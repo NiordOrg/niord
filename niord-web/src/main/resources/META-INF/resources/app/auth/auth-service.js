@@ -58,38 +58,32 @@ angular.module('niord.auth')
                     } else if (response.status === 404) {
                         console.error('Not found');
                     } else if (response.status === 500) {
-                        console.group('Server Error (500) Details:');
-                        console.error('URL:', response.config?.url || 'Unknown');
-                        console.error('Method:', response.config?.method || 'Unknown');
-                        console.error('Status:', response.status, response.statusText);
-                        
-                        if (response.data) {
-                            console.error('Response Data:', response.data);
-                            if (response.data.errorMessage) {
-                                console.error('Error Message:', response.data.errorMessage);
-                            }
-                            if (response.data.stackTrace) {
-                                console.error('Stack Trace:', response.data.stackTrace);
-                            }
-                        }
-                        
+                        var requestData = '';
                         if (response.config?.data) {
                             try {
-                                const requestData = typeof response.config.data === 'string' 
-                                    ? JSON.parse(response.config.data) 
-                                    : response.config.data;
-                                console.error('Request Data:', requestData);
+                                requestData = typeof response.config.data === 'string' 
+                                    ? response.config.data 
+                                    : JSON.stringify(response.config.data, null, 2);
                             } catch (e) {
-                                console.error('Request Data (raw):', response.config.data);
+                                requestData = String(response.config.data);
                             }
                         }
                         
-                        if (response.headers && typeof response.headers === 'function') {
-                            console.error('Response Headers:', response.headers());
-                        }
+                        var errorMessage = response.data?.errorMessage || 'No error message provided';
+                        var responseData = response.data ? JSON.stringify(response.data, null, 2) : 'No response data';
                         
-                        console.error('Full Response Object:', response);
-                        console.groupEnd();
+                        console.error(
+                            'SERVER ERROR 500 DETAILS:\n' +
+                            '========================\n' +
+                            'Time: ' + new Date().toISOString() + '\n' +
+                            'URL: ' + (response.config?.url || 'Unknown') + '\n' +
+                            'Method: ' + (response.config?.method || 'Unknown') + '\n' +
+                            'Status: ' + response.status + ' ' + (response.statusText || '') + '\n' +
+                            'Error: ' + errorMessage + '\n\n' +
+                            'Request Data:\n' + requestData + '\n\n' +
+                            'Response Data:\n' + responseData + '\n' +
+                            '========================'
+                        );
                     } else if (response.status) {
                         if (response.data && response.data.errorMessage) {
                             console.error(response.data.errorMessage);
