@@ -108,6 +108,8 @@ class S124Utils {
             // Create the JAXB Marshaller
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
             jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, format);
+            jaxbMarshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, 
+                "http://www.iho.int/S124/gml/2.0 https://schemas.s100dev.net/schemas/S124/2.0.0/20250729/124_2.0.0.xsd");
 
             // Transform the S-124 object to an output stream
             ByteArrayOutputStream xmlStream = new ByteArrayOutputStream();
