@@ -15,9 +15,12 @@
  */
 package org.niord.s100.s124;
 
-import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.Dataset;
-import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPart;
-import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPreamble;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 import org.niord.core.message.DateInterval;
 import org.niord.core.message.Message;
@@ -25,7 +28,9 @@ import org.niord.core.message.MessagePart;
 import org.niord.core.message.MessagePartDesc;
 import org.niord.model.message.MainType;
 
-import static org.junit.Assert.*;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.Dataset;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPart;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPreamble;
 
 /**
  * Tests for S-124 validation and error handling
@@ -220,7 +225,7 @@ public class S124ValidationTest extends S124TestBase {
         // Assert
         assertNotNull("Should handle empty short ID", dataset);
         NavwarnPreamble preamble = findPreamble(dataset);
-        String mrn = preamble.getMessageSeriesIdentifier().getWarningIdentifier();
+        String mrn = preamble.getMessageSeriesIdentifier().getInteroperabilityIdentifier();
         assertTrue("Should use numeric ID when short ID is empty", mrn.contains("123"));
     }
 
@@ -238,7 +243,7 @@ public class S124ValidationTest extends S124TestBase {
         // Assert
         assertNotNull("Should handle null short ID", dataset);
         NavwarnPreamble preamble = findPreamble(dataset);
-        String mrn = preamble.getMessageSeriesIdentifier().getWarningIdentifier();
+        String mrn = preamble.getMessageSeriesIdentifier().getInteroperabilityIdentifier();
         assertTrue("Should use numeric ID when short ID is null", mrn.contains("123"));
     }
 
@@ -259,7 +264,7 @@ public class S124ValidationTest extends S124TestBase {
 
         // Assert
         java.util.List<NavwarnPart> parts = findNavwarnParts(dataset);
-        String text = parts.get(0).getWarningInformation().getInformation().getText();
+        String text = parts.get(0).getWarningInformation().getInformations().get(0).getText();
 
         assertFalse("HTML tags should be removed", text.contains("<p>"));
         assertFalse("HTML tags should be removed", text.contains("<strong>"));

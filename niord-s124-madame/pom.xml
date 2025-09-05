@@ -33,7 +33,7 @@
         <dependency>
             <groupId>com.github.NiordOrg.niord-s124-xml-bindings</groupId>
             <artifactId>s124-2_0_1-xml-bindings</artifactId>
-            <version>v0.0.5</version>
+            <version>v0.0.6</version>
         </dependency>
 
     </dependencies>

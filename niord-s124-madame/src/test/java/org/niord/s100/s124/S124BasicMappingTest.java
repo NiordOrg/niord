@@ -74,7 +74,7 @@ public class S124BasicMappingTest extends S124TestBase {
 
         // Verify message series identifier
         assertNotNull("Message series identifier should not be null", preamble.getMessageSeriesIdentifier());
-        assertEquals("Country name should match", TEST_COUNTRY, preamble.getMessageSeriesIdentifier().getCountryName());
+        assertEquals("Country name should match", TEST_COUNTRY, preamble.getMessageSeriesIdentifier().getNationality());
         assertEquals("Production agency should match", TEST_PRODUCTION_AGENCY, preamble.getMessageSeriesIdentifier().getAgencyResponsibleForProduction());
         assertEquals("Warning number should match", 42, preamble.getMessageSeriesIdentifier().getWarningNumber());
 
@@ -130,10 +130,10 @@ public class S124BasicMappingTest extends S124TestBase {
 
         // Verify warning information
         assertNotNull("Part should have warning information", firstPart.getWarningInformation());
-        assertNotNull("Should have information", firstPart.getWarningInformation().getInformation());
-        assertEquals("Headline should match", "Test warning part 1",
-                firstPart.getWarningInformation().getInformation().getHeadline());
-        assertEquals("Text should match", "Details for test warning part 1", firstPart.getWarningInformation().getInformation().getText());
+        assertNotNull("Should have informations", firstPart.getWarningInformation().getInformations());
+        assertFalse("Should have at least one information", firstPart.getWarningInformation().getInformations().isEmpty());
+        assertEquals("Text should match", "Details for test warning part 1", 
+                firstPart.getWarningInformation().getInformations().get(0).getText());
     }
 
     @Test
@@ -209,9 +209,8 @@ public class S124BasicMappingTest extends S124TestBase {
         var parts = findNavwarnParts(dataset);
         NavwarnPart navwarnPart = parts.get(0);
 
-        assertEquals("Language should be Danish", "da", navwarnPart.getWarningInformation().getInformation().getLanguage());
-        assertEquals("Headline should be in Danish", "Dansk emne", navwarnPart.getWarningInformation().getInformation().getHeadline());
-        assertEquals("Text should be in Danish", "Danske detaljer", navwarnPart.getWarningInformation().getInformation().getText());
+        assertEquals("Language should be Danish", "da", navwarnPart.getWarningInformation().getInformations().get(0).getLanguage());
+        assertEquals("Text should be in Danish", "Danske detaljer", navwarnPart.getWarningInformation().getInformations().get(0).getText());
     }
 
     @Test
@@ -228,8 +227,8 @@ public class S124BasicMappingTest extends S124TestBase {
         var parts = findNavwarnParts(dataset);
         NavwarnPart navwarnPart = parts.get(0);
 
-        assertEquals("Language should fallback to English", "en", navwarnPart.getWarningInformation().getInformation().getLanguage());
-        assertEquals("Headline should be in English", "Test warning part 1", navwarnPart.getWarningInformation().getInformation().getHeadline());
+        assertEquals("Language should fallback to English", "en", navwarnPart.getWarningInformation().getInformations().get(0).getLanguage());
+        assertEquals("Text should be in English", "Details for test warning part 1", navwarnPart.getWarningInformation().getInformations().get(0).getText());
     }
 
     @Test
@@ -260,7 +259,7 @@ public class S124BasicMappingTest extends S124TestBase {
 
         // Assert
         NavwarnPreamble preamble = findPreamble(dataset);
-        String mrn = preamble.getMessageSeriesIdentifier().getWarningIdentifier();
+        String mrn = preamble.getMessageSeriesIdentifier().getInteroperabilityIdentifier();
 
         assertValidMrn(mrn);
         assertTrue("MRN should contain lowercase short ID", mrn.contains("dk-001-24"));

@@ -59,9 +59,9 @@ public class S124ReferenceTest extends S124TestBase {
         
         // Verify message series identifier
         MessageSeriesIdentifierType msgSeries = s124Ref.getMessageSeriesIdentifiers().get(0);
-        assertEquals(TEST_COUNTRY, msgSeries.getCountryName());
+        assertEquals(TEST_COUNTRY, msgSeries.getNationality());
         assertEquals(43, msgSeries.getWarningNumber());
-        assertTrue(msgSeries.getWarningIdentifier().contains("dk-002-24"));
+        assertTrue(msgSeries.getInteroperabilityIdentifier().contains("dk-002-24"));
     }
     
     @Test

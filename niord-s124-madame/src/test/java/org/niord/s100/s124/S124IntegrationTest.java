@@ -390,7 +390,7 @@ public class S124IntegrationTest extends S124TestBase {
         var parts = findNavwarnParts(dataset);
         assertEquals("Should have 1 part", 1, parts.size());
 
-        String text = parts.get(0).getWarningInformation().getInformation().getText();
+        String text = parts.get(0).getWarningInformation().getInformations().get(0).getText();
         assertTrue(text.contains("cancelled"));
     }
 
@@ -404,12 +404,12 @@ public class S124IntegrationTest extends S124TestBase {
         var daParts = findNavwarnParts(daDataset);
         var deParts = findNavwarnParts(deDataset);
 
-        assertEquals("en", enParts.get(0).getWarningInformation().getInformation().getLanguage());
-        assertEquals("da", daParts.get(0).getWarningInformation().getInformation().getLanguage());
-        assertEquals("Should have 1 part", "de", deParts.get(0).getWarningInformation().getInformation().getLanguage());
+        assertEquals("en", enParts.get(0).getWarningInformation().getInformations().get(0).getLanguage());
+        assertEquals("da", daParts.get(0).getWarningInformation().getInformations().get(0).getLanguage());
+        assertEquals("Should have 1 part", "de", deParts.get(0).getWarningInformation().getInformations().get(0).getLanguage());
 
-        assertTrue(daParts.get(0).getWarningInformation().getInformation().getHeadline().contains("Dansk"));
-        assertTrue(deParts.get(0).getWarningInformation().getInformation().getHeadline().contains("Deutsche"));
+        assertTrue(daParts.get(0).getWarningInformation().getInformations().get(0).getText().contains("dansk"));
+        assertTrue(deParts.get(0).getWarningInformation().getInformations().get(0).getText().contains("Deutsch"));
     }
 
     private void validateComplexGeometryDataset(Dataset dataset) {
@@ -445,7 +445,7 @@ public class S124IntegrationTest extends S124TestBase {
         assertEquals("Should contain distance information", 1, parts.size());
 
         NavwarnPart part = parts.get(0);
-        String details = part.getWarningInformation().getInformation().getText();
+        String details = part.getWarningInformation().getInformations().get(0).getText();
         assertTrue(details.contains("cable laying"));
         assertTrue(details.contains("500m"));
 

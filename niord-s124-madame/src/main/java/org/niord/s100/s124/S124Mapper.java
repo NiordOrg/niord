@@ -288,9 +288,8 @@ class S124Mapper {
         if (mpd != null) {
             InformationType it = s124ObjectFactory.createInformationType();
             it.setLanguage(lang(mpd.getLang()));
-            it.setHeadline(mpd.getSubject());
             it.setText(htmlToPlainText(mpd.getDetails()));
-            wit.setInformation(it);
+            wit.getInformations().add(it);
         }
 
         part.setWarningInformation(wit);
@@ -473,14 +472,14 @@ class S124Mapper {
             messageSeriesIdentifer.setYear(refYear);
         }
 
-        messageSeriesIdentifer.setCountryName(country);
+        messageSeriesIdentifer.setNationality(country);
         messageSeriesIdentifer.setAgencyResponsibleForProduction(productionAgency);
 
         if (message.getMessageSeries() != null) {
             messageSeriesIdentifer.setNameOfSeries(message.getMessageSeries().getSeriesId());
         }
 
-        messageSeriesIdentifer.setWarningIdentifier(toMrn(message));
+        messageSeriesIdentifer.setInteroperabilityIdentifier(toMrn(message));
 
         if (message.getNumber() != null) {
             messageSeriesIdentifer.setWarningNumber(message.getNumber());
