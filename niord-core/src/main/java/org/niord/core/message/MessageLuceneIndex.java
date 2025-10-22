@@ -457,6 +457,7 @@ public class MessageLuceneIndex extends BaseService {
             writer.commit();
         } finally {
             closeWriter(writer);
+            closeReader();
         }
         log.info(String.format("Lucene index deleted, lastUpdated is %s", getLastUpdated().toString()));
 
