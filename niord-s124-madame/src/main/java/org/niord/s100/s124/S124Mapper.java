@@ -728,7 +728,7 @@ class S124Mapper {
 
     private static OffsetDateTime toOtherOffsetDateTime(Date date) {
         Instant instant = date.toInstant();
-        return OffsetDateTime.ofInstant(instant, ZoneId.systemDefault());
+        return OffsetDateTime.ofInstant(instant, ZoneId.of("UTC"));
     }
     private static LocalDateTime toOtherLocalDateTime(Date date) {
         Instant instant = date.toInstant();
