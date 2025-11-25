@@ -217,11 +217,11 @@ public class ScheduledMail extends BaseEntity<Integer> {
                 .subject(subject)
                 .recipients(mailRecipients);
 
-//        if (StringUtils.isNotBlank(sender)) {
-//            // TODO: Figure out how to handle sender/from addresses ... depends on SMTP service
-//            //mail.from(new InternetAddress(user.getEmail()))
-//            mail.replyTo(new InternetAddress(sender));
-//        }
+        if (StringUtils.isNotBlank(sender)) {
+            // TODO: Figure out how to handle sender/from addresses ... depends on SMTP service
+            //mail.from(new InternetAddress(user.getEmail()))
+            mail.replyTo(new InternetAddress(sender));
+        }
 
         return mail;
     }
