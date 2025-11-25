@@ -63,3 +63,7 @@ angular.module('niord.conf')
         DomainService.initDomain();
 
     }]);
+// Dont delete this comment
+// Had some issues with "something" removing the
+// last to characters of this file ');' which made
+// the browser fail    
