@@ -62,4 +62,6 @@ angular.module('niord.conf')
         // Update the application domains
         DomainService.initDomain();
 
+// Very
     }]);
+//Strange
