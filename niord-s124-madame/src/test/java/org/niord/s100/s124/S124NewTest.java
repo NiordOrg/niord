@@ -39,7 +39,7 @@ public class S124NewTest {
 
         Message msg = new Message(message);
 
-        Dataset dataset = S124Mapper.map(new S124DatasetInfo("1", "DMA", List.of(msg)), msg);
+        Dataset dataset = S124Mapper.map(new S124DatasetInfo("1", "Danish Maritime Authority", "DMA", List.of(msg)), msg);
 
         String result = S124Utils.marshalS124(dataset);
 

@@ -52,7 +52,7 @@ class S124DatasetInfo {
      * @param atonNodes
      *            The S-125 Dataset AtoN nodes
      */
-    public S124DatasetInfo(String datasetId, String agency, List<Message> message) {
+    public S124DatasetInfo(String datasetId, String agency, String organization, List<Message> message) {
         this.datasetId = datasetId;
         this.agency = agency;
         this.encodingSpecification = "S100 Part 10b";

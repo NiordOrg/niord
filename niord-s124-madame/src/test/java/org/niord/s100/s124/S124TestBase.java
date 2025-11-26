@@ -57,7 +57,7 @@ public abstract class S124TestBase {
 
     protected S124DatasetInfo createTestDatasetInfo() {
         // Use constructor that matches the actual API
-        S124DatasetInfo info = new S124DatasetInfo("urn:mrn:iho:dataset:dk:test:001", "DK-DMA-S124", new ArrayList<>());
+        S124DatasetInfo info = new S124DatasetInfo("urn:mrn:iho:dataset:dk:test:001", "DK-DMA-S124", "DK-DMA-S124",new ArrayList<>());
         return info;
     }
 

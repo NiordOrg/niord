@@ -74,7 +74,7 @@ public class S124Service {
             }
         }
         String dataSetId = message.getShortId(); 
-        S124DatasetInfo di = new S124DatasetInfo(dataSetId, responsibleAgency, List.of(message));
+        S124DatasetInfo di = new S124DatasetInfo(dataSetId, responsibleAgency, app.getOrganisation(), List.of(message));
 
         Dataset dataset = S124Mapper.map(di, message);
 
