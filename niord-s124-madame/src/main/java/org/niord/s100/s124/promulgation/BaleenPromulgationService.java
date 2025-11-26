@@ -69,9 +69,6 @@ public class BaleenPromulgationService extends BasePromulgationService implement
     private static final Logger log = LoggerFactory.getLogger(BaleenPromulgationService.class);
 
     @Inject
-    DictionaryService dictionaryService;
-
-    @Inject
     PromulgationTypeService promulgationTypeService;
 
     @Inject

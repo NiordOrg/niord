@@ -18,6 +18,10 @@ package org.niord.s100.s124;
 import java.util.List;
 
 import org.niord.core.NiordApp;
+import org.niord.core.dictionary.Dictionary;
+import org.niord.core.dictionary.DictionaryEntry;
+import org.niord.core.dictionary.DictionaryEntryDesc;
+import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.model.message.MainType;
@@ -36,6 +40,9 @@ public class S124Service {
 
     @Inject
     NiordApp app;
+
+    @Inject
+    DictionaryService dictionaryService;
 
     /**
      * Generates S-124 compliant GML for the message
@@ -57,7 +64,17 @@ public class S124Service {
         // Ensure we use a valid language
         language = app.getLanguage(language);
 
-        S124DatasetInfo di = new S124DatasetInfo("D", app.getOrganisation(), List.of(message));
+        String responsibleAgency = "Unknown Agency";
+        DictionaryEntry responsibleAgencyEntry = dictionaryService.findByName("message").getEntries().get("msg.responsible.agency");
+        if (responsibleAgencyEntry != null) {
+            // For now we generate english only
+            DictionaryEntryDesc desc = responsibleAgencyEntry.getDesc("en");
+            if (desc != null) {
+                responsibleAgency = desc.getValue();
+            }
+        }
+        String dataSetId = message.getShortId(); 
+        S124DatasetInfo di = new S124DatasetInfo(dataSetId, responsibleAgency, List.of(message));
 
         Dataset dataset = S124Mapper.map(di, message);
 
