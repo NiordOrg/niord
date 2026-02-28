@@ -24,6 +24,9 @@ import org.niord.s100.s124.promulgation.BaleenMessagePromulgation;
  */
 public class BaleenMessagePromulgationVo extends BaseMessagePromulgationVo<BaleenMessagePromulgation>{
 
+    /** S-124 XML content, populated on load for display purposes (not persisted) */
+    String content;
+
     /** Constructor **/
     public BaleenMessagePromulgationVo() {
     }
@@ -46,4 +49,15 @@ public class BaleenMessagePromulgationVo extends BaseMessagePromulgationVo<Balee
         return true;
     }
 
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
 }

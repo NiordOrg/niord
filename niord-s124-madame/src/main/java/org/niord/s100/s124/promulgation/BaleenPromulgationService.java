@@ -139,10 +139,20 @@ public class BaleenPromulgationService extends BasePromulgationService implement
     /** {@inheritDoc} */
     @Override
     public void onLoadSystemMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException {
-        BaleenMessagePromulgationVo audio = message.promulgation(BaleenMessagePromulgationVo.class, type.getTypeId());
-        if (audio == null) {
-            audio = new BaleenMessagePromulgationVo(type.toVo(DataFilter.get()));
-            message.checkCreatePromulgations().add(audio);
+        BaleenMessagePromulgationVo baleen = message.promulgation(BaleenMessagePromulgationVo.class, type.getTypeId());
+        if (baleen == null) {
+            baleen = new BaleenMessagePromulgationVo(type.toVo(DataFilter.get()));
+            message.checkCreatePromulgations().add(baleen);
+        }
+
+        // Generate S-124 XML content for display
+        try {
+            String language = type.getLanguage() != null ? type.getLanguage() : "en";
+            String s124Content = service.generateGML(message.getId(), language);
+            baleen.setContent(s124Content);
+        } catch (Exception e) {
+            // S-124 generation may fail for NM types or unnumbered warnings
+            log.debug("Could not generate S-124 content for message {}: {}", message.getId(), e.getMessage());
         }
     }
 
