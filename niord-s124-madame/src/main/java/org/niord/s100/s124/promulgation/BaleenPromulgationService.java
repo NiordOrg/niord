@@ -142,17 +142,23 @@ public class BaleenPromulgationService extends BasePromulgationService implement
         BaleenMessagePromulgationVo baleen = message.promulgation(BaleenMessagePromulgationVo.class, type.getTypeId());
         if (baleen == null) {
             baleen = new BaleenMessagePromulgationVo(type.toVo(DataFilter.get()));
+            baleen.setPromulgate(type.getRequirement() == Requirement.MANDATORY || type.getRequirement() == Requirement.DEFAULT);
             message.checkCreatePromulgations().add(baleen);
         }
 
-        // Generate S-124 XML content for display
-        try {
-            String language = type.getLanguage() != null ? type.getLanguage() : "en";
-            String s124Content = service.generateGML(message.getId(), language);
-            baleen.setContent(s124Content);
-        } catch (Exception e) {
-            // S-124 generation may fail for NM types or unnumbered warnings
-            log.debug("Could not generate S-124 content for message {}: {}", message.getId(), e.getMessage());
+        // Generate S-124 XML content for display (only for VERIFIED messages)
+        if (message.getStatus() == Status.VERIFIED) {
+            try {
+                String language = type.getLanguage() != null ? type.getLanguage() : "en";
+                log.info("Generating S-124 content for message {} with language {}", message.getId(), language);
+                String s124Content = service.generateGML(message.getId(), language);
+                baleen.setContent(s124Content);
+                log.info("Generated S-124 content for message {} ({} chars)", message.getId(),
+                        s124Content != null ? s124Content.length() : 0);
+            } catch (Exception e) {
+                // S-124 generation may fail for NM types or unnumbered warnings
+                log.warn("Could not generate S-124 content for message {}: {}", message.getId(), e.getMessage(), e);
+            }
         }
     }
 
