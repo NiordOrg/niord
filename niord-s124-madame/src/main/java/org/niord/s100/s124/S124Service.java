@@ -89,6 +89,42 @@ public class S124Service {
 
 
     /**
+     * Generates a preview S-124 GML for a message that has not yet been published.
+     * Uses placeholder values for fields not yet assigned (number, shortId).
+     */
+    public String generatePreviewGML(Message message, String language) throws Exception {
+        if (message.getMainType() == MainType.NM) {
+            throw new IllegalArgumentException("S-124 does not support Notices to Mariners");
+        }
+
+        language = app.getLanguage(language);
+
+        // Set placeholder values for fields not yet assigned at VERIFIED status
+        if (message.getNumber() == null) {
+            message.setNumber(0);
+        }
+        if (message.getShortId() == null || message.getShortId().isBlank()) {
+            message.setShortId("PREVIEW");
+        }
+
+        String responsibleAgency = "Unknown Agency";
+        DictionaryEntry responsibleAgencyEntry = dictionaryService.findByName("message").getEntries().get("msg.responsible.agency");
+        if (responsibleAgencyEntry != null) {
+            DictionaryEntryDesc desc = responsibleAgencyEntry.getDesc("en");
+            if (desc != null) {
+                responsibleAgency = desc.getValue();
+            }
+        }
+
+        String dataSetId = message.getShortId();
+        S124DatasetInfo di = new S124DatasetInfo(dataSetId, responsibleAgency, app.getOrganisation(), List.of(message));
+        di.setTitle("PREVIEW - Niord S-124 Dataset");
+
+        Dataset dataset = S124Mapper.map(di, message);
+        return S124Utils.marshalS124(dataset);
+    }
+
+    /**
      * Generates S-124 compliant GML for the message
      *
      * @param messageId

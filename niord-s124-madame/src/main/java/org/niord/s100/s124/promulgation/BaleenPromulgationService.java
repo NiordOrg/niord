@@ -146,18 +146,18 @@ public class BaleenPromulgationService extends BasePromulgationService implement
             message.checkCreatePromulgations().add(baleen);
         }
 
-        // Generate S-124 XML content for display (only for VERIFIED messages)
+        // Generate S-124 preview XML for display (only for VERIFIED messages)
         if (message.getStatus() == Status.VERIFIED) {
             try {
                 String language = type.getLanguage() != null ? type.getLanguage() : "en";
-                log.info("Generating S-124 content for message {} with language {}", message.getId(), language);
-                String s124Content = service.generateGML(message.getId(), language);
+                log.info("Generating S-124 preview for message {} with language {}", message.getId(), language);
+                Message msg = messageService.resolveMessage(message.getId());
+                String s124Content = service.generatePreviewGML(msg, language);
                 baleen.setContent(s124Content);
-                log.info("Generated S-124 content for message {} ({} chars)", message.getId(),
+                log.info("Generated S-124 preview for message {} ({} chars)", message.getId(),
                         s124Content != null ? s124Content.length() : 0);
             } catch (Exception e) {
-                // S-124 generation may fail for NM types or unnumbered warnings
-                log.warn("Could not generate S-124 content for message {}: {}", message.getId(), e.getMessage(), e);
+                log.warn("Could not generate S-124 preview for message {}: {}", message.getId(), e.getMessage());
             }
         }
     }
