@@ -38,7 +38,7 @@ public class AtonIconRenderer {
 
     public static final String SVG_NS = "http://www.w3.org/2000/svg";
 
-	public static void renderIcon(AtonNodeVo aton, String format, OutputStream out, int w, int h, int x, int y, double s) throws IOException {
+	public static synchronized void renderIcon(AtonNodeVo aton, String format, OutputStream out, int w, int h, int x, int y, double s) throws IOException {
 
 		// First, generate the map from the AtoN tags
 		S57map map = new S57map(true);
