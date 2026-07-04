@@ -34,7 +34,9 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -84,6 +86,35 @@ public class SettingsRestService extends AbstractBatchableRestService {
                 .stream()
                 .map(SettingVo::new)
                 .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns all web settings (settings flagged with web=true) as a flat JSON map.
+     *
+     * This is anonymous by design: web=true is the backend's own definition of "publicly
+     * shippable to the browser", and this endpoint re-creates what the legacy, unauthenticated
+     * conf/site-config.js emitted (minus the $rootScope. wrapper) for the new front-end to read
+     * at bootstrap time.
+     *
+     * @return a flat { key: value } map of all web settings
+     */
+    @GET
+    @Path("/web")
+    @Produces("application/json;charset=UTF-8")
+    @PermitAll // web settings are public by definition (web=true)
+    @GZIP
+    @NoCache
+    public Map<String, Object> getWebSettings() {
+        Map<String, Object> webSettings = new HashMap<>();
+        for (Setting setting : settingsService.getAllForWeb()) {
+            // Never expose Password-typed settings (none are web=true today; keep the invariant)
+            if (setting.getType() == Setting.Type.Password) {
+                continue;
+            }
+            webSettings.put(setting.getKey(), setting.getValue());
+        }
+        return webSettings;
     }
 
 
