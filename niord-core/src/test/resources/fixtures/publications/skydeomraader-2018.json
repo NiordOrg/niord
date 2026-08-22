@@ -1,0 +1,720 @@
+{
+  "case": "skydeomraader-2018",
+  "kind": "publication",
+  "publicationId": "58a37fcf-10f6-41ba-b791-1e77d1a70667",
+  "memberCount": 71,
+  "source": "https://niord.t-dma.dk",
+  "synthetic": false,
+  "members": [
+    {
+      "uid": "07c8d2bf-861e-436f-b0fe-111bd20e9dbe",
+      "shortId": "FA/ES-D-138 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578477389000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "18caee11-7e2e-44fe-a616-435200842e26",
+      "shortId": "FA/EK-R-16 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597347000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "18e84c41-636b-48bb-9352-d131ed5ccb6e",
+      "shortId": "FA/EK-R-14 2018",
+      "publishDateFrom": 1532597037000,
+      "publishDateTo": 1546597107000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "1de4373c-5277-474b-ad04-5dd8d0e7998a",
+      "shortId": "FA/EK-R-33 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597647000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "1ec2f119-1aeb-45d4-993c-6d4e982c23ca",
+      "shortId": "FA/EK-R-19 2018",
+      "publishDateFrom": 1532596772000,
+      "publishDateTo": 1546597107000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "1f656b6f-67d5-4c73-9464-68a83f7750d2",
+      "shortId": "FA/EK-R-15 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479157000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "261bf89f-dcc4-44eb-b953-d1967cbb8e06",
+      "shortId": "FA/EK-R-15 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546597287000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "263d9972-34da-4f36-ad8e-cf68253bc605",
+      "shortId": "FA/EK-R-44 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478809000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "298f4f70-841c-4f4d-9c16-d50580e3c247",
+      "shortId": "FA/EK-D-371 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578477137000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "2e4a8f72-0903-4c02-9ba0-8efd855fceb5",
+      "shortId": "FA/EK-R-13 2018",
+      "publishDateFrom": 1532597100000,
+      "publishDateTo": 1546597167000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "36751b10-6998-42eb-8487-55253dd8336b",
+      "shortId": "FA/EK-R-53 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479715000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "385ec984-0e43-4074-827a-55169453d893",
+      "shortId": "FA/EK-D-395 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596867000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "3a1f4724-b1b9-4c58-8824-8c22a4342a61",
+      "shortId": "FA/14 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478763000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "3c329051-230c-4975-9638-434c87b7ab97",
+      "shortId": "FA/EK-R-48 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597527000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "3cde1334-0c23-4a4d-bc27-ac9c102dd8c4",
+      "shortId": "FA/EK-D-373 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597707000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "451e87bf-7b96-4941-a6c8-9a47767771bb",
+      "shortId": "FA/EK-D-389 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597467000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "4541a577-57a8-467a-bbe7-c0408c97fec2",
+      "shortId": "FA/EK-R-20 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479244000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "457cdf73-9a0c-40a9-a51c-66891c6116ad",
+      "shortId": "FA/EK-D-352 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596987000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "47ff8ffa-e6ff-442b-a8d8-6c6fe1bca679",
+      "shortId": "FA/EK-R-20 2018",
+      "publishDateFrom": 1532597147000,
+      "publishDateTo": 1546597347000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "4a291407-1084-4b9f-905b-cc891298dbfc",
+      "shortId": "FA/EK-D-351 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597407000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "50fc8e9f-c3af-4f9f-b1d6-27d37c31c391",
+      "shortId": "FA/11 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546597047000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "52081790-926d-430d-8270-2117638341e8",
+      "shortId": "FA/EK-R-18 2018",
+      "publishDateFrom": 1544612206000,
+      "publishDateTo": 1546599567000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "5421dbeb-0e34-4492-bfae-53480940e891",
+      "shortId": "FA/EK-R-20 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1532436152000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "685c316b-7b8c-4aaa-b639-e09a82ac0f93",
+      "shortId": "FA/EK-R-18 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478890000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "689976d9-79d5-4658-b28d-bbc8a9fdcf0d",
+      "shortId": "FA/11 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478971000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "698ffd07-fc25-4fb2-b428-63ad5666294b",
+      "shortId": "FA/EK-R-11 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479353000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "6d3498a0-1b93-438e-ab42-036a6a7948c2",
+      "shortId": "FA/EK-D-380 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597587000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "6edc52fa-9798-4ea9-939a-afec93f4d757",
+      "shortId": "FA/EK-D-371 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596747000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "7085df1b-7221-49f3-b68b-da24ae33a64e",
+      "shortId": "FA/EK-R-19 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479007000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "749b50df-3343-45a4-8c05-adbf9b334a77",
+      "shortId": "FA/EK-R-11 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1532435198000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "7509bc2e-7891-42e3-88db-70b9f2c83e88",
+      "shortId": "FA/EK-D-351 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479318000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "78c44ca3-4056-4189-b24c-2c867968e34c",
+      "shortId": "FA/EK-D-389 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479492000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "7a43ed64-a2e9-4fb7-92f2-84b09afc863d",
+      "shortId": "FA/EK-R-33 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479695000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "7aadf3c5-4f2f-4871-befc-095e0ee18d45",
+      "shortId": "FA/EK-D-352 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478847000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "7c381eb7-05c6-4661-9f63-dabe33f864d9",
+      "shortId": "FA/EK-D-370 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479528000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "7ea7fc96-9b3e-4be6-8cf9-aa2671d7d784",
+      "shortId": "FA/ES-D-138 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596807000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "85cdcf08-4dca-4edd-a1fb-7e9cc7ca1d63",
+      "shortId": "FA/ES-D-139 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596807000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "89fc95dc-2f36-44e6-9e42-484aea437ba7",
+      "shortId": "FA/EK-D-350 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597407000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "8dcaf7ed-0207-4a08-8ad6-be7fbab6a20a",
+      "shortId": "FA/EK-R-12 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546597227000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "958f0063-3d4a-4121-a2d3-b93ea0b09597",
+      "shortId": "FA/EK-R-12 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479117000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "9bdc3d11-f556-415e-9a08-ae5dc3cd225d",
+      "shortId": "FA/ES-D-139 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478597000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "9fb15c8e-633a-4e07-a6b9-3411d66c5edf",
+      "shortId": "FA/EK-R-13 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479078000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "a26faff2-7473-439a-8e7f-bc9a9cfd9036",
+      "shortId": "FA/EK-R-17 2018",
+      "publishDateFrom": 1544618732000,
+      "publishDateTo": 1546599567000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "abddeb04-f8e6-4119-84f0-2f50a07776b5",
+      "shortId": "FA/15 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597587000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "b0ff1a08-425d-4bd7-a512-248d25c483d1",
+      "shortId": "FA/EK-R-13 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1532435646000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "b27c5b3e-82e9-4a22-ae17-328dbf36b5ab",
+      "shortId": "FA/EK-D-373 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479727000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "b959258c-1195-48a9-8661-547f7e2d2698",
+      "shortId": "FA/EK-R-11 2018",
+      "publishDateFrom": 1532597259000,
+      "publishDateTo": 1546597407000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "b9ea84fa-ba95-4f54-83d8-fa1fa032a015",
+      "shortId": "FA/15 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479618000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "ba7c2c70-4a9b-4870-94af-35e161766d2b",
+      "shortId": "FA/EK-R-17 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478920000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "bcd61958-f47d-4406-9415-a0b10aec8b1a",
+      "shortId": "FA/EK-D-370 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597527000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "c09f45ad-4aa7-4f05-877f-c77acf3c5f33",
+      "shortId": "FA/EK-R-14 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1532435946000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "c14a45ec-727d-4c2d-a9e4-26ee1b7d78c7",
+      "shortId": "FA/EK-R-16 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479282000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "c59998ee-9af0-4c79-a8fd-aad57dac9d18",
+      "shortId": "FA/EK-D-353 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597467000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "c6607161-8f40-488c-92e7-15b43712f3a5",
+      "shortId": "FA/EK-D-396 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596867000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "cd292976-59fa-48e7-86eb-714fabbc63f5",
+      "shortId": "FA/EK-R-53 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597647000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "cd6bacc1-1d99-4d92-bf5c-e9a83428a718",
+      "shortId": "FA/EK-D-381 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597587000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "cdeda832-512e-4ff2-a183-0ad0fb8febf4",
+      "shortId": "FA/EK-D-350 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479391000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "cfe4306d-9cf9-48ca-8488-09172fa7aabd",
+      "shortId": "FA/14 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596927000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "d19668ff-298e-4543-8415-8c45a11ce3f5",
+      "shortId": "FA/EK-R-48 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479554000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "d5d0707a-ce9e-470c-8e6c-84cce162c416",
+      "shortId": "FA/EK-D-396 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478660000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "d6814562-1bd4-4f59-83c9-3bf74e91ed95",
+      "shortId": "FA/EK-D-381 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479665000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "d7f3cc4f-e5f9-4413-ae0b-74d066c9caac",
+      "shortId": "FA/EK-R-45 2018",
+      "publishDateFrom": 1514874441000,
+      "publishDateTo": 1546597467000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "dba914c4-bc45-44e4-9b13-dbcbfd64b1cd",
+      "shortId": "FA/EK-R-45 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479426000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "dcabae41-0f41-4acd-a23b-81e6ac409980",
+      "shortId": "FA/ES-D-140 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596747000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "dfc6f033-aaf0-4993-a853-c1ccc9aa7027",
+      "shortId": "FA/EK-D-395 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578478697000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "e5c62a66-29e3-45a0-8014-453467670a24",
+      "shortId": "FA/EK-R-14 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479042000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "ec07b6dd-bbd5-4754-baa3-05d92134743b",
+      "shortId": "FA/EK-D-380 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479634000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "effb18be-1094-4e32-b225-897c7e14483b",
+      "shortId": "FA/EK-R-44 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1546596927000,
+      "status": "EXPIRED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "f31483f0-7ef0-4e27-be45-67b9b460c6cc",
+      "shortId": "FA/EK-R-19 2018",
+      "publishDateFrom": 1514874440000,
+      "publishDateTo": 1532436039000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "f81c6664-2a28-4ec1-b8d1-fc40bdc5923f",
+      "shortId": "FA/EK-D-353 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578479456000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "fd611608-c42c-4501-a411-c250ef9b5674",
+      "shortId": "FA/ES-D-140 2019",
+      "publishDateFrom": 1546592400000,
+      "publishDateTo": 1578477206000,
+      "status": "CANCELLED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    }
+  ]
+}

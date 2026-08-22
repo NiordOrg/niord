@@ -11,7 +11,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const HOST = 'https://niord.t-dma.dk';
@@ -23,6 +23,34 @@ const TAGS = [
   'nm-pt-w01-2026',
   'nm-w01-2026',
   ...[23, 24, 25, 26, 27, 28].flatMap((w) => [`nm-w${String(w).padStart(2, '0')}-2026`, `nm-pt-w${String(w).padStart(2, '0')}-2026`]),
+  // Hazard weeks.
+  'nm-w45-2018', // the explicit NEGATIVE fixture -- the resolver is expected to differ here
+  'nm-pt-w12-2024', // release-moment precision: membership changes 4s after the stamped cut-off
+];
+
+/* Publications, resolved through ?publication=<uuid>. Unlike tags these carry no
+ * messageCount to check against, so the corpus guard does that job instead: a
+ * publication id the backend does not recognise is NOT an error, it silently
+ * returns the entire default corpus. */
+const PUBLICATIONS = [
+  { case: 'skydeomraader-2017-ed1', id: '38a25c50-47d1-4ac4-bbe7-2a37f0dfee5a' },
+  { case: 'skydeomraader-2017-ed2', id: 'f2fa5eb8-e72a-4198-a883-fbcf1202274f' }, // supersede-moment superset
+  { case: 'skydeomraader-2018', id: '58a37fcf-10f6-41ba-b791-1e77d1a70667' }, // the union case
+  { case: 'skydeomraader-2026', id: '558aa1ac-7807-43b0-8d00-9b074baca026' }, // the 31-of-32 pair
+  { case: 'skydeomraader-2027', id: '46c4ed07-17a7-4afc-87f9-c78d266c4805' },
+];
+
+/* Single messages, fetched by shortId. A 204 is a RESULT here, not a failure:
+ * the rolled-back-publish class is defined by the message not existing, so its
+ * absence is the fact being frozen. */
+const MESSAGES = [
+  { case: 'nm-780-18', shortId: 'NM-780-18' }, // NULL publishDateFrom
+  { case: 'nm-1116-22', shortId: 'NM-1116-22' }, // back-dated pair
+  { case: 'nm-300-24', shortId: 'NM-300-24' }, // type mutation
+  { case: 'nm-466-26', shortId: 'NM-466-26' }, // 62s past the cut-off
+  { case: 'nm-473-26', shortId: 'NM-473-26' }, // rolled-back publish
+  { case: 'nm-962-25', shortId: 'NM-962-25' }, // rolled-back publish
+  { case: 'nm-1046-25', shortId: 'NM-1046-25' }, // rolled-back publish
 ];
 
 /* curl.exe rather than fetch(): proven to work on this box, where other HTTP
@@ -122,7 +150,80 @@ for (const name of only ? [only] : TAGS) {
   }
 }
 
+
+/* The corpus guard.
+ *
+ * Tags carry a messageCount to check a fetch against. Publications do not, and
+ * an unrecognised publication id does not error -- the filter is dropped and
+ * the whole default corpus comes back looking like a perfectly ordinary answer.
+ * So fetch that corpus once, and treat any capture that reproduces it exactly
+ * as a dropped filter rather than a result. */
+const corpus = new Set(
+  (getJson(`${HOST}/rest/messages/search?domain=${DOMAIN}&maxSize=1000`).data ?? []).map((m) => m.id),
+);
+const sameAsCorpus = (uids) => uids.length === corpus.size && uids.every((u) => corpus.has(u));
+
+function writeFixture(name, fixture) {
+  const text = serialise(fixture);
+  writeFileSync(join(outDir, `${name}.json`), text, 'utf8');
+  hashes.push(`${createHash('sha256').update(text, 'utf8').digest('hex')}  ${name}.json`);
+}
+
 if (!only) {
+  for (const pub of PUBLICATIONS) {
+    try {
+      const res = getJson(`${HOST}/rest/messages/search?domain=${DOMAIN}&publication=${pub.id}&maxSize=1000`);
+      const data = res.data ?? [];
+      if (data.length !== res.total) throw new Error(`returned ${data.length} of ${res.total}; raise maxSize`);
+      const members = data.map(toFacts).sort((a, b) => (a.uid < b.uid ? -1 : a.uid > b.uid ? 1 : 0));
+      if (sameAsCorpus(members.map((m) => m.uid))) {
+        throw new Error(`result is identical to the unfiltered corpus (${corpus.size}) -- the publication filter was dropped`);
+      }
+      writeFixture(pub.case, {
+        case: pub.case,
+        kind: 'publication',
+        publicationId: pub.id,
+        memberCount: members.length,
+        source: HOST,
+        synthetic: false,
+        members,
+      });
+      console.log(`  ok  ${pub.case.padEnd(24)} ${String(members.length).padStart(4)} members`);
+    } catch (e) {
+      failed++;
+      console.error(`  FAIL ${pub.case}: ${e.message}`);
+    }
+  }
+
+  for (const msg of MESSAGES) {
+    try {
+      // A 204 is a result, not a failure. curl --fail does not treat it as one.
+      const body = execFileSync('curl.exe', ['-sS', '--retry', '3', `${HOST}/rest/messages/message/${msg.shortId}`], {
+        encoding: 'utf8',
+        maxBuffer: 16 * 1024 * 1024,
+      });
+      const absent = body.trim() === '';
+      const fixture = absent
+        ? { case: msg.case, kind: 'message', shortId: msg.shortId, absent: true, source: HOST, synthetic: false }
+        : { case: msg.case, kind: 'message', shortId: msg.shortId, absent: false, source: HOST, synthetic: false, facts: toFacts(JSON.parse(body)) };
+      writeFixture(msg.case, fixture);
+      console.log(`  ok  ${msg.case.padEnd(24)} ${absent ? 'ABSENT (no such message)' : 'captured'}`);
+    } catch (e) {
+      failed++;
+      console.error(`  FAIL ${msg.case}: ${e.message}`);
+    }
+  }
+}
+
+
+if (!only) {
+  /* Synthetic fixtures are hand-authored, never written by this script, but they
+   * are hashed alongside the captured ones so an accidental edit shows up as
+   * drift rather than passing unnoticed. */
+  for (const f of readdirSync(outDir).filter((n) => n.startsWith('synthetic-') && n.endsWith('.json')).sort()) {
+    const text = readFileSync(join(outDir, f), 'utf8');
+    hashes.push(`${createHash('sha256').update(text, 'utf8').digest('hex')}  ${f}`);
+  }
   hashes.sort();
   writeFileSync(join(outDir, 'hashes.txt'), hashes.join('\n') + '\n', 'utf8');
   console.log(`\nwrote ${hashes.length} fixtures + hashes.txt to ${outDir}`);

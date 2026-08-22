@@ -1,0 +1,18 @@
+{
+  "case": "nm-300-24",
+  "kind": "message",
+  "shortId": "NM-300-24",
+  "absent": false,
+  "source": "https://niord.t-dma.dk",
+  "synthetic": false,
+  "facts": {
+    "uid": "f6891308-42b3-48b9-8db2-0f8c1ce8b21b",
+    "shortId": "NM-300-24",
+    "publishDateFrom": 1712572402000,
+    "publishDateTo": 1720015169000,
+    "status": "EXPIRED",
+    "type": "PERMANENT_NOTICE",
+    "mainType": "NM",
+    "seriesId": "dma-nm"
+  }
+}

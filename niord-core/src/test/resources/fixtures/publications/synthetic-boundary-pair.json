@@ -1,0 +1,52 @@
+{
+  "case": "synthetic-boundary-pair",
+  "kind": "synthetic",
+  "synthetic": true,
+  "why": "No production message can supply this case: zero of 10,413 messages sit on any of the 992 cut-off stamps, so the data cannot arbitrate whether the interval is open or closed at its lower bound. The rule is (prev, this] -- strict lower, closed upper -- and it is ratified rather than measured (DM-Q18). This fixture is what pins it, and it is mandatory rather than optional for that reason.",
+  "pins": "RI-2. A message stamped EXACTLY on a shared cut-off belongs to the EARLIER issue, and to exactly one. Reusing CriteriaHelper.between(), which is >= and <=, would place it in both.",
+  "cutoffs": {
+    "previousIssueCutoff": 1767225600000,
+    "sharedCutoff": 1767830400000,
+    "nextIssueCutoff": 1768435200000
+  },
+  "members": [
+    {
+      "uid": "00000000-0000-4000-8000-00000000b001",
+      "shortId": "SYNTH-BOUNDARY-ON",
+      "publishDateFrom": 1767830400000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm",
+      "note": "stamped exactly on the shared cut-off"
+    },
+    {
+      "uid": "00000000-0000-4000-8000-00000000b002",
+      "shortId": "SYNTH-BOUNDARY-BEFORE",
+      "publishDateFrom": 1767830399000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm",
+      "note": "one second before the shared cut-off"
+    },
+    {
+      "uid": "00000000-0000-4000-8000-00000000b003",
+      "shortId": "SYNTH-BOUNDARY-AFTER",
+      "publishDateFrom": 1767830401000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm",
+      "note": "one second after the shared cut-off"
+    }
+  ],
+  "expected": {
+    "earlierIssue": ["00000000-0000-4000-8000-00000000b001", "00000000-0000-4000-8000-00000000b002"],
+    "laterIssue": ["00000000-0000-4000-8000-00000000b003"],
+    "inBothIssues": []
+  }
+}

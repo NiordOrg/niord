@@ -1,0 +1,18 @@
+{
+  "case": "nm-1116-22",
+  "kind": "message",
+  "shortId": "NM-1116-22",
+  "absent": false,
+  "source": "https://niord.t-dma.dk",
+  "synthetic": false,
+  "facts": {
+    "uid": "86aba751-8436-4818-bceb-b0b6ea521a0f",
+    "shortId": "NM-1116-22",
+    "publishDateFrom": 1667379336000,
+    "publishDateTo": 1677502952000,
+    "status": "CANCELLED",
+    "type": "TEMPORARY_NOTICE",
+    "mainType": "NM",
+    "seriesId": "dma-nm"
+  }
+}

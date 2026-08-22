@@ -1,0 +1,18 @@
+{
+  "case": "nm-466-26",
+  "kind": "message",
+  "shortId": "NM-466-26",
+  "absent": false,
+  "source": "https://niord.t-dma.dk",
+  "synthetic": false,
+  "facts": {
+    "uid": "27f41818-772d-4af7-bf9b-afe195478515",
+    "shortId": "NM-466-26",
+    "publishDateFrom": 1779877199000,
+    "publishDateTo": 1782736828000,
+    "status": "CANCELLED",
+    "type": "TEMPORARY_NOTICE",
+    "mainType": "NM",
+    "seriesId": "dma-nm"
+  }
+}

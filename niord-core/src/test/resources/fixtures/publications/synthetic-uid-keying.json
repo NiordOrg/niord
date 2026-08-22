@@ -1,0 +1,22 @@
+{
+  "case": "synthetic-uid-keying",
+  "kind": "synthetic",
+  "synthetic": true,
+  "why": "Authored because the production case recorded for this hazard could NOT be reproduced. FA/EK-R-19 does not exist as a message on either environment (HTTP 204), the dma-fa series holds 32 messages under 32 distinct shortIds rather than the recorded 357 under 331, and no series on either environment carries a duplicated shortId at all. The hazard is still real -- shortId is not declared unique and nothing prevents reuse -- so it is pinned synthetically rather than left untested or backed by a fixture that does not reproduce.",
+  "pins": "M-1. Member comparison is keyed on uid, never shortId. Keyed on shortId these two sets look identical; keyed on uid they differ by one member in each direction.",
+  "issueA": [
+    { "uid": "00000000-0000-4000-8000-00000000c001", "shortId": "FA/1 2099" },
+    { "uid": "00000000-0000-4000-8000-00000000c002", "shortId": "FA/2 2099" },
+    { "uid": "00000000-0000-4000-8000-00000000c003", "shortId": "FA/3 2099" }
+  ],
+  "issueB": [
+    { "uid": "00000000-0000-4000-8000-00000000c001", "shortId": "FA/1 2099" },
+    { "uid": "00000000-0000-4000-8000-00000000c002", "shortId": "FA/2 2099" },
+    { "uid": "00000000-0000-4000-8000-00000000c004", "shortId": "FA/3 2099" }
+  ],
+  "expected": {
+    "shortIdKeyedDiff": 0,
+    "uidKeyedOnlyInA": ["00000000-0000-4000-8000-00000000c003"],
+    "uidKeyedOnlyInB": ["00000000-0000-4000-8000-00000000c004"]
+  }
+}

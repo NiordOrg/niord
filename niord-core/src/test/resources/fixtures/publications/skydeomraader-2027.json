@@ -1,0 +1,330 @@
+{
+  "case": "skydeomraader-2027",
+  "kind": "publication",
+  "publicationId": "46c4ed07-17a7-4afc-87f9-c78d266c4805",
+  "memberCount": 32,
+  "source": "https://niord.t-dma.dk",
+  "synthetic": false,
+  "members": [
+    {
+      "uid": "11626ea1-2397-4c7d-8925-0b0db02f6e7d",
+      "shortId": "FA/EK-R-19 2026",
+      "publishDateFrom": 1767085982000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "1162d959-338c-49d5-9d77-5dc41b3fee95",
+      "shortId": "FA/EK-R-16 2026",
+      "publishDateFrom": 1767086392000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "1295909c-d5cf-478d-8eff-1a981a9502f8",
+      "shortId": "FA/ES-D-139 2026",
+      "publishDateFrom": 1767083739000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "16b25b31-ee3c-4a63-8a10-992fda75ebd0",
+      "shortId": "FA/11 2026",
+      "publishDateFrom": 1767085925000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "1e15fa9d-0dca-4edb-8401-9fc8e95e304c",
+      "shortId": "FA/EK-D-389 2026",
+      "publishDateFrom": 1767086775000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "34861d0c-9ed1-42e2-9305-3e1fdb7151b3",
+      "shortId": "FA/14 2026",
+      "publishDateFrom": 1767085702000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "359f6ea5-f99a-4824-abf2-f3949b7f6484",
+      "shortId": "FA/EK-R-48 2026",
+      "publishDateFrom": 1767087083000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "418a2e0b-f281-4e1c-adaa-a68027d95731",
+      "shortId": "FA/EK-R-12 2026",
+      "publishDateFrom": 1767086180000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "43bc2c52-6b46-4f52-aea0-0309a9653d5c",
+      "shortId": "FA/EK-R-22 2026",
+      "publishDateFrom": 1767085812000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "50571ea4-e9ab-463b-81fc-d75158ed4748",
+      "shortId": "FA/EK-R-80 2026",
+      "publishDateFrom": 1767087322000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "5743476f-9d82-4ada-923f-8ef7db418695",
+      "shortId": "FA/EK-R-15 2026",
+      "publishDateFrom": 1767086227000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "671af072-2663-4c02-a11a-f8edc058847d",
+      "shortId": "FA/EK-R-20 2026",
+      "publishDateFrom": 1767086300000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "689357d1-75ab-4d25-92dd-2aa61cb5a148",
+      "shortId": "FA/EK-D-350 2026",
+      "publishDateFrom": 1767086517000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "7dc7736e-f4f6-4e53-bf60-8388f9a75a86",
+      "shortId": "FA/ES-D-138 2026",
+      "publishDateFrom": 1767084243000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "80d5155c-12f8-4129-a8d3-f27589be9d60",
+      "shortId": "FA/EK-R-13 2026",
+      "publishDateFrom": 1767086112000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "84198ded-83f6-4258-b339-c5d48bf35f50",
+      "shortId": "FA/EK-R-11 2026",
+      "publishDateFrom": 1767086478000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "8ad44dba-d9e3-4c91-be4f-cb0d0a250f1f",
+      "shortId": "FA/EK-R-18 2026",
+      "publishDateFrom": 1767085844000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "95eaed25-26dd-4f9b-9253-a1a7f10e11f3",
+      "shortId": "FA/EK-D-370 2026",
+      "publishDateFrom": 1767087050000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "a5871966-e14e-40f3-94b1-dfb4e0b2b8b2",
+      "shortId": "FA/EK-R-44 2026",
+      "publishDateFrom": 1767085733000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "a5f0ac81-8067-42a0-83d3-68c011b5dfc2",
+      "shortId": "FA/EK-D-351 2026",
+      "publishDateFrom": 1767086437000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "ae246d5a-a0e1-49b8-9f3d-b65a11858a6b",
+      "shortId": "FA/EK-D-396 2026",
+      "publishDateFrom": 1767084396000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "c4458fa2-67f2-414e-97eb-e18b1f9d6054",
+      "shortId": "FA/EK-R-17 2026",
+      "publishDateFrom": 1767085881000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "c5699a9e-d45d-4260-82f5-6f83a239665a",
+      "shortId": "FA/EK-R-14 2026",
+      "publishDateFrom": 1767086038000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "cefbcf49-48f4-4b25-97fb-c54eaa08132f",
+      "shortId": "FA/EK-R-81 2026",
+      "publishDateFrom": 1767087289000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "d0196d46-4951-463d-a1ba-3c5fdc3fa41d",
+      "shortId": "FA/15 2026",
+      "publishDateFrom": 1778578683000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "d11af66f-01b4-4077-bfd6-77639ede2a1f",
+      "shortId": "FA/EK-R-33 2026",
+      "publishDateFrom": 1767087258000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "d5c01054-ac65-4597-9341-24c755b0609b",
+      "shortId": "FA/EK-D-373 2026",
+      "publishDateFrom": 1767087390000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "d8be2d15-8313-4451-aeee-8e918f1a0a61",
+      "shortId": "FA/EK-R-53 2026",
+      "publishDateFrom": 1767087355000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "e306497e-96cf-4be7-a94d-35e8849d563f",
+      "shortId": "FA/EK-R-45 2026",
+      "publishDateFrom": 1767086570000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "ee990d8c-82e6-47bd-b534-9861a6230ea9",
+      "shortId": "FA/EK-D-395 2026",
+      "publishDateFrom": 1767084443000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "fb49bd9d-3031-4821-9fce-6f0b88cd6953",
+      "shortId": "FA/ES-D-140 2026",
+      "publishDateFrom": 1767083438000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    },
+    {
+      "uid": "ff9a1c80-fb3a-4eee-8e93-56f3227ac443",
+      "shortId": "FA/EK-D-371 2026",
+      "publishDateFrom": 1767083125000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "MISCELLANEOUS_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-fa"
+    }
+  ]
+}

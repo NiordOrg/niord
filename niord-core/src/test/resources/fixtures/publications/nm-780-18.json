@@ -1,0 +1,18 @@
+{
+  "case": "nm-780-18",
+  "kind": "message",
+  "shortId": "NM-780-18",
+  "absent": false,
+  "source": "https://niord.t-dma.dk",
+  "synthetic": false,
+  "facts": {
+    "uid": "d8b5c62e-6e77-4d55-8a3a-fc14d87c003c",
+    "shortId": "NM-780-18",
+    "publishDateFrom": null,
+    "publishDateTo": 1543583377000,
+    "status": "CANCELLED",
+    "type": "TEMPORARY_NOTICE",
+    "mainType": "NM",
+    "seriesId": "dma-nm"
+  }
+}

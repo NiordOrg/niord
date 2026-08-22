@@ -1,0 +1,16 @@
+{
+  "case": "synthetic-empty-operand",
+  "kind": "synthetic",
+  "synthetic": true,
+  "why": "Authored, not captured: no live series carries an empty operand, because the editor will not save one. The case still has to be pinned, since an empty operand reaching the resolver is the difference between 'this issue has no members' and 'this issue has every member'.",
+  "pins": "RI-6. An empty operand must RAISE, never resolve to the identity element. Resolved as an empty AND it matches everything; resolved as an empty OR it matches nothing. Both are silent, plausible and wrong. Asserted in B1.1, which owns operand resolution -- decide() never receives one, since it takes an already-resolved ResolvedCriteria.",
+  "criteria": {
+    "op": "AND",
+    "operands": []
+  },
+  "expected": {
+    "outcome": "RAISE",
+    "reasonCode": "EMPTY_OPERAND",
+    "mustNotBe": ["matches everything", "matches nothing"]
+  }
+}
