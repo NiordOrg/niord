@@ -1,0 +1,194 @@
+package org.niord.core.publication.series.resolve;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.WeekFields;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Derives an issue's numbers, and expands the name and file-name patterns.
+ *
+ * Two errors this exists to not reproduce.
+ *
+ * The issue is named for the ISO week of the EFFECTIVE CUT-OFF -- the end of the
+ * window, not its start. Naming from the start produces "Uge 26+27, 2026" where
+ * production says "EfS uge 27".
+ *
+ * And the year is the ISO WEEK-year, not the calendar year. Legacy pairs a
+ * correct ISO week with a calendar year read in the JVM default zone, so a
+ * cut-off on 31 December 2025 comes out as "EfS uge 1 - 2025" when it belongs to
+ * week 1 of 2026. Everything here derives in the series' own timezone.
+ */
+public final class IssueNaming {
+
+    /**
+     * The complete token vocabulary. Nothing else may declare a token, and the
+     * API serves this constant rather than a copy -- a menu built from a second
+     * list is a second source of truth.
+     */
+    public static final Set<String> TOKENS = new LinkedHashSet<>(List.of(
+            "week", "week-2-digits",
+            "weekTo", "weekTo-2-digits",
+            "year", "year-2-digits",
+            "month", "month-2-digits",
+            "day", "day-2-digits",
+            "edition"));
+
+    /*
+     * The zero-padded variants are IN.
+     *
+     * Production proves they are used -- nm-w01-2026 through nm-w34-2026 -- and
+     * without them a file-name pattern that wants "uge 07" cannot be expressed at
+     * all.
+     *
+     * The day tokens are in for a related reason (DM-Q15). Without them a series
+     * with cadence = DAILY has no way to name its issues, and shipping a cadence
+     * that cannot produce a name is worse than either alternative. Adding tokens
+     * is additive and costs nothing; removing DAILY from the cadence enum would
+     * mean an ALTER TABLE on a native ENUM column later.
+     */
+
+    private static final Pattern TOKEN = Pattern.compile("\\$\\{([^}]*)\\}");
+
+    /** The numbers an issue derives from its cut-off. */
+    public record Numbers(int week, Integer weekTo, int year, int month, int day, Integer edition) {
+    }
+
+    private IssueNaming() {
+    }
+
+    /** A pattern referenced a token that does not exist. */
+    public static class UnknownTokenException extends RuntimeException {
+        private final String token;
+
+        public UnknownTokenException(String token) {
+            super("unknown token ${" + token + "}; the vocabulary is " + TOKENS);
+            this.token = token;
+        }
+
+        public String token() {
+            return token;
+        }
+
+        /** The wire code, so the API does not invent its own. */
+        public String code() {
+            return "UNKNOWN_TOKEN";
+        }
+    }
+
+    /**
+     * Derives the numbers for an issue closing at the given cut-off.
+     *
+     * @param cutoff the EFFECTIVE cut-off -- the end of the window
+     * @param intervalFrom the start, used only to detect a multi-week issue
+     * @param zone the series' nominal cut-off timezone; never the JVM default
+     * @param edition the edition number, where the scheme has one
+     */
+    public static Numbers derive(Date cutoff, Date intervalFrom, ZoneId zone, Integer edition) {
+        if (cutoff == null) {
+            throw new IllegalArgumentException("an issue always has a cut-off to derive from");
+        }
+        ZoneId z = zone == null ? ZoneId.of("UTC") : zone;
+        ZonedDateTime end = Instant.ofEpochMilli(cutoff.getTime()).atZone(z);
+
+        WeekFields iso = WeekFields.ISO;
+        int week = end.get(iso.weekOfWeekBasedYear());
+
+        // The ISO week-BASED year. A cut-off on 31 December can belong to week 1
+        // of the following year, and the calendar year would name it wrongly.
+        int year = end.get(iso.weekBasedYear());
+
+        Integer weekTo = null;
+        if (intervalFrom != null) {
+            ZonedDateTime start = Instant.ofEpochMilli(intervalFrom.getTime()).atZone(z);
+            int startWeek = start.get(iso.weekOfWeekBasedYear());
+            if (startWeek != week) {
+                // The window spans more than one week: "Uge 2+3, 2026". The FIRST
+                // week is the from-week and the cut-off week is the to-week.
+                weekTo = week;
+                week = startWeek;
+            }
+        }
+
+        return new Numbers(week, weekTo, year, end.getMonthValue(), end.getDayOfMonth(), edition);
+    }
+
+    /** The values each token expands to, for a given set of numbers. */
+    public static Map<String, String> valuesOf(Numbers n) {
+        Map<String, String> v = new LinkedHashMap<>();
+        v.put("week", String.valueOf(n.week()));
+        v.put("week-2-digits", pad(n.week()));
+        v.put("weekTo", n.weekTo() == null ? "" : String.valueOf(n.weekTo()));
+        v.put("weekTo-2-digits", n.weekTo() == null ? "" : pad(n.weekTo()));
+        v.put("year", String.valueOf(n.year()));
+        v.put("year-2-digits", pad(n.year() % 100));
+        v.put("month", String.valueOf(n.month()));
+        v.put("month-2-digits", pad(n.month()));
+        v.put("day", String.valueOf(n.day()));
+        v.put("day-2-digits", pad(n.day()));
+        v.put("edition", n.edition() == null ? "" : String.valueOf(n.edition()));
+        return v;
+    }
+
+    private static String pad(int value) {
+        return String.format(Locale.ROOT, "%02d", value);
+    }
+
+    /**
+     * Expands a pattern.
+     *
+     * S-14: nothing of the form ${...} may survive. Production serves a real PDF
+     * at .../Skydeomraader-%24%7Byear%7D.pdf today because an unexpanded token
+     * reached a file name and then a URL, so this is asserted rather than assumed.
+     */
+    public static String expand(String pattern, Numbers numbers) {
+        if (pattern == null) {
+            return null;
+        }
+        Map<String, String> values = valuesOf(numbers);
+
+        Matcher m = TOKEN.matcher(pattern);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            String token = m.group(1);
+            if (!TOKENS.contains(token)) {
+                // Loudly. A surviving token becomes part of a file name, and then
+                // part of a public URL.
+                throw new UnknownTokenException(token);
+            }
+            m.appendReplacement(out, Matcher.quoteReplacement(values.getOrDefault(token, "")));
+        }
+        m.appendTail(out);
+
+        String expanded = out.toString();
+        if (expanded.contains("${")) {
+            throw new IllegalStateException(
+                    "a token survived expansion in [" + expanded + "]; this is how a literal ${year} "
+                            + "reaches a published file name");
+        }
+        return expanded;
+    }
+
+    /** True when every token in the pattern is one this vocabulary declares. */
+    public static boolean isExpandable(String pattern) {
+        if (pattern == null) {
+            return true;
+        }
+        Matcher m = TOKEN.matcher(pattern);
+        while (m.find()) {
+            if (!TOKENS.contains(m.group(1))) {
+                return false;
+            }
+        }
+        return true;
+    }
+}

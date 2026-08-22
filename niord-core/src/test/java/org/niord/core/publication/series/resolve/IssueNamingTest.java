@@ -1,0 +1,179 @@
+package org.niord.core.publication.series.resolve;
+
+import org.junit.jupiter.api.Test;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/** Naming and numbering. Pure, no database. */
+public class IssueNamingTest {
+
+    private static final ZoneId DK = ZoneId.of("Europe/Copenhagen");
+
+    private static Date at(int year, int month, int day, int hour, int minute) {
+        return Date.from(ZonedDateTime.of(year, month, day, hour, minute, 0, 0, DK).toInstant());
+    }
+
+    // ------------------------------------------------------- the year boundary
+
+    /**
+     * The ISO week-YEAR, not the calendar year.
+     *
+     * A cut-off on 31 December 2025 belongs to ISO week 1 of 2026. Legacy pairs
+     * the correct week with the calendar year and produces "EfS uge 1 - 2025",
+     * which names the issue for a year it is not in.
+     */
+    @Test
+    public void aCutoffInIsoWeekOneOfTheNextYearTakesTheNextYear() {
+        IssueNaming.Numbers n = IssueNaming.derive(at(2025, 12, 31, 10, 0), null, DK, null);
+        assertEquals(1, n.week(), "31.12.2025 is in ISO week 1");
+        assertEquals(2026, n.year(),
+                "the ISO week-year is 2026; taking the calendar year gives the legacy 'uge 1 - 2025' bug");
+    }
+
+    /** And the other direction: early January belonging to the previous week-year. */
+    @Test
+    public void aCutoffInEarlyJanuaryCanBelongToThePreviousWeekYear() {
+        // 1 January 2027 falls in ISO week 53 of 2026.
+        IssueNaming.Numbers n = IssueNaming.derive(at(2027, 1, 1, 10, 0), null, DK, null);
+        assertEquals(53, n.week());
+        assertEquals(2026, n.year(), "1.1.2027 is in ISO week 53 of 2026");
+    }
+
+    @Test
+    public void weekFiftyTwoIsOrdinary() {
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 12, 24, 10, 0), null, DK, null);
+        assertEquals(52, n.week());
+        assertEquals(2026, n.year());
+    }
+
+    // ----------------------------------------------------------- the multi-week case
+
+    @Test
+    public void aWindowSpanningTwoWeeksCarriesBothNumbers() {
+        Date from = at(2026, 1, 8, 10, 0);   // week 2
+        Date to = at(2026, 1, 15, 10, 0);    // week 3
+        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null);
+
+        assertEquals(2, n.week(), "the from-week");
+        assertEquals(3, n.weekTo(), "the cut-off week");
+        assertEquals("Uge 2+3, 2026", "Uge " + n.week() + "+" + n.weekTo() + ", " + n.year());
+    }
+
+    /**
+     * The issue is named for the END of the window, never the start.
+     *
+     * Naming from the start produces "Uge 26" where production says "uge 27".
+     */
+    @Test
+    public void aSingleWeekWindowIsNamedForItsCutoffNotItsStart() {
+        Date from = at(2026, 6, 29, 10, 0);
+        Date to = at(2026, 7, 3, 10, 0);     // still week 27
+        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null);
+
+        assertEquals(27, n.week());
+        assertNull(n.weekTo(), "a single-week window carries no second number");
+    }
+
+    // ----------------------------------------------------- the token vocabulary
+
+    /** One expansion case per token. A token with no case means the menu can offer something untested. */
+    @Test
+    public void everyDeclaredTokenExpands() {
+        // Week 7, so the padded variants are visibly different from the plain ones.
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 2, 12, 9, 5), null, DK, 3);
+        Map<String, String> values = IssueNaming.valuesOf(n);
+
+        assertEquals(IssueNaming.TOKENS, values.keySet(),
+                "the value map and the declared vocabulary disagree; one of them is a second source of truth");
+
+        assertEquals("7", values.get("week"));
+        assertEquals("07", values.get("week-2-digits"), "the padded variant must pad");
+        assertEquals("2026", values.get("year"));
+        assertEquals("26", values.get("year-2-digits"));
+        assertEquals("2", values.get("month"));
+        assertEquals("02", values.get("month-2-digits"));
+        assertEquals("12", values.get("day"));
+        assertEquals("12", values.get("day-2-digits"));
+        assertEquals("3", values.get("edition"));
+
+        for (String token : IssueNaming.TOKENS) {
+            String expanded = IssueNaming.expand("x${" + token + "}x", n);
+            assertFalse(expanded.contains("${"), token + " did not expand");
+        }
+    }
+
+    /** The padded variants are IN, and production proves they are used: nm-w01-2026. */
+    @Test
+    public void theZeroPaddedVariantsAreAvailable() {
+        IssueNaming.Numbers week1 = IssueNaming.derive(at(2026, 1, 2, 10, 0), null, DK, null);
+        assertEquals("nm-w01-2026",
+                IssueNaming.expand("nm-w${week-2-digits}-${year}", week1),
+                "without the padded token, a pattern that wants 'w01' is inexpressible");
+    }
+
+    /** DM-Q15: a DAILY series must be nameable, which is why the day tokens exist. */
+    @Test
+    public void aDailySeriesCanBeNamed() {
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 3, 5, 8, 0), null, DK, null);
+        assertEquals("Dagens EfS 05.03.2026",
+                IssueNaming.expand("Dagens EfS ${day-2-digits}.${month-2-digits}.${year}", n),
+                "shipping a DAILY cadence with no way to name its issues is worse than either alternative");
+    }
+
+    // ------------------------------------------------------------------- S-14
+
+    /**
+     * Nothing of the form ${...} may survive expansion.
+     *
+     * Production serves a real PDF at .../Skydeomraader-%24%7Byear%7D.pdf today,
+     * because an unexpanded token reached a file name and then a URL.
+     */
+    @Test
+    public void anUnknownTokenFailsRatherThanSurvivingIntoTheOutput() {
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 2, 12, 9, 5), null, DK, null);
+
+        IssueNaming.UnknownTokenException e = assertThrows(IssueNaming.UnknownTokenException.class,
+                () -> IssueNaming.expand("Skydeomraader-${yeer}.pdf", n));
+        assertEquals("yeer", e.token());
+        assertEquals("UNKNOWN_TOKEN", e.code());
+
+        assertFalse(IssueNaming.isExpandable("Skydeomraader-${yeer}.pdf"));
+        assertTrue(IssueNaming.isExpandable("Skydeomraader-${year}.pdf"));
+    }
+
+    @Test
+    public void aFullyExpandedPatternKeepsItsLiteralText() {
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 7, 8, 10, 0), null, DK, null);
+        assertEquals("EfS-Uge-28-2026.pdf",
+                IssueNaming.expand("EfS-Uge-${week}-${year}.pdf", n));
+        assertEquals("EfS uge 28", IssueNaming.expand("EfS uge ${week}", n));
+    }
+
+    // ------------------------------------------------------------- the timezone
+
+    /**
+     * Derived in the series' timezone, never the JVM default. Around midnight the
+     * two disagree about which day -- and therefore which week -- a cut-off is in.
+     */
+    @Test
+    public void derivationUsesTheSeriesTimezone() {
+        // 22:30 UTC on a Sunday is already Monday in Copenhagen, so the two zones
+        // put this cut-off in different ISO weeks.
+        Date cutoff = Date.from(ZonedDateTime.of(2026, 1, 4, 23, 30, 0, 0, ZoneId.of("UTC")).toInstant());
+
+        IssueNaming.Numbers utc = IssueNaming.derive(cutoff, null, ZoneId.of("UTC"), null);
+        IssueNaming.Numbers dk = IssueNaming.derive(cutoff, null, DK, null);
+
+        assertEquals(1, utc.week(), "4.1.2026 23:30 UTC is still ISO week 1");
+        assertEquals(2, dk.week(), "the same instant is 5.1 in Copenhagen, which is ISO week 2");
+    }
+}
