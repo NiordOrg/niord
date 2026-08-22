@@ -150,6 +150,10 @@ const ID_BASE = 900_000;
 const seriesRowId = new Map(seriesIds.map((s, i) => [s, ID_BASE + i]));
 
 const lines = [];
+// UTC on both sides. FROM_UNIXTIME renders in the SESSION timezone, so without
+// this the stored wall-clock is local time while the fixtures carry absolute
+// epochs, and the two only appear to agree.
+lines.push("SET time_zone = '+00:00';");
 lines.push('SET FOREIGN_KEY_CHECKS = 0;');
 lines.push('DELETE FROM Message WHERE id >= ' + ID_BASE + ';');
 lines.push('DELETE FROM MessageSeries WHERE id >= ' + ID_BASE + ';');
