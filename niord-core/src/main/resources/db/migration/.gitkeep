@@ -1,0 +1,3 @@
+# Flyway migrations live here, beside the entities they serve, and ship in the
+# niord-core jar. Deliberately empty: no DDL is hand-written, it is generated
+# from the entity model and reviewed before it is committed.

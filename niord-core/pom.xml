@@ -229,6 +229,24 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Flyway is a RUNTIME dependency of the deployable (niord-dk-web), not of
+             niord-core. It is here in test scope only so the baseline behaviour can be
+             verified against the container this module already talks to. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-flyway</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Flyway dropped built-in MySQL support in 8.0; without this module it
+             refuses to start with "Unsupported Database: MySQL 8.0". quarkus-flyway
+             does not pull it in. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- The JDBC driver is supplied by the deployment overlay (niord-dk-web) at
              runtime, so niord-core has none of its own. @QuarkusTest needs one to reach
              the test MySQL container; test scope keeps the production graph unchanged. -->
