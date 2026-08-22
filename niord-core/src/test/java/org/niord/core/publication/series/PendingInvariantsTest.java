@@ -12,11 +12,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * a pending naming a task that does not exist, and prints the count on every run
  * -- so the number of rules still living as prose is visible rather than inferred.
  *
+ * Named ...Test so Surefire actually runs it. It was PendingInvariants first,
+ * which looks exactly like a test class and is silently ignored -- the class
+ * matters less than the annotations on it, but a file that appears to assert
+ * things and never executes is its own small trap.
+ *
  * B1.7b is the task that drives this file to empty. It cannot run until the
  * transactional actions exist, because most of what is left here is about what
  * happens at freeze, at publish, and at cutover.
  */
-public class PendingInvariants {
+public class PendingInvariantsTest {
 
     /** 4 rule(s) awaiting B2.12. */
     @BindsRule(value = {"D-3", "D-5", "D-6", "D-8"}, pending = "B2.12")
