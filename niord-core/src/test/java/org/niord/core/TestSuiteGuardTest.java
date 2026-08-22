@@ -1,0 +1,55 @@
+package org.niord.core;
+
+import org.junit.jupiter.api.Test;
+import org.junit.platform.engine.discovery.DiscoverySelectors;
+import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.TestIdentifier;
+import org.junit.platform.launcher.TestPlan;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Fails the build if the discovered test count collapses.
+ *
+ * Adding quarkus-junit5 switches Surefire to the JUnit Platform provider. Without
+ * junit-vintage-engine on the classpath the platform discovers none of the JUnit 4
+ * tests, and the build reports "Tests run: 0, Failures: 0, Errors: 0" followed by
+ * BUILD SUCCESS -- a green build that ran nothing. Nothing else in the toolchain
+ * notices, so this test is what makes that state loud.
+ *
+ * The count is obtained by discovery rather than execution, so this test does not
+ * re-run the suite and cannot recurse into itself.
+ */
+public class TestSuiteGuardTest {
+
+    /**
+     * The JUnit 4 suite as it stood when the platform provider was introduced.
+     * Raise this as real tests are added; never lower it to make a build pass.
+     */
+    private static final int FLOOR = 30;
+
+    @Test
+    public void testSuiteIsStillDiscovered() {
+        LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+                .selectors(DiscoverySelectors.selectPackage("org.niord"))
+                .build();
+
+        Launcher launcher = LauncherFactory.create();
+        TestPlan plan = launcher.discover(request);
+
+        long discovered = plan.countTestIdentifiers(this::isForeignTest);
+
+        assertTrue(discovered >= FLOOR,
+                "Discovered " + discovered + " tests, expected at least " + FLOOR
+                        + ". A drop here usually means the JUnit 4 suite stopped being discovered -- "
+                        + "check that junit-vintage-engine is still a test dependency of niord-core.");
+    }
+
+    /** Counts real tests, excluding this guard's own so the floor stays honest. */
+    private boolean isForeignTest(TestIdentifier id) {
+        return id.isTest() && !id.getUniqueId().contains(TestSuiteGuardTest.class.getSimpleName());
+    }
+}

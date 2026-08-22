@@ -124,6 +124,19 @@
 
     <build>
         <finalName>${project.artifactId}</finalName>
+
+        <pluginManagement>
+            <plugins>
+                <!-- The version property was declared but the plugin was never bound, so Surefire
+                     resolved from the Maven super-POM. Its provider auto-detection decides which
+                     tests run at all, so the version is pinned rather than inherited. -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire-plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <testResources>
             <testResource>
                 <directory>src/test/resources</directory>

@@ -2,6 +2,27 @@
 # Niord
 The niord repository contains the common code-base for the NW + NM T&P editing and publishing system.
 
+## Building
+
+The build is pinned to **Java 21 (Temurin)** and driven through the checked-in Maven wrapper, so it does
+not depend on a Maven installed on PATH or bundled with an IDE:
+
+```
+JAVA_HOME=<path to a Temurin 21 JDK>
+./mvnw -pl niord-core -am test          # 31 tests
+./mvnw -DskipTests -Dmaven.source.skip=true install
+```
+
+Two notes on those flags, so they are not copied around without reason:
+
+- `-Dmaven.source.skip=true` is needed only for **offline** builds. `maven-source-plugin` runs
+  `attach-sources` on every `install`, and its own dependencies are typically not in a warm local
+  repository.
+- **Java 21 specifically.** Above 21, Quarkus augmentation in `niord-dk-web` fails when Byte Buddy
+  refuses the newer class file version while enhancing entities. `-Dnet.bytebuddy.experimental=true`
+  silences it, but that flag disables a safety check in the bytecode enhancer, which is the machinery
+  behind lazy loading and dirty tracking. Pinning the JDK is the cheaper and safer of the two.
+
 ## Development Setup
 
 To get started with developing Niord you need to check out the developer guide at 

@@ -210,6 +210,31 @@
             <artifactId>httpclient</artifactId>
         </dependency>
 
+
+        <!-- Test.
+             quarkus-junit5 pulls in the JUnit Platform provider, which makes Surefire stop
+             running the JUnit 4 suite entirely: without the vintage engine the build reports
+             Tests run: 0 and still says BUILD SUCCESS. The vintage engine keeps the existing
+             30 tests executing, and TestSuiteGuardTest fails the build if that count ever
+             collapses again. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 

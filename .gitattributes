@@ -1,0 +1,5 @@
+# The Maven wrapper ships both flavours; each must keep its own endings
+# regardless of the cloning platform. mvnw is a /bin/sh script and breaks
+# outright if it is checked out with CRLF.
+mvnw       text eol=lf
+mvnw.cmd   text eol=crlf
