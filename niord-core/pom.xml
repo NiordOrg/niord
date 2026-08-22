@@ -229,6 +229,15 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- The JDBC driver is supplied by the deployment overlay (niord-dk-web) at
+             runtime, so niord-core has none of its own. @QuarkusTest needs one to reach
+             the test MySQL container; test scope keeps the production graph unchanged. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-jdbc-mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
@@ -236,6 +245,30 @@
         </dependency>
 
     </dependencies>
+
+    <build>
+        <!-- Declaring testResources here REPLACES the inherited block, so the
+             standard directory is repeated rather than dropped. -->
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>false</filtering>
+            </testResource>
+            <!-- SettingsService loads /niord.json from the classpath at startup and
+                 refuses to boot without it. The real file lives in niord-web; it is
+                 referenced rather than copied so the tests cannot drift from the
+                 settings the application actually ships. -->
+            <testResource>
+                <directory>${project.basedir}/../niord-web/src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>niord.json</include>
+                    <include>version.properties</include>
+                    <include>*_en.properties</include>
+                </includes>
+            </testResource>
+        </testResources>
+    </build>
 
 
     <!-- Add repositories that contains geotools dependencies -->

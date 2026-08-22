@@ -23,6 +23,23 @@ Two notes on those flags, so they are not copied around without reason:
   silences it, but that flag disables a safety check in the bytecode enhancer, which is the machinery
   behind lazy loading and dirty tracking. Pinning the JDK is the cheaper and safer of the two.
 
+## Running the tests against MySQL
+
+Tests that need a database talk to an externally-managed MySQL container -- not Dev Services, not
+H2. The shared `hibernate_sequence` behaviour, the native `ENUM` columns and the spatial types are
+exactly what those tests exist to exercise, and an in-memory substitute would quietly exercise none
+of them. Keeping the container outside the build also means it stays warm between runs and its
+schema survives for inspection after a failure.
+
+```
+docker run -d --name niord-test-db -p 13306:3306 \
+  -e MYSQL_ROOT_PASSWORD=mysql -e MYSQL_DATABASE=niord \
+  -e MYSQL_USER=niord -e MYSQL_PASSWORD=niord mysql:8.0.35
+```
+
+Docker Desktop does not start at boot, so launch it first. `CoreQuarkusBootstrapTest` asserts the
+server really reports MySQL 8.0.x, so it fails rather than passes if the container is down.
+
 ## Development Setup
 
 To get started with developing Niord you need to check out the developer guide at 
