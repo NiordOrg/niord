@@ -78,7 +78,11 @@ public class PublicationSeriesDesc extends DescEntity<PublicationSeries> {
 
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(name, nameSuggestionPattern, fileNamePattern, messageReferenceFormat, linkPattern);
+        // D-7. The NAME decides, not "any field". A row carrying only a format string
+        // and a blank name round-trips to nothing under the inherited rule, and the
+        // citation text on it is lost without a word -- which is the legacy defect
+        // this rule exists to close. Such a row is not defined, so it never persists.
+        return ILocalizedDesc.fieldsDefined(name);
     }
 
     @Override

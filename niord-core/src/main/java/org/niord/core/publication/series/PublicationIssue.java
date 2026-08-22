@@ -66,7 +66,7 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     private String cutoffSource;
 
     @Column(nullable = false)
-    private boolean cutoffReconstructed;
+    private boolean cutoffReconstructed = false;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date publicFrom;
@@ -76,11 +76,11 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PublicWindowSource publicWindowSource;
+    private PublicWindowSource publicWindowSource = PublicWindowSource.DERIVED;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private IssueStatus status;
+    private IssueStatus status = IssueStatus.OPEN;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date publishedAt;
@@ -107,7 +107,7 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     private Date snapshotFrozenAt;
 
     @Column(nullable = false)
-    private Integer memberCount;
+    private Integer memberCount = 0;
 
     @Column(length = 255)
     private String snapshotTimeRelation;

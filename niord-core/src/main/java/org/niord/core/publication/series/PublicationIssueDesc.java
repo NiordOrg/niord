@@ -31,7 +31,7 @@ public class PublicationIssueDesc extends DescEntity<PublicationIssue> {
     private String name;
 
     @Column(nullable = false)
-    private boolean nameOverridden;
+    private boolean nameOverridden = false;
 
     @Column(length = 255)
     private String fileName;
@@ -49,7 +49,7 @@ public class PublicationIssueDesc extends DescEntity<PublicationIssue> {
     private FileSource fileSource;
 
     @Column(nullable = false)
-    private boolean fileSourceSticky;
+    private boolean fileSourceSticky = false;
 
     @ManyToOne
     private User replacedBy;
@@ -171,7 +171,9 @@ public class PublicationIssueDesc extends DescEntity<PublicationIssue> {
 
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(name, fileName, filePath, link, messageReferenceFormat, fileHash);
+        // D-7, as on the series desc: the name decides. A file name or a link with
+        // no name is a row that silently loses whatever else it carried.
+        return ILocalizedDesc.fieldsDefined(name);
     }
 
     @Override

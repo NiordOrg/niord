@@ -51,15 +51,15 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SeriesStatus status;
+    private SeriesStatus status = SeriesStatus.DRAFT;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ContentMode contentMode;
+    private ContentMode contentMode = ContentMode.GENERATED_FROM_QUERY;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SeriesCadence cadence;
+    private SeriesCadence cadence = SeriesCadence.NONE;
 
     @Enumerated(EnumType.STRING)
     private CutoffDay nominalCutoffDay;
@@ -76,7 +76,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private NumberingScheme numberingScheme;
+    private NumberingScheme numberingScheme = NumberingScheme.NONE;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date firstIssueStartsAt;
@@ -99,7 +99,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MessagePublication messagePublication;
+    private MessagePublication messagePublication = MessagePublication.NONE;
 
     private Integer sortOrder;
 
@@ -126,18 +126,18 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ReleaseMode releaseMode;
+    private ReleaseMode releaseMode = ReleaseMode.MANUAL_GATE;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private NextIssueCreation nextIssueCreation;
+    private NextIssueCreation nextIssueCreation = NextIssueCreation.AUTO_ON_PUBLISH;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PublicAuthority publicAuthority;
+    private PublicAuthority publicAuthority = PublicAuthority.LEGACY;
 
     @Column(nullable = false)
-    private boolean languageSpecific;
+    private boolean languageSpecific = true;
 
     public String getSeriesId() {
         return seriesId;
