@@ -37,6 +37,18 @@ docker run -d --name niord-test-db -p 13306:3306 \
   -e MYSQL_USER=niord -e MYSQL_PASSWORD=niord mysql:8.0.35
 ```
 
+Seed it once with the committed baseline. Flyway then adopts that database at version 0 and
+applies the migrations on top, which is exactly what happens on a deployed environment -- so the
+tests exercise the real delivery path rather than a Hibernate-generated approximation of it:
+
+```
+docker exec -i niord-test-db mysql -uroot -pmysql niord \
+  < niord-core/src/test/resources/schema/baseline-MaDaMe.sql
+```
+
+Hibernate schema generation is off in the tests (`generation=none`) for that reason: with both
+active, whichever ran last would win and the migration would never be exercised.
+
 Docker Desktop does not start at boot, so launch it first. `CoreQuarkusBootstrapTest` asserts the
 server really reports MySQL 8.0.x, so it fails rather than passes if the container is down.
 

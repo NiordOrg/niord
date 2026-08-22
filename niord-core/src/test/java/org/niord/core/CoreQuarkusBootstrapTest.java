@@ -6,7 +6,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -38,6 +37,10 @@ public class CoreQuarkusBootstrapTest {
                         + "is not talking to the niord-test-db container.");
 
         Object db = entityManager.createNativeQuery("SELECT DATABASE()").getSingleResult();
-        assertEquals("niord", db.toString(), "connected to the wrong schema");
+        // Any niord* schema: the migration check runs the same boot against a
+        // throwaway database, and pinning the exact name would fail it for a
+        // reason that has nothing to do with what is being tested.
+        assertTrue(db.toString().startsWith("niord"),
+                "connected to the wrong schema: " + db);
     }
 }

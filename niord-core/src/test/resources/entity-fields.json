@@ -1,0 +1,1082 @@
+{
+  "note": "Generated from DATA-MODEL.md sections 3.1-3.10 by gen-field-manifest.js. Do not hand-edit.",
+  "sourceSha256": "5b6e87f6c1fd8c04f4adc9d960516508942d9bfb66896580f0a824c9fdc1b513",
+  "entities": [
+    {
+      "entity": "PublicationSeries",
+      "existing": false,
+      "fields": [
+        {
+          "name": "id",
+          "ddl": "id INTEGER NOT NULL (PK)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "version",
+          "ddl": "version INTEGER NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "created",
+          "ddl": "created DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "updated",
+          "ddl": "updated DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "seriesId",
+          "ddl": "seriesId VARCHAR(64) NOT NULL UNIQUE",
+          "nullable": false,
+          "notNull": true,
+          "unique": true
+        },
+        {
+          "name": "legacyTemplateId",
+          "ddl": "legacyTemplateId VARCHAR(36) UNIQUE",
+          "nullable": true,
+          "notNull": false,
+          "unique": true
+        },
+        {
+          "name": "importSource",
+          "ddl": "importSource VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "status",
+          "ddl": "status enum('DRAFT','ACTIVE','RETIRED') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "statusChangedAt",
+          "ddl": "statusChangedAt DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "statusChangedBy",
+          "ddl": "statusChangedBy_id INTEGER FK → User(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "statusChangeReason",
+          "ddl": "statusChangeReason VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "contentMode",
+          "ddl": "contentMode enum('GENERATED_FROM_QUERY','UPLOADED_FILE','EXTERNAL_LINK','NONE') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "cadence",
+          "ddl": "cadence enum('NONE','DAILY','WEEKLY','MONTHLY','YEARLY') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "nominalCutoffDay",
+          "ddl": "nominalCutoffDay enum('MONDAY','SUNDAY')",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "nominalCutoffDayOfMonth",
+          "ddl": "nominalCutoffDayOfMonth SMALLINT",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "nominalCutoffMonth",
+          "ddl": "nominalCutoffMonth SMALLINT",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "nominalCutoffTime",
+          "ddl": "nominalCutoffTime VARCHAR(5)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "nominalCutoffTimeZone",
+          "ddl": "nominalCutoffTimeZone VARCHAR(64)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "numberingScheme",
+          "ddl": "numberingScheme enum('ISO_WEEK_YEAR','YEAR_EDITION','MONTH_YEAR','EDITION_SEQUENCE','NONE') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "firstIssueStartsAt",
+          "ddl": "firstIssueStartsAt DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "timeRelation",
+          "ddl": "timeRelation enum('PUBLISHED_IN_INTERVAL','IN_FORCE_AT_CUTOFF')",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "aliveAtCutoff",
+          "ddl": "aliveAtCutoff BIT(1)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "criteria",
+          "ddl": "criteria TEXT + @Convert(JpaCriteriaAttributeConverter.class)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "category",
+          "ddl": "category_id INTEGER NOT NULL FK",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "domain",
+          "ddl": "domain_id INTEGER FK",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "messagePublication",
+          "ddl": "messagePublication enum('NONE','INTERNAL','EXTERNAL') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "sortOrder",
+          "ddl": "sortOrder INTEGER",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "reportId",
+          "ddl": "reportId VARCHAR(64)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "pageSize",
+          "ddl": "pageSize enum('A3','A4','A5','B4','B5','LETTER','LEGAL','LEDGER')",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "pageOrientation",
+          "ddl": "pageOrientation enum('PORTRAIT','LANDSCAPE')",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "mapThumbnails",
+          "ddl": "mapThumbnails BIT(1)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "messageSortBy",
+          "ddl": "messageSortBy VARCHAR(32)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "messageSortOrder",
+          "ddl": "messageSortOrder enum('ASC','DESC')",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "reportParams",
+          "ddl": "reportParams TEXT + @Convert(JpaPropertiesAttributeConverter.class)",
+          "nullable": false,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "releaseMode",
+          "ddl": "releaseMode enum('MANUAL_GATE','AUTO_RELEASE') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "nextIssueCreation",
+          "ddl": "nextIssueCreation enum('AUTO_ON_PUBLISH','MANUAL') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "publicAuthority",
+          "ddl": "publicAuthority enum('LEGACY','NEW') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "languageSpecific",
+          "ddl": "languageSpecific BIT(1) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "PublicationSeriesDesc",
+      "existing": false,
+      "fields": [
+        {
+          "name": "id",
+          "ddl": "id INTEGER NOT NULL (PK)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "lang",
+          "ddl": "lang VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "entity",
+          "ddl": "entity_id INTEGER NOT NULL FK",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "name",
+          "ddl": "name VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "nameSuggestionPattern",
+          "ddl": "nameSuggestionPattern VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "fileNamePattern",
+          "ddl": "fileNamePattern VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "messageReferenceFormat",
+          "ddl": "messageReferenceFormat VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "linkPattern",
+          "ddl": "linkPattern VARCHAR(1024)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "PublicationCategory",
+      "existing": true,
+      "fields": [
+        {
+          "name": "id",
+          "ddl": "id INTEGER NOT NULL (PK)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "categoryId",
+          "ddl": "categoryId VARCHAR(255) NOT NULL UNIQUE",
+          "nullable": false,
+          "notNull": true,
+          "unique": true
+        },
+        {
+          "name": "priority",
+          "ddl": "priority INTEGER NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "publish",
+          "ddl": "publish BIT(1) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "PublicationCategoryDesc",
+      "existing": true,
+      "fields": [
+        {
+          "name": "lang",
+          "ddl": "lang VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "entity",
+          "ddl": "entity_id INTEGER NOT NULL FK",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "name",
+          "ddl": "name VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "description",
+          "ddl": "description VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "PublicationIssue",
+      "existing": false,
+      "fields": [
+        {
+          "name": "id",
+          "ddl": "id INTEGER NOT NULL (PK)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "version",
+          "ddl": "version INTEGER NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "publicId",
+          "ddl": "publicId VARCHAR(36) NOT NULL UNIQUE",
+          "nullable": false,
+          "notNull": true,
+          "unique": true
+        },
+        {
+          "name": "legacyPublicationId",
+          "ddl": "legacyPublicationId VARCHAR(36) UNIQUE",
+          "nullable": true,
+          "notNull": false,
+          "unique": true
+        },
+        {
+          "name": "series",
+          "ddl": "series_id INTEGER NOT NULL FK",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "repoPath",
+          "ddl": "repoPath VARCHAR(128) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "intervalFrom",
+          "ddl": "intervalFrom DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "intervalTo",
+          "ddl": "intervalTo DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "intervalFromSource",
+          "ddl": "intervalFromSource enum('STAMPED','NOMINAL','RECOVERED','MANUAL')",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "intervalToSource",
+          "ddl": "intervalToSource VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "cutoffStampedAt",
+          "ddl": "cutoffStampedAt DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "cutoffSource",
+          "ddl": "cutoffSource VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "cutoffReconstructed",
+          "ddl": "cutoffReconstructed BIT(1) NOT NULL, columnDefinition = \"BIT(1) default 0\"",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "publicFrom",
+          "ddl": "publicFrom DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "publicTo",
+          "ddl": "publicTo DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "publicWindowSource",
+          "ddl": "publicWindowSource enum('DERIVED','MANUAL') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "status",
+          "ddl": "status enum('OPEN','PUBLISHED','RETIRED') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "publishedAt",
+          "ddl": "publishedAt DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "publishedBy",
+          "ddl": "publishedBy_id INTEGER FK → User(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "retiredAt",
+          "ddl": "retiredAt DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "retiredBy",
+          "ddl": "retiredBy_id INTEGER FK → User(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "retiredReason",
+          "ddl": "retiredReason VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "membershipProvenance",
+          "ddl": "membershipProvenance enum('EXACT','EXPLAINED_DIFF','UNION_SNAPSHOT','NO_MEMBERSHIP')",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "membershipProvenanceNote",
+          "ddl": "membershipProvenanceNote TEXT",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotFrozenAt",
+          "ddl": "snapshotFrozenAt DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "memberCount",
+          "ddl": "memberCount INTEGER NOT NULL, columnDefinition = \"INT default 0\"",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "snapshotTimeRelation",
+          "ddl": "snapshotTimeRelation VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotAliveAtCutoff",
+          "ddl": "snapshotAliveAtCutoff BIT(1)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotIntervalFrom",
+          "ddl": "snapshotIntervalFrom DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotSeriesIds",
+          "ddl": "snapshotSeriesIds TEXT + JSON converter",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotDomainId",
+          "ddl": "snapshotDomainId VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotSortBy",
+          "ddl": "snapshotSortBy VARCHAR(32)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotSortOrder",
+          "ddl": "snapshotSortOrder VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "criteriaSnapshot",
+          "ddl": "criteriaSnapshot TEXT + @Convert(JpaCriteriaAttributeConverter.class)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "criteriaOverride",
+          "ddl": "criteriaOverride TEXT + same converter",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "week",
+          "ddl": "week INTEGER",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "weekTo",
+          "ddl": "weekTo INTEGER",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "year",
+          "ddl": "year INTEGER",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "edition",
+          "ddl": "edition VARCHAR(64)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "supersedes",
+          "ddl": "supersedes_id INTEGER FK → PublicationIssue(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "reportParams",
+          "ddl": "reportParams TEXT + @Convert(JpaPropertiesAttributeConverter.class)",
+          "nullable": false,
+          "notNull": false,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "PublicationIssueDesc",
+      "existing": false,
+      "fields": [
+        {
+          "name": "id",
+          "ddl": "id INTEGER NOT NULL (PK)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "lang",
+          "ddl": "lang VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "entity",
+          "ddl": "entity_id INTEGER NOT NULL FK",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "name",
+          "ddl": "name VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "nameOverridden",
+          "ddl": "nameOverridden BIT(1) NOT NULL, columnDefinition = \"BIT(1) default 0\"",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "fileName",
+          "ddl": "fileName VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "filePath",
+          "ddl": "filePath VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "link",
+          "ddl": "link VARCHAR(1024)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "messageReferenceFormat",
+          "ddl": "messageReferenceFormat VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "fileSource",
+          "ddl": "fileSource enum('GENERATED','UPLOADED')",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "fileSourceSticky",
+          "ddl": "fileSourceSticky BIT(1) NOT NULL, columnDefinition = \"BIT(1) default 0\"",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "replacedBy",
+          "ddl": "replacedBy_id INTEGER FK → User(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "replacedAt",
+          "ddl": "replacedAt DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "fileGeneratedAt",
+          "ddl": "fileGeneratedAt DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "fileSize",
+          "ddl": "fileSize BIGINT",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "fileHash",
+          "ddl": "fileHash VARCHAR(64)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "IssueMember",
+      "existing": false,
+      "fields": [
+        {
+          "name": "id",
+          "ddl": "id INTEGER NOT NULL (PK)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "issue",
+          "ddl": "issue_id INTEGER NOT NULL FK",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "messageUid",
+          "ddl": "messageUid VARCHAR(36) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "message",
+          "ddl": "message_id INTEGER FK → Message(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "sortIndex",
+          "ddl": "sortIndex INTEGER NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "frozenShortId",
+          "ddl": "frozenShortId VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "frozenMainType",
+          "ddl": "frozenMainType VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "frozenType",
+          "ddl": "frozenType VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "frozenStatus",
+          "ddl": "frozenStatus VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "frozenPublishDateFrom",
+          "ddl": "frozenPublishDateFrom DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "frozenPublishDateTo",
+          "ddl": "frozenPublishDateTo DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "source",
+          "ddl": "source enum('CRITERIA','OVERRIDE_INCLUDE','IMPORTED') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "reasonNote",
+          "ddl": "reasonNote VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "override",
+          "ddl": "override_id INTEGER FK → IssueOverride(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "IssueOverride",
+      "existing": false,
+      "fields": [
+        {
+          "name": "id",
+          "ddl": "id INTEGER NOT NULL (PK)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "version",
+          "ddl": "version INTEGER NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "created",
+          "ddl": "created DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "updated",
+          "ddl": "updated DATETIME(6)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "issue",
+          "ddl": "issue_id INTEGER NOT NULL FK",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "messageUid",
+          "ddl": "messageUid VARCHAR(36) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "message",
+          "ddl": "message_id INTEGER FK → Message(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "kind",
+          "ddl": "kind enum('INCLUDE','EXCLUDE') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "author",
+          "ddl": "author_id INTEGER NOT NULL FK → User(id)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "reason",
+          "ddl": "reason VARCHAR(512) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "appliedAtPublish",
+          "ddl": "appliedAtPublish BIT(1)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "IssueAuditEntry",
+      "existing": false,
+      "fields": [
+        {
+          "name": "id",
+          "ddl": "id INTEGER NOT NULL (PK)",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "issue",
+          "ddl": "issue_id INTEGER NOT NULL FK",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "action",
+          "ddl": "action VARCHAR(255) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "created",
+          "ddl": "created DATETIME(6) NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "actorKind",
+          "ddl": "actorKind enum('USER','SYSTEM','IMPORT') NOT NULL",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "user",
+          "ddl": "user_id INTEGER FK → User(id)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "actorLabel",
+          "ddl": "actorLabel VARCHAR(255)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "reason",
+          "ddl": "reason VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "archivePath",
+          "ddl": "archivePath VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "detail",
+          "ddl": "detail TEXT + @Convert(converter = JpaJsonAttributeConverter.class)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

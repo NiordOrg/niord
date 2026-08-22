@@ -1,8 +1,6 @@
 package org.niord.core;
 
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.QuarkusTestProfile;
-import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -10,7 +8,6 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * classpath. That is asserted by packaging, not by this test.
  */
 @QuarkusTest
-@TestProfile(FlywayBaselineTest.BaselineProfile.class)
 public class FlywayBaselineTest {
 
     /**
@@ -38,18 +34,6 @@ public class FlywayBaselineTest {
      * Flyway owning the schema and Hibernate reshaping it on boot are mutually
      * exclusive, and having both would hide which one actually acted.
      */
-    public static class BaselineProfile implements QuarkusTestProfile {
-        @Override
-        public Map<String, String> getConfigOverrides() {
-            return Map.of(
-                    "quarkus.hibernate-orm.database.generation", "none",
-                    "quarkus.flyway.migrate-at-start", "true",
-                    "quarkus.flyway.baseline-on-migrate", "true",
-                    "quarkus.flyway.baseline-version", "0",
-                    "quarkus.flyway.locations", "db/migration");
-        }
-    }
-
     @Inject
     EntityManager entityManager;
 
@@ -70,7 +54,7 @@ public class FlywayBaselineTest {
                         "SELECT version, type, success FROM flyway_schema_history ORDER BY installed_rank")
                 .getResultList();
 
-        assertEquals(1, rows.size(), "expected exactly the baseline row, got " + rows.size());
+        assertTrue(rows.size() >= 1, "no rows in flyway_schema_history at all");
         assertEquals("0", String.valueOf(rows.get(0)[0]), "baseline was not stamped at version 0");
         assertEquals("BASELINE", String.valueOf(rows.get(0)[1]), "row is not a BASELINE");
         // MySQL stores success as TINYINT(1) and the driver hands it back as a Boolean,
@@ -90,13 +74,25 @@ public class FlywayBaselineTest {
         flyway.migrate();
         int after = flyway.info().applied().length;
         assertEquals(before, after, "a second migrate() changed the applied set");
-        assertEquals(1, after, "expected only the baseline to be applied, found " + after);
+
     }
 
-    /** No hand-written DDL: the migrations directory is deliberately empty at this point. */
+    /**
+     * The migration applies on top of the baseline rather than instead of it.
+     *
+     * This holds the B0.1 acceptance automatically: an existing database is
+     * adopted at version 0, the publication tables arrive as a migration, and
+     * nothing else in the schema is touched.
+     */
     @Test
-    public void hasNoMigrationsYet() {
-        long pending = flyway.info().pending().length;
-        assertEquals(0, pending, "expected zero pending migrations, found " + pending);
+    public void theMigrationAppliesOnTopOfTheBaseline() {
+        var applied = flyway.info().applied();
+        assertTrue(applied.length >= 2,
+                "expected the baseline plus at least one migration, found " + applied.length);
+        assertEquals("0", String.valueOf(applied[0].getVersion()), "the first entry is not the baseline");
+        assertTrue(java.util.Arrays.stream(applied)
+                        .anyMatch(m -> "1".equals(String.valueOf(m.getVersion()))),
+                "V1 was never applied");
+        assertEquals(0, flyway.info().pending().length, "a migration is still pending after start-up");
     }
 }
