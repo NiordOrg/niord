@@ -1,0 +1,298 @@
+{
+  "source": "https://niord.t-dma.dk",
+  "domain": "niord-nm",
+  "tags": [
+    {
+      "tag": "nm-pt-w01-2026",
+      "tagId": "7824c0ff-619e-4b10-b356-389911bd8bbc",
+      "locked": true,
+      "messageCount": 123,
+      "created": 1767704553000,
+      "fixture": "nm-pt-w01-2026.json",
+      "memberCount": 123
+    },
+    {
+      "tag": "nm-w01-2026",
+      "tagId": "59ddc388-ff2e-488d-b53e-ac7d2cb8c4f5",
+      "locked": true,
+      "messageCount": 2,
+      "created": 1767682640000,
+      "fixture": "nm-w01-2026.json",
+      "memberCount": 2
+    },
+    {
+      "tag": "nm-w23-2026",
+      "tagId": "2ec0893e-4f71-47af-872b-b4f8523f9d4b",
+      "locked": true,
+      "messageCount": 26,
+      "created": 1779877261000,
+      "fixture": "nm-w23-2026.json",
+      "memberCount": 26
+    },
+    {
+      "tag": "nm-pt-w23-2026",
+      "tagId": "6f52c330-602c-4139-a8eb-b8b322c795ab",
+      "locked": true,
+      "messageCount": 166,
+      "created": 1779877267000,
+      "fixture": "nm-pt-w23-2026.json",
+      "memberCount": 166
+    },
+    {
+      "tag": "nm-w24-2026",
+      "tagId": "a494c924-6665-494c-8614-b91b4f15f4c0",
+      "locked": true,
+      "messageCount": 33,
+      "created": 1780481659000,
+      "fixture": "nm-w24-2026.json",
+      "memberCount": 33
+    },
+    {
+      "tag": "nm-pt-w24-2026",
+      "tagId": "2025169d-ce43-459a-8504-5455e1037e2c",
+      "locked": true,
+      "messageCount": 162,
+      "created": 1780481644000,
+      "fixture": "nm-pt-w24-2026.json",
+      "memberCount": 162
+    },
+    {
+      "tag": "nm-w25-2026",
+      "tagId": "a8de4c79-1d54-418c-bcd6-5418d528a15a",
+      "locked": true,
+      "messageCount": 37,
+      "created": 1781088404000,
+      "fixture": "nm-w25-2026.json",
+      "memberCount": 37
+    },
+    {
+      "tag": "nm-pt-w25-2026",
+      "tagId": "3620c398-fb16-442d-ad6d-d4a1f5b9cd1a",
+      "locked": true,
+      "messageCount": 169,
+      "created": 1781088413000,
+      "fixture": "nm-pt-w25-2026.json",
+      "memberCount": 169
+    },
+    {
+      "tag": "nm-w26-2026",
+      "tagId": "219849f7-95ba-46f1-8dfb-d5eef7843ec1",
+      "locked": true,
+      "messageCount": 26,
+      "created": 1781693687000,
+      "fixture": "nm-w26-2026.json",
+      "memberCount": 26
+    },
+    {
+      "tag": "nm-pt-w26-2026",
+      "tagId": "36565382-ce19-4cf4-8588-19d9d1e84424",
+      "locked": true,
+      "messageCount": 168,
+      "created": 1781693679000,
+      "fixture": "nm-pt-w26-2026.json",
+      "memberCount": 168
+    },
+    {
+      "tag": "nm-w27-2026",
+      "tagId": "89245188-8dff-4dc2-ace2-202b37bfdd63",
+      "locked": true,
+      "messageCount": 34,
+      "created": 1782298446000,
+      "fixture": "nm-w27-2026.json",
+      "memberCount": 34
+    },
+    {
+      "tag": "nm-pt-w27-2026",
+      "tagId": "dc6f106a-ae65-4d82-ba43-61b3b26a52bd",
+      "locked": true,
+      "messageCount": 171,
+      "created": 1782298466000,
+      "fixture": "nm-pt-w27-2026.json",
+      "memberCount": 171
+    },
+    {
+      "tag": "nm-w28-2026",
+      "tagId": "a36ae560-4355-4bb8-ae67-4b0853a55a5f",
+      "locked": true,
+      "messageCount": 27,
+      "created": 1782902395000,
+      "fixture": "nm-w28-2026.json",
+      "memberCount": 27
+    },
+    {
+      "tag": "nm-pt-w28-2026",
+      "tagId": "717237c6-244b-4e0c-b3f4-7bc66799afa3",
+      "locked": true,
+      "messageCount": 165,
+      "created": 1782902372000,
+      "fixture": "nm-pt-w28-2026.json",
+      "memberCount": 165
+    },
+    {
+      "tag": "nm-w45-2018",
+      "tagId": "017147d0-bcaf-4f05-8d96-98915ae78bd1",
+      "locked": true,
+      "messageCount": 23,
+      "created": 1541157241000,
+      "fixture": "nm-w45-2018.json",
+      "memberCount": 23
+    },
+    {
+      "tag": "nm-pt-w12-2024",
+      "tagId": "1e381d14-55af-4b78-8332-d4a90ebe88f4",
+      "locked": true,
+      "messageCount": 135,
+      "created": 1710328452000,
+      "fixture": "nm-pt-w12-2024.json",
+      "memberCount": 135
+    }
+  ],
+  "other": [
+    {
+      "case": "skydeomraader-2017-ed1",
+      "kind": "publication",
+      "publicationId": "38a25c50-47d1-4ac4-bbe7-2a37f0dfee5a",
+      "memberCount": 32,
+      "fixture": "skydeomraader-2017-ed1.json"
+    },
+    {
+      "case": "skydeomraader-2017-ed2",
+      "kind": "publication",
+      "publicationId": "f2fa5eb8-e72a-4198-a883-fbcf1202274f",
+      "memberCount": 33,
+      "fixture": "skydeomraader-2017-ed2.json"
+    },
+    {
+      "case": "skydeomraader-2018",
+      "kind": "publication",
+      "publicationId": "58a37fcf-10f6-41ba-b791-1e77d1a70667",
+      "memberCount": 71,
+      "fixture": "skydeomraader-2018.json"
+    },
+    {
+      "case": "skydeomraader-2026",
+      "kind": "publication",
+      "publicationId": "558aa1ac-7807-43b0-8d00-9b074baca026",
+      "memberCount": 32,
+      "fixture": "skydeomraader-2026.json"
+    },
+    {
+      "case": "skydeomraader-2027",
+      "kind": "publication",
+      "publicationId": "46c4ed07-17a7-4afc-87f9-c78d266c4805",
+      "memberCount": 32,
+      "fixture": "skydeomraader-2027.json"
+    },
+    {
+      "case": "nm-780-18",
+      "kind": "message",
+      "shortId": "NM-780-18",
+      "absent": false,
+      "fixture": "nm-780-18.json"
+    },
+    {
+      "case": "nm-1116-22",
+      "kind": "message",
+      "shortId": "NM-1116-22",
+      "absent": false,
+      "fixture": "nm-1116-22.json"
+    },
+    {
+      "case": "nm-300-24",
+      "kind": "message",
+      "shortId": "NM-300-24",
+      "absent": false,
+      "fixture": "nm-300-24.json"
+    },
+    {
+      "case": "nm-466-26",
+      "kind": "message",
+      "shortId": "NM-466-26",
+      "absent": false,
+      "fixture": "nm-466-26.json"
+    },
+    {
+      "case": "nm-473-26",
+      "kind": "message",
+      "shortId": "NM-473-26",
+      "absent": true,
+      "fixture": "nm-473-26.json"
+    },
+    {
+      "case": "nm-962-25",
+      "kind": "message",
+      "shortId": "NM-962-25",
+      "absent": true,
+      "fixture": "nm-962-25.json"
+    },
+    {
+      "case": "nm-1046-25",
+      "kind": "message",
+      "shortId": "NM-1046-25",
+      "absent": true,
+      "fixture": "nm-1046-25.json"
+    }
+  ],
+  "blocklist": [
+    {
+      "tag": "nm-w01-2025",
+      "fixture": false,
+      "reason": "shared by three publications, not one -- the tag cannot say which issue it is the oracle for"
+    },
+    {
+      "tag": "nm-pt-w01-2025",
+      "fixture": false,
+      "reason": "shared by three publications, not one"
+    },
+    {
+      "tag": "nm-w52-2024",
+      "fixture": false,
+      "reason": "cut-off destroyed by a later save; retire/republish batches re-stamped updated"
+    },
+    {
+      "tag": "nm-pt-w52-2024",
+      "fixture": false,
+      "reason": "cut-off destroyed by a later save"
+    },
+    {
+      "tag": "nm-pt-w02-2025",
+      "fixture": false,
+      "reason": "name drift -- it belongs to the \"uge 3 - 2025\" publication, and nm-pt-w03-2025 does not exist"
+    },
+    {
+      "tag": "efs-2019-changeover-1",
+      "fixture": false,
+      "reason": "structurally irreproducible: two tags recorded simultaneously for six days across the 2019 changeover fortnight; 12 messages sit in 2-3 issues at once and 2 in none, so tiling does not hold"
+    },
+    {
+      "tag": "efs-2019-changeover-2",
+      "fixture": false,
+      "reason": "structurally irreproducible -- 2019 changeover fortnight, issue 2 of 3"
+    },
+    {
+      "tag": "efs-2019-changeover-3",
+      "fixture": false,
+      "reason": "structurally irreproducible -- 2019 changeover fortnight, issue 3 of 3"
+    },
+    {
+      "tag": "skydeomraader-2018",
+      "fixture": true,
+      "reason": "union over a long window: 71 members, two full annual cohorts. Every publishDate boundary +/-1ms was swept across the series history and no instant reproduces the set. Captured anyway, as a divergence fixture -- the resolver is EXPECTED to differ"
+    },
+    {
+      "tag": "skydeomraader-2020-ed1",
+      "fixture": false,
+      "reason": "union over a long window (66 members); not captured -- skydeomraader-2018 already covers the class"
+    },
+    {
+      "tag": "skydeomraader-2022-ed1",
+      "fixture": false,
+      "reason": "union over a long window (41 members); not captured -- covered by skydeomraader-2018"
+    },
+    {
+      "tag": "efs-a-2020-ed1",
+      "fixture": false,
+      "reason": "union over a long window (56 members); not captured -- covered by skydeomraader-2018"
+    }
+  ]
+}

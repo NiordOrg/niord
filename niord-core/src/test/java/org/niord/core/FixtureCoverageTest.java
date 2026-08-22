@@ -140,4 +140,73 @@ public class FixtureCoverageTest {
                     name + " records " + declared + " members but carries " + root.get("members").size());
         }
     }
+
+    // ---------------------------------------------------------------- manifest
+
+    private JsonNode manifest() throws Exception {
+        byte[] raw = read("manifest.json");
+        assertNotNull(raw, "manifest.json is missing");
+        return new ObjectMapper().readTree(raw);
+    }
+
+    /**
+     * The blocklist is data, not quietly-absent files. Every entry states why the
+     * recorded set cannot be trusted as an oracle, so the decision stays
+     * reviewable rather than looking like an oversight.
+     */
+    @Test
+    public void blocklistedOraclesAreDeclaredWithAReason() throws Exception {
+        JsonNode blocklist = manifest().path("blocklist");
+        assertTrue(blocklist.isArray() && blocklist.size() > 0, "manifest carries no blocklist");
+
+        for (JsonNode entry : blocklist) {
+            String tag = entry.path("tag").asText("");
+            assertTrue(!tag.isBlank(), "blocklist entry with no tag name");
+
+            String reason = entry.path("reason").asText("");
+            assertTrue(!reason.isBlank(), tag + " is blocklisted with no reason");
+
+            // "Blocklisted" means not an oracle. It does not always mean "not
+            // captured": the union-over-window annuals are captured on purpose,
+            // because asserting the resolver DIFFERS from them is itself a test.
+            if (!entry.path("fixture").asBoolean(false)) {
+                assertTrue(read(tag + ".json") == null,
+                        tag + " is blocklisted with fixture:false but a fixture file exists. Either it is an "
+                                + "oracle or it is not -- do not leave it ambiguous.");
+            }
+        }
+    }
+
+    /** An unlocked tag is not an oracle, and the manifest is where that stays provable. */
+    @Test
+    public void everyCapturedTagWasLocked() throws Exception {
+        JsonNode tags = manifest().path("tags");
+        assertTrue(tags.isArray() && tags.size() > 0, "manifest carries no tag rows");
+        for (JsonNode tag : tags) {
+            assertTrue(tag.path("locked").asBoolean(false),
+                    tag.path("tag").asText() + " was captured from an UNLOCKED tag; its membership can still move");
+            assertTrue(tag.hasNonNull("tagId"), tag.path("tag").asText() + " has no resolved tagId recorded");
+            assertTrue(tag.hasNonNull("created"), tag.path("tag").asText() + " has no created stamp recorded");
+        }
+    }
+
+    /**
+     * The recorded messageCount must equal what the fixture actually carries.
+     * This is the same guard the capture script applies at fetch time, held
+     * after the fact so a hand-edited file cannot slip past it.
+     */
+    @Test
+    public void manifestCountsAgreeWithTheCapturedFiles() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        for (JsonNode tag : manifest().path("tags")) {
+            String name = tag.path("tag").asText();
+            byte[] content = read(tag.path("fixture").asText());
+            assertNotNull(content, "manifest lists a fixture for " + name + " that is not there");
+
+            int members = mapper.readTree(content).path("members").size();
+            assertEquals(tag.path("messageCount").asInt(), members,
+                    name + ": manifest records messageCount " + tag.path("messageCount").asInt()
+                            + " but the fixture carries " + members + " members");
+        }
+    }
 }

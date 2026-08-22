@@ -53,6 +53,30 @@ const MESSAGES = [
   { case: 'nm-1046-25', shortId: 'NM-1046-25' }, // rolled-back publish
 ];
 
+/* The contaminated-oracle blocklist, carried as data rather than as quietly
+ * absent files. Each entry says why it cannot be trusted, so the decision stays
+ * reviewable instead of looking like an oversight.
+ *
+ * "Blocklisted" means NOT AN ORACLE -- the recorded set must not be used to
+ * assert that the resolver reproduces it. It does not always mean "do not
+ * capture": the union-over-window annuals are captured deliberately, because
+ * asserting the resolver DIFFERS from them is itself a test. Those carry
+ * fixture: true. Everything with fixture: false must have no file at all. */
+const BLOCKLIST = [
+  { tag: 'nm-w01-2025', fixture: false, reason: 'shared by three publications, not one -- the tag cannot say which issue it is the oracle for' },
+  { tag: 'nm-pt-w01-2025', fixture: false, reason: 'shared by three publications, not one' },
+  { tag: 'nm-w52-2024', fixture: false, reason: 'cut-off destroyed by a later save; retire/republish batches re-stamped updated' },
+  { tag: 'nm-pt-w52-2024', fixture: false, reason: 'cut-off destroyed by a later save' },
+  { tag: 'nm-pt-w02-2025', fixture: false, reason: 'name drift -- it belongs to the "uge 3 - 2025" publication, and nm-pt-w03-2025 does not exist' },
+  { tag: 'efs-2019-changeover-1', fixture: false, reason: 'structurally irreproducible: two tags recorded simultaneously for six days across the 2019 changeover fortnight; 12 messages sit in 2-3 issues at once and 2 in none, so tiling does not hold' },
+  { tag: 'efs-2019-changeover-2', fixture: false, reason: 'structurally irreproducible -- 2019 changeover fortnight, issue 2 of 3' },
+  { tag: 'efs-2019-changeover-3', fixture: false, reason: 'structurally irreproducible -- 2019 changeover fortnight, issue 3 of 3' },
+  { tag: 'skydeomraader-2018', fixture: true, reason: 'union over a long window: 71 members, two full annual cohorts. Every publishDate boundary +/-1ms was swept across the series history and no instant reproduces the set. Captured anyway, as a divergence fixture -- the resolver is EXPECTED to differ' },
+  { tag: 'skydeomraader-2020-ed1', fixture: false, reason: 'union over a long window (66 members); not captured -- skydeomraader-2018 already covers the class' },
+  { tag: 'skydeomraader-2022-ed1', fixture: false, reason: 'union over a long window (41 members); not captured -- covered by skydeomraader-2018' },
+  { tag: 'efs-a-2020-ed1', fixture: false, reason: 'union over a long window (56 members); not captured -- covered by skydeomraader-2018' },
+];
+
 /* curl.exe rather than fetch(): proven to work on this box, where other HTTP
  * paths are blocked. */
 function getJson(url) {
@@ -118,6 +142,8 @@ const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 
 mkdirSync(outDir, { recursive: true });
 const hashes = [];
+const manifestTags = [];
+const manifestOther = [];
 let failed = 0;
 
 for (const name of only ? [only] : TAGS) {
@@ -141,6 +167,18 @@ for (const name of only ? [only] : TAGS) {
     const file = `${name}.json`;
     writeFileSync(join(outDir, file), text, 'utf8');
     hashes.push(`${createHash('sha256').update(text, 'utf8').digest('hex')}  ${file}`);
+
+    // Both silent-failure guards recorded as values, so a later re-capture can be
+    // checked rather than trusted. tagCreated is the cut-off recovery source.
+    manifestTags.push({
+      tag: tag.name,
+      tagId: tag.tagId,
+      locked: tag.locked,
+      messageCount: tag.messageCount,
+      created: tag.created,
+      fixture: `${name}.json`,
+      memberCount: members.length,
+    });
 
     const distinctShort = new Set(members.map((m) => m.shortId)).size;
     console.log(`  ok  ${name.padEnd(16)} ${String(members.length).padStart(4)} members` + (distinctShort !== members.length ? `  (only ${distinctShort} distinct shortIds -- uid keying is load-bearing)` : ''));
@@ -188,6 +226,7 @@ if (!only) {
         synthetic: false,
         members,
       });
+      manifestOther.push({ case: pub.case, kind: 'publication', publicationId: pub.id, memberCount: members.length, fixture: `${pub.case}.json` });
       console.log(`  ok  ${pub.case.padEnd(24)} ${String(members.length).padStart(4)} members`);
     } catch (e) {
       failed++;
@@ -207,6 +246,7 @@ if (!only) {
         ? { case: msg.case, kind: 'message', shortId: msg.shortId, absent: true, source: HOST, synthetic: false }
         : { case: msg.case, kind: 'message', shortId: msg.shortId, absent: false, source: HOST, synthetic: false, facts: toFacts(JSON.parse(body)) };
       writeFixture(msg.case, fixture);
+      manifestOther.push({ case: msg.case, kind: 'message', shortId: msg.shortId, absent, fixture: `${msg.case}.json` });
       console.log(`  ok  ${msg.case.padEnd(24)} ${absent ? 'ABSENT (no such message)' : 'captured'}`);
     } catch (e) {
       failed++;
@@ -224,6 +264,20 @@ if (!only) {
     const text = readFileSync(join(outDir, f), 'utf8');
     hashes.push(`${createHash('sha256').update(text, 'utf8').digest('hex')}  ${f}`);
   }
+  writeFileSync(
+    join(outDir, 'manifest.json'),
+    serialise({
+      source: HOST,
+      domain: DOMAIN,
+      tags: manifestTags,
+      other: manifestOther,
+      blocklist: BLOCKLIST,
+    }),
+    'utf8',
+  );
+  const manifestText = readFileSync(join(outDir, 'manifest.json'), 'utf8');
+  hashes.push(`${createHash('sha256').update(manifestText, 'utf8').digest('hex')}  manifest.json`);
+
   hashes.sort();
   writeFileSync(join(outDir, 'hashes.txt'), hashes.join('\n') + '\n', 'utf8');
   console.log(`\nwrote ${hashes.length} fixtures + hashes.txt to ${outDir}`);
