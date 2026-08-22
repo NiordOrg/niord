@@ -48,13 +48,13 @@ public class FixtureCoverageTest {
         put("nm-473-26", "rolled-back publish, instance 1 of 3");
         put("nm-962-25", "rolled-back publish, instance 2 of 3");
         put("nm-1046-25", "rolled-back publish, instance 3 of 3");
-        put("skydeomraader-2017-ed2", "supersede-moment superset");
+        put("skydeomraader-2017-ed1", "uid-keying: paired with ed2, shortId keying undercounts the diff 15 -> 1");
+        put("skydeomraader-2017-ed2", "supersede-moment superset, and the other half of the uid-keying pair");
         put("skydeomraader-2018", "the union case");
         put("skydeomraader-2026", "31-of-32 pair, first half");
         put("skydeomraader-2027", "31-of-32 pair, second half");
         put("synthetic-boundary-pair", "RI-2 -- no production message sits on a cut-off stamp");
         put("synthetic-empty-operand", "RI-6 -- an empty operand must raise, never resolve");
-        put("synthetic-uid-keying", "M-1 -- the production case for this does not reproduce");
     }};
 
     private static byte[] read(String name) throws Exception {

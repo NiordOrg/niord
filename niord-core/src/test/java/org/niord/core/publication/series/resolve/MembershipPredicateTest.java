@@ -460,4 +460,60 @@ public class MembershipPredicateTest {
                 "using the creation stamp as the cut-off should empty this issue entirely -- that it does is "
                         + "exactly why it must not be used that way");
     }
+
+    // ------------------------------------------------ M-1, keyed on uid
+
+    /**
+     * Member comparison is keyed on uid, never shortId.
+     *
+     * Real data, not an authored case -- an earlier attempt to reproduce this
+     * concluded it did not occur, because it queried the corpus with
+     * `messageSeries=`, which the backend silently drops. Asked correctly, the
+     * firing-areas series holds 357 messages under 331 distinct shortIds, and
+     * `FA/EK-R-19 2017` alone exists twice under two different uids.
+     *
+     * The consequence is what this pins: the two 2017 editions differ by
+     * FIFTEEN members, and a shortId-keyed comparison reports ONE.
+     */
+    @Test
+    public void memberComparisonIsKeyedOnUidNotShortId() throws Exception {
+        List<MessageFacts> ed1 = members(fixture("skydeomraader-2017-ed1"));
+        List<MessageFacts> ed2 = members(fixture("skydeomraader-2017-ed2"));
+
+        JsonNode raw1 = fixture("skydeomraader-2017-ed1");
+        JsonNode raw2 = fixture("skydeomraader-2017-ed2");
+
+        Set<String> uidsA = ed1.stream().map(MessageFacts::uid).collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<String> uidsB = ed2.stream().map(MessageFacts::uid).collect(Collectors.toCollection(LinkedHashSet::new));
+        int uidDiff = symmetricDifference(uidsA, uidsB);
+
+        Set<String> shortA = shortIds(raw1);
+        Set<String> shortB = shortIds(raw2);
+        int shortIdDiff = symmetricDifference(shortA, shortB);
+
+        assertEquals(15, uidDiff, "the 2017 editions no longer differ by 15 members when keyed on uid");
+        assertEquals(1, shortIdDiff,
+                "the shortId-keyed comparison no longer undercounts; if this changed, re-check the fixtures");
+
+        assertTrue(uidDiff > shortIdDiff,
+                "shortId keying is supposed to UNDERCOUNT here -- that is the whole hazard");
+        assertEquals(14, uidDiff - shortIdDiff,
+                "a shortId-keyed diff hides 14 of the 15 real differences between these two editions");
+    }
+
+    /** shortId is captured for readability only; this is the one place it is read. */
+    private static Set<String> shortIds(JsonNode fixture) {
+        Set<String> out = new LinkedHashSet<>();
+        for (JsonNode m : fixture.path("members")) {
+            out.add(m.path("shortId").asText(null));
+        }
+        return out;
+    }
+
+    private static int symmetricDifference(Set<String> a, Set<String> b) {
+        int n = 0;
+        for (String x : a) if (!b.contains(x)) n++;
+        for (String x : b) if (!a.contains(x)) n++;
+        return n;
+    }
 }
