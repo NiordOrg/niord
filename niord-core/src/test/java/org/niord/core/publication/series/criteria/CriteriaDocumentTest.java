@@ -1,6 +1,7 @@
 package org.niord.core.publication.series.criteria;
 
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.BindsRule;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.model.message.Type;
@@ -94,6 +95,7 @@ public class CriteriaDocumentTest {
     }
 
     /** Field order must not depend on Java declaration order or on insertion order. */
+    @BindsRule({"C-10"})
     @Test
     public void serializationIsCanonicalAndStable() {
         IssueCriteriaVo d = doc(types("TEMPORARY_NOTICE"), series("dma-nm"));
@@ -126,6 +128,7 @@ public class CriteriaDocumentTest {
     }
 
     /** C-5 in its practical form: there is no way to express a status criterion. */
+    @BindsRule({"C-5"})
     @Test
     public void noStatusCriterionCanBeExpressed() {
         assertThrows(CriteriaParseException.class, () -> CONVERTER.convertToEntityAttribute(
@@ -137,6 +140,8 @@ public class CriteriaDocumentTest {
     }
 
     // ---------------------------------------------------------- C-1 .. C-10
+
+    @BindsRule({"C-1", "C-2", "C-3", "C-4", "C-6", "C-7", "C-8", "C-9"})
 
     @Test
     public void everyValidationRuleRejectsItsOwnFailure() {
@@ -219,6 +224,8 @@ public class CriteriaDocumentTest {
                 () -> CriteriaResolver.resolve(d, TimeRelation.PUBLISHED_IN_INTERVAL, false, CriteriaResolver.NO_DOMAINS));
         assertEquals(CriterionKind.MESSAGE_SERIES, e.kind());
     }
+
+    @BindsRule({"RI-8"})
 
     @Test
     public void aDomainNodeIsAMacroExpandedBeforeTheQuery() {

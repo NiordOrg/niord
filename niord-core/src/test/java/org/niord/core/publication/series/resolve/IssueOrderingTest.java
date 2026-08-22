@@ -1,6 +1,7 @@
 package org.niord.core.publication.series.resolve;
 
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.BindsRule;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -54,6 +55,7 @@ public class IssueOrderingTest {
      * felt like, and two runs of the same issue produce different documents --
      * which nothing would flag, because both are individually correct.
      */
+    @BindsRule({"RI-9"})
     @Test
     public void areaLessMessagesSortLastAndInIdOrder() {
         List<IssueOrdering.Orderable> members = new ArrayList<>(List.of(
@@ -111,6 +113,8 @@ public class IssueOrderingTest {
 
     // ------------------------------------------------------------- sortIndex
 
+    @BindsRule({"RI-11"})
+
     @Test
     public void sortIndexIsDenseZeroBasedAndUnique() {
         List<IssueOrdering.Orderable> members = new ArrayList<>();
@@ -134,6 +138,7 @@ public class IssueOrderingTest {
      * Appending would put it at the end of the printed document regardless of
      * where it belongs, which is visible to every reader and correct nowhere.
      */
+    @BindsRule({"M-2"})
     @Test
     public void anOverrideIncludedMemberIsOrderedInPlace() {
         List<IssueOrdering.Orderable> queryMatched = new ArrayList<>(List.of(

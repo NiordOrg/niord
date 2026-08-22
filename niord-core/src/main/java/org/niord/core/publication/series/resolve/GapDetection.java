@@ -1,0 +1,146 @@
+package org.niord.core.publication.series.resolve;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * Gap detection, UPCOMING, and dormancy.
+ *
+ * All of it is GATED, and the gate is the interesting part. Gap detection only
+ * makes sense where issues tile -- one ends, the next begins. Issues of an
+ * IN_FORCE_AT_CUTOFF series OVERLAP: the 2026 and 2027 firing-areas issues share
+ * 31 of their 32 members. Asking which year is "missing" between them is a
+ * category error, and answering it produces a MISSING pseudo-row, a retro-create
+ * affordance and a warning for something that was never absent.
+ *
+ * Dormancy is DERIVED, never stored. "We deliberately stopped" is RETIRED, which
+ * is a decision and belongs in a column. "Nobody got round to it" is an
+ * observation about the calendar, and an observation that is stored goes stale
+ * the moment the calendar moves on.
+ */
+public final class GapDetection {
+
+    /** Missed cadence periods before a series is considered dormant. */
+    public static final int DORMANCY_PERIODS = 3;
+
+    /** Why gap detection did or did not run. Carried so the answer is explainable. */
+    public record Gate(boolean enabled, String reason) {
+    }
+
+    /** A period with no issue. */
+    public record Gap(Date from, Date to, int index) {
+    }
+
+    private GapDetection() {
+    }
+
+    /**
+     * Whether gap detection runs at all.
+     *
+     * @param relation the series' time relation
+     * @param cadence the cadence, or null for a one-off
+     * @param active whether the series is ACTIVE
+     * @param dormant whether it is dormant, derived
+     */
+    public static Gate gate(TimeRelation relation, String cadence, boolean active, boolean dormant) {
+        if (relation != TimeRelation.PUBLISHED_IN_INTERVAL) {
+            return new Gate(false,
+                    "issues of an IN_FORCE_AT_CUTOFF series overlap rather than tile, so a missing period "
+                            + "is a category error rather than a gap");
+        }
+        if (cadence == null || "NONE".equals(cadence)) {
+            return new Gate(false, "a one-off has no cadence to be missing a period of");
+        }
+        if (!active) {
+            return new Gate(false, "only an ACTIVE series is expected to keep producing issues");
+        }
+        if (dormant) {
+            return new Gate(false,
+                    "a dormant series is already flagged as such; warning about every period since would "
+                            + "bury the one fact that matters");
+        }
+        return new Gate(true, "an active, tiling series with a cadence");
+    }
+
+    /**
+     * The periods between consecutive issues where one is missing.
+     *
+     * Returns empty whenever the gate is closed, so a caller that forgets to
+     * check still cannot produce a pseudo-row for an overlapping series.
+     */
+    public static List<Gap> gaps(Gate gate, List<Date> cutoffsAscending, long periodMillis) {
+        List<Gap> out = new ArrayList<>();
+        if (!gate.enabled() || cutoffsAscending == null || cutoffsAscending.size() < 2) {
+            return out;
+        }
+
+        for (int i = 1; i < cutoffsAscending.size(); i++) {
+            long previous = cutoffsAscending.get(i - 1).getTime();
+            long current = cutoffsAscending.get(i).getTime();
+            long elapsed = current - previous;
+
+            // A period and a half of slack: real releases drift by hours, and a
+            // tighter bound would report a gap every time somebody published late.
+            long missing = Math.round((double) elapsed / periodMillis) - 1;
+            for (int k = 0; k < missing; k++) {
+                long from = previous + (k + 1) * periodMillis;
+                out.add(new Gap(new Date(from), new Date(from + periodMillis), out.size()));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Whether a series is dormant: nothing published for DORMANCY_PERIODS
+     * cadence periods.
+     *
+     * For a weekly series that is three missed weeks -- long enough that a
+     * holiday or a one-week slip does not raise it, short enough that a genuinely
+     * abandoned series surfaces within a month.
+     */
+    public static boolean isDormant(Date lastIssueCutoff, Date now, long periodMillis) {
+        if (lastIssueCutoff == null || now == null || periodMillis <= 0) {
+            return false;
+        }
+        return now.getTime() - lastIssueCutoff.getTime() > DORMANCY_PERIODS * periodMillis;
+    }
+
+    /** The next nominal cut-off after the last issue: the UPCOMING row. */
+    public static Date nextCutoff(Date lastIssueCutoff, long periodMillis) {
+        return lastIssueCutoff == null ? null : new Date(lastIssueCutoff.getTime() + periodMillis);
+    }
+
+    /** Milliseconds in one period of the given cadence. */
+    public static long periodMillisOf(String cadence, ZoneId zone, Date around) {
+        if (cadence == null) {
+            return 0L;
+        }
+        return switch (cadence) {
+            case "DAILY" -> 24L * 3600_000L;
+            case "WEEKLY" -> 7L * 24L * 3600_000L;
+            case "MONTHLY" -> monthMillis(zone, around);
+            case "YEARLY" -> yearMillis(zone, around);
+            default -> 0L;
+        };
+    }
+
+    /* Months and years are not fixed lengths, so they are measured around the
+     * date in question rather than approximated by an average. */
+    private static long monthMillis(ZoneId zone, Date around) {
+        ZonedDateTime t = at(zone, around);
+        return t.plusMonths(1).toInstant().toEpochMilli() - t.toInstant().toEpochMilli();
+    }
+
+    private static long yearMillis(ZoneId zone, Date around) {
+        ZonedDateTime t = at(zone, around);
+        return t.plusYears(1).toInstant().toEpochMilli() - t.toInstant().toEpochMilli();
+    }
+
+    private static ZonedDateTime at(ZoneId zone, Date around) {
+        return (around == null ? ZonedDateTime.now(zone == null ? ZoneId.of("UTC") : zone)
+                : ZonedDateTime.ofInstant(around.toInstant(), zone == null ? ZoneId.of("UTC") : zone));
+    }
+}

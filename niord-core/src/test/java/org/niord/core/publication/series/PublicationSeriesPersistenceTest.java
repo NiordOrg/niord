@@ -83,6 +83,7 @@ public class PublicationSeriesPersistenceTest {
      * two-language test passes just as well against an implementation that only
      * ever keeps the first and the last.
      */
+    @BindsRule({"D-1", "D-2"})
     @Test
     @Transactional
     public void aSeriesRoundTripsOneDescPerConfiguredLanguage() {
@@ -184,6 +185,7 @@ public class PublicationSeriesPersistenceTest {
      * field for field. Where they disagree, one of the two silently keeps rows the
      * other discards.
      */
+    @BindsRule({"D-9"})
     @Test
     public void descDefinedAgreesOnWhatAnEmptyRowIs() {
         PublicationSeriesDesc blank = new PublicationSeriesDesc();

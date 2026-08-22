@@ -211,6 +211,7 @@ public class MemberResolutionDifferentialTest {
     // ------------------------------------------------------------- B1.1 invariants
 
     /** RI-6, on the path that would silently empty the issue. */
+    @BindsRule({"RI-6"})
     @Test
     @Transactional
     public void anUnresolvableOperandRaisesRatherThanEmptyingTheIssue() {
@@ -226,6 +227,7 @@ public class MemberResolutionDifferentialTest {
     }
 
     /** RI-12. Nothing caps the result at 100, which is the default in the params object. */
+    @BindsRule({"RI-12", "RI-13"})
     @Test
     @Transactional
     public void thereIsNoAccidentalCap() {
@@ -237,6 +239,7 @@ public class MemberResolutionDifferentialTest {
     }
 
     /** RI-5. The search REST layer, which day-snaps intervals, is not on the path. */
+    @BindsRule({"RI-5"})
     @Test
     public void theSearchRestLayerIsNotOnTheCallPath() {
         for (String forbidden : List.of(

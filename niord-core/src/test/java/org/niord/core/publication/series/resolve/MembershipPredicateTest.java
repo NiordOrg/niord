@@ -3,6 +3,7 @@ package org.niord.core.publication.series.resolve;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.BindsRule;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
@@ -103,6 +104,8 @@ public class MembershipPredicateTest {
 
     // ------------------------------------------------------------ RI-1, derived
 
+    @BindsRule({"RI-1"})
+
     @Test
     public void publicStatusesAreDerivedAndNonEmpty() {
         assertFalse(MembershipPredicate.PUBLIC_STATUSES.isEmpty(),
@@ -170,6 +173,7 @@ public class MembershipPredicateTest {
      * it is unambiguous: 123 of the 165 members have a NULL publishDateTo, and
      * the unsafe form discards every one of them.
      */
+    @BindsRule({"RI-4"})
     @Test
     public void nullPublishDateToIsAliveNotExpired() throws Exception {
         JsonNode f = fixture("nm-pt-w28-2026");
@@ -196,6 +200,8 @@ public class MembershipPredicateTest {
     }
 
     // ------------------------------------------- RI-3, NULL publishDateFrom
+
+    @BindsRule({"RI-3"})
 
     @Test
     public void nullPublishDateFromIsExcludedAndReported() throws Exception {
@@ -230,6 +236,7 @@ public class MembershipPredicateTest {
      * and to exactly one. No production message can settle this -- none of the
      * 10,413 sits on any of the 992 stamps -- so the case is authored.
      */
+    @BindsRule({"RI-2"})
     @Test
     public void aMessageOnTheCutoffLandsInTheEarlierIssueOnly() throws Exception {
         JsonNode f = fixture("synthetic-boundary-pair");
@@ -272,6 +279,7 @@ public class MembershipPredicateTest {
      * issue. Applying a chained interval to the 2027 firing-areas issue would
      * leave it holding one message instead of thirty-two.
      */
+    @BindsRule({"RI-7"})
     @Test
     public void inForceAtCutoffIgnoresAnyLowerBound() throws Exception {
         JsonNode f = fixture("skydeomraader-2027");
@@ -342,6 +350,8 @@ public class MembershipPredicateTest {
     }
 
     // ------------------------------------------------- RI-10, the set algebra
+
+    @BindsRule({"RI-10"})
 
     @Test
     public void curationOverridesTheQueryAndExcludeWins() throws Exception {
@@ -475,6 +485,7 @@ public class MembershipPredicateTest {
      * The consequence is what this pins: the two 2017 editions differ by
      * FIFTEEN members, and a shortId-keyed comparison reports ONE.
      */
+    @BindsRule({"M-1"})
     @Test
     public void memberComparisonIsKeyedOnUidNotShortId() throws Exception {
         List<MessageFacts> ed1 = members(fixture("skydeomraader-2017-ed1"));

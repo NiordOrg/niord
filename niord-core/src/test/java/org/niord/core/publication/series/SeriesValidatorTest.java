@@ -88,6 +88,8 @@ public class SeriesValidatorTest {
 
     // ---------------------------------------------------------- one case per rule
 
+    @BindsRule({"S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "S-7", "S-8", "S-9", "S-10", "S-11", "S-12", "S-13", "S-14", "S-15", "S-16", "S-17", "S-18", "D-7"})
+
     @Test
     public void everySeriesRuleHasACaseThatTripsIt() {
         // S-1: query-backed but no criteria. This one resolves EVERYTHING.
