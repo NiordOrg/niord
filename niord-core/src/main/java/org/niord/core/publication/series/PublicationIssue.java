@@ -3,6 +3,9 @@ package org.niord.core.publication.series;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import org.niord.core.publication.series.vo.PublicationIssueVo;
+import org.niord.core.publication.series.vo.PublicationIssueDescVo;
+import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -487,4 +490,63 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         return desc;
     }
 
+
+    /**
+     * Converts to a value object. Same split as the series: the operational
+     * fields exist only on the system type.
+     *
+     * The interval, the stamp and the snapshot header are all editor-tier. Out
+     * of context they are worse than absent -- a public reader seeing
+     * snapshotIntervalFrom would reasonably take it for the issue period.
+     */
+    public <V extends PublicationIssueVo> V toVo(Class<V> clz) {
+        V vo;
+        try {
+            vo = clz.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException("cannot instantiate " + clz, e);
+        }
+
+        vo.setPublicId(publicId);
+        vo.setSeriesId(series == null ? null : series.getSeriesId());
+        vo.setCreated(getCreated());
+        vo.setUpdated(getUpdated());
+        vo.setPublicFrom(publicFrom);
+        vo.setPublicTo(publicTo);
+        vo.setWeek(week);
+        vo.setWeekTo(weekTo);
+        vo.setYear(year);
+        vo.setEdition(edition);
+
+        for (PublicationIssueDesc d : getDescs()) {
+            PublicationIssueDescVo dv = new PublicationIssueDescVo();
+            dv.setLang(d.getLang());
+            dv.setName(d.getName());
+            dv.setFileName(d.getFileName());
+            dv.setLink(d.getLink());
+            dv.setMessageReferenceFormat(d.getMessageReferenceFormat());
+            vo.getDescs().add(dv);
+        }
+
+        if (vo instanceof SystemPublicationIssueVo sys) {
+            sys.setStatus(status == null ? null : status.name());
+            sys.setIntervalFrom(intervalFrom);
+            sys.setIntervalTo(intervalTo);
+            sys.setIntervalFromSource(intervalFromSource == null ? null : intervalFromSource.name());
+            sys.setCutoffStampedAt(cutoffStampedAt);
+            sys.setCutoffReconstructed(cutoffReconstructed);
+            sys.setPublishedAt(publishedAt);
+            sys.setPublishedBy(publishedBy == null ? null : publishedBy.getUsername());
+            sys.setRetiredAt(retiredAt);
+            sys.setRetiredReason(retiredReason);
+            sys.setMemberCount(memberCount);
+            sys.setMembershipProvenance(membershipProvenance == null ? null : membershipProvenance.name());
+            sys.setSnapshotIntervalFrom(snapshotIntervalFrom);
+            sys.setSnapshotTimeRelation(snapshotTimeRelation);
+            sys.setSupersedesPublicId(supersedes == null ? null : supersedes.getPublicId());
+            sys.setLegacyPublicationId(legacyPublicationId);
+            sys.setRepoPath(repoPath);
+        }
+        return vo;
+    }
 }

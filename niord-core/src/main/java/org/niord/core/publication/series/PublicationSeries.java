@@ -4,6 +4,10 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
+import org.niord.core.publication.series.vo.PublicationSeriesVo;
+import org.niord.core.publication.series.vo.PublicationSeriesDescVo;
+import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
+import java.util.LinkedHashMap;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -426,4 +430,72 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         this.languages = languages;
     }
 
+
+    /**
+     * Converts to a value object, public fields first and operational fields
+     * only for the system type.
+     *
+     * The branch on instanceof is the whole access control. A field that is not
+     * declared on the public type cannot be serialised from it, however the
+     * caller got hold of the object -- which is a stronger guarantee than a flag
+     * checked at every serialisation point, where the one that forgets leaks
+     * everything.
+     */
+    public <V extends PublicationSeriesVo> V toVo(Class<V> clz) {
+        V vo;
+        try {
+            vo = clz.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException("cannot instantiate " + clz, e);
+        }
+
+        vo.setSeriesId(seriesId);
+        vo.setCreated(getCreated());
+        vo.setUpdated(getUpdated());
+        vo.setCategoryId(category == null ? null : category.getCategoryId());
+        vo.setSortOrder(sortOrder);
+
+        for (PublicationSeriesDesc d : getDescs()) {
+            PublicationSeriesDescVo dv = new PublicationSeriesDescVo();
+            dv.setLang(d.getLang());
+            dv.setName(d.getName());
+            dv.setNameSuggestionPattern(d.getNameSuggestionPattern());
+            dv.setFileNamePattern(d.getFileNamePattern());
+            dv.setMessageReferenceFormat(d.getMessageReferenceFormat());
+            dv.setLinkPattern(d.getLinkPattern());
+            vo.getDescs().add(dv);
+        }
+
+        if (vo instanceof SystemPublicationSeriesVo sys) {
+            sys.setStatus(status == null ? null : status.name());
+            sys.setContentMode(contentMode == null ? null : contentMode.name());
+            sys.setCadence(cadence == null ? null : cadence.name());
+            sys.setNominalCutoffDay(nominalCutoffDay == null ? null : nominalCutoffDay.name());
+            sys.setNominalCutoffTime(nominalCutoffTime);
+            sys.setNominalCutoffTimeZone(nominalCutoffTimeZone);
+            sys.setNumberingScheme(numberingScheme == null ? null : numberingScheme.name());
+            sys.setTimeRelation(timeRelation == null ? null : timeRelation.name());
+            sys.setAliveAtCutoff(aliveAtCutoff);
+            sys.setFirstIssueStartsAt(firstIssueStartsAt);
+            sys.setCriteria(criteria);
+            sys.setDomainId(domain == null ? null : domain.getDomainId());
+            sys.getLanguages().addAll(languages);
+            sys.setReportId(reportId);
+            sys.setPageSize(pageSize == null ? null : pageSize.name());
+            sys.setPageOrientation(pageOrientation == null ? null : pageOrientation.name());
+            sys.setMapThumbnails(mapThumbnails);
+            sys.setMessageSortBy(messageSortBy);
+            sys.setMessageSortOrder(messageSortOrder == null ? null : messageSortOrder.name());
+            sys.setMessagePublication(messagePublication == null ? null : messagePublication.name());
+            sys.setReleaseMode(releaseMode == null ? null : releaseMode.name());
+            sys.setNextIssueCreation(nextIssueCreation == null ? null : nextIssueCreation.name());
+            sys.setPublicAuthority(publicAuthority == null ? null : publicAuthority.name());
+            sys.setLegacyTemplateId(legacyTemplateId);
+            sys.setImportSource(importSource);
+            if (reportParams != null) {
+                sys.setReportParams(new LinkedHashMap<>(reportParams));
+            }
+        }
+        return vo;
+    }
 }

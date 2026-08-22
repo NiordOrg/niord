@@ -2,6 +2,11 @@ package org.niord.core.publication.series;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import jakarta.persistence.PrePersist;
+import jakarta.validation.constraints.NotNull;
+import java.util.Date;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -20,6 +25,34 @@ import org.niord.core.user.User;
  */
 @Entity
 public class IssueAuditEntry extends BaseEntity<Integer> {
+
+    /**
+     * When this entry was written.
+     *
+     * Its OWN column with its own @PrePersist, because BaseEntity does not carry
+     * one -- only VersionedEntity does, and an append-only audit row must not be
+     * versioned. Without this the Historik panel has nothing to order by except
+     * the surrogate id, which is an implementation detail rather than a time.
+     */
+    @NotNull
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = false)
+    private Date created;
+
+    @PrePersist
+    protected void stampCreated() {
+        if (created == null) {
+            created = new Date();
+        }
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 
     @ManyToOne
     private PublicationIssue issue;

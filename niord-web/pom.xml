@@ -88,6 +88,30 @@
           <version>25.0.4</version>
         </dependency>
 
+
+        <!-- Test.
+             Adding JUnit 5 alone flips Surefire to the JUnit Platform provider, and
+             the two existing JUnit 4 tests here would stop being discovered while the
+             build stayed green. The vintage engine keeps them running; the guard
+             makes a future collapse loud. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 
