@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -27,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * filter.
  */
 @QuarkusTest
+@EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
+        disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
 public class PublicationSeriesPersistenceTest {
 
     @Inject

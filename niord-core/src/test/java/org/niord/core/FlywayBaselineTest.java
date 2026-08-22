@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import java.util.List;
 
@@ -27,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * classpath. That is asserted by packaging, not by this test.
  */
 @QuarkusTest
+@EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
+        disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
 public class FlywayBaselineTest {
 
     /**

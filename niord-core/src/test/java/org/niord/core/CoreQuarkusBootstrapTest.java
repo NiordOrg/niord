@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * suite that quietly ran on H2 would be green and worthless.
  */
 @QuarkusTest
+@EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
+        disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
 public class CoreQuarkusBootstrapTest {
 
     @Inject
