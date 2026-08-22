@@ -3,3 +3,10 @@
 # outright if it is checked out with CRLF.
 mvnw       text eol=lf
 mvnw.cmd   text eol=crlf
+
+# The publication fixtures are hashed byte-for-byte by hashes.txt, and the
+# capture script writes LF. A CRLF checkout changes every hash and fires the
+# drift guard on a clean clone -- a false alarm that would teach people to
+# regenerate on sight, which is exactly what the guard exists to prevent.
+*.mjs                                          text eol=lf
+niord-core/src/test/resources/fixtures/**      text eol=lf

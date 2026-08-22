@@ -1,0 +1,381 @@
+{
+  "tag": "nm-w25-2026",
+  "tagId": "a8de4c79-1d54-418c-bcd6-5418d528a15a",
+  "locked": true,
+  "messageCount": 37,
+  "tagCreated": 1781088404000,
+  "source": "https://niord.t-dma.dk",
+  "synthetic": false,
+  "members": [
+    {
+      "uid": "02300cf3-f54b-4914-9fac-9be5896d4fb2",
+      "shortId": "NM-553-26",
+      "publishDateFrom": 1781600064000,
+      "publishDateTo": 1782901102000,
+      "status": "CANCELLED",
+      "type": "PRELIMINARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "07804134-8da8-406d-ab0d-e212ff3fd771",
+      "shortId": "NM-555-26",
+      "publishDateFrom": 1781605592000,
+      "publishDateTo": 1785301705000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "0caf0a5c-8ed0-4af1-aabc-551399e0a5da",
+      "shortId": "NM-534-26",
+      "publishDateFrom": 1781177055000,
+      "publishDateTo": 1783504769000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "111f21dc-32f7-4a2a-9f00-cd010d8d759b",
+      "shortId": "NM-552-26",
+      "publishDateFrom": 1781599870000,
+      "publishDateTo": 1783493373000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "13da2a5f-6327-4080-8ff9-37da53a6a43d",
+      "shortId": "NM-535-26",
+      "publishDateFrom": 1781178796000,
+      "publishDateTo": 1785832975000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "1924127e-3ff1-46c2-a5de-ec4f10755ed2",
+      "shortId": "NM-528-26",
+      "publishDateFrom": 1781089195000,
+      "publishDateTo": 1782295170000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "2c7845d0-af76-4990-b00e-b259be1c222f",
+      "shortId": "NM-549-26",
+      "publishDateFrom": 1781531225000,
+      "publishDateTo": 1783504769000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "3897409a-a3d6-4a06-b4aa-3bab1ac2dc33",
+      "shortId": "NM-538-26",
+      "publishDateFrom": 1781251896000,
+      "publishDateTo": 1782215624000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "3be74510-2225-4a65-aabc-49a910385978",
+      "shortId": "NM-548-26",
+      "publishDateFrom": 1781531130000,
+      "publishDateTo": 1782900548000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "3cc24506-3238-4509-9450-2d09cbc76071",
+      "shortId": "NM-558-26",
+      "publishDateFrom": 1781691337000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "3f48ebf8-f7bf-4a2c-b4c2-6c47ee08d5bc",
+      "shortId": "NM-536-26",
+      "publishDateFrom": 1781181328000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "513a5c15-cef6-403d-bd98-f5295cfeb49e",
+      "shortId": "NM-543-26",
+      "publishDateFrom": 1781515703000,
+      "publishDateTo": 1782899969000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "58178126-b7d6-49a8-b5f4-a806af7d5436",
+      "shortId": "NM-547-26",
+      "publishDateFrom": 1781531003000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "5936acad-1bd5-47b2-8943-54243ef2e4fa",
+      "shortId": "NM-551-26",
+      "publishDateFrom": 1781597844000,
+      "publishDateTo": 1783504769000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "66d9deb2-60ef-4cb8-941f-64215ee7077a",
+      "shortId": "NM-564-26",
+      "publishDateFrom": 1781692945000,
+      "publishDateTo": 1782215204000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "6796ac1e-516d-48aa-a62e-88f8ef672e09",
+      "shortId": "NM-557-26",
+      "publishDateFrom": 1781678952000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "73dfb3d6-cff4-437d-82dc-dffa5e53cd9e",
+      "shortId": "NM-556-26",
+      "publishDateFrom": 1781670158000,
+      "publishDateTo": 1783428329000,
+      "status": "CANCELLED",
+      "type": "PRELIMINARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "79294c2c-0251-4183-87cd-5fe185542a6b",
+      "shortId": "NM-532-26",
+      "publishDateFrom": 1781176693000,
+      "publishDateTo": 1783504769000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "79e9e089-8850-4f34-8fd7-b8052c8e564a",
+      "shortId": "NM-550-26",
+      "publishDateFrom": 1781591717000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "PRELIMINARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "7a951f12-7cb9-40f3-9123-3da42a6fba27",
+      "shortId": "NM-530-26",
+      "publishDateFrom": 1781092840000,
+      "publishDateTo": 1782290509000,
+      "status": "CANCELLED",
+      "type": "PRELIMINARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "8276162a-d10b-4ef1-8b06-46209668dc67",
+      "shortId": "NM-544-26",
+      "publishDateFrom": 1781515763000,
+      "publishDateTo": 1782899969000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "8a60c697-e108-46ff-a768-51e833f0afb9",
+      "shortId": "NM-545-26",
+      "publishDateFrom": 1781521397000,
+      "publishDateTo": 1785152044000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "96189154-51bb-4cac-bcfb-26ed22034367",
+      "shortId": "NM-537-26",
+      "publishDateFrom": 1781250725000,
+      "publishDateTo": 1782899969000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "97c1ce89-77d6-4396-816d-947c56c09cc9",
+      "shortId": "NM-531-26",
+      "publishDateFrom": 1781176095000,
+      "publishDateTo": 1783504769000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "9d293e78-7cb4-4289-bfd2-08d6b3e9c564",
+      "shortId": "NM-529-26",
+      "publishDateFrom": 1781089294000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "9dccf29e-11e2-4128-8f90-05b02f323885",
+      "shortId": "NM-559-26",
+      "publishDateFrom": 1781691651000,
+      "publishDateTo": 1783494294000,
+      "status": "CANCELLED",
+      "type": "PRELIMINARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "a875913a-cd46-40b7-aec0-8cbf060d92b6",
+      "shortId": "NM-533-26",
+      "publishDateFrom": 1781176833000,
+      "publishDateTo": 1783504769000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "b117d165-c9c5-4f79-89f0-d3522b76d37a",
+      "shortId": "NM-539-26",
+      "publishDateFrom": 1781253538000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "PRELIMINARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "d10e8f1a-3f07-44f3-9fc8-9db0d9203f5b",
+      "shortId": "NM-542-26",
+      "publishDateFrom": 1781515628000,
+      "publishDateTo": 1783504769000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "dcc485cd-3d2f-4e35-b0e4-bfa2280baca8",
+      "shortId": "NM-560-26",
+      "publishDateFrom": 1781691681000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "e48a67f4-4118-4824-88b5-817e39b45214",
+      "shortId": "NM-563-26",
+      "publishDateFrom": 1781692799000,
+      "publishDateTo": 1782133458000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "ebc78692-6ddf-4900-a097-aa7231519311",
+      "shortId": "NM-561-26",
+      "publishDateFrom": 1781692272000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "f17d1419-00f5-449c-9208-2132825e4fa2",
+      "shortId": "NM-546-26",
+      "publishDateFrom": 1781530883000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "f2e2fb4a-f405-4f7d-b25f-f4072e97f9ed",
+      "shortId": "NM-541-26",
+      "publishDateFrom": 1781515574000,
+      "publishDateTo": 1782899970000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "f8445a4f-7f64-48cb-9930-0222e850ae3c",
+      "shortId": "NM-554-26",
+      "publishDateFrom": 1781602680000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "fd93409b-2ae6-4752-a396-8de8b1a4f2ab",
+      "shortId": "NM-540-26",
+      "publishDateFrom": 1781255976000,
+      "publishDateTo": 1783504769000,
+      "status": "EXPIRED",
+      "type": "PERMANENT_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "ffc1a262-4214-45a7-a892-17d3bfc76888",
+      "shortId": "NM-562-26",
+      "publishDateFrom": 1781692368000,
+      "publishDateTo": null,
+      "status": "PUBLISHED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    }
+  ]
+}

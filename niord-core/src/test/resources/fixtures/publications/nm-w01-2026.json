@@ -1,0 +1,31 @@
+{
+  "tag": "nm-w01-2026",
+  "tagId": "59ddc388-ff2e-488d-b53e-ac7d2cb8c4f5",
+  "locked": true,
+  "messageCount": 2,
+  "tagCreated": 1767682640000,
+  "source": "https://niord.t-dma.dk",
+  "synthetic": false,
+  "members": [
+    {
+      "uid": "1a09a109-f9d6-4a4e-9d7c-982c4ef98c22",
+      "shortId": "NM-1087-25",
+      "publishDateFrom": 1767010106000,
+      "publishDateTo": 1768994874000,
+      "status": "CANCELLED",
+      "type": "PRELIMINARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    },
+    {
+      "uid": "1b79b13d-96cf-488e-91b9-5f16304e473e",
+      "shortId": "NM-1088-25",
+      "publishDateFrom": 1767011544000,
+      "publishDateTo": 1770127517000,
+      "status": "CANCELLED",
+      "type": "TEMPORARY_NOTICE",
+      "mainType": "NM",
+      "seriesId": "dma-nm"
+    }
+  ]
+}
