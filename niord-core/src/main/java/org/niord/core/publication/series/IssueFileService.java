@@ -1,0 +1,119 @@
+package org.niord.core.publication.series;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import org.niord.core.service.BaseService;
+import org.niord.core.user.User;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Date;
+
+/**
+ * Per-language file upload and clear (C6).
+ *
+ * Upload is legal on a PUBLISHED issue as well as an OPEN one, and that is the
+ * design rather than an oversight: it is the post-publish correction path. A
+ * wrong PDF on the public site has to be replaceable without retiring the issue
+ * and republishing, because retiring changes what the record says happened.
+ *
+ * An upload onto a published issue archives what it replaces FIRST. C3 keeps
+ * every generation indefinitely, so overwriting without archiving destroys the
+ * published artefact -- and that is the one people cited.
+ *
+ * The sticky flag stops the next publish regenerating over a hand-uploaded
+ * correction. Without it the correction survives exactly until somebody presses
+ * publish again, which is the least predictable moment for it to vanish.
+ */
+@ApplicationScoped
+public class IssueFileService extends BaseService {
+
+    @Inject
+    PublicationPathService paths;
+
+    @Inject
+    IssueAuditService audit;
+
+    @Transactional
+    public PublicationIssueDesc upload(PublicationIssue issue, String lang, String fileName,
+                                       byte[] bytes, User actor) {
+        PublicationIssueDesc desc = descFor(issue, lang);
+
+        String archived = null;
+        if (issue.getStatus() == IssueStatus.PUBLISHED && desc.getFilePath() != null) {
+            archived = archiveExisting(issue, desc);
+        }
+
+        Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
+        try {
+            Files.createDirectories(target.getParent());
+            Files.write(target, bytes);
+        } catch (IOException e) {
+            throw new IssueLifecycleService.TransitionRefusedException("FILE_WRITE_FAILED",
+                    "could not write " + target + ": " + e.getMessage());
+        }
+
+        desc.setFileName(fileName);
+        desc.setFilePath(issue.getRepoPath() + "/" + fileName);
+        desc.setFileSource(FileSource.UPLOADED);
+        desc.setFileSourceSticky(true);
+
+        IssueAuditEntry entry = audit.override(issue, actor, "FILE_UPLOADED", lang, fileName);
+        if (archived != null) {
+            entry.setArchivePath(archived);
+        }
+        em.merge(desc);
+        return desc;
+    }
+
+    /**
+     * Clears an uploaded file, returning the language to generated content.
+     *
+     * Only while the issue is OPEN. Clearing a published file would leave a dead
+     * link where a cited document used to be; the way to fix a published file is
+     * to upload a replacement over it.
+     */
+    @Transactional
+    public PublicationIssueDesc clear(PublicationIssue issue, String lang, User actor) {
+        if (issue.getStatus() != IssueStatus.OPEN) {
+            throw new IssueLifecycleService.TransitionRefusedException("ISSUE_NOT_OPEN",
+                    "clearing a published file would leave a dead link where a cited document was; "
+                            + "upload a replacement instead");
+        }
+        PublicationIssueDesc desc = descFor(issue, lang);
+        desc.setFileName(null);
+        desc.setFilePath(null);
+        desc.setFileSource(null);
+        desc.setFileSourceSticky(false);
+        audit.override(issue, actor, "FILE_CLEARED", lang, null);
+        return em.merge(desc);
+    }
+
+    private String archiveExisting(PublicationIssue issue, PublicationIssueDesc desc) {
+        Path existing = paths.repoRoot().resolve(desc.getFilePath());
+        if (!Files.exists(existing)) {
+            return null;
+        }
+        Path target = paths.archivePathFor(issue.getPublicId(), desc.getLang(),
+                desc.getFileName() == null ? "publication.pdf" : desc.getFileName(),
+                new Date().getTime());
+        try {
+            Files.createDirectories(target.getParent());
+            Files.copy(existing, target);
+            return target.toString();
+        } catch (IOException e) {
+            throw new IssuePublishService.ArchiveFailedException(
+                    "could not archive the published file before replacing it: " + existing, e);
+        }
+    }
+
+    private PublicationIssueDesc descFor(PublicationIssue issue, String lang) {
+        return issue.getDescs().stream()
+                .filter(d -> lang.equals(d.getLang()))
+                .findFirst()
+                .orElseThrow(() -> new IssueLifecycleService.TransitionRefusedException("NO_SUCH_LANGUAGE",
+                        "the issue has no " + lang + " desc row; the series may not be configured for it"));
+    }
+}

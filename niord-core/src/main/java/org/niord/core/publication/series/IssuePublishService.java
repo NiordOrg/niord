@@ -153,10 +153,20 @@ public class IssuePublishService extends BaseService {
         // --- 3. RESOLVE, in process ---------------------------------------
         // Never through the search REST layer: it day-snaps the interval and
         // forces PUBLISHED-only.
-        ResolvedCriteria criteria = criteriaOf(series);
+        //
+        // But first: does this series have membership AT ALL? Roughly 48
+        // publications do not -- an uploaded file, an external link, or nothing.
+        // A null criteria document means NO QUERY, which is a different thing
+        // from an empty one, and resolving it would either raise or match the
+        // entire corpus. Branching here is what keeps those two nulls apart.
+        boolean hasMembership = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
+                && series.getCriteria() != null
+                && series.getTimeRelation() != null;
+
         Interval window = new Interval(issue.getIntervalFrom(), stamp);
-        MemberResolutionService.Resolution resolution =
-                resolver.resolve(criteria, window, includes(issue), excludes(issue));
+        MemberResolutionService.Resolution resolution = hasMembership
+                ? resolver.resolve(criteriaOf(series), window, includes(issue), excludes(issue))
+                : MemberResolutionService.Resolution.empty();
 
         // --- 4. OVERRIDES: already applied by the resolver ----------------
         Set<String> members = resolution.members();
@@ -184,9 +194,14 @@ public class IssuePublishService extends BaseService {
         issue.setSnapshotIntervalFrom(issue.getIntervalFrom());
         issue.setSnapshotSortBy(sort.sortBy().name());
         issue.setSnapshotSortOrder(sort.direction().name());
-        issue.setSnapshotSeriesIds(String.join(",", criteria.messageSeriesIds()));
+        issue.setSnapshotSeriesIds(hasMembership
+                ? String.join(",", criteriaOf(series).messageSeriesIds()) : null);
         issue.setCriteriaSnapshot(series.getCriteria());
         issue.setMemberCount(members.size());
+        // NO_MEMBERSHIP is not the same as "the query returned nothing", and a
+        // reader who cannot tell them apart will assume the second.
+        issue.setMembershipProvenance(hasMembership
+                ? MembershipProvenance.EXACT : MembershipProvenance.NO_MEMBERSHIP);
 
         // --- 8. appliedAtPublish on every override ------------------------
         // An exclude naming a uid the query never returned freezes false: it

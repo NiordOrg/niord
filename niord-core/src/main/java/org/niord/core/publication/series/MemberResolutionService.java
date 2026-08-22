@@ -78,6 +78,11 @@ public class MemberResolutionService extends BaseService {
             return candidateUids.size();
         }
 
+        /** A resolution for a series that has no membership at all. */
+        public static Resolution empty() {
+            return new Resolution(Map.of(), List.of(), Set.of(), List.of(), List.of());
+        }
+
         /** The warning of one code, if it was raised. */
         public Optional<ResolutionWarningVo> warning(ResolutionWarningCode code) {
             return warnings.stream().filter(w -> w.code() == code).findFirst();

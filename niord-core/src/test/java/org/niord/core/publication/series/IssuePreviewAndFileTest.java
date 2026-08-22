@@ -1,0 +1,249 @@
+package org.niord.core.publication.series;
+
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.core.publication.vo.MessagePublication;
+import org.niord.core.user.User;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/** Previews, and per-language file upload and clear. */
+@QuarkusTest
+@EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
+        disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
+public class IssuePreviewAndFileTest {
+
+    @Inject
+    IssuePreviewService previews;
+
+    @Inject
+    IssueFileService files;
+
+    @Inject
+    IssueLifecycleService lifecycle;
+
+    @Inject
+    IssuePublishService publishService;
+
+    @Inject
+    PublicationPathService paths;
+
+    @Inject
+    EntityManager em;
+
+    private PublicationIssue anIssue() {
+        PublicationCategory c = new PublicationCategory();
+        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        em.persist(c);
+
+        PublicationSeries s = new PublicationSeries();
+        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setStatus(SeriesStatus.ACTIVE);
+        s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setCadence(SeriesCadence.WEEKLY);
+        s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
+        s.setAliveAtCutoff(false);
+        s.setReleaseMode(ReleaseMode.MANUAL_GATE);
+        s.setNextIssueCreation(NextIssueCreation.MANUAL);
+        s.setPublicAuthority(PublicAuthority.LEGACY);
+        s.setMessagePublication(MessagePublication.NONE);
+        s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
+        s.setCategory(c);
+        s.getLanguages().add("da");
+        s.createDesc("da").setName("Test series");
+        em.persist(s);
+
+        User u = new User();
+        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        em.persist(u);
+
+        PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, u);
+        em.flush();
+        return i;
+    }
+
+    private User user() {
+        User u = new User();
+        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        em.persist(u);
+        return u;
+    }
+
+    // ================================================================= previews
+
+    /** Staleness is computed, so it cannot go stale itself. */
+    @Test
+    @Transactional
+    public void previewStalenessIsComputedFromTimestamps() {
+        PublicationIssue issue = anIssue();
+
+        // No preview at all is stale: "nothing to compare" and "current" are
+        // different answers and only one should let a release proceed quietly.
+        assertTrue(previews.isStale(issue, "da", new Date()),
+                "an issue with no preview reported a fresh one");
+
+        previews.record(issue, "da", "test.pdf", "first".getBytes(StandardCharsets.UTF_8));
+
+        assertFalse(previews.isStale(issue, "da", null),
+                "a preview with no known change should be current");
+        assertFalse(previews.isStale(issue, "da", new Date(1_600_000_000_000L)),
+                "a change older than the preview does not make it stale");
+        assertTrue(previews.isStale(issue, "da", new Date(System.currentTimeMillis() + 60_000L)),
+                "a change newer than the preview must make it stale");
+    }
+
+    /** Generations accumulate rather than overwrite, so preview-then-compare works. */
+    @Test
+    @Transactional
+    public void generationsAccumulateAndTheNewestWins() throws Exception {
+        PublicationIssue issue = anIssue();
+
+        previews.record(issue, "da", "test.pdf", "first".getBytes(StandardCharsets.UTF_8));
+        Thread.sleep(5);
+        IssuePreviewService.Preview second =
+                previews.record(issue, "da", "test.pdf", "second".getBytes(StandardCharsets.UTF_8));
+
+        Path dir = paths.previewRoot().resolve(issue.getPublicId()).resolve("da");
+        try (var list = Files.list(dir)) {
+            assertTrue(list.count() >= 2, "the second generation overwrote the first");
+        }
+
+        assertEquals(second.generation(), previews.newest(issue, "da").orElseThrow().generation(),
+                "the newest generation is not the one that comes back");
+    }
+
+    @Test
+    @Transactional
+    public void theSweepRemovesOnlyExpiredGenerations() {
+        PublicationIssue issue = anIssue();
+        previews.record(issue, "da", "test.pdf", "recent".getBytes(StandardCharsets.UTF_8));
+
+        assertEquals(0, previews.sweep(new Date()), "the sweep removed a generation inside its TTL");
+
+        Date farFuture = new Date(System.currentTimeMillis() + 2 * IssuePreviewService.PREVIEW_TTL_MILLIS);
+        assertTrue(previews.sweep(farFuture) >= 1, "the sweep left an expired generation behind");
+    }
+
+    /** X-6 again, from the other side: previews are not written under the served root. */
+    @Test
+    @Transactional
+    public void previewsAreWrittenOutsideTheServedRepository() {
+        PublicationIssue issue = anIssue();
+        IssuePreviewService.Preview p =
+                previews.record(issue, "da", "test.pdf", "bytes".getBytes(StandardCharsets.UTF_8));
+
+        Path repo = paths.repoRoot().toAbsolutePath().normalize();
+        Path written = p.path().toAbsolutePath().normalize();
+        assertFalse(written.startsWith(repo),
+                "a preview landed under the served repository root at " + written
+                        + "; every unpublished draft would be publicly readable");
+    }
+
+    // ================================================================= files
+
+    /** Upload on a PUBLISHED issue is the post-publish correction path, and it archives first. */
+    @Test
+    @Transactional
+    public void uploadingOntoAPublishedIssueArchivesWhatItReplaces() throws Exception {
+        PublicationIssue issue = anIssue();
+
+        files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
+        assertEquals(IssueStatus.PUBLISHED, published.getStatus());
+
+        // The correction. Legal on a published issue by design.
+        files.upload(published, "da", "first.pdf", "corrected".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+
+        Path archiveDir = paths.archiveRoot().resolve(published.getPublicId()).resolve("da");
+        assertTrue(Files.isDirectory(archiveDir), "nothing was archived before the replacement was written");
+        try (var list = Files.list(archiveDir)) {
+            List<Path> archived = list.toList();
+            assertFalse(archived.isEmpty(), "the replaced bytes were not archived");
+            assertEquals("original", Files.readString(archived.get(0)),
+                    "the archive does not hold the bytes that were replaced");
+        }
+
+        Path live = paths.repoRoot().resolve(published.getRepoPath()).resolve("first.pdf");
+        assertEquals("corrected", Files.readString(live), "the correction was not written");
+    }
+
+    /** The sticky flag stops the next publish regenerating over a hand correction. */
+    @Test
+    @Transactional
+    public void anUploadedFileIsStickySoPublishDoesNotOverwriteIt() {
+        PublicationIssue issue = anIssue();
+        files.upload(issue, "da", "hand.pdf", "by hand".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+
+        PublicationIssueDesc desc = issue.getDescs().get(0);
+        assertTrue(desc.isFileSourceSticky(),
+                "the upload was not marked sticky; the next publish would regenerate over it");
+        assertEquals(FileSource.UPLOADED, desc.getFileSource());
+    }
+
+    /** Clearing a published file would leave a dead link where a citation points. */
+    @Test
+    @Transactional
+    public void aPublishedFileCannotBeCleared() {
+        PublicationIssue issue = anIssue();
+        files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+
+        // While OPEN, clearing is fine.
+        files.clear(issue, "da", user());
+        em.flush();
+        assertNull(issue.getDescs().get(0).getFilePath());
+        assertFalse(issue.getDescs().get(0).isFileSourceSticky(),
+                "clearing left the sticky flag set, so the language would never regenerate");
+
+        files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> files.clear(published, "da", user()));
+        assertEquals("ISSUE_NOT_OPEN", e.code());
+    }
+
+    /** A language the series is not configured for has no desc row to write to. */
+    @Test
+    @Transactional
+    public void uploadingForAnUnconfiguredLanguageIsRefused() {
+        PublicationIssue issue = anIssue();
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> files.upload(issue, "de", "x.pdf", "x".getBytes(StandardCharsets.UTF_8), user()));
+        assertEquals("NO_SUCH_LANGUAGE", e.code());
+    }
+}
