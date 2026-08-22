@@ -10,3 +10,7 @@ mvnw.cmd   text eol=crlf
 # regenerate on sight, which is exactly what the guard exists to prevent.
 *.mjs                                          text eol=lf
 niord-core/src/test/resources/fixtures/**      text eol=lf
+
+# The schema baseline is compared byte-for-byte to detect drift, and regeneration
+# is deterministic. A CRLF checkout would make every comparison fail.
+niord-core/src/test/resources/schema/**        text eol=lf
