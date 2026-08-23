@@ -15,7 +15,10 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.legacy.LegacyImportReportVo;
+import org.niord.core.publication.series.legacy.LegacyImportService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.publication.PublicationCategory;
@@ -55,6 +58,9 @@ public class PublicationSeriesRestService {
 
     @Inject
     PublicationSeriesService seriesService;
+
+    @Inject
+    LegacyImportService importService;
 
     @Inject
     PublicationCategoryService categoryService;
@@ -269,28 +275,45 @@ public class PublicationSeriesRestService {
      * reachable from here, and an import that silently produced approximate
      * series would be far worse than one that declines to run.
      */
+    /**
+     * S18. The dry run.
+     *
+     * Reads and translates the whole legacy estate, reports everything wrong with
+     * it, and writes NOTHING -- not written-and-rolled-back, but never opened for
+     * write at all. That is what lets it promise the database is byte-identical
+     * afterwards.
+     *
+     * Returns 200 with the report whether or not the import would succeed, because
+     * the report IS the answer: an admin running a dry run is asking what would
+     * happen, and a 422 with a body they have to dig out of an error handler is a
+     * worse way to tell them.
+     */
     @POST
     @Path("/import-legacy/validate")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
-    public Map<String, Object> importDryRun() {
-        return notYet();
+    public LegacyImportReportVo importDryRun() {
+        return importService.dryRun();
     }
 
+    /**
+     * S19. The run.
+     *
+     * Refuses with 422 and the FULL report if anything is wrong -- every offender,
+     * not the first. An admin fixing them one build at a time is exactly the
+     * failure mode a full report exists to prevent, and a half-imported archive is
+     * worse than none: the rows that landed look correct and nothing marks them as
+     * partial.
+     */
     @POST
     @Path("/import-legacy")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
-    public Map<String, Object> importLegacy() {
-        return notYet();
-    }
-
-    private Map<String, Object> notYet() {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("code", "NOT_IMPLEMENTED");
-        out.put("message", "the legacy importer is Phase B5; it needs legacy publication fields that are "
-                + "not readable from this environment");
-        return out;
+    public Response importLegacy() {
+        LegacyImportReportVo report = importService.run();
+        return report.isWouldSucceed()
+                ? Response.ok(report).build()
+                : Response.status(422).entity(report).build();
     }
 
     private PublicationSeries required(String seriesId) {
