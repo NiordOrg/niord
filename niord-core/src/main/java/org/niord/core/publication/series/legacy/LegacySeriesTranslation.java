@@ -1,0 +1,326 @@
+package org.niord.core.publication.series.legacy;
+
+import org.niord.core.publication.Publication;
+import org.niord.core.publication.PublicationDesc;
+import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.NextIssueCreation;
+import org.niord.core.publication.series.NumberingScheme;
+import org.niord.core.publication.series.PageOrientation;
+import org.niord.core.publication.series.PageSize;
+import org.niord.core.publication.series.PublicAuthority;
+import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.PublicationSeriesDesc;
+import org.niord.core.publication.series.ReleaseMode;
+import org.niord.core.publication.series.SeriesCadence;
+import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
+import org.niord.model.publication.PublicationType;
+
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * B5.3. A legacy template becomes a series, and lands as a reviewable DRAFT.
+ *
+ * WHY DRAFT. A series is a configuration row and this import is a TRANSLATION,
+ * not a fact. A DRAFT series is invisible to the new-issue picker and has to
+ * pass S-1..S-16 before an admin activates it, which is exactly the review a
+ * translation needs. Importing straight to ACTIVE would route around the only
+ * check that exists on the translation being right.
+ *
+ * WHY THE seriesId IS AUTHORED (R3). Adopting the legacy UUID would make the
+ * new identity a copy of the old one, and the whole point of seriesId is that it
+ * is a stable, human-readable name an admin can recognise in a picker.
+ * Provenance travels in legacyTemplateId instead, so nothing is lost.
+ */
+public final class LegacySeriesTranslation {
+
+    /** printSettings keys that map onto a typed column. Anything else is refused. */
+    public static final Set<String> ALLOWED_PRINT_SETTINGS =
+            Set.of("report", "pageSize", "pageOrientation", "mapThumbnails");
+
+    /** A legacy row that cannot be translated. Aborts the whole import. */
+    public static class ImportRefusedException extends RuntimeException {
+
+        private final String code;
+        private final String publicationId;
+
+        public ImportRefusedException(String code, String publicationId, String message) {
+            super(message);
+            this.code = code;
+            this.publicationId = publicationId;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getPublicationId() {
+            return publicationId;
+        }
+    }
+
+    private LegacySeriesTranslation() {
+    }
+
+    /**
+     * The authored seriesId for a template.
+     *
+     * Derived from the template's own title so that an admin opening the DRAFT
+     * list recognises what each row is. Deterministic, so re-running the import
+     * against the same estate authors the same ids rather than a second set.
+     *
+     * Titles are unique across the twelve templates in the captured estate, and
+     * a collision is refused rather than silently suffixed: two series quietly
+     * named x and x-2 is precisely the ambiguity an authored id exists to avoid.
+     */
+    public static String authorSeriesId(Publication template, Set<String> alreadyAuthored) {
+        String title = titleOf(template);
+        String slug = slug(title);
+
+        if (slug.isEmpty()) {
+            throw new ImportRefusedException("SERIES_ID_UNAUTHORABLE", template.getPublicationId(),
+                    "the template has no title in any language, so no seriesId can be authored from it. "
+                            + "seriesId is the human-readable identity and is never adopted from the "
+                            + "legacy UUID (R3), so this needs a human.");
+        }
+        if (!alreadyAuthored.add(slug)) {
+            throw new ImportRefusedException("SERIES_ID_COLLISION", template.getPublicationId(),
+                    "two templates author the same seriesId [" + slug + "]. Suffixing one of them would "
+                            + "leave two series nobody can tell apart, which is what an authored id exists "
+                            + "to prevent.");
+        }
+        return slug;
+    }
+
+    /** Builds the series. Never persists; the caller decides that. */
+    public static PublicationSeries translate(Publication template, String seriesId, String importSource) {
+        PublicationSeries series = new PublicationSeries();
+
+        series.setSeriesId(seriesId);
+        series.setLegacyTemplateId(template.getPublicationId());
+        series.setImportSource(importSource);
+        series.setStatus(SeriesStatus.DRAFT);
+
+        LegacyFilterTranslator.Translation t =
+                LegacyFilterTranslator.translate(template.getMessageTagFilter());
+        series.setTimeRelation(t.timeRelation());
+        series.setAliveAtCutoff(t.aliveAtCutoff());
+
+        series.setCadence(cadence(template));
+        series.setNumberingScheme(numbering(template));
+        series.setContentMode(contentMode(template));
+        series.setMessagePublication(template.getMessagePublication());
+        series.setLanguageSpecific(template.isLanguageSpecific());
+
+        // Imported series stay on the legacy public path until B7.1 flips them
+        // deliberately. Importing as NEW would move the whole archive onto the
+        // new adapter in the same change that created it.
+        series.setPublicAuthority(PublicAuthority.LEGACY);
+
+        // A translated series is reviewed before it releases anything, so the
+        // conservative pair: nothing happens without a human.
+        series.setReleaseMode(ReleaseMode.MANUAL_GATE);
+        series.setNextIssueCreation(NextIssueCreation.MANUAL);
+
+        applyPrintSettings(template, series);
+        series.setReportParams(template.getReportParams());
+        series.setLanguages(languages(template));
+        series.setDescs(descs(template));
+
+        return series;
+    }
+
+    /**
+     * printSettings map onto typed columns, and an unknown key aborts.
+     *
+     * These keys silently change what is in the PDF and in what order, so
+     * importing an unrecognised one "best effort" produces a publication that
+     * looks right and prints wrong -- worse than refusing.
+     */
+    private static void applyPrintSettings(Publication template, PublicationSeries series) {
+        Map<String, Object> settings = template.getPrintSettings();
+        if (settings == null || settings.isEmpty()) {
+            return;
+        }
+
+        for (String key : settings.keySet()) {
+            if (!ALLOWED_PRINT_SETTINGS.contains(key)) {
+                throw new ImportRefusedException("PRINT_SETTING_NOT_ALLOWED", template.getPublicationId(),
+                        "printSettings carries [" + key + "], which is not one of "
+                                + ALLOWED_PRINT_SETTINGS + ". Print settings decide what is in the PDF "
+                                + "and in what order; importing an unknown one best-effort is worse than "
+                                + "failing.");
+            }
+        }
+
+        series.setReportId(str(settings.get("report")));
+        series.setPageSize(enumOf(PageSize.class, settings.get("pageSize"), "pageSize",
+                template.getPublicationId()));
+        series.setPageOrientation(enumOf(PageOrientation.class, settings.get("pageOrientation"),
+                "pageOrientation", template.getPublicationId()));
+        series.setMapThumbnails(settings.get("mapThumbnails") instanceof Boolean b ? b : null);
+    }
+
+    /**
+     * S-9 requires the four report fields to arrive together or not at all.
+     *
+     * The legacy estate satisfies this already, but a template carrying a report
+     * and no page size would otherwise import as a DRAFT that can never be
+     * activated, and the admin would have no idea why.
+     */
+    public static void assertReportSettingsAreComplete(PublicationSeries series, String publicationId) {
+        boolean hasReport = series.getReportId() != null;
+        if (hasReport != (series.getPageSize() != null)
+                || hasReport != (series.getPageOrientation() != null)
+                || hasReport != (series.getMapThumbnails() != null)) {
+            throw new ImportRefusedException("PRINT_SETTINGS_INCOMPLETE", publicationId,
+                    "report, pageSize, pageOrientation and mapThumbnails must be set exactly together "
+                            + "(S-9). Importing a partial set produces a DRAFT that can never be activated.");
+        }
+    }
+
+    private static SeriesCadence cadence(Publication template) {
+        if (template.getPeriodicalType() == null) {
+            return SeriesCadence.NONE;
+        }
+        return switch (template.getPeriodicalType()) {
+            case DAILY -> SeriesCadence.DAILY;
+            case WEEKLY -> SeriesCadence.WEEKLY;
+            case MONTHLY -> SeriesCadence.MONTHLY;
+            case YEARLY -> SeriesCadence.YEARLY;
+        };
+    }
+
+    /** The numbering that matches the cadence; a one-off numbers nothing. */
+    private static NumberingScheme numbering(Publication template) {
+        return switch (cadence(template)) {
+            case WEEKLY -> NumberingScheme.ISO_WEEK_YEAR;
+            case MONTHLY -> NumberingScheme.MONTH_YEAR;
+            case YEARLY -> NumberingScheme.YEAR_EDITION;
+            case DAILY -> NumberingScheme.EDITION_SEQUENCE;
+            case NONE -> NumberingScheme.NONE;
+        };
+    }
+
+    /**
+     * A LINK row carrying no link in any language normalises to NONE.
+     *
+     * The alternative is a series declaring it publishes a link and holding
+     * none, which fails validation on activation for a reason the admin cannot
+     * act on -- the legacy row simply never had one.
+     */
+    private static ContentMode contentMode(Publication template) {
+        PublicationType type = template.getType();
+        if (type == null) {
+            return ContentMode.NONE;
+        }
+        return switch (type) {
+            case MESSAGE_REPORT -> ContentMode.GENERATED_FROM_QUERY;
+            case REPOSITORY -> ContentMode.UPLOADED_FILE;
+            case LINK -> hasAnyLink(template) ? ContentMode.EXTERNAL_LINK : ContentMode.NONE;
+            case NONE -> ContentMode.NONE;
+        };
+    }
+
+    private static boolean hasAnyLink(Publication template) {
+        return template.getDescs() != null && template.getDescs().stream()
+                .anyMatch(d -> d.getLink() != null && !d.getLink().isBlank());
+    }
+
+    private static List<String> languages(Publication template) {
+        Set<String> langs = new LinkedHashSet<>();
+        if (template.getDescs() != null) {
+            template.getDescs().stream()
+                    .map(PublicationDesc::getLang)
+                    .filter(l -> l != null && !l.isBlank())
+                    .forEach(langs::add);
+        }
+        return new ArrayList<>(langs);
+    }
+
+    private static List<PublicationSeriesDesc> descs(Publication template) {
+        List<PublicationSeriesDesc> out = new ArrayList<>();
+        if (template.getDescs() == null) {
+            return out;
+        }
+        for (PublicationDesc d : template.getDescs()) {
+            if (d.getLang() == null || d.getLang().isBlank()) {
+                continue;
+            }
+            PublicationSeriesDesc desc = new PublicationSeriesDesc();
+            desc.setLang(d.getLang());
+            desc.setName(d.getTitle());
+            desc.setNameSuggestionPattern(d.getTitleFormat());
+            desc.setFileNamePattern(d.getFileName());
+            desc.setLinkPattern(d.getLink());
+            desc.setMessageReferenceFormat(d.getMessagePublicationFormat());
+            out.add(desc);
+        }
+        return out;
+    }
+
+    private static String titleOf(Publication template) {
+        if (template.getDescs() == null) {
+            return "";
+        }
+        // English first, then anything: the id is an operator-facing key, not a
+        // user-facing label, so a stable language preference beats the session's.
+        return template.getDescs().stream()
+                .filter(d -> "en".equalsIgnoreCase(d.getLang()))
+                .map(PublicationDesc::getTitle)
+                .filter(s -> s != null && !s.isBlank())
+                .findFirst()
+                .orElseGet(() -> template.getDescs().stream()
+                        .map(PublicationDesc::getTitle)
+                        .filter(s -> s != null && !s.isBlank())
+                        .findFirst().orElse(""));
+    }
+
+    /** Lower-case ASCII with single hyphens. Danish letters fold rather than vanish. */
+    static String slug(String s) {
+        if (s == null) {
+            return "";
+        }
+        String folded = Normalizer.normalize(s, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .replace("ø", "oe").replace("Ø", "oe")
+                .replace("æ", "ae").replace("Æ", "ae")
+                .replace("å", "aa").replace("Å", "aa");
+        return folded.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+", "")
+                .replaceAll("-+$", "");
+    }
+
+    private static String str(Object o) {
+        return o == null ? null : String.valueOf(o);
+    }
+
+    /**
+     * Legacy stores these lower-case ("portrait") against upper-case constants,
+     * so the match folds case -- and only case. A value outside the enum aborts
+     * rather than defaulting: silently printing A4 because the stored size was
+     * unreadable is the same class of harm as an unknown print-setting key.
+     */
+    private static <E extends Enum<E>> E enumOf(Class<E> type, Object raw, String field,
+                                                String publicationId) {
+        if (raw == null || String.valueOf(raw).isBlank()) {
+            return null;
+        }
+        String name = String.valueOf(raw).trim().toUpperCase(Locale.ROOT);
+        try {
+            return Enum.valueOf(type, name);
+        } catch (IllegalArgumentException e) {
+            throw new ImportRefusedException("PRINT_SETTING_NOT_ALLOWED", publicationId,
+                    "printSettings." + field + " = '" + raw + "' is not one of "
+                            + java.util.Arrays.toString(type.getEnumConstants())
+                            + ". Defaulting it would change what the PDF looks like without saying so.");
+        }
+    }
+}
