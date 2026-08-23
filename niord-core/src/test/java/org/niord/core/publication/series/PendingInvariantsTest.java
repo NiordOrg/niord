@@ -37,8 +37,8 @@ public class PendingInvariantsTest {
         assertTrue(true, "declared pending on B2.2");
     }
 
-    /** 21 rule(s) awaiting B2.3b. */
-    @BindsRule(value = {"I-1", "I-2", "I-3", "I-4", "I-5", "I-6", "I-7", "I-8", "I-9", "I-10", "I-11", "I-12", "I-13", "I-16", "I-17", "M-3", "M-4", "M-5", "M-6", "M-7", "X-7"}, pending = "B2.3b")
+    /** 6 rule(s) awaiting B2.3b. */
+    @BindsRule(value = {"I-7", "I-8", "I-9", "I-13", "I-16", "X-7"}, pending = "B2.3b")
     @Test
     public void awaitingB2_3b() {
         assertTrue(true, "declared pending on B2.3b");
