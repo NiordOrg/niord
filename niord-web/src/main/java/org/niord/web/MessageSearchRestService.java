@@ -35,7 +35,8 @@ import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.publication.PublicationService;
+import org.niord.core.message.MemberSetDesignation;
+import org.niord.core.message.PublicationMemberSetSource;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
@@ -75,7 +76,7 @@ public class MessageSearchRestService {
     MessageTagService messageTagService;
 
     @Inject
-    PublicationService publicationService;
+    PublicationMemberSetSource memberSetSource;
 
     @Inject
     DomainService domainService;
@@ -114,6 +115,23 @@ public class MessageSearchRestService {
         Domain currentDomain = domainService.currentDomain();
         Domain searchDomain = searchDomain(params);
 
+        // Resolve publication= before any of the decisions below, and refuse
+        // rather than widen.
+        //
+        // The tier comes from the CALLER, not from the endpoint: this class is
+        // @PermitAll, so an anonymous request reaches it. Hard-coding the
+        // internal tier here would let anyone who guesses an id resolve an OPEN
+        // issue or a DRAFT publication -- the contents of an issue nobody has
+        // released.
+        PublicationMemberSetSource.Audience audience = userService.currentUser() != null
+                ? PublicationMemberSetSource.Audience.INTERNAL
+                : PublicationMemberSetSource.Audience.PUBLIC;
+
+        MemberSetDesignation designation =
+                memberSetSource.designate(params.getPublications(), audience);
+        params.memberSetDesignation(designation);
+        boolean memberSetDesignated = designation.designatesMemberSet();
+
         // Enforce security rules - depends on whether the current user is in the context of a domain or not.
         if (searchDomain != null) {
 
@@ -137,12 +155,13 @@ public class MessageSearchRestService {
             }
             */
 
-            // Convert publications to their associated message tags
-            if (!params.getPublications().isEmpty()) {
-                params.getTags().addAll(publicationService.findTagsByPublicationIds(params.getPublications()));
-            }
-
-            // Validate that the specified tags are allowed for the current user
+            // Validate that the specified tags are allowed for the current user.
+            //
+            // Only the tag= parameter reaches here now. Publication-derived tags
+            // used to be folded in above and validated against the search domain
+            // with them -- which truncated an official issue for an admin browsing
+            // in another domain. A designated member set is served verbatim: it is
+            // an explicit list, and 17 live publications have no domain at all.
             if (!params.getTags().isEmpty()) {
                 String[] tagIds = params.getTags().toArray(new String[params.getTags().size()]);
                 params.tags(messageTagService.findTags(searchDomain, tagIds).stream()
@@ -150,8 +169,16 @@ public class MessageSearchRestService {
                         .collect(Collectors.toSet()));
             }
 
-            // If no valid tags are specified, impose restrictions on statuses
-            if (params.getTags().isEmpty()) {
+            // If nothing designates a member set and no valid tags are specified,
+            // impose restrictions on statuses.
+            //
+            // A UNION, not a replacement. getTags() is fed from two sources here:
+            // the tag= parameter and, until now, the publication conversion. Drop
+            // the conversion and simply swap the test, and every plain tag= search
+            // has the restriction block re-imposed on it -- cross-domain tagged
+            // messages disappear and non-public statuses are stripped, from a
+            // parameter this redesign is not supposed to touch.
+            if (!memberSetDesignated && params.getTags().isEmpty()) {
 
                 Set<String> domainSeries = searchDomain.getMessageSeries().stream()
                         .map(MessageSeries::getSeriesId)
@@ -180,8 +207,9 @@ public class MessageSearchRestService {
             }
 
         } else {
-            // Return published messages if no tags has been specified
-            if (params.getTags().isEmpty()) {
+            // Return published messages if nothing narrows the search. Same union:
+            // a designated member set counts, and so does a plain tag=.
+            if (!memberSetDesignated && params.getTags().isEmpty()) {
                 params.statuses(Collections.singleton(Status.PUBLISHED));
             }
         }

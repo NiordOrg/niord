@@ -32,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,7 +97,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Set<String> categoryIds = new HashSet<>();
     Set<String> chartNumbers = new HashSet<>();
     Set<String> tags = new HashSet<>();
-    Set<String> publications = new HashSet<>();
+    // A LinkedHashSet, unlike every other set here. "The first publication"
+    // supplies the sort domain, so the caller's order has to survive; in a
+    // HashSet it is hash order, and two identical requests can sort differently.
+    Set<String> publications = new LinkedHashSet<>();
+
+    // Filled once by whoever resolves the publication= ids, so the resolution is
+    // not repeated -- and, more importantly, so the widening decisions in the
+    // REST layers and the predicate in the search see the same answer.
+    MemberSetDesignation memberSetDesignation;
     Set<String> promulgationTypes = new HashSet<>();
     String viewMode;
 
@@ -147,7 +156,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .categoryIds(toSet(reqParams.get("category"), Function.identity()))
                 .chartNumbers(toSet(reqParams.get("chart"), Function.identity()))
                 .tags(toSet(reqParams.get("tag"), Function.identity()))
-                .publications(toSet(reqParams.get("publication"), Function.identity()))
+                .publications(toOrderedSet(reqParams.get("publication")))
                 .promulgationTypes(toSet(reqParams.get("promulgationType"), Function.identity()))
                 .messageId(getParameterValues(reqParams, "messageId"))
                 .referenceLevels(checkNull(getParameterValues(reqParams, "referenceLevels"), Integer::valueOf))
@@ -515,8 +524,41 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     }
 
     public MessageSearchParams publications(Set<String> publications) {
-        this.publications = toSet(publications);
+        this.publications = toOrderedSet(publications);
         return this;
+    }
+
+    /**
+     * What the publication= ids designate, once resolved.
+     *
+     * Null means "not resolved yet" rather than "nothing designated" -- the
+     * difference matters, because a search reached directly rather than through a
+     * REST layer has to resolve for itself. Mailing-list triggers take that path,
+     * which is why publication= is silently discarded for them today.
+     */
+    public MemberSetDesignation getMemberSetDesignation() {
+        return memberSetDesignation;
+    }
+
+    public MessageSearchParams memberSetDesignation(MemberSetDesignation memberSetDesignation) {
+        this.memberSetDesignation = memberSetDesignation;
+        return this;
+    }
+
+    /** Order-preserving, for the one set whose order is meaningful. */
+    private static Set<String> toOrderedSet(Set<String> values) {
+        return values == null ? new LinkedHashSet<>() : new LinkedHashSet<>(values);
+    }
+
+    /** Order-preserving, for the one set whose order is meaningful. */
+    private static Set<String> toOrderedSet(String[] values) {
+        Set<String> out = new LinkedHashSet<>();
+        if (values != null) {
+            for (String value : values) {
+                out.add(value);
+            }
+        }
+        return out;
     }
 
     public Set<String> getPromulgationTypes() {

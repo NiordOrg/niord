@@ -1,0 +1,219 @@
+package org.niord.core.publication;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
+import org.niord.core.domain.Domain;
+import org.niord.core.message.MemberSetDesignation;
+import org.niord.core.message.PublicationMemberSetSource;
+import org.niord.core.publication.series.IssueLifecycleService.TransitionRefusedException;
+import org.niord.core.publication.series.IssueStatus;
+import org.niord.core.publication.series.PublicationIssue;
+import org.niord.core.publication.vo.PublicationStatus;
+import org.niord.core.service.BaseService;
+import org.niord.model.publication.PublicationType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * The one place a {@code publication=} id is turned into something.
+ *
+ * There were two independent copies of this resolution -- one in the
+ * authenticated message search, one in the public message API -- and a third
+ * path, the mailing-list triggers, that parsed the parameter and then discarded
+ * it. Three implementations of one rule is three chances to disagree, and they
+ * did.
+ *
+ * THE DEFECT THIS CLOSES. Today an id that resolves to nothing is silently
+ * dropped: the publication contributes no tag, no tag means no tag filter, no
+ * tag filter means the default widening, and the caller receives every published
+ * message. A typo returns 244 messages. So does every ACTIVE publication that
+ * has no message tag, of which there are 27. Nothing in the response says the
+ * filter was ignored.
+ *
+ * So resolution never widens. The order is: a new-model issue, then a legacy
+ * publication, then refuse -- and refusing is an exception, not an empty result,
+ * because an empty result is indistinguishable from a real one.
+ *
+ * NO EXISTENCE ORACLE. An id that exists but is not servable to this caller is
+ * refused with byte-identical text to an id that does not exist. An anonymous
+ * caller must not be able to tell a draft issue from a typo by comparing error
+ * messages.
+ */
+@ApplicationScoped
+public class PublicationResolver extends BaseService implements PublicationMemberSetSource {
+
+    private static final Logger log = LoggerFactory.getLogger(PublicationResolver.class);
+
+    /** The wire code. One code for both refusal reasons, deliberately. */
+    public static final String UNRESOLVABLE = "PUBLICATION_UNRESOLVABLE";
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public MemberSetDesignation designate(Collection<String> publicationIds, Audience audience) {
+
+        if (publicationIds == null || publicationIds.isEmpty()) {
+            return MemberSetDesignation.NONE;
+        }
+
+        // LinkedHashSet: the caller's order is meaningful -- the first publication
+        // supplies the sort domain -- and it must not depend on hash order.
+        Set<String> memberUids = new LinkedHashSet<>();
+        Set<String> tagIds = new LinkedHashSet<>();
+        List<String> unresolved = new ArrayList<>();
+
+        for (String publicationId : publicationIds) {
+            if (publicationId == null || publicationId.isBlank()) {
+                continue;
+            }
+
+            // 1. The new model, first. An imported issue reuses the legacy id as
+            //    its publicId, so checking legacy first would keep serving the old
+            //    row forever after cutover.
+            PublicationIssue issue = findIssue(publicationId);
+            if (issue != null) {
+                if (!servable(issue, audience)) {
+                    unresolved.add(publicationId);
+                    continue;
+                }
+                memberUids.addAll(memberUids(publicationId));
+                continue;
+            }
+
+            // 2. The legacy row.
+            Publication legacy = findLegacy(publicationId);
+            if (legacy != null && servable(legacy, audience)) {
+                // By the STORED join only. Six tags are shared between
+                // publications and two are each shared by three, so resolving by
+                // scanning the tag table returns the other publications' contents.
+                if (legacy.getType() == PublicationType.MESSAGE_REPORT && legacy.getMessageTag() != null) {
+                    tagIds.add(legacy.getMessageTag().getTagId());
+                }
+                // No tag is a legitimate answer: this publication designates an
+                // empty member set. Zero messages -- never "no publication named".
+                continue;
+            }
+
+            unresolved.add(publicationId);
+        }
+
+        if (!unresolved.isEmpty()) {
+            // One id failing fails the whole request. A partial answer to a
+            // multi-id query is indistinguishable from a complete one.
+            log.debug("refusing search: unresolvable publication ids {} for audience {}",
+                    unresolved, audience);
+            throw new TransitionRefusedException(UNRESOLVABLE, unresolvableMessage(unresolved));
+        }
+
+        return new MemberSetDesignation(true, memberUids, tagIds);
+    }
+
+    /**
+     * Resolves one id to a new-model issue, or null.
+     *
+     * Public so the citation endpoints share this resolution rather than each
+     * writing their own.
+     */
+    @Transactional
+    public PublicationIssue findIssue(String publicationId) {
+        List<PublicationIssue> found = em.createQuery(
+                        "SELECT i FROM PublicationIssue i WHERE i.publicId = :id", PublicationIssue.class)
+                .setParameter("id", publicationId)
+                .setMaxResults(1)
+                .getResultList();
+        return found.isEmpty() ? null : found.get(0);
+    }
+
+    /** Resolves one id to a legacy publication, or null. */
+    @Transactional
+    public Publication findLegacy(String publicationId) {
+        List<Publication> found = em.createNamedQuery("Publication.findByPublicationId", Publication.class)
+                .setParameter("publicationId", publicationId)
+                .setMaxResults(1)
+                .getResultList();
+        return found.isEmpty() ? null : found.get(0);
+    }
+
+    /**
+     * The domain to sort by: the FIRST named publication's, whatever it is.
+     *
+     * The first, and only the first -- including when the first has no domain, in
+     * which case the answer is null and the result is not domain-sorted. Falling
+     * through to the second publication would read as an improvement and would
+     * change the order of an existing mixed request; 17 live publications have no
+     * domain, so it would fire.
+     *
+     * "The first" is only meaningful because the id set preserves the caller's
+     * order -- it is a LinkedHashSet for exactly this. Both halves of the
+     * transition answer here, so a cut-over series sorts the way its legacy rows
+     * did.
+     */
+    @Transactional
+    public Domain sortDomain(Collection<String> publicationIds) {
+        if (publicationIds == null || publicationIds.isEmpty()) {
+            return null;
+        }
+
+        String first = publicationIds.iterator().next();
+
+        PublicationIssue issue = findIssue(first);
+        if (issue != null) {
+            return issue.getSeries() == null ? null : issue.getSeries().getDomain();
+        }
+
+        Publication legacy = findLegacy(first);
+        return legacy == null ? null : legacy.getDomain();
+    }
+
+
+    /** The frozen member uids of an issue, in their stored order. */
+    private List<String> memberUids(String publicId) {
+        return em.createQuery(
+                        "SELECT m.messageUid FROM IssueMember m "
+                                + "WHERE m.issue.publicId = :id ORDER BY m.sortIndex", String.class)
+                .setParameter("id", publicId)
+                .getResultList();
+    }
+
+    /**
+     * Whether a public caller may be served this issue.
+     *
+     * PUBLISHED only. An OPEN or RETIRED issue exists, and an internal caller may
+     * work with it, but to the public API it is refused exactly as a missing id
+     * is.
+     */
+    private static boolean servable(PublicationIssue issue, Audience audience) {
+        return audience == Audience.INTERNAL || issue.getStatus() == IssueStatus.PUBLISHED;
+    }
+
+    /**
+     * Whether a public caller may be served this legacy publication.
+     *
+     * ACTIVE only, and this filter is new. The legacy resolution had no status
+     * filter at all, so a DRAFT or RECORDING publication's message tag resolved
+     * anonymously -- an unfinished issue's contents, served to the public site by
+     * anyone who knew the id.
+     */
+    private static boolean servable(Publication publication, Audience audience) {
+        return audience == Audience.INTERNAL || publication.getStatus() == PublicationStatus.ACTIVE;
+    }
+
+    /**
+     * The refusal text.
+     *
+     * One wording for every reason. "Does not exist", "not published yet" and
+     * "not yours" must read identically, or the difference between them is an
+     * oracle an anonymous caller can query.
+     */
+    private static String unresolvableMessage(List<String> ids) {
+        return "Unresolvable publication id(s): " + String.join(", ", ids);
+    }
+}

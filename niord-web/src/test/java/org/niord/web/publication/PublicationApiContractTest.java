@@ -4,6 +4,7 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.series.vo.PublicationIssueVo;
 import org.niord.core.publication.series.vo.PublicationSeriesVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
@@ -14,12 +15,18 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import org.niord.model.message.Status;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -113,7 +120,11 @@ public class PublicationApiContractTest {
      */
     @Test
     public void everyThrownErrorCodeIsInTheCatalogue() throws IOException {
-        Pattern thrown = Pattern.compile("TransitionRefusedException\\(\\s*\"([A-Z_]+)\"");
+        // Two forms, because a code passed as a constant would otherwise slip
+        // past the scan -- and a code that slips past returns 500.
+        Pattern thrownLiteral = Pattern.compile("TransitionRefusedException\\(\\s*\"([A-Z_]+)\"");
+        Pattern thrownConstant = Pattern.compile("TransitionRefusedException\\(\\s*([A-Z][A-Z0-9_]{3,})\\b");
+        Pattern constantValue = Pattern.compile("String\\s+([A-Z][A-Z0-9_]{3,})\\s*=\\s*\"([A-Z_]+)\"");
         Set<String> codes = new LinkedHashSet<>();
 
         for (String root : List.of("../niord-core/src/main/java", "src/main/java")) {
@@ -123,9 +134,30 @@ public class PublicationApiContractTest {
             }
             try (Stream<java.nio.file.Path> files = Files.walk(dir)) {
                 for (java.nio.file.Path f : files.filter(p -> p.toString().endsWith(".java")).toList()) {
-                    Matcher m = thrown.matcher(Files.readString(f, StandardCharsets.UTF_8));
+                    String src = Files.readString(f, StandardCharsets.UTF_8);
+
+                    Matcher m = thrownLiteral.matcher(src);
                     while (m.find()) {
                         codes.add(m.group(1));
+                    }
+
+                    // Resolve constants declared in the same file. Cross-file
+                    // constants are not followed; if one turns up, this says so
+                    // rather than quietly leaving the code out of the scan.
+                    Map<String, String> constants = new LinkedHashMap<>();
+                    Matcher c = constantValue.matcher(src);
+                    while (c.find()) {
+                        constants.put(c.group(1), c.group(2));
+                    }
+                    Matcher k = thrownConstant.matcher(src);
+                    while (k.find()) {
+                        String resolved = constants.get(k.group(1));
+                        assertNotNull(resolved,
+                                f.getFileName() + " throws TransitionRefusedException with the constant "
+                                        + k.group(1) + ", which is not declared in that file. The scan "
+                                        + "cannot follow it, so the code could be missing from the "
+                                        + "catalogue and return 500 unnoticed.");
+                        codes.add(resolved);
                     }
                 }
             }
@@ -178,7 +210,110 @@ public class PublicationApiContractTest {
         assertEquals(500, PublicationErrorCatalogue.statusOf("ARCHIVE_FAILED"));
     }
 
+    /**
+     * An unresolvable publication= id is a 400, and it is CATALOGUED.
+     *
+     * Named on its own because of what the alternative costs. With no mapping it
+     * falls through to 500, and it is thrown from the public message API -- so a
+     * caller with a typo would be told the server broke, and would retry.
+     */
+    @Test
+    public void anUnresolvablePublicationIsAClientError() {
+        assertTrue(PublicationErrorCatalogue.knows(PublicationResolver.UNRESOLVABLE),
+                "PUBLICATION_UNRESOLVABLE is not in the catalogue, so a bad publication= id would "
+                        + "return 500 from an anonymous endpoint");
+        assertEquals(400, PublicationErrorCatalogue.statusOf(PublicationResolver.UNRESOLVABLE));
+    }
+
+    // ================================================== the widening trigger
+
+    /**
+     * The widening is triggered by the DESIGNATION, not by tag presence.
+     *
+     * Tag presence was the old trigger, and it conflated "no publication was
+     * named" with "a publication was named and it produced no tag". Five sites
+     * branched on it. Any one of them left behind re-opens the defect for the
+     * endpoint it guards, and the endpoint goes on returning 200 with a
+     * plausible-looking list, so nothing surfaces it.
+     *
+     * Source-level rather than behavioural because that is what makes it
+     * exhaustive: it catches the sixth site somebody adds later.
+     */
+    @Test
+    public void noWideningStillBranchesOnTagPresence() throws IOException {
+        String api = read("src/main/java/org/niord/web/api/AbstractApiService.java");
+        assertTrue(api.contains("memberSetDesignated"),
+                "AbstractApiService no longer consults the designation");
+        assertFalse(api.contains("params.getTags().isEmpty()"),
+                "AbstractApiService still branches on tag presence. /rest/public/v1/messages declares "
+                        + "no tag parameter at all, so tags there can only have come from a "
+                        + "publication -- which is precisely the conflation being removed.");
+        assertFalse(api.contains("tagsSpecified"),
+                "the tagsSpecified flag survived; it is the old trigger under its old name");
+
+        String search = read("src/main/java/org/niord/web/MessageSearchRestService.java");
+        assertTrue(search.contains("memberSetDesignated"),
+                "MessageSearchRestService no longer consults the designation");
+        assertFalse(search.contains("if (params.getTags().isEmpty())"),
+                "a widening branch in MessageSearchRestService still tests tag presence alone. It has "
+                        + "to be the UNION -- !memberSetDesignated && getTags().isEmpty() -- because "
+                        + "tag= reaches that endpoint directly, and a plain replacement re-imposes "
+                        + "the restriction block on every ordinary tag= search.");
+        assertTrue(search.contains("!memberSetDesignated && params.getTags().isEmpty()"),
+                "the union form is missing from MessageSearchRestService");
+    }
+
+    /**
+     * And neither file converts publications to tags any more.
+     *
+     * Two independent copies of that conversion is how the two endpoints drifted
+     * apart in the first place.
+     */
+    @Test
+    public void neitherEndpointResolvesPublicationsToTagsItself() throws IOException {
+        for (String file : List.of("src/main/java/org/niord/web/api/AbstractApiService.java",
+                "src/main/java/org/niord/web/MessageSearchRestService.java")) {
+            assertFalse(read(file).contains("findTagsByPublicationIds"),
+                    file + " still resolves publications to tags on its own; there is one resolver "
+                            + "now, and a second copy is a second set of rules");
+        }
+    }
+
+    /**
+     * The status widening is DERIVED from Status.isPublic(), not listed.
+     *
+     * All 2,324 members of the blank-era issues are EXPIRED or CANCELLED and not
+     * one is PUBLISHED. A literal "PUBLISHED only" filter empties every
+     * historical issue -- and an empty issue still renders, so the failure is a
+     * document with no content rather than an error.
+     */
+    @Test
+    public void theStatusWideningIsDerived() throws IOException {
+        String api = read("src/main/java/org/niord/web/api/AbstractApiService.java");
+        assertTrue(api.contains("Status::isPublic"),
+                "the widened status set is no longer derived from Status.isPublic()");
+
+        Set<Status> derived = Arrays.stream(Status.values())
+                .filter(Status::isPublic)
+                .collect(Collectors.toSet());
+
+        assertTrue(derived.contains(Status.EXPIRED) && derived.contains(Status.CANCELLED),
+                "Status.isPublic() no longer covers EXPIRED and CANCELLED, so every historical issue "
+                        + "would come back empty");
+        assertTrue(derived.contains(Status.PUBLISHED));
+        assertFalse(derived.contains(Status.DRAFT),
+                "DRAFT became public; the derived set feeds an anonymous endpoint");
+    }
+
     // ------------------------------------------------------------------ helpers
+
+    private static String read(String path) throws IOException {
+        java.nio.file.Path file = Paths.get(path);
+        assertTrue(Files.isRegularFile(file), "missing source file " + path
+                + " -- this test reads sources, so a move breaks it silently otherwise");
+        return Files.readString(file, StandardCharsets.UTF_8);
+    }
+
 
     private static boolean hasHttpVerb(Method m) {
         return m.isAnnotationPresent(jakarta.ws.rs.GET.class)

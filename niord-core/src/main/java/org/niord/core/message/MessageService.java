@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,6 +71,7 @@ import org.niord.core.promulgation.BaseMessagePromulgation;
 import org.niord.core.promulgation.PromulgationManager;
 import org.niord.core.promulgation.PromulgationType;
 import org.niord.core.publication.PublicationService;
+import org.niord.core.publication.series.IssueLifecycleService.TransitionRefusedException;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.Roles;
@@ -150,6 +152,11 @@ public class MessageService extends BaseService {
     @Inject
     PublicationService publicationService;
 
+    // The narrow interface rather than PublicationService: that service already
+    // injects this one, and injecting it back would close the cycle.
+    @Inject
+    PublicationMemberSetSource memberSetSource;
+
     @Inject
     MessageLuceneIndex messageLuceneIndex;
 
@@ -199,6 +206,30 @@ public class MessageService extends BaseService {
         }
     }
 
+
+
+    /**
+     * What the publication= ids designate, resolved at most once per search.
+     *
+     * A REST layer resolves first, because it needs the answer before this point
+     * to decide whether to widen. Anything reaching the search directly -- a
+     * mailing-list trigger, a report -- resolves here instead. Without this
+     * branch those callers parse publication= and then ignore it, which is the
+     * behaviour they have today.
+     */
+    private MemberSetDesignation designation(MessageSearchParams param) {
+        if (param.getMemberSetDesignation() != null) {
+            return param.getMemberSetDesignation();
+        }
+
+        MemberSetDesignation designation = param.getPublications().isEmpty()
+                ? MemberSetDesignation.NONE
+                : memberSetSource.designate(
+                        param.getPublications(), PublicationMemberSetSource.Audience.INTERNAL);
+
+        param.memberSetDesignation(designation);
+        return designation;
+    }
 
     /**
      * Returns the message with the given legacy id
@@ -959,6 +990,16 @@ public class MessageService extends BaseService {
             result.setData(messages);
             result.updateSize();
 
+        } catch (TransitionRefusedException e) {
+            // Never swallowed.
+            //
+            // The catch below turns any failure into an empty result, which a
+            // caller cannot tell from a real answer of zero messages. An
+            // unresolvable publication= id is exactly the failure this is meant
+            // to make visible, so swallowing it here would replace "returns
+            // everything" with "returns nothing", quietly, and call it fixed.
+            throw e;
+
         } catch (Exception e) {
             log.error("Error performing search " + params + ": " + e, e);
         }
@@ -1151,14 +1192,54 @@ public class MessageService extends BaseService {
         }
 
 
-        // Tags
-        if (!param.getTags().isEmpty()) {
+        // Tags and publication member sets -- ONE disjunction, never two conjuncts.
+        //
+        // Two publication= ids used to become two tags, which this ORs. Giving the
+        // member set its own conjunct instead would quietly turn that union into
+        // an intersection: two issues would return the messages in BOTH rather
+        // than in either, and a caller asking for two weeks of EfS would get
+        // whatever the weeks have in common, usually nothing.
+        MemberSetDesignation designation = designation(param);
+        List<Predicate> memberSet = new ArrayList<>();
+
+        // ONE join for both sources of tag. Two LEFT JOINs on the same collection
+        // would multiply the rows before the OR ever ran.
+        Set<String> tagIds = new LinkedHashSet<>(param.getTags());
+        tagIds.addAll(designation.tagIds());
+
+        if (!tagIds.isEmpty()) {
             Join<Message, MessageTag> tags = msgRoot.join("tags", JoinType.LEFT);
-            String[] tagIds = param.getTags().toArray(new String[param.getTags().size()]);
-            Predicate[] tagMatch = messageTagService.findTags(tagIds).stream()
+            List<Predicate> tagMatch = messageTagService.findTags(tagIds.toArray(new String[0])).stream()
                     .map(t -> builder.equal(tags.get("id"), t.getId()))
-                    .toArray(Predicate[]::new);
-            criteriaHelper.add(builder.or(tagMatch));
+                    .collect(Collectors.toList());
+
+            // A tag the caller may not see produces no predicate, and that has to
+            // mean ZERO messages. The previous code got this for free, because
+            // builder.or() of an empty array is FALSE; collecting the predicates
+            // into a shared disjunction loses it, and losing it turns an invisible
+            // tag into no filter at all -- the same widening this whole change
+            // exists to remove.
+            memberSet.add(tagMatch.isEmpty()
+                    ? builder.disjunction()
+                    : builder.or(tagMatch.toArray(new Predicate[0])));
+        }
+
+        if (designation.designatesMemberSet()) {
+            if (!designation.memberUids().isEmpty()) {
+                // A frozen snapshot is an explicit uid list. Served verbatim: no
+                // date window, so none of adjustDateInterval's whole-day rounding.
+                memberSet.add(msgRoot.get("uid").in(designation.memberUids()));
+            }
+            if (designation.isEmptyDesignation()) {
+                // A publication that designates nothing means ZERO messages. Never
+                // in (), and never a fall-through to the widening branch -- the
+                // fall-through is what returns every published message today.
+                memberSet.add(builder.disjunction());
+            }
+        }
+
+        if (!memberSet.isEmpty()) {
+            criteriaHelper.add(builder.or(memberSet.toArray(new Predicate[0])));
         }
 
 

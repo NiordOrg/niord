@@ -28,6 +28,16 @@ public final class PublicationErrorCatalogue {
         put("NO_SUCH_LANGUAGE", 400);
         put("RETRO_CREATE_NOT_APPLICABLE", 400);
         put("SERIES_INVALID", 400);
+        // 400 and not 409, though it reads like a state conflict. The 409 group
+        // means "the same request may succeed later"; this one never can. Once a
+        // series has released an issue, the field is fixed for its lifetime, and
+        // a client that retried on 409 would retry forever.
+        put("MESSAGE_PUBLICATION_IMMUTABLE", 400);
+        // A publication= id that resolves to nothing the caller may see. 400
+        // rather than 404 because it is one parameter of a search, not the
+        // resource being addressed -- and the same 400 whether the id is a typo
+        // or an issue this caller is not allowed to know exists.
+        put("PUBLICATION_UNRESOLVABLE", 400);
 
         // 404 -- nothing of that identity exists.
         put("SERIES_NOT_FOUND", 404);

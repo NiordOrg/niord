@@ -40,7 +40,6 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.NiordApp;
 import org.niord.core.area.Area;
 import org.niord.core.message.Message;
-import org.niord.core.publication.Publication;
 import org.niord.model.DataFilter;
 import org.niord.model.message.AreaVo;
 import org.niord.model.message.MainType;
@@ -372,9 +371,10 @@ public class ApiRestService extends AbstractApiService {
             from = to = System.currentTimeMillis();
         }
 
-        List<PublicationVo> publications = super.searchPublications(language, from, to).stream()
-                .map(p -> toPublicationVo(p, language, externalize))
-                .collect(Collectors.toList());
+        List<PublicationVo> publications = super.searchPublications(language, from, to);
+        if (externalize) {
+            publications.forEach(p -> externalize(p, app.getBaseUri()));
+        }
 
         // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
         ObjectMapper om = objectMapperForDateFormat(dateFormat);
@@ -420,17 +420,19 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
     ) throws Exception {
 
-        Publication publication = super.getPublication(publicationId);
+        PublicationVo result = super.getPublication(publicationId, language);
 
-        if (publication == null) {
+        if (result == null) {
             return Response
                     .status(Response.Status.NOT_FOUND)
                     .entity("No publication found with ID: " + publicationId)
                     .build();
         } else {
 
-            // Convert publication to value objects and externalize publication links, if requested
-            PublicationVo result = toPublicationVo(publication, language, externalize);
+            // Externalize publication links, if requested
+            if (externalize) {
+                externalize(result, app.getBaseUri());
+            }
 
             // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
             ObjectMapper om = objectMapperForDateFormat(dateFormat);
@@ -447,34 +449,30 @@ public class ApiRestService extends AbstractApiService {
 
 
     /**
-     * Convert the publication to a value object representation.
-     * If requested, rewrite all links to make them external URLs.
-     * @param pub the publication to convert to a value object
-     * @param externalize whether to rewrite all links to make them external URLs
-     * @return the publication value object representation
+     * Rewrites the relative links of a publication into absolute URLs, in place.
+     *
+     * Deliberately pure: it takes the base URI rather than reading it from the
+     * application, and it takes a value object rather than an entity. Both are
+     * what let a publication that has no entity behind it -- an issue of a series
+     * that has cut over -- go through exactly this code rather than a copy of it.
+     *
+     * Already-absolute links are left alone, so running this twice is harmless.
+     *
+     * @param publication the publication to rewrite, may be null
+     * @param baseUri     the base URI to resolve relative links against
+     * @return the same instance, for chaining
      **/
-    private PublicationVo toPublicationVo(Publication pub, String language, boolean externalize) {
+    static PublicationVo externalize(PublicationVo publication, String baseUri) {
 
         // Sanity check
-        if (pub == null) {
-            return null;
+        if (publication == null || publication.getDescs() == null) {
+            return publication;
         }
 
-        // Convert the publication to a value object
-        DataFilter filter = DataFilter.get().lang(language);
-        PublicationVo publication = pub.toVo(PublicationVo.class, filter);
-
-        // If "externalize" is set, rewrite all links to make them external
-        if (externalize) {
-            String baseUri = app.getBaseUri();
-
-            if (publication.getDescs() != null) {
-                publication.getDescs().stream()
-                        .filter(d -> StringUtils.isNotBlank(d.getLink()))
-                        .filter(d -> !d.getLink().matches("^(?i)(https?)://.*$"))
-                        .forEach(d -> d.setLink(concat(baseUri, d.getLink())));
-            }
-        }
+        publication.getDescs().stream()
+                .filter(d -> StringUtils.isNotBlank(d.getLink()))
+                .filter(d -> !d.getLink().matches("^(?i)(https?)://.*$"))
+                .forEach(d -> d.setLink(concat(baseUri, d.getLink())));
 
         return publication;
     }
@@ -581,8 +579,14 @@ public class ApiRestService extends AbstractApiService {
      ***************************/
 
 
-    /** Returns an ObjectMapper for the given date format **/
-    private ObjectMapper objectMapperForDateFormat(JsonDateFormat dateFormat) {
+    /**
+     * Returns an ObjectMapper for the given date format.
+     *
+     * Package-private rather than private so the payload contract test can
+     * serialize through the same mapper the endpoint uses. A test that builds its
+     * own mapper proves nothing about what the endpoint emits.
+     **/
+    static ObjectMapper objectMapperForDateFormat(JsonDateFormat dateFormat) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(
                 SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
@@ -592,7 +596,7 @@ public class ApiRestService extends AbstractApiService {
 
 
     /** Concatenates the URI components **/
-    private String concat(String... paths) {
+    private static String concat(String... paths) {
         StringBuilder result = new StringBuilder();
         if (paths != null) {
             Arrays.stream(paths)

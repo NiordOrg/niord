@@ -159,22 +159,6 @@ public class PublicationService extends BaseService {
     }
 
 
-    /**
-     * Returns the tag IDs for the message-report publications with the given publication IDs
-     *
-     * @param publicationIds the publication IDs
-     * @return the tag IDs for the message-report publications with the given publication IDs
-     */
-    public Set<String> findTagsByPublicationIds(Set<String> publicationIds) {
-        if (publicationIds == null || publicationIds.isEmpty()) {
-            return Collections.emptySet();
-        }
-        return em.createNamedQuery("Publication.findTagsByPublicationIds", String.class)
-                .setParameter("publicationIds", publicationIds)
-                .getResultList().stream()
-                .collect(Collectors.toSet());
-    }
-
 
     /**
      * Returns the message-recording publications

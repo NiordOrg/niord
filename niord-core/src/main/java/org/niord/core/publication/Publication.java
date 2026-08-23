@@ -74,9 +74,6 @@ import java.util.stream.Collectors;
                 query="SELECT p FROM Publication p where p.id in (:ids)"),
         @NamedQuery(name="Publication.findByTemplateId",
                 query="SELECT p FROM Publication p where p.template is not null and p.template.publicationId = :templateId"),
-        @NamedQuery(name="Publication.findTagsByPublicationIds",
-                query="SELECT DISTINCT p.messageTag.tagId FROM Publication p where p.publicationId in (:publicationIds) "
-                     + " and p.type = 'MESSAGE_REPORT' and p.messageTag is not null"),
         @NamedQuery(name="Publication.findRecordingPublications",
                 query="SELECT p FROM Publication p where p.status = 'RECORDING' "
                         + " and p.type = 'MESSAGE_REPORT' and p.messageTag is not null "

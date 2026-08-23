@@ -24,12 +24,15 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
-import org.niord.core.message.MessageTag;
-import org.niord.core.message.MessageTagService;
-import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationSearchParams;
+import org.niord.core.publication.Publication;
+import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.message.MemberSetDesignation;
+import org.niord.core.message.PublicationMemberSetSource;
+import org.niord.model.DataFilter;
+import org.niord.model.publication.PublicationVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
@@ -63,7 +66,10 @@ public abstract class AbstractApiService {
     PublicationService publicationService;
 
     @Inject
-    MessageTagService messageTagService;
+    PublicationResolver publicationResolver;
+
+    @Inject
+    PublicationMemberSetSource memberSetSource;
 
     @Inject
     AreaService areaService;
@@ -115,31 +121,32 @@ public abstract class AbstractApiService {
                 .includeNoPos(Boolean.TRUE); // Messages without a geometry may be included if WKT specified
 
 
-        // Convert publications to their associated message tags
-        if (!params.getPublications().isEmpty()) {
-            Set<String> tags = publicationService.findTagsByPublicationIds(params.getPublications());
+        // Resolve the publication= ids here, once, and refuse rather than widen.
+        //
+        // This used to convert publications to message tags and then let tag
+        // PRESENCE drive every decision below. An id that produced no tag -- a
+        // typo, or any of the 27 ACTIVE publications that have no message tag --
+        // therefore looked exactly like "no publication was named", and the
+        // widening below returned every published message. The designation keeps
+        // the two apart: it is true as soon as one id resolves, whatever it
+        // contains.
+        MemberSetDesignation designation = memberSetSource.designate(
+                params.getPublications(), PublicationMemberSetSource.Audience.PUBLIC);
+        params.memberSetDesignation(designation);
 
-            // Validate user access to the tags
-            if (!tags.isEmpty()) {
-                String[] tagIds = tags.toArray(new String[tags.size()]);
-                params.tags(messageTagService.findTags(tagIds).stream()
-                        .map(MessageTag::getTagId)
-                        .collect(Collectors.toSet()));
-            }
+        boolean memberSetDesignated = designation.designatesMemberSet();
 
-            // Use the first specified publication domain to sort by
-            Publication publication = publicationService.findByPublicationId(params.getPublications().iterator().next());
-            if (publication != null) {
-                sortDomain = publication.getDomain();
-            }
+        if (memberSetDesignated) {
+            // Use the first specified publication's domain to sort by
+            sortDomain = publicationResolver.sortDomain(params.getPublications());
         }
 
-        boolean tagsSpecified = !params.getTags().isEmpty();
         boolean domainsSpecified = domainIds != null && !domainIds.isEmpty();
         boolean messageSeriesSpecified = messageSeries != null && !messageSeries.isEmpty();
 
-        // If no tags or domains or message series have been defined, use the domains published by default
-        if (!tagsSpecified && !domainsSpecified && !messageSeriesSpecified) {
+        // If nothing designates a member set and no domains or message series have
+        // been defined, use the domains published by default
+        if (!memberSetDesignated && !domainsSpecified && !messageSeriesSpecified) {
             domainIds = domainService.getPublishedDomains().stream()
                     .map(Domain::getDomainId)
                     .collect(Collectors.toSet());
@@ -190,15 +197,22 @@ public abstract class AbstractApiService {
         }
 
         // If no publications or message series (and thus, no domains) have been specified, return nothing
-        if (params.getTags().isEmpty() && params.getSeriesIds().isEmpty()) {
+        if (!memberSetDesignated && params.getSeriesIds().isEmpty()) {
             return new PagedSearchResultVo<>();
         }
 
-        // Enforce allowed statuses
-        if (params.getTags().isEmpty()) {
-             params.statuses(Collections.singleton(Status.PUBLISHED));
+        // Enforce allowed statuses.
+        //
+        // Derived from Status.isPublic() rather than listed: all 2,324 members of
+        // the blank-era issues are EXPIRED or CANCELLED and not one is PUBLISHED,
+        // so a literal "PUBLISHED only" filter empties every historical issue --
+        // and empties it quietly, because an issue with no messages still renders.
+        if (!memberSetDesignated) {
+            params.statuses(Collections.singleton(Status.PUBLISHED));
         } else {
-            params.statuses(new HashSet<>(Arrays.asList(Status.PUBLISHED, Status.CANCELLED, Status.EXPIRED)));
+            params.statuses(Arrays.stream(Status.values())
+                    .filter(Status::isPublic)
+                    .collect(Collectors.toSet()));
         }
 
         // Apply domain sort order
@@ -220,23 +234,33 @@ public abstract class AbstractApiService {
 
 
     /**
-     * Returns the publication with the given ID if it is public
+     * Returns the publication with the given ID if it is public.
+     *
+     * Returns a value object rather than the entity. The public face of a
+     * publication has two possible sources -- the legacy table and, after
+     * cutover, a published issue of a series -- and only one of them has a
+     * {@code Publication} row behind it. Converting here lets the second source
+     * be added without fabricating a transient entity to carry it.
      *
      * @param publicationId the publication ID
-     * @return the publication with the given ID if it is public
+     * @param language      the language to filter the descriptions by
+     * @return the publication with the given ID if it is public, or null
      */
-    public Publication getPublication(String publicationId) {
+    public PublicationVo getPublication(String publicationId, String language) {
         Publication publication = publicationService.findByPublicationId(publicationId);
-        return publication != null && publication.getStatus() == ACTIVE && publication.getCategory().isPublish()
-                ? publication
-                : null;
+
+        boolean isPublic = publication != null
+                && publication.getStatus() == ACTIVE
+                && publication.getCategory().isPublish();
+
+        return isPublic ? toPublicationVo(publication, language) : null;
     }
 
 
     /**
      * Searches for publications
      */
-    public List<Publication> searchPublications(String language, Long from, Long to) {
+    public List<PublicationVo> searchPublications(String language, Long from, Long to) {
 
         PublicationSearchParams params = new PublicationSearchParams()
                 .language(language)
@@ -248,7 +272,22 @@ public abstract class AbstractApiService {
 
         return publicationService
                 .searchPublications(params)
-                .getData();
+                .getData()
+                .stream()
+                .map(p -> toPublicationVo(p, language))
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * The entity-to-value-object half of the conversion, with no externalization.
+     *
+     * PublicationVo is a published XSD with a fixed propOrder, so this must stay a
+     * plain filtered copy: a field added, renamed or reordered here changes an
+     * interchange format that is consumed outside this codebase.
+     */
+    private PublicationVo toPublicationVo(Publication pub, String language) {
+        return pub.toVo(PublicationVo.class, DataFilter.get().lang(language));
     }
 
 

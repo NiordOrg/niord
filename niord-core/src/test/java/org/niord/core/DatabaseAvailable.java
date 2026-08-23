@@ -20,7 +20,12 @@ public final class DatabaseAvailable {
 
     private static final String HOST = System.getProperty("niord.test.db.host", "localhost");
     private static final int PORT = Integer.getInteger("niord.test.db.port", 13306);
-    private static final int TIMEOUT_MS = 1500;
+    // Generous, and retried. A build that is compiling, booting Quarkus and
+    // hammering the same database can take longer than a second to answer a
+    // connect -- and a probe that gives up then skips the whole database-backed
+    // suite while the build still goes GREEN. That is worse than a slow probe.
+    private static final int TIMEOUT_MS = 5000;
+    private static final int ATTEMPTS = 3;
 
     private static Boolean cached;
 
@@ -30,16 +35,33 @@ public final class DatabaseAvailable {
     /** Referenced by @EnabledIf on the database-backed test classes. */
     public static synchronized boolean isAvailable() {
         if (cached == null) {
-            try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(HOST, PORT), TIMEOUT_MS);
-                cached = true;
-            } catch (Exception e) {
+            Exception last = null;
+            for (int attempt = 1; attempt <= ATTEMPTS && cached == null; attempt++) {
+                try (Socket socket = new Socket()) {
+                    socket.connect(new InetSocketAddress(HOST, PORT), TIMEOUT_MS);
+                    cached = true;
+                } catch (Exception e) {
+                    last = e;
+                    if (attempt < ATTEMPTS) {
+                        try {
+                            Thread.sleep(1000L);
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (cached == null) {
                 cached = false;
                 // Loud on purpose. A silent skip is how a database-backed suite
                 // quietly stops running and nobody notices for weeks.
                 System.out.println();
                 System.out.println("=========================================================================");
-                System.out.println(" No MySQL at " + HOST + ":" + PORT + " -- database-backed tests are SKIPPED.");
+                System.out.println(" No MySQL at " + HOST + ":" + PORT + " after " + ATTEMPTS
+                        + " attempts -- database-backed tests are SKIPPED.");
+                System.out.println(" Last error: " + last);
                 System.out.println(" The pure suite still runs. To run everything, start the container:");
                 System.out.println("   docker run -d --name niord-test-db -p 13306:3306 \\");
                 System.out.println("     -e MYSQL_ROOT_PASSWORD=mysql -e MYSQL_DATABASE=niord \\");

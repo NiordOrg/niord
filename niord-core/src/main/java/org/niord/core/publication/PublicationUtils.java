@@ -114,6 +114,19 @@ public class PublicationUtils {
 
             String updatedPubHtml = computeMessagePublication(publication, parameters, link, msgDesc.getLang());
 
+            if (updatedPubHtml == null) {
+                // No citation format in THIS language.
+                //
+                // The line below used to append " " + updatedPubHtml regardless,
+                // which writes the four characters " null" into the message's
+                // publication field -- rendered to the public site, and invisible
+                // to the editor who typed nothing wrong. Skipping the language is
+                // the only safe answer: a publication may legitimately carry a
+                // format in one language and not another, so refusing the whole
+                // update would block a correct single-language citation.
+                return;
+            }
+
             String pubHtml = internal
                     ? msgDesc.getInternalPublication()
                     : msgDesc.getPublication();
