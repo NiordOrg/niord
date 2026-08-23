@@ -39,7 +39,7 @@ public class SeriesValidatorTest {
         s.setStatus(SeriesStatus.DRAFT);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setCadence(SeriesCadence.WEEKLY);
-        s.setNominalCutoffDay(CutoffDay.MONDAY);
+        s.setNominalCutoffDay(CutoffDay.WEDNESDAY);
         s.setNominalCutoffTime("09:00");
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
@@ -84,6 +84,35 @@ public class SeriesValidatorTest {
     @Test
     public void theBaselineSeriesIsValid() {
         assertClean(valid());
+    }
+
+    /**
+     * Every weekday is expressible, and Wednesday in particular.
+     *
+     * The weekly EfS is released every Wednesday and S-5 makes this field
+     * required for a WEEKLY series, so an enum missing Wednesday means the
+     * primary production series cannot record its own release day. It held
+     * MONDAY and SUNDAY alone: the specification writes the type as
+     * "MONDAY...SUNDAY" and its DDL column transcribed that ellipsis as a
+     * two-element list, the schema followed the DDL and the enum followed the
+     * schema -- so all three agreed with each other and none with the domain.
+     *
+     * Asserted as a COUNT as well as by name, because the failure was a set that
+     * looked plausible rather than a value that looked wrong.
+     */
+    @Test
+    public void everyWeekdayIsExpressibleAsACutOffDay() {
+        assertEquals(7, CutoffDay.values().length,
+                "CutoffDay holds " + java.util.Arrays.toString(CutoffDay.values())
+                        + "; a weekly series must be able to name any release day");
+
+        for (java.time.DayOfWeek d : java.time.DayOfWeek.values()) {
+            CutoffDay.valueOf(d.name());
+        }
+
+        PublicationSeries s = valid();
+        s.setNominalCutoffDay(CutoffDay.WEDNESDAY);
+        assertClean(s);
     }
 
     // -------------------------------------------------- the citable series
