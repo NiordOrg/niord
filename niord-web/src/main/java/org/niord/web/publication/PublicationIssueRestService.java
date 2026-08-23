@@ -20,6 +20,10 @@ import org.niord.core.publication.series.IssueAuditEntry;
 import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueCurationService;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.user.UserService;
+import org.niord.core.publication.series.IntervalBoundSource;
+import org.niord.core.publication.series.PublicationSeriesService;
+import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueStatus;
@@ -61,6 +65,12 @@ public class PublicationIssueRestService {
     PublicationIssueService issueService;
 
     @Inject
+    PublicationSeriesService seriesService;
+
+    @Inject
+    UserService userService;
+
+    @Inject
     IssuePublishService publishService;
 
     @Inject
@@ -77,6 +87,55 @@ public class PublicationIssueRestService {
 
     @Inject
     EntityManager em;
+
+    // ----------------------------------------------------------------- writes
+
+    /**
+     * I1. Create an issue on a series.
+     *
+     * The only route into the issue lifecycle. Everything else here -- publish,
+     * retire, reactivate, curate -- operates on an issue that already exists, so
+     * without this the whole surface was unreachable: the series and issue
+     * endpoints had never been exercised against a running system, and the first
+     * thing to touch them would have been the historical importer.
+     *
+     * Delegates to IssueLifecycleService.create, which mints the publicId and
+     * writes the audit entry. This adds no rules of its own -- an endpoint that
+     * re-implements the lifecycle is a second lifecycle.
+     */
+    @POST
+    @Path("/issue")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationIssueVo create(CreateIssueRequest request) {
+        if (request == null || request.seriesId() == null || request.seriesId().isBlank()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "seriesId is required to create an issue");
+        }
+
+        PublicationSeries series = seriesService.findBySeriesId(request.seriesId());
+        if (series == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
+                    "no series '" + request.seriesId() + "'");
+        }
+
+        // A PUBLISHED_IN_INTERVAL series chains: intervalFrom is the previous
+        // issue's stamped cut-off, and the caller supplying it is how a recovered
+        // issue is created. IN_FORCE_AT_CUTOFF has no interval at all, so null is
+        // the right value there rather than a missing one.
+        Date intervalFrom = request.intervalFrom() == null ? null : new Date(request.intervalFrom());
+        IntervalBoundSource source = intervalFrom == null ? null
+                : (request.recovered() ? IntervalBoundSource.RECOVERED : IntervalBoundSource.STAMPED);
+
+        PublicationIssue issue = lifecycle.create(series, intervalFrom, source, userService.currentUser());
+        em.flush();
+        return issue.toVo(SystemPublicationIssueVo.class);
+    }
+
+    /** What a create needs, and nothing more. */
+    public record CreateIssueRequest(String seriesId, Long intervalFrom, boolean recovered) {
+    }
 
     // ------------------------------------------------------------------ reads
 

@@ -441,6 +441,115 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
      * checked at every serialisation point, where the one that forgets leaks
      * everything.
      */
+    /**
+     * The inverse of {@link #toVo}: a system value object onto this entity.
+     *
+     * The category and the domain are NOT resolved here -- they are references to
+     * other entities and this class has no persistence context. The caller
+     * resolves them and sets them, and `SeriesValidator` refuses a series with no
+     * category, so a caller that forgets cannot save.
+     *
+     * ENUMS FAIL LOUDLY. A value the enum does not know is a client sending a
+     * name this build does not have -- a stale frontend, or a typo -- and the
+     * quiet alternative is to leave the field null, which for `contentMode` or
+     * `timeRelation` means the issue silently resolves nothing. `SeriesValidator`
+     * would then report "required field missing" for a field the client did send,
+     * which sends whoever is debugging it to the wrong place entirely.
+     */
+    public void updateFromVo(SystemPublicationSeriesVo vo) {
+        seriesId = vo.getSeriesId();
+        sortOrder = vo.getSortOrder();
+
+        status = enumOf(SeriesStatus.class, vo.getStatus(), "status");
+        contentMode = enumOf(ContentMode.class, vo.getContentMode(), "contentMode");
+        cadence = enumOf(SeriesCadence.class, vo.getCadence(), "cadence");
+        nominalCutoffDay = enumOf(CutoffDay.class, vo.getNominalCutoffDay(), "nominalCutoffDay");
+        nominalCutoffTime = vo.getNominalCutoffTime();
+        nominalCutoffTimeZone = vo.getNominalCutoffTimeZone();
+        numberingScheme = enumOf(NumberingScheme.class, vo.getNumberingScheme(), "numberingScheme");
+        timeRelation = enumOf(TimeRelation.class, vo.getTimeRelation(), "timeRelation");
+        aliveAtCutoff = vo.getAliveAtCutoff();
+        firstIssueStartsAt = vo.getFirstIssueStartsAt();
+        reportId = vo.getReportId();
+        pageSize = enumOf(PageSize.class, vo.getPageSize(), "pageSize");
+        pageOrientation = enumOf(PageOrientation.class, vo.getPageOrientation(), "pageOrientation");
+        mapThumbnails = vo.getMapThumbnails();
+        messageSortBy = vo.getMessageSortBy();
+        messageSortOrder = enumOf(PagedSearchParamsVo.SortOrder.class, vo.getMessageSortOrder(),
+                "messageSortOrder");
+        messagePublication = enumOf(MessagePublication.class, vo.getMessagePublication(),
+                "messagePublication");
+        releaseMode = enumOf(ReleaseMode.class, vo.getReleaseMode(), "releaseMode");
+        nextIssueCreation = enumOf(NextIssueCreation.class, vo.getNextIssueCreation(),
+                "nextIssueCreation");
+        publicAuthority = enumOf(PublicAuthority.class, vo.getPublicAuthority(), "publicAuthority");
+        legacyTemplateId = vo.getLegacyTemplateId();
+        importSource = vo.getImportSource();
+
+        criteria = criteriaOf(vo.getCriteria());
+
+        languages.clear();
+        if (vo.getLanguages() != null) {
+            languages.addAll(vo.getLanguages());
+        }
+        if (vo.getReportParams() != null) {
+            reportParams.clear();
+            reportParams.putAll(vo.getReportParams());
+        }
+
+        // Replaced wholesale rather than merged. A desc row that the client did
+        // not send is a row the client deleted, and merging would make deletion
+        // impossible through this path.
+        descs.clear();
+        if (vo.getDescs() != null) {
+            for (PublicationSeriesDescVo dv : vo.getDescs()) {
+                PublicationSeriesDesc d = createDesc(dv.getLang());
+                d.setName(dv.getName());
+                d.setNameSuggestionPattern(dv.getNameSuggestionPattern());
+                d.setFileNamePattern(dv.getFileNamePattern());
+                d.setMessageReferenceFormat(dv.getMessageReferenceFormat());
+                d.setLinkPattern(dv.getLinkPattern());
+            }
+        }
+    }
+
+    /** Null stays null; anything else must be a name the enum knows. */
+    private static <E extends Enum<E>> E enumOf(Class<E> type, String name, String field) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        try {
+            return Enum.valueOf(type, name.trim());
+        } catch (IllegalArgumentException e) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    field + " = '" + name + "' is not one of " + java.util.Arrays.toString(type.getEnumConstants()));
+        }
+    }
+
+    /**
+     * The criteria document, which arrives as whatever JSON-B made of it.
+     *
+     * Round-tripped through the mapper rather than cast, because a POST body
+     * deserialises to maps and lists while the column holds an IssueCriteriaVo,
+     * and a cast would succeed on the way in and fail at flush time -- far from
+     * the request that caused it.
+     */
+    private static IssueCriteriaVo criteriaOf(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        if (raw instanceof IssueCriteriaVo already) {
+            return already;
+        }
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper m = new com.fasterxml.jackson.databind.ObjectMapper();
+            return m.convertValue(raw, IssueCriteriaVo.class);
+        } catch (RuntimeException e) {
+            throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
+                    "the criteria document could not be read: " + e.getMessage());
+        }
+    }
+
     public <V extends PublicationSeriesVo> V toVo(Class<V> clz) {
         V vo;
         try {

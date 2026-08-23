@@ -16,6 +16,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
+import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.SeriesStatus;
@@ -51,6 +55,12 @@ public class PublicationSeriesRestService {
 
     @Inject
     PublicationSeriesService seriesService;
+
+    @Inject
+    PublicationCategoryService categoryService;
+
+    @Inject
+    DomainService domainService;
 
     @Inject
     IssueLifecycleService lifecycle;
@@ -130,8 +140,55 @@ public class PublicationSeriesRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
     public SystemPublicationSeriesVo create(SystemPublicationSeriesVo vo) {
-        throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                "series creation from a VO is not wired yet; the entity path is used directly for now");
+        if (vo == null || vo.getSeriesId() == null || vo.getSeriesId().isBlank()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "seriesId is required; it is the human-authored, stable identity of the series");
+        }
+        if (seriesService.findBySeriesId(vo.getSeriesId()) != null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_ID_TAKEN",
+                    "a series with id '" + vo.getSeriesId() + "' already exists");
+        }
+
+        PublicationSeries series = new PublicationSeries();
+        series.updateFromVo(vo);
+        resolveReferences(series, vo);
+
+        // Created as DRAFT whatever the client asked for. ACTIVE is what puts a
+        // series in the picker, and S-17 requires a complete series for that --
+        // so activation is the status transition, which validates. Letting create
+        // set ACTIVE would route around that check.
+        series.setStatus(SeriesStatus.DRAFT);
+
+        return seriesService.create(series).toVo(SystemPublicationSeriesVo.class);
+    }
+
+    /**
+     * Resolves the two references the value object carries only by id.
+     *
+     * They are separate from updateFromVo because that method is on the entity
+     * and has no persistence context. A category that does not exist is refused
+     * rather than created: the categories are a small curated set with a publish
+     * flag and a priority that decides where the series appears on the public
+     * page, and inventing one silently would put a series in a category nobody
+     * configured.
+     */
+    private void resolveReferences(PublicationSeries series, SystemPublicationSeriesVo vo) {
+        if (vo.getCategoryId() != null && !vo.getCategoryId().isBlank()) {
+            PublicationCategory category = categoryService.findByCategoryId(vo.getCategoryId());
+            if (category == null) {
+                throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_NOT_FOUND",
+                        "no publication category '" + vo.getCategoryId() + "'");
+            }
+            series.setCategory(category);
+        }
+        if (vo.getDomainId() != null && !vo.getDomainId().isBlank()) {
+            Domain domain = domainService.findByDomainId(vo.getDomainId());
+            if (domain == null) {
+                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                        "no domain '" + vo.getDomainId() + "'");
+            }
+            series.setDomain(domain);
+        }
     }
 
     /** S10. Status transition, validated. */
