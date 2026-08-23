@@ -166,6 +166,7 @@ public class LegacyImportService extends BaseService {
         planAlreadyImported(plan, templates, publications);
         planCategories(plan, templates, publications);
         Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates);
+        planOrphanSeries(plan, publications, seriesByTemplate);
         planIssues(plan, publications, seriesByTemplate, frozenAt);
 
         plan.report().setSeriesImported(plan.series().size());
@@ -189,7 +190,8 @@ public class LegacyImportService extends BaseService {
      */
     private void planAlreadyImported(Plan plan, List<Publication> templates,
                                      List<Publication> publications) {
-        for (Publication template : templates) {
+        for (Publication template : concat(templates, publications.stream()
+                .filter(x -> x.getTemplate() == null).toList())) {
             Long seriesRows = em.createQuery(
                             "SELECT COUNT(s) FROM PublicationSeries s WHERE s.legacyTemplateId = :id",
                             Long.class)
@@ -302,6 +304,52 @@ public class LegacyImportService extends BaseService {
         plan.categoryOfSeries().put(series.getSeriesId(), categoryId);
     }
 
+    /**
+     * A one-off series for every publication that has no template. Ruling B5-v.
+     *
+     * 39 rows in the estate are in this position -- 11 NCAGS, the ice-service
+     * notices, the standalone references (Danish List of Lights and friends), and
+     * 9 double-week issues made by hand rather than from the weekly template. An
+     * issue must belong to a series, so they need one; giving each its own infers
+     * nothing about which are really the same publication, and leaves that to the
+     * DRAFT review.
+     *
+     * Keyed into the same map as the templates, under the PUBLICATION's id, so
+     * planIssues has one place to look.
+     */
+    private void planOrphanSeries(Plan plan, List<Publication> publications,
+                                  Map<String, PublicationSeries> seriesByTemplate) {
+        List<Publication> orphans = publications.stream()
+                .filter(p -> p.getTemplate() == null)
+                .toList();
+        if (orphans.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> ids = LegacySeriesTranslation.authorOrphanSeriesIds(orphans);
+
+        for (Publication orphan : orphans) {
+            try {
+                // Translated from the publication itself: a template-less row
+                // carries the same fields a template does -- category, cadence,
+                // filter, descs -- because legacy made it BY copying one.
+                PublicationSeries series = LegacySeriesTranslation.translate(
+                        orphan, ids.get(orphan.getPublicationId()), importSource());
+                LegacySeriesTranslation.assertReportSettingsAreComplete(
+                        series, orphan.getPublicationId());
+                assertReferencesResolve(plan, orphan, series);
+                planCategoryOf(plan, orphan, series);
+
+                plan.series().add(series);
+                seriesByTemplate.put(orphan.getPublicationId(), series);
+            } catch (LegacySeriesTranslation.ImportRefusedException e) {
+                problem(plan, e.getCode(), orphan, e.getMessage());
+            } catch (RuntimeException e) {
+                problem(plan, "ORPHAN_SERIES_UNTRANSLATABLE", orphan, e.getMessage());
+            }
+        }
+    }
+
     private void planIssues(Plan plan, List<Publication> publications,
                             Map<String, PublicationSeries> seriesByTemplate, Date frozenAt) {
         Map<String, List<Publication>> byTag = MemberSnapshotImport.byTagName(publications);
@@ -327,6 +375,21 @@ public class LegacyImportService extends BaseService {
 
                     PublicationSeries series = legacy.getTemplate() == null
                             ? null : seriesByTemplate.get(legacy.getTemplate().getPublicationId());
+
+                    if (series == null) {
+                        // A template-less publication is its own one-off series
+                        // (ruling B5-v). PublicationIssue.series is NOT NULL, so
+                        // it must belong to something, and one series per orphan
+                        // infers nothing about which of them are really the same
+                        // publication -- that is a judgement for the DRAFT review.
+                        series = seriesByTemplate.get(legacy.getPublicationId());
+                    }
+                    if (series == null) {
+                        problem(plan, "NO_SERIES_FOR_PUBLICATION", legacy,
+                                "no series was translated for this publication and none could be "
+                                        + "authored from it either.");
+                        continue;
+                    }
 
                     PublicationIssue issue =
                             LegacyIssueTranslation.translate(legacy, series, frozenAt);

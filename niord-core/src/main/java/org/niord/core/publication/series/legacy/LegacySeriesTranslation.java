@@ -18,6 +18,7 @@ import org.niord.model.publication.PublicationType;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -39,6 +40,21 @@ import java.util.Set;
  * Provenance travels in legacyTemplateId instead, so nothing is lost.
  */
 public final class LegacySeriesTranslation {
+
+    /**
+     * The seriesId column is varchar(64), so an authored id has to fit.
+     *
+     * Not cosmetic: the ice-service annexes are titled "Meddelelse fra
+     * Marinestaben om istjeneste samt om ismeldinger m.m. for vinteren 2019
+     * (Danish Only)", whose slug is 95 characters. MySQL in strict mode rejects
+     * the insert rather than truncating, so the import would die on those eight
+     * rows.
+     *
+     * The cap is applied to the BASE at each escalation step, so the suffix
+     * always fits rather than being cut off -- a truncated disambiguator would
+     * reintroduce exactly the collision it was added to break.
+     */
+    public static final int MAX_SERIES_ID = 64;
 
     /** printSettings keys that map onto a typed column. Anything else is refused. */
     public static final Set<String> ALLOWED_PRINT_SETTINGS =
@@ -81,7 +97,7 @@ public final class LegacySeriesTranslation {
      */
     public static String authorSeriesId(Publication template, Set<String> alreadyAuthored) {
         String title = titleOf(template);
-        String slug = slug(title);
+        String slug = fit(slug(title), MAX_SERIES_ID);
 
         if (slug.isEmpty()) {
             throw new ImportRefusedException("SERIES_ID_UNAUTHORABLE", template.getPublicationId(),
@@ -96,6 +112,78 @@ public final class LegacySeriesTranslation {
                             + "to prevent.");
         }
         return slug;
+    }
+
+    /**
+     * Authors seriesIds for the template-less publications, which become one
+     * one-off series each (ruling B5-v).
+     *
+     * Escalates only as far as it has to, so the common case stays readable:
+     *
+     *   1. the title slug                      -- "danish-list-of-lights-2022"
+     *   2. plus the publication's start year    -- "ncags-2019"
+     *   3. plus a short id, for the whole colliding group
+     *
+     * Step 3 applies to EVERY member of a colliding group rather than to the
+     * later ones, so the result does not depend on iteration order: three NCAGS
+     * rows share 2023, and naming one of them "ncags-2023" and the others
+     * "ncags-2023-<id>" would make which-one-got-the-clean-name an artefact of
+     * the query plan. Determinism matters because the import is disposable --
+     * re-running it after a regrouping must author the same ids.
+     */
+    public static Map<String, String> authorOrphanSeriesIds(List<Publication> orphans) {
+        Map<String, String> base = new LinkedHashMap<>();
+        for (Publication p : orphans) {
+            base.put(p.getPublicationId(), fit(slug(titleOf(p)), MAX_SERIES_ID));
+        }
+        escalate(orphans, base, p -> {
+            Integer year = yearOf(p);
+            if (year == null) {
+                return fit(slug(titleOf(p)), MAX_SERIES_ID);
+            }
+            String suffix = "-" + year;
+            return fit(slug(titleOf(p)), MAX_SERIES_ID - suffix.length()) + suffix;
+        });
+        escalate(orphans, base, p -> {
+            String suffix = "-" + p.getPublicationId().substring(0, 8);
+            return fit(base.get(p.getPublicationId()), MAX_SERIES_ID - suffix.length()) + suffix;
+        });
+        return base;
+    }
+
+    /** Re-authors every member of any group that is still not unique. */
+    private static void escalate(List<Publication> orphans, Map<String, String> names,
+                                 java.util.function.Function<Publication, String> next) {
+        Map<String, List<Publication>> byName = new LinkedHashMap<>();
+        for (Publication p : orphans) {
+            byName.computeIfAbsent(names.get(p.getPublicationId()), k -> new ArrayList<>()).add(p);
+        }
+        for (List<Publication> group : byName.values()) {
+            if (group.size() > 1) {
+                group.forEach(p -> names.put(p.getPublicationId(), next.apply(p)));
+            }
+        }
+    }
+
+    /** Trims to a length without leaving a trailing hyphen. */
+    static String fit(String slug, int max) {
+        if (slug == null || slug.length() <= max) {
+            return slug;
+        }
+        String cut = slug.substring(0, max);
+        while (cut.endsWith("-")) {
+            cut = cut.substring(0, cut.length() - 1);
+        }
+        return cut;
+    }
+
+    private static Integer yearOf(Publication p) {
+        if (p.getPublishDateFrom() == null) {
+            return null;
+        }
+        java.util.Calendar c = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        c.setTime(p.getPublishDateFrom());
+        return c.get(java.util.Calendar.YEAR);
     }
 
     /** Builds the series. Never persists; the caller decides that. */

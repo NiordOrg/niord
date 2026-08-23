@@ -84,14 +84,20 @@ public final class LegacyIssueTranslation {
         issue.setIntervalFrom(legacy.getPublishDateFrom());
         issue.setIntervalTo(legacy.getPublishDateTo());
 
-        // R8's belt and braces: a cadenced series derives its window, and only a
-        // genuinely open-ended one-off is MANUAL. Marking a cadenced imported
-        // issue MANUAL is what leaves two current EfS issues on the public site
-        // at the first native publish. Refined in B5.4c.
-        issue.setPublicWindowSource(
-                series != null && series.getCadence() != null && series.getCadence() != SeriesCadence.NONE
-                        ? PublicWindowSource.DERIVED
-                        : PublicWindowSource.MANUAL);
+        // B5.4c / R8. DERIVED for anything with a cadence, MANUAL only for a
+        // genuinely open-ended one-off.
+        //
+        // Read from the SERIES where there is one and from the publication's own
+        // periodicalType where there is not. Keying on the series alone marked 9
+        // template-less WEEKLY publications MANUAL -- they are the double-week
+        // issues (NtM Week 15-16, EfS 51-52) that were created ad hoc rather than
+        // from the template, and they are as cadenced as any other. Marking a
+        // cadenced issue MANUAL is exactly what B2.3b step 13 skips by design,
+        // and the first native publish would then leave two current EfS issues
+        // on the public site at once.
+        issue.setPublicWindowSource(isCadenced(legacy, series)
+                ? PublicWindowSource.DERIVED
+                : PublicWindowSource.MANUAL);
 
         issue.setRepoPath(legacy.getRepoPath());
         issue.setEdition(legacy.getEdition() == null ? null : String.valueOf(legacy.getEdition()));
@@ -108,6 +114,20 @@ public final class LegacyIssueTranslation {
         IssueSnapshotDeriver.derive(issue, legacy, series, frozenAt);
 
         return issue;
+    }
+
+    /**
+     * Whether this issue belongs to something that repeats.
+     *
+     * The series is authoritative when it exists, because that is the row an
+     * admin edits. The publication's own periodicalType is the fallback for a
+     * template-less row, which has no series to ask.
+     */
+    public static boolean isCadenced(Publication legacy, PublicationSeries series) {
+        if (series != null) {
+            return series.getCadence() != null && series.getCadence() != SeriesCadence.NONE;
+        }
+        return legacy.getPeriodicalType() != null;
     }
 
     /**
