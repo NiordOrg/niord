@@ -9,10 +9,14 @@ import jakarta.persistence.TableGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -175,6 +179,60 @@ public class EntityContractTest {
                             + "was activated, flagged dormant and reactivated -- an event that overwrites its "
                             + "own predecessor is not an audit trail.");
         }
+    }
+
+    /**
+     * Every collection and map field is non-null on a freshly constructed entity.
+     *
+     * The converters make this a contract rather than a preference: a null column
+     * comes back from JpaPropertiesAttributeConverter as an EMPTY map, so an entity
+     * loaded from the database always has one. An uninitialised field therefore
+     * leaves exactly one instance that behaves differently -- the one nobody has
+     * persisted yet -- and the create path is made entirely of those.
+     *
+     * PublicationSeries.reportParams was that field. updateFromVo called clear() on
+     * it, SystemPublicationSeriesVo initialises its own map so the null-guard above
+     * the call was never false, and every create through the REST endpoint answered
+     * 500 with an NPE. Not data-dependent: it could not have worked once. The suite
+     * missed it because the tests build entities with setters and none of them went
+     * through updateFromVo; the seed script found it on the first real call.
+     *
+     * Asserted over every field of every entity, rather than as a check that those
+     * two maps are non-null, because a rule that only knows the fields already fixed
+     * would not have caught PublicationIssue.reportParams -- which had the same gap,
+     * and which this found.
+     */
+    @Test
+    public void noEntityStartsLifeWithANullCollection() throws Exception {
+        List<String> offenders = new ArrayList<>();
+
+        for (Class<?> type : ENTITIES) {
+            Constructor<?> ctor = type.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            Object fresh = ctor.newInstance();
+
+            for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
+                for (Field f : c.getDeclaredFields()) {
+                    if (Modifier.isStatic(f.getModifiers())) {
+                        continue;
+                    }
+                    if (!Collection.class.isAssignableFrom(f.getType())
+                            && !Map.class.isAssignableFrom(f.getType())) {
+                        continue;
+                    }
+                    f.setAccessible(true);
+                    if (f.get(fresh) == null) {
+                        offenders.add(type.getSimpleName() + "." + f.getName()
+                                + " (" + f.getType().getSimpleName() + ")");
+                    }
+                }
+            }
+        }
+
+        assertTrue(offenders.isEmpty(),
+                "These fields are null on a newly constructed entity, so any code that mutates them in "
+                        + "place -- clear(), add(), put() -- throws for created rows and works for loaded "
+                        + "ones: " + offenders + ". Initialise them at the declaration.");
     }
 
     private static boolean hasField(Class<?> type, String name) {

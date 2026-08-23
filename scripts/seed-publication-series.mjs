@@ -31,23 +31,41 @@
  * served a NEW-authority row anywhere but a test, and cannot be made to.
  *
  * Usage:
- *   node scripts/seed-publication-series.mjs [--keep] [--base <url>]
+ *   node scripts/seed-publication-series.mjs [--no-publish] [--base <url>]
  *
- *   --keep   leave the series behind. Without it the seed deletes what it made,
- *            so running it twice is safe and it leaves no fixture pretending to
- *            be real data.
+ *   --no-publish  stop after the issue is created. Everything up to that point
+ *                 is reversible, so this run cleans up completely and can be
+ *                 repeated as often as you like.
+ *
+ * A FULL RUN CANNOT BE UNDONE. Publishing makes an issue undeletable by design,
+ * and a series with any issue is undeletable in turn, so every full run leaves
+ * one series and one published issue on the target system for good. Each run
+ * therefore takes its own id, and prints what it left.
  */
 
 const args = process.argv.slice(2);
 const BASE = args.includes('--base') ? args[args.indexOf('--base') + 1] : 'https://niord.t-dma.dk/rest';
-const KEEP = args.includes('--keep');
+// Publishing is the one step this script cannot take back. --no-publish stops
+// after the issue is created, which leaves nothing behind: an OPEN, unstamped
+// issue is deletable, and so is its series once the issue is gone. Use it to
+// smoke-test create and activate as often as you like.
+const PUBLISH = !args.includes('--no-publish');
 const KEYCLOAK = (process.env.NIORD_KEYCLOAK
     || 'https://login.t-dma.dk/auth/realms/niord/protocol/openid-connect/token');
 const USER = process.env.NIORD_USER || 'test-sysadmin';
 const PASS = process.env.NIORD_PASS || 'test1234';
 
-// A recognisable id, so anything this leaves behind is obviously a seed.
-const SERIES_ID = 'seed-probe-series';
+// A recognisable id, unique per run.
+//
+// Unique because a run that reaches step 4 CANNOT be undone. A published issue
+// is refused deletion by design -- it is a historical record -- and a series is
+// refused deletion while it has any issue at all. Both refusals are correct, and
+// together they mean a fixed id would let this script run exactly once and then
+// fail every later run with SERIES_ID_TAKEN.
+//
+// So each run gets its own id, and the run says plainly what it left behind.
+const STAMP = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 13);
+const SERIES_ID = `seed-probe-${STAMP}`;
 
 let token;
 let step = 0;
@@ -158,7 +176,17 @@ async function main() {
         messagePublication: 'EXTERNAL',
         publicAuthority: 'LEGACY',
         languages: ['da'],
-        criteria: { criteria: [{ type: 'MESSAGE_SERIES', values: ['dma-nm'] }] },
+        // The discriminator is "kind", not "type", and its values are the camelCase
+        // names from the @JsonSubTypes list -- not the CriterionKind constants. The
+        // deviation is deliberate upstream: "type" is already the message-type
+        // domain word, so a node reading {"type":"messageType"} would be ambiguous.
+        // This script had it wrong in both respects and the server said so exactly,
+        // which is the validator earning its place.
+        criteria: {
+            schemaVersion: 1,
+            match: 'ALL',
+            criteria: [{ kind: 'messageSeries', operator: 'IN', values: ['dma-nm'] }],
+        },
         descs: [{
             lang: 'da',
             name: 'Seed probe',
@@ -190,13 +218,43 @@ async function main() {
     }
     ok('issue created', `publicId ${issue.publicId}`);
 
+    if (!PUBLISH) {
+        await cleanup([issue.publicId]);
+        console.log();
+        console.log('--no-publish: stopped before the irreversible step, and cleaned up.');
+        console.log();
+        console.log('seed complete.');
+        return;
+    }
+
     // 4. Publish it.
+    //
+    // The endpoint reads exactly two keys: acknowledgedWarnings and regenerate.
+    // This script used to send acknowledgeWarnings, acknowledged and stamp -- none
+    // of which are read -- and then reported PASS without looking at the result.
+    // A step that cannot fail is not a check, so it now reads the issue back.
+    //
+    // There is no caller-supplied stamp: publish stamps the moment it runs. Step 5
+    // therefore has to ask the public list about the returned stampedAt rather than
+    // about a date chosen here.
     const published = await call('PUT', `/publication-issues/issue/${issue.publicId}/publish`, {
-        acknowledgeWarnings: true,
-        acknowledged: [],
-        stamp: Date.parse('2026-08-12T12:00:00Z'),
+        acknowledgedWarnings: [],
+        regenerate: true,
     });
-    ok('issue published', `members ${published.memberCount ?? '?'}`);
+
+    // Publish sets PUBLISHED and REPORTS warnings rather than refusing on them, so
+    // a green response is not by itself evidence that the status moved.
+    const after = await call('GET', `/publication-issues/issue/${issue.publicId}`);
+    if (after.status !== 'PUBLISHED') {
+        fail('issue published', `the call succeeded but status is ${after.status}, not PUBLISHED`);
+    }
+    ok('issue published', `members ${published.memberCount ?? '?'}, stamped `
+        + new Date(published.stampedAt).toISOString());
+
+    const warnings = published.unacknowledgedWarnings || [];
+    if (warnings.length) {
+        console.log(`        warnings, unacknowledged and not fatal: ${warnings.join('; ')}`);
+    }
 
     // 5. The union. It cannot run yet, and that is the finding.
     //
@@ -205,7 +263,7 @@ async function main() {
     // LEGACY to NEW. That flip is the whole of B7.1, so as things stand cutover
     // has no API. Recorded here rather than worked around, because a seed that
     // reached past the API to set a column would hide exactly this.
-    const at = Date.parse('2026-08-12T13:00:00Z');
+    const at = published.stampedAt;
     const publicList = await fetch(
         `${BASE}/public/v1/publications?lang=da&from=${at}&to=${at}`).then(r => r.json());
     const served = publicList.some(pub => pub.publicationId === issue.publicId);
@@ -220,12 +278,14 @@ async function main() {
             + '        reporting a missing capability, not a failure.');
     }
 
-    if (!KEEP) {
-        await cleanup([issue.publicId]);
-        console.log('\n  cleaned up. Pass --keep to leave the series behind.');
-    } else {
-        console.log(`\n  left behind: series ${SERIES_ID}`);
-    }
+    // Nothing to clean up: the issue is published, so both deletes are refused.
+    // Reported rather than attempted, because a cleanup that always fails reads
+    // like a broken script instead of a correct rule.
+    console.log();
+    console.log(`  LEFT BEHIND, permanently: series ${SERIES_ID} and one published issue.`);
+    console.log('  Neither can be deleted through the API -- a published issue is a historical');
+    console.log('  record, and a series with any issue is refused deletion. Both are correct.');
+    console.log('  Run with --no-publish for a smoke test that cleans up after itself.');
 
     console.log('\nseed complete.');
 }

@@ -16,6 +16,7 @@ import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
@@ -152,9 +153,14 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     @ManyToOne
     private PublicationIssue supersedes;
 
+    // Initialised for the same reason as PublicationSeries.reportParams: the
+    // converter hands back an empty map for a null column, so a loaded entity
+    // always has one. Leaving it null here would mean a caller could tell a
+    // constructed issue from a loaded one, which is the difference that turned
+    // the equivalent field on the series into a 500 on every create.
     @Column(columnDefinition = "TEXT")
     @Convert(converter = JpaPropertiesAttributeConverter.class)
-    private Map<String, Object> reportParams;
+    private Map<String, Object> reportParams = new LinkedHashMap<>();
 
     public String getPublicId() {
         return publicId;

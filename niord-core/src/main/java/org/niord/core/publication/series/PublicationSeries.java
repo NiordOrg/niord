@@ -124,9 +124,14 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     @Enumerated(EnumType.STRING)
     private PagedSearchParamsVo.SortOrder messageSortOrder;
 
+    // Initialised, not left null. JpaPropertiesAttributeConverter returns an empty
+    // map for a null column, so an entity LOADED from the database always has a
+    // map; only a freshly constructed one did not, which made the create path the
+    // single place updateFromVo could dereference null. Publication does the same
+    // for its two maps, and descs and languages below do it for the same reason.
     @Column(columnDefinition = "TEXT")
     @Convert(converter = JpaPropertiesAttributeConverter.class)
-    private Map<String, Object> reportParams;
+    private Map<String, Object> reportParams = new LinkedHashMap<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
