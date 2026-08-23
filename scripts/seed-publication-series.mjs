@@ -244,9 +244,19 @@ async function main() {
 
     // Publish sets PUBLISHED and REPORTS warnings rather than refusing on them, so
     // a green response is not by itself evidence that the status moved.
-    const after = await call('GET', `/publication-issues/issue/${issue.publicId}`);
+    //
+    // Read back through editable-issue, not issue. The public PublicationIssueVo
+    // carries no lifecycle state at all -- no status, no publishedAt, no member
+    // count -- which is correct for a citizen-facing shape and useless for this
+    // check. Asking the wrong one returned status undefined, which this step
+    // reported as a failure rather than passing on a field that was never there.
+    const after = await call('GET', `/publication-issues/editable-issue/${issue.publicId}`);
     if (after.status !== 'PUBLISHED') {
-        fail('issue published', `the call succeeded but status is ${after.status}, not PUBLISHED`);
+        fail('issue published',
+            `the call succeeded but status is ${after.status}, not PUBLISHED`);
+    }
+    if (!after.publishedAt) {
+        fail('issue published', 'status is PUBLISHED but publishedAt was never stamped');
     }
     ok('issue published', `members ${published.memberCount ?? '?'}, stamped `
         + new Date(published.stampedAt).toISOString());
