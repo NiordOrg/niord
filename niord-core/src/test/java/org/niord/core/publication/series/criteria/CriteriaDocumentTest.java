@@ -245,50 +245,13 @@ public class CriteriaDocumentTest {
                         CriteriaResolver.NO_DOMAINS));
     }
 
-    // ------------------------------------------- the legacy translation table
-
-    /**
-     * Exactly four distinct filter strings exist across the estate, plus the
-     * no-membership case. A fifth means either new data or a wrong assumption,
-     * and both need a human -- so it fails rather than being guessed at.
-     */
-    @Test
-    public void theLegacyTableMapsFourStringsAndRefusesAFifth() {
-        LegacyFilterTranslator.Translation blank = LegacyFilterTranslator.translate("");
-        assertTrue(blank.hasMembership());
-        assertFalse(blank.aliveAtCutoff());
-        assertTrue(blank.messageTypes().isEmpty());
-
-        LegacyFilterTranslator.Translation phase =
-                LegacyFilterTranslator.translate("data.phase=='msg-status-change' && msg.status==PUBLISHED");
-        assertFalse(phase.aliveAtCutoff());
-        assertTrue(phase.note().contains("recorder trigger"),
-                "the phase guard must be recorded as a trigger, not as membership");
-
-        LegacyFilterTranslator.Translation inForce = LegacyFilterTranslator.translate("msg.status == PUBLISHED");
-        assertTrue(inForce.aliveAtCutoff(), "the in-force regime must set the alive clause");
-
-        LegacyFilterTranslator.Translation pt =
-                LegacyFilterTranslator.translate("(msg.type==T || msg.type==P) && msg.status==PUBLISHED");
-        assertEquals(Set.of("TEMPORARY_NOTICE", "PRELIMINARY_NOTICE"), pt.messageTypes());
-
-        // Whitespace variants of the same filter are the same filter.
-        assertEquals(inForce.aliveAtCutoff(), LegacyFilterTranslator.translate("msg.status==PUBLISHED").aliveAtCutoff());
-
-        LegacyFilterTranslator.UnknownLegacyFilterException e =
-                assertThrows(LegacyFilterTranslator.UnknownLegacyFilterException.class,
-                        () -> LegacyFilterTranslator.translate("msg.status==DRAFT && msg.type==X"));
-        assertTrue(e.getMessage().contains("refusing to guess"), e.getMessage());
-    }
-
-    /** No translated filter smuggles a status conjunct into the stored document. */
-    @Test
-    public void theStatusConjunctIsDroppedDeliberately() {
-        for (String f : List.of("", "data.phase=='msg-status-change' && msg.status==PUBLISHED",
-                "msg.status == PUBLISHED", "(msg.type==T || msg.type==P) && msg.status==PUBLISHED")) {
-            LegacyFilterTranslator.Translation t = LegacyFilterTranslator.translate(f);
-            assertTrue(t.messageTypes().stream().noneMatch(v -> v.contains("PUBLISHED")),
-                    "a status value leaked into the translated criteria for [" + f + "]");
-        }
-    }
+    // The legacy translation table is asserted in LegacyFilterTableTest, which
+    // drives it from fixtures/legacy-estate/message-tag-filters.json -- the bytes
+    // the estate actually stores.
+    //
+    // The tests that used to sit here typed the filter strings by hand, using the
+    // consent document's shorthand (msg.type==T), which is what the code matched.
+    // Both were wrong in the same direction, so the tests passed on an estate that
+    // would have failed 917 of 1,077 rows. A test that shares the code's assumption
+    // cannot test the assumption, so it was moved to the data rather than fixed.
 }

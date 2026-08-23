@@ -1,0 +1,29 @@
+{
+  "_": "The messageTagFilter values that actually exist, byte for byte.",
+  "__": "Generated from the captured production estate; never hand-typed. The consent document abbreviates these (msg.type==T) and the code once matched the abbreviation, which would have failed every P&T publication in the estate.",
+  "capturedFrom": "niord.t-dma.dk, publications/search-details, 2026-08-23",
+  "total": 1077,
+  "distinctColumnValues": 5,
+  "values": [
+    {
+      "filter": "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED",
+      "count": 501
+    },
+    {
+      "filter": "data.phase == 'msg-status-change' && msg.status == Status.PUBLISHED",
+      "count": 387
+    },
+    {
+      "filter": null,
+      "count": 159
+    },
+    {
+      "filter": "msg.status == Status.PUBLISHED",
+      "count": 29
+    },
+    {
+      "filter": "",
+      "count": 1
+    }
+  ]
+}
