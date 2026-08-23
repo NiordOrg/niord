@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.BindsRule;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.message.MemberSetDesignation;
 import org.niord.core.message.MessageSearchParams;
@@ -126,6 +127,7 @@ public class PublicationResolutionTest {
      * caller received every published message -- and an empty official issue is a
      * perfectly ordinary thing for the model to contain.
      */
+    @BindsRule({"RI-15"})
     @Test
     @Transactional
     public void anIssueWithNoMembersDesignatesAnEmptySet() {
@@ -221,6 +223,7 @@ public class PublicationResolutionTest {
     }
 
     /** And the same OPEN issue resolves for an internal caller. */
+    @BindsRule({"RI-14"})
     @Test
     @Transactional
     public void anOpenIssueResolvesInternally() {
@@ -539,6 +542,7 @@ public class PublicationResolutionTest {
      * still ACTIVE and still the right answer. Every stored citation into it
      * breaks, and comes back on its own later, which is the worst way to find out.
      */
+    @BindsRule({"X-3"})
     @Test
     @Transactional
     public void anImportedIssueNotYetPublishedFallsBackToTheLegacyRow() {

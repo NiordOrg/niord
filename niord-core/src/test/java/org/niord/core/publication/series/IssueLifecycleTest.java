@@ -82,6 +82,14 @@ public class IssueLifecycleTest {
         return s;
     }
 
+    /** An existing message, since O-6 refuses an override naming nothing. */
+    private String someMessageUid() {
+        List<String> uids = em.createQuery("SELECT m.uid FROM Message m ORDER BY m.id", String.class)
+                .setMaxResults(1).getResultList();
+        assertFalse(uids.isEmpty(), "the test database holds no messages; seed it first");
+        return uids.get(0);
+    }
+
     private User user() {
         User u = new User();
         u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
@@ -112,6 +120,7 @@ public class IssueLifecycleTest {
     }
 
     /** Retro-create is a category error for a series whose issues overlap. */
+    @BindsRule({"I-8"})
     @Test
     @Transactional
     public void retroCreateIsRefusedForAnOverlappingSeries() {
@@ -137,6 +146,7 @@ public class IssueLifecycleTest {
      * OQ-10. The new edition sets supersedes AND caps the predecessor in one
      * transaction -- the multi-step alternative is where the cap gets forgotten.
      */
+    @BindsRule({"I-13"})
     @Test
     @Transactional
     public void aNewEditionLinksAndCapsInOneTransaction() {
@@ -210,6 +220,7 @@ public class IssueLifecycleTest {
      * publicId is minted at create. The real test is never-stamped and
      * never-published.
      */
+    @BindsRule({"I-16"})
     @Test
     @Transactional
     public void onlyAnUntouchedIssueCanBeDeleted() {
@@ -238,6 +249,7 @@ public class IssueLifecycleTest {
     }
 
     /** X-5. A series with issues is retired, never deleted. */
+    @BindsRule({"X-5"})
     @Test
     @Transactional
     public void aSeriesWithIssuesCannotBeDeleted() {
@@ -263,19 +275,25 @@ public class IssueLifecycleTest {
         em.flush();
 
         User curator = user();
-        curation.include(i, "some-uid", curator, "belongs in this week");
+        // A real message: O-6 refuses an override naming one that does not exist,
+        // because an override that can never apply would sit in the audit trail
+        // looking like a decision nobody can act on.
+        String uid = someMessageUid();
+
+        curation.include(i, uid, curator, "belongs in this week");
         em.flush();
         assertEquals(1, curation.forIssue(i).size());
 
         // A second decision on the same message replaces the first: two would be
         // either redundant or contradictory.
-        curation.exclude(i, "some-uid", curator, "changed my mind");
+        curation.exclude(i, uid, curator, "changed my mind");
         em.flush();
         List<IssueOverride> after = curation.forIssue(i);
         assertEquals(1, after.size(), "two overrides for one message were kept");
         assertEquals(OverrideKind.EXCLUDE, after.get(0).getKind());
     }
 
+    @BindsRule({"O-1"})
     @Test
     @Transactional
     public void anOverrideMustSayWhy() {
@@ -291,6 +309,7 @@ public class IssueLifecycleTest {
     }
 
     /** Once frozen, the member set is history. Changing it would rewrite what was published. */
+    @BindsRule({"O-3"})
     @Test
     @Transactional
     public void curationIsRefusedOnceTheIssueIsFrozen() {

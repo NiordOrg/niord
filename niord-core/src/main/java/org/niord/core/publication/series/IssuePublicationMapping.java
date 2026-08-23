@@ -193,12 +193,28 @@ public final class IssuePublicationMapping {
     }
 
     /** An explicit link wins; otherwise the repository path the file was written to. */
-    private static String linkOf(PublicationIssueDesc desc) {
+    /**
+     * D-8. Relative for repository-hosted files, absolute only for an external link.
+     *
+     * filePath is a STORAGE path -- publications/a/8e/<id>/EfS.pdf -- and is not
+     * fetchable. What a client needs is the repository URL that serves it, which
+     * is what legacy stores for all 2,128 of its repository-hosted descs:
+     * /rest/repo/file/<path>. Emitting the bare storage path gives every natively
+     * published issue a link that 404s, while the imported rows beside it work,
+     * because those carry legacy's link verbatim.
+     *
+     * An explicit link is returned untouched: that is the EXTERNAL_LINK case, and
+     * it is absolute by definition.
+     */
+    static String linkOf(PublicationIssueDesc desc) {
         if (notBlank(desc.getLink())) {
             return desc.getLink();
         }
-        return notBlank(desc.getFilePath()) ? desc.getFilePath() : null;
+        return notBlank(desc.getFilePath()) ? REPO_FILE_PREFIX + desc.getFilePath() : null;
     }
+
+    /** What the repository serves its files under. */
+    static final String REPO_FILE_PREFIX = "/rest/repo/file/";
 
     private static PublicationType typeOf(PublicationIssue issue) {
         boolean anyLink = descsOf(issue).stream().anyMatch(d -> notBlank(d.getLink()));

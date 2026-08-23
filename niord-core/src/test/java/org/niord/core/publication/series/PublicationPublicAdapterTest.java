@@ -329,6 +329,7 @@ public class PublicationPublicAdapterTest {
     }
 
     /** The minus one millisecond: no instant has two current issues. */
+    @BindsRule({"I-18"})
     @Test
     @Transactional
     public void noInstantHasTwoCurrentIssues() {
@@ -474,6 +475,7 @@ public class PublicationPublicAdapterTest {
     // ==================================================== citation resolution
 
     /** A citation resolves to the new issue first, then to a legacy row. */
+    @BindsRule({"X-4"})
     @Test
     @Transactional
     public void aCitationResolvesTheNewIssueBeforeTheLegacyRow() {

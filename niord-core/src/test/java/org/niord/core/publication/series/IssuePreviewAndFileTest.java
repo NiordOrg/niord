@@ -50,6 +50,24 @@ public class IssuePreviewAndFileTest {
     @Inject
     EntityManager em;
 
+    /**
+     * An OPEN issue whose series is configured for two languages.
+     *
+     * D-3 is a rule ACROSS languages, so it cannot be shown on the single-language
+     * issue the rest of this suite uses.
+     */
+    private PublicationIssue anIssueInTwoLanguages() {
+        PublicationIssue issue = anIssue();
+        PublicationSeries s = issue.getSeries();
+        if (!s.getLanguages().contains("en")) {
+            s.getLanguages().add("en");
+            s.createDesc("en").setName("Test series");
+        }
+        issue.createDesc("en").setName("Test issue");
+        em.flush();
+        return issue;
+    }
+
     private PublicationIssue anIssue() {
         PublicationCategory c = new PublicationCategory();
         c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
@@ -162,6 +180,7 @@ public class IssuePreviewAndFileTest {
     // ================================================================= files
 
     /** Upload on a PUBLISHED issue is the post-publish correction path, and it archives first. */
+    @BindsRule({"D-6"})
     @Test
     @Transactional
     public void uploadingOntoAPublishedIssueArchivesWhatItReplaces() throws Exception {
@@ -209,6 +228,7 @@ public class IssuePreviewAndFileTest {
     }
 
     /** Clearing a published file would leave a dead link where a citation points. */
+    @BindsRule({"D-5"})
     @Test
     @Transactional
     public void aPublishedFileCannotBeCleared() {
@@ -245,5 +265,48 @@ public class IssuePreviewAndFileTest {
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
                         () -> files.upload(issue, "de", "x.pdf", "x".getBytes(StandardCharsets.UTF_8), user()));
         assertEquals("NO_SUCH_LANGUAGE", e.code());
+    }
+    /**
+     * D-3: one file name per issue, across ALL its languages.
+     *
+     * Every language writes into the same repoPath, so two languages sharing a
+     * name are two languages sharing a file: whichever uploads second overwrites
+     * the first, and the issue then serves the Danish PDF to an English reader
+     * with nothing anywhere recording that it happened.
+     *
+     * Left unimplemented until B1.7b -- the rule was pending on B2.12, which
+     * completed without it.
+     */
+    @BindsRule({"D-3"})
+    @Test
+    @Transactional
+    public void twoLanguagesMayNotShareAFileName() {
+        PublicationIssue issue = anIssueInTwoLanguages();
+
+        files.upload(issue, "da", "shared.pdf", "dansk".getBytes(StandardCharsets.UTF_8), user());
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> files.upload(issue, "en", "shared.pdf",
+                                "english".getBytes(StandardCharsets.UTF_8), user()));
+        assertEquals("FILE_NAME_NOT_DISTINCT", e.code());
+
+        // A distinct name is fine, which is what makes the refusal about the
+        // collision rather than about uploading twice.
+        assertNotNull(files.upload(issue, "en", "distinct.pdf",
+                "english".getBytes(StandardCharsets.UTF_8), user()));
+    }
+
+    /** Re-uploading the SAME language keeps its own name; D-3 is across languages. */
+    @BindsRule({"D-3"})
+    @Test
+    @Transactional
+    public void alanguageMayReuseItsOwnFileName() {
+        PublicationIssue issue = anIssueInTwoLanguages();
+
+        files.upload(issue, "da", "same.pdf", "first".getBytes(StandardCharsets.UTF_8), user());
+        assertNotNull(files.upload(issue, "da", "same.pdf",
+                "replacement".getBytes(StandardCharsets.UTF_8), user()),
+                "replacing a language's own file is a replacement, not a collision");
     }
 }

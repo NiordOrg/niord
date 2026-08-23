@@ -242,6 +242,7 @@ public class IssuePublishTest {
     }
 
     /** Step 8. An exclude the query never returned freezes appliedAtPublish = false. */
+    @BindsRule({"O-5"})
     @Test
     @Transactional
     public void anOverrideThatChangedNothingFreezesAsNotApplied() {
@@ -304,6 +305,7 @@ public class IssuePublishTest {
      * The retro-create case. Without this the recovered issue has a NULL publicTo
      * and the public site's current publication becomes a two-year-old one.
      */
+    @BindsRule({"I-19"})
     @Test
     @Transactional
     public void aRecoveredIssueCapsItselfAgainstItsSuccessor() {
@@ -342,6 +344,7 @@ public class IssuePublishTest {
      * lock, and clearing the persistence context between them inside a single
      * transaction pulls the ground out from under it.
      */
+    @BindsRule({"I-14"})
     @Test
     @Transactional
     public void anOpenEndedPredecessorIsCapped() {
@@ -387,6 +390,7 @@ public class IssuePublishTest {
     }
 
     /** Step 13. A hand-chosen window end is left alone -- somebody decided that value. */
+    @BindsRule({"I-19"})
     @Test
     @Transactional
     public void aManuallyClosedPredecessorIsLeftAlone() {

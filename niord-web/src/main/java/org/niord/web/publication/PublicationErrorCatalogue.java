@@ -25,6 +25,21 @@ public final class PublicationErrorCatalogue {
         put("EMPTY_OPERAND", 400);
         put("UNRESOLVABLE_OPERAND", 400);
         put("OVERRIDE_REASON_REQUIRED", 400);
+
+        // B1.7b. Three guards that had no code until the invariant gate ran, so
+        // they had no catalogue entry either -- and an uncatalogued code returns
+        // 500 from an endpoint, which is the failure this catalogue exists to
+        // prevent.
+        //
+        // 409 for both override refusals: each names a CONFLICT with something
+        // that already exists -- a membership the criteria already grant, or the
+        // absence of the message being named -- rather than a malformed request.
+        put("OVERRIDE_ALREADY_A_MEMBER", 409);
+        put("OVERRIDE_MESSAGE_NOT_FOUND", 409);
+
+        // 409 as well: the upload is well formed, and conflicts with the file
+        // name another language already holds in the same folder.
+        put("FILE_NAME_NOT_DISTINCT", 409);
         put("NO_SUCH_LANGUAGE", 400);
         put("RETRO_CREATE_NOT_APPLICABLE", 400);
         put("SERIES_INVALID", 400);

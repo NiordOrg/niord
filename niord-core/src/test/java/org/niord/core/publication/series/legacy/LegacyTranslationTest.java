@@ -1,6 +1,7 @@
 package org.niord.core.publication.series.legacy;
 
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.BindsRule;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
@@ -127,6 +128,7 @@ public class LegacyTranslationTest {
     // ----------------------------------------------------------------- B5.4a
 
     /** Id-space continuity, over every row: publicId IS the legacy id. */
+    @BindsRule({"X-2"})
     @Test
     public void everyIssueKeepsItsLegacyIdVerbatim() {
         List<String> broken = new ArrayList<>();
@@ -146,6 +148,7 @@ public class LegacyTranslationTest {
     }
 
     /** The whole estate, and no two issues collide on publicId. */
+    @BindsRule({"X-1"})
     @Test
     public void theImportedIdSpaceDoesNotCollide() {
         Set<String> seen = new HashSet<>();
@@ -163,6 +166,7 @@ public class LegacyTranslationTest {
      * The containment rule is D-4's imported layout, which is the fixture B1.7b
      * waits on.
      */
+    @BindsRule({"D-4"})
     @Test
     public void pathsAreVerbatimAndContainedByTheirRepoPath() {
         int checked = 0;

@@ -25,8 +25,34 @@ public class IssueCurationService extends BaseService {
     @Inject
     IssueAuditService audit;
 
+    /**
+     * O-4. Including a message the query already selects is refused.
+     *
+     * Not harmless duplication: the override would sit in the audit trail
+     * claiming somebody decided to add a message that was already there, and if
+     * the criteria later narrow, that stale INCLUDE quietly keeps a message the
+     * query no longer selects -- a membership nobody chose, explained by a
+     * decision nobody made.
+     *
+     * Checked against the members already resolved onto the issue rather than by
+     * re-running the query: an OPEN issue's rows are the live resolution, and
+     * re-resolving here would double the cost of every curation click.
+     */
     @Transactional
     public IssueOverride include(PublicationIssue issue, String messageUid, User author, String reason) {
+        Long alreadyAMember = em.createQuery(
+                        "SELECT COUNT(m) FROM IssueMember m WHERE m.issue = :i AND m.messageUid = :uid "
+                                + "AND m.source = :criteria", Long.class)
+                .setParameter("i", issue)
+                .setParameter("uid", messageUid)
+                .setParameter("criteria", MemberSource.CRITERIA)
+                .getSingleResult();
+        if (alreadyAMember > 0) {
+            throw new IssueLifecycleService.TransitionRefusedException("OVERRIDE_ALREADY_A_MEMBER",
+                    "message '" + messageUid + "' is already selected by this issue's criteria. An "
+                            + "INCLUDE on top of it records a decision nobody made, and would keep "
+                            + "the message if the criteria later narrowed.");
+        }
         return addOverride(issue, messageUid, OverrideKind.INCLUDE, author, reason, "OVERRIDE_INCLUDED");
     }
 
@@ -60,6 +86,21 @@ public class IssueCurationService extends BaseService {
 
         // One override per message per issue: two would be either redundant or
         // contradictory, and neither is something to store.
+        // O-6. An override naming a message that does not exist is a hard error.
+        // Silently keeping it would leave a curation decision that can never
+        // apply, and the annex report takes its heading from the first member --
+        // so the visible result of a bad uid is an untitled PDF rather than a
+        // complaint.
+        Long messages = em.createQuery(
+                        "SELECT COUNT(m) FROM Message m WHERE m.uid = :uid", Long.class)
+                .setParameter("uid", messageUid)
+                .getSingleResult();
+        if (messages == 0) {
+            throw new IssueLifecycleService.TransitionRefusedException("OVERRIDE_MESSAGE_NOT_FOUND",
+                    "no message has uid '" + messageUid + "'. An override that names nothing can "
+                            + "never apply, and would sit in the audit trail looking like a decision.");
+        }
+
         List<IssueOverride> existing = em.createQuery(
                         "SELECT o FROM IssueOverride o WHERE o.issue = :i AND o.messageUid = :uid",
                         IssueOverride.class)

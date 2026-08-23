@@ -55,6 +55,21 @@ public class IssueFileService extends BaseService {
                     "could not write " + target + ": " + e.getMessage());
         }
 
+        // D-3. One file name per issue, across ALL its languages.
+        //
+        // Every language writes into the SAME repoPath, so two languages sharing
+        // a name are two languages sharing a file: whichever uploads second
+        // overwrites the first, and the issue then serves the Danish PDF to an
+        // English reader with nothing anywhere recording that it happened.
+        for (PublicationIssueDesc other : issue.getDescs()) {
+            if (!other.getLang().equals(lang) && fileName.equals(other.getFileName())) {
+                throw new IssueLifecycleService.TransitionRefusedException("FILE_NAME_NOT_DISTINCT",
+                        "'" + fileName + "' is already the file name for '" + other.getLang()
+                                + "'. Both languages write into the same folder, so sharing a name "
+                                + "means one silently overwrites the other.");
+            }
+        }
+
         desc.setFileName(fileName);
         desc.setFilePath(issue.getRepoPath() + "/" + fileName);
         desc.setFileSource(FileSource.UPLOADED);

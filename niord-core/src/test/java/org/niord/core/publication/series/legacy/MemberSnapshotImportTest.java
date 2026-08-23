@@ -3,6 +3,7 @@ package org.niord.core.publication.series.legacy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.BindsRule;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.MemberSource;
@@ -232,6 +233,7 @@ public class MemberSnapshotImportTest {
     }
 
     /** The importer creates no overrides, on any row. */
+    @BindsRule({"O-7"})
     @Test
     public void theImporterCreatesNoOverrides() throws Exception {
         for (Imported result : importAll().values()) {
