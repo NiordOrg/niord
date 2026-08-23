@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.user.User;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -53,6 +54,9 @@ public class IssueInvariantsTest {
 
     @Inject
     IssueLifecycleService lifecycle;
+
+    @Inject
+    IssueCurationService curation;
 
     @Inject
     EntityManager em;
@@ -224,9 +228,20 @@ public class IssueInvariantsTest {
         if (issue.getMemberCount() > 0) {
             assertNotNull(issue.getSnapshotFrozenAt(), "I-12: members with no freeze time");
             assertNotNull(issue.getMembershipProvenance(), "I-12: members with no provenance");
-            assertNotNull(issue.getCriteriaSnapshot(),
-                    "I-12: a frozen member list with no criteria recorded beside it cannot be "
-                            + "explained afterwards, only trusted");
+
+            // The criteria snapshot is required when a QUERY produced the members,
+            // not merely when members exist. Two shapes have members and no
+            // criteria, and both are legitimate: an annex issue curated by hand,
+            // and an imported annex carrying its one recorded member (ruling
+            // B5-iv). S-1 forbids criteria on a non-query series, so demanding it
+            // whenever memberCount > 0 makes those shapes unrepresentable -- and
+            // B1.7b gates the exit from Phase B5 on this harness, so the assertion
+            // would go red for a row the importer is required to write.
+            if (issue.getSeries().getContentMode() == ContentMode.GENERATED_FROM_QUERY) {
+                assertNotNull(issue.getCriteriaSnapshot(),
+                        "I-12: a query-derived member list with no criteria recorded beside it "
+                                + "cannot be explained afterwards, only trusted");
+            }
         }
     }
 
@@ -356,6 +371,86 @@ public class IssueInvariantsTest {
                         + "rows, or every reader of the member set has to remember to filter them");
     }
 
+    // ==================================================== curated membership
+
+    /**
+     * A series with no query still publishes what a curator named.
+     *
+     * The NCAGS and Isbilag annexes hold two live messages a year and each issue
+     * names one of them; no query of any shape can select one and not the other,
+     * because the only discriminator is the message body. contentMode is not
+     * GENERATED_FROM_QUERY for them.
+     *
+     * The overrides used to be passed only on the query branch, so curating such
+     * an issue recorded an audited include -- IssueCurationService has no
+     * contentMode guard -- and publish then froze ZERO members while the release
+     * checklist reported that every override applied. The annex report takes its
+     * heading from the first member, so the visible result is an untitled
+     * document rather than an error.
+     */
+    @BindsRule({"X-7"})
+    @Test
+    @Transactional
+    public void aCuratedIssueOnANonQuerySeriesPublishesWhatWasNamed() {
+        String uid = someMessageUid();
+
+        PublicationSeries annexes = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        annexes.setContentMode(ContentMode.NONE);
+        annexes.setCriteria(null);
+        annexes.setTimeRelation(null);
+        em.flush();
+
+        PublicationIssue issue = lifecycle.create(annexes, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, null);
+        em.flush();
+        curation.include(issue, uid, user(), "the ice service message for this year");
+        em.flush();
+
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+        em.flush();
+        em.clear();
+
+        PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
+        assertEquals(1, published.getMemberCount().intValue(),
+                "the curated include was discarded at publish, so the issue froze empty while the "
+                        + "checklist reported that every override applied");
+
+        List<String> uids = em.createQuery(
+                        "SELECT m.messageUid FROM IssueMember m WHERE m.issue.id = :id", String.class)
+                .setParameter("id", published.getId()).getResultList();
+        assertEquals(List.of(uid), uids, "the frozen member is not the one that was named");
+    }
+
+    /** And an exclude still removes one, so the two overrides stay symmetric. */
+    @Test
+    @Transactional
+    public void anExcludeOnANonQuerySeriesRemovesTheNamedMember() {
+        List<String> uids = someMessageUids(2);
+
+        PublicationSeries annexes = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        annexes.setContentMode(ContentMode.NONE);
+        annexes.setCriteria(null);
+        annexes.setTimeRelation(null);
+        em.flush();
+
+        PublicationIssue issue = lifecycle.create(annexes, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, null);
+        em.flush();
+        curation.include(issue, uids.get(0), user(), "the NCAGS message");
+        curation.include(issue, uids.get(1), user(), "added in error");
+        curation.exclude(issue, uids.get(1), user(), "removed again before release");
+        em.flush();
+
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+        em.flush();
+        em.clear();
+
+        assertEquals(1, em.find(PublicationIssue.class, issue.getId()).getMemberCount().intValue(),
+                "an exclude on a non-query series did not remove the member it named");
+    }
+
     // ------------------------------------------------------------------ fixtures
 
     private PublicationSeries series(TimeRelation relation) {
@@ -389,6 +484,26 @@ public class IssueInvariantsTest {
         s.createDesc("da").setName("Test series");
         em.persist(s);
         return s;
+    }
+
+    /** Every override names its author -- IssueOverride.author is non-null, which is C1. */
+    private User user() {
+        User u = new User();
+        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        em.persist(u);
+        return u;
+    }
+
+    private String someMessageUid() {
+        return someMessageUids(1).get(0);
+    }
+
+    private List<String> someMessageUids(int count) {
+        List<String> uids = em.createQuery("SELECT m.uid FROM Message m ORDER BY m.id", String.class)
+                .setMaxResults(count).getResultList();
+        assertEquals(count, uids.size(),
+                "the test database holds fewer than " + count + " messages; seed it first");
+        return uids;
     }
 
     private PublicationIssue openIssue(PublicationSeries s, Date intervalFrom) {

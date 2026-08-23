@@ -164,9 +164,26 @@ public class IssuePublishService extends BaseService {
                 && series.getTimeRelation() != null;
 
         Interval window = new Interval(issue.getIntervalFrom(), stamp);
+
+        // The gate is on running the QUERY, not on having members.
+        //
+        // Overrides constitute membership on their own. A series with no criteria
+        // can still have contents that somebody named by hand -- the NCAGS and
+        // Isbilag annexes hold two live messages a year and each issue names one
+        // of them, where no query of any shape can select one and not the other.
+        //
+        // Passing the overrides only on the query branch meant a curator could
+        // record an audited include on such an issue, IssueCurationService having
+        // no contentMode guard, and publish would then freeze zero members while
+        // NO_INEFFECTIVE_OVERRIDES reported that every override applied. The
+        // annex report takes its heading from the first member, so the result is
+        // an untitled document rather than an error.
+        Set<String> curated = includes(issue);
+        curated.removeAll(excludes(issue));
+
         MemberResolutionService.Resolution resolution = hasMembership
                 ? resolver.resolve(criteriaOf(series), window, includes(issue), excludes(issue))
-                : MemberResolutionService.Resolution.empty();
+                : MemberResolutionService.Resolution.curated(curated);
 
         // --- 4. OVERRIDES: already applied by the resolver ----------------
         Set<String> members = resolution.members();

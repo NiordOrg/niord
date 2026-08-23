@@ -83,6 +83,26 @@ public class MemberResolutionService extends BaseService {
             return new Resolution(Map.of(), List.of(), Set.of(), List.of(), List.of());
         }
 
+        /**
+         * A resolution whose members were named, not derived.
+         *
+         * A series with no criteria still has contents when somebody put them
+         * there by hand. That is what the NCAGS and Isbilag annexes are: a series
+         * holding two live messages a year, each issue naming one of them, where
+         * no query of any shape can select one and not the other -- the only
+         * discriminator is the message body.
+         *
+         * Without this, curating such an issue records an audited override and
+         * then discards it at publish, and the release checklist reports that
+         * every override applied.
+         */
+        public static Resolution curated(Set<String> uids) {
+            List<String> ordered = List.copyOf(uids);
+            Map<String, MemberDecision> decisions = new LinkedHashMap<>();
+            uids.forEach(uid -> decisions.put(uid, new MemberDecision(uid, true, MembershipReason.MANUAL_INCLUDE)));
+            return new Resolution(decisions, ordered, Set.copyOf(uids), List.of(), List.of());
+        }
+
         /** The warning of one code, if it was raised. */
         public Optional<ResolutionWarningVo> warning(ResolutionWarningCode code) {
             return warnings.stream().filter(w -> w.code() == code).findFirst();
