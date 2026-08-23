@@ -107,6 +107,10 @@ public final class LegacyEstateFixture {
             mt.setTagId(text(tag, "tagId"));
             mt.setName(text(tag, "name"));
             mt.setCreated(date(tag, "created"));
+            // Whether the tag is LOCKED decides whether its contents are frozen
+            // evidence. Omitting it makes every tag look unlocked, which turns the
+            // whole estate into EXPLAINED_DIFF and leaves nothing as an oracle.
+            mt.setLocked(tag.has("locked") && tag.get("locked").asBoolean());
             p.setMessageTag(mt);
         }
         if (n.hasNonNull("template")) {

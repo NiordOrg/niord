@@ -259,6 +259,30 @@ public class IssueSnapshotDeriverTest {
                 issue.getCriteriaSnapshot().getCriteria().get(0).getValues());
     }
 
+    /**
+     * The criteria values are in a STABLE order across runs.
+     *
+     * Set.of randomises its iteration order per JVM run. While the translation
+     * held one, two imports of the same estate produced two different stored
+     * criteria documents -- which would flake the export round trip and B5.6's
+     * byte-identical dry run, intermittently and only on some JVM starts. The
+     * order asserted here is the legacy filter's own.
+     */
+    @Test
+    public void theCriteriaValueOrderIsStable() {
+        String filter = "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) "
+                + "&& msg.status == Status.PUBLISHED";
+
+        List<String> first = issueFor(filter, null).getCriteriaSnapshot().getCriteria().get(0).getValues();
+        for (int i = 0; i < 50; i++) {
+            assertEquals(first,
+                    issueFor(filter, null).getCriteriaSnapshot().getCriteria().get(0).getValues(),
+                    "the stored document must not depend on iteration order");
+        }
+        assertEquals(List.of("TEMPORARY_NOTICE", "PRELIMINARY_NOTICE"), first,
+                "the order is the one the legacy filter itself spells");
+    }
+
     /** No status value reaches the stored document, on any shape. */
     @Test
     public void noStatusConjunctIsStored() throws Exception {

@@ -113,7 +113,7 @@ public final class IssueSnapshotDeriver {
 
         if (!t.messageTypes().isEmpty()) {
             MessageTypeCriterionVo types = new MessageTypeCriterionVo();
-            types.setValues(new ArrayList<>(new LinkedHashSet<>(t.messageTypes())));
+            types.setValues(new ArrayList<>(t.messageTypes()));
             nodes.add(types);
         }
 

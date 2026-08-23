@@ -2,7 +2,7 @@ package org.niord.core.publication.series.criteria;
 
 import org.niord.core.publication.series.resolve.TimeRelation;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * Translates a legacy messageTagFilter string into the criteria shape it means.
@@ -22,6 +22,12 @@ import java.util.Set;
  * strings now live in a resource generated from the captured estate
  * (fixtures/legacy-estate/message-tag-filters.json) and the test drives this
  * table from that resource rather than from anything typed by hand.
+ *
+ * ORDER IS PART OF THE ANSWER. messageTypes is a List because the values are
+ * written into a stored criteria document and compared byte-for-byte by the
+ * export round trip and by B5.6's byte-identical dry run. Set.of randomises its
+ * iteration order per JVM run, so a set here made two imports of one estate
+ * produce two different documents. The order is the legacy filter's own.
  *
  * Anything outside the table FAILS LOUDLY. A best-effort translation of an
  * unrecognised filter would produce a plausible-looking series with the wrong
@@ -52,7 +58,7 @@ public final class LegacyFilterTranslator {
      * issues need false.
      */
     public record Translation(Shape shape, boolean hasMembership, TimeRelation timeRelation,
-                              boolean aliveAtCutoff, Set<String> messageTypes, String note) {
+                              boolean aliveAtCutoff, List<String> messageTypes, String note) {
     }
 
     private LegacyFilterTranslator() {
@@ -96,24 +102,24 @@ public final class LegacyFilterTranslator {
             // sixth case failing loudly on a live ACTIVE publication; normalised
             // it reads as what it is, a filter that selects on nothing.
             return new Translation(Shape.BLANK, true, TimeRelation.PUBLISHED_IN_INTERVAL, false,
-                    Set.of(), "blank filter - the sticky regime; scope comes from the series alone");
+                    List.of(), "blank filter - the sticky regime; scope comes from the series alone");
         }
 
         if (f.equals(normalise(PHASE))) {
             // The phase guard is a recorder trigger, not a membership predicate:
             // it says WHEN the tag was written, not WHICH messages belong.
             return new Translation(Shape.PHASE, true, TimeRelation.PUBLISHED_IN_INTERVAL, true,
-                    Set.of(), "phase guard is a recorder trigger, not membership; status conjunct is RI-1");
+                    List.of(), "phase guard is a recorder trigger, not membership; status conjunct is RI-1");
         }
 
         if (f.equals(normalise(STATUS))) {
             return new Translation(Shape.STATUS, true, TimeRelation.IN_FORCE_AT_CUTOFF, true,
-                    Set.of(), "in-force-at-cutoff regime; status conjunct is RI-1");
+                    List.of(), "in-force-at-cutoff regime; status conjunct is RI-1");
         }
 
         if (f.equals(normalise(TYPE_AND_STATUS))) {
             return new Translation(Shape.TYPE_AND_STATUS, true, TimeRelation.IN_FORCE_AT_CUTOFF, true,
-                    Set.of("TEMPORARY_NOTICE", "PRELIMINARY_NOTICE"),
+                    List.of("TEMPORARY_NOTICE", "PRELIMINARY_NOTICE"),
                     "the P&T series; the disjunction becomes a set-valued messageType node");
         }
 
