@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The one place a {@code publication=} id is turned into something.
@@ -64,7 +65,17 @@ public class PublicationResolver extends BaseService implements PublicationMembe
     @Transactional
     public MemberSetDesignation designate(Collection<String> publicationIds, Audience audience) {
 
-        if (publicationIds == null || publicationIds.isEmpty()) {
+        // Blanks are dropped BEFORE the emptiness test, not skipped inside the
+        // loop. "?publication=" with no value parses to a set holding one empty
+        // string, and skipping it inside the loop still returned a designation --
+        // an always-false one, so a cleared filter blanked the result list and
+        // suppressed the default domains at the same time. An empty parameter
+        // names no publication, which is exactly what NONE means.
+        Set<String> ids = publicationIds == null ? Set.of() : publicationIds.stream()
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (ids.isEmpty()) {
             return MemberSetDesignation.NONE;
         }
 
@@ -74,25 +85,26 @@ public class PublicationResolver extends BaseService implements PublicationMembe
         Set<String> tagIds = new LinkedHashSet<>();
         List<String> unresolved = new ArrayList<>();
 
-        for (String publicationId : publicationIds) {
-            if (publicationId == null || publicationId.isBlank()) {
-                continue;
-            }
+        for (String publicationId : ids) {
 
             // 1. The new model, first. An imported issue reuses the legacy id as
             //    its publicId, so checking legacy first would keep serving the old
             //    row forever after cutover.
             PublicationIssue issue = findIssue(publicationId);
-            if (issue != null) {
-                if (!servable(issue, audience)) {
-                    unresolved.add(publicationId);
-                    continue;
-                }
+            if (issue != null && servable(issue, audience)) {
                 memberUids.addAll(memberUids(publicationId));
                 continue;
             }
 
-            // 2. The legacy row.
+            // 2. The legacy row -- reached ALSO when an issue exists but is not
+            //    servable, and this is the cutover case rather than an edge case.
+            //
+            //    An imported issue adopts the legacy id as its publicId and sits
+            //    at OPEN until it is first published. Refusing at step 1 rather
+            //    than falling through would take that id dark for every anonymous
+            //    caller between import and first publish -- while the legacy row
+            //    is still ACTIVE and still the right answer. Every stored citation
+            //    into it would break for exactly that window.
             Publication legacy = findLegacy(publicationId);
             if (legacy != null && servable(legacy, audience)) {
                 // By the STORED join only. Six tags are shared between
@@ -164,12 +176,13 @@ public class PublicationResolver extends BaseService implements PublicationMembe
         }
 
         PublicationIssue issue = findIssue(publicationId);
-        if (issue != null) {
-            return servable(issue, audience)
-                    ? IssuePublicationMapping.toPublicationVo(issue, lang)
-                    : null;
+        if (issue != null && servable(issue, audience)) {
+            return IssuePublicationMapping.toPublicationVo(issue, lang);
         }
 
+        // Falls through when the issue exists but is not servable, for the same
+        // reason designate() does: between import and first publish the legacy row
+        // is still the right answer, and every citation into that id depends on it.
         Publication legacy = findLegacy(publicationId);
         if (legacy == null || !servable(legacy, audience)) {
             return null;

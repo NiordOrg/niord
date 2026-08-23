@@ -201,12 +201,23 @@ public final class SeriesValidator {
                 for (String[] pattern : new String[][]{
                         {"nameSuggestionPattern", d.getNameSuggestionPattern()},
                         {"fileNamePattern", d.getFileNamePattern()},
-                        {"messageReferenceFormat", d.getMessageReferenceFormat()},
                         {"linkPattern", d.getLinkPattern()}}) {
                     if (pattern[1] != null && !IssueNaming.isExpandable(pattern[1])) {
                         e.add(new FieldError("S-14", "descs." + d.getLang() + "." + pattern[0],
                                 "contains a token outside the vocabulary " + IssueNaming.TOKENS));
                     }
+                }
+
+                // The citation format is validated with the DEFERRED token allowed.
+                // It is the one pattern that is expanded twice -- the naming tokens
+                // here, and ${parameters} at the moment of citing -- so validating
+                // it against the strict vocabulary rejects every format the legacy
+                // convention produces, and S-13 then makes the series unsaveable.
+                if (d.getMessageReferenceFormat() != null
+                        && !IssueNaming.isCitationExpandable(d.getMessageReferenceFormat())) {
+                    e.add(new FieldError("S-14", "descs." + d.getLang() + ".messageReferenceFormat",
+                            "contains a token outside the vocabulary " + IssueNaming.TOKENS
+                                    + " plus ${" + IssueNaming.DEFERRED_TOKEN + "}"));
                 }
             }
         }

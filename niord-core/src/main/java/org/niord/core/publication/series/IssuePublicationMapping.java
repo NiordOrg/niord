@@ -8,8 +8,13 @@ import org.niord.model.DataFilter;
 import org.niord.model.publication.PublicationDescVo;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.publication.PublicationVo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +37,8 @@ import java.util.List;
  * citation-format rule be tested without one.
  */
 public final class IssuePublicationMapping {
+
+    private static final Logger log = LoggerFactory.getLogger(IssuePublicationMapping.class);
 
     private IssuePublicationMapping() {
     }
@@ -112,11 +119,23 @@ public final class IssuePublicationMapping {
             return null;
         }
 
+        IssueNaming.Numbers numbers = numbersOf(issue);
+        if (numbers == null) {
+            log.warn("issue {} has no date to derive citation numbers from; no citation format in {}",
+                    issue.getPublicId(), lang);
+            return null;
+        }
+
         try {
-            return IssueNaming.expandCitation(seriesDesc.getMessageReferenceFormat(), numbersOf(issue));
+            return IssueNaming.expandCitation(seriesDesc.getMessageReferenceFormat(), numbers);
         } catch (RuntimeException e) {
-            // A pattern that cannot expand is a series-validation problem. It
-            // must not become a half-expanded citation stored in a message.
+            // A pattern that cannot expand is a series-validation problem, and it
+            // must not become a half-expanded citation stored in a message. But it
+            // is NOT the same thing as having no format, and the caller can only
+            // report what it is told -- so the reason is logged here or it is lost,
+            // and the editor is sent looking for a missing format that is present.
+            log.warn("series {} has a citation format in {} that cannot expand for issue {}: {}",
+                    series.getSeriesId(), lang, issue.getPublicId(), e.toString());
             return null;
         }
     }
@@ -144,7 +163,10 @@ public final class IssuePublicationMapping {
         vo.setPublishDateTo(issue.getPublicTo());
 
         List<PublicationDescVo> descs = new ArrayList<>();
-        for (PublicationIssueDesc desc : issue.getDescs()) {
+        // descOf() and citationFormat() both guard this, so a null collection is
+        // reachable. Unguarded here it NPEs out of listVo and takes down the whole
+        // public listing rather than omitting one row.
+        for (PublicationIssueDesc desc : descsOf(issue)) {
             if (lang != null && !lang.equals(desc.getLang())) {
                 continue;
             }
@@ -179,19 +201,23 @@ public final class IssuePublicationMapping {
     }
 
     private static PublicationType typeOf(PublicationIssue issue) {
-        boolean anyLink = issue.getDescs().stream().anyMatch(d -> notBlank(d.getLink()));
+        boolean anyLink = descsOf(issue).stream().anyMatch(d -> notBlank(d.getLink()));
         if (anyLink) {
             return PublicationType.LINK;
         }
-        boolean anyFile = issue.getDescs().stream().anyMatch(d -> notBlank(d.getFilePath()));
+        boolean anyFile = descsOf(issue).stream().anyMatch(d -> notBlank(d.getFilePath()));
         return anyFile ? PublicationType.REPOSITORY : PublicationType.NONE;
     }
 
+    /** The descs, never null. One guard, so the callers cannot each forget it differently. */
+    private static List<PublicationIssueDesc> descsOf(PublicationIssue issue) {
+        return issue.getDescs() == null ? List.of() : issue.getDescs();
+    }
+
     private static PublicationIssueDesc descOf(PublicationIssue issue, String lang) {
-        return issue.getDescs() == null ? null
-                : issue.getDescs().stream()
-                        .filter(d -> lang.equals(d.getLang()))
-                        .findFirst().orElse(null);
+        return descsOf(issue).stream()
+                .filter(d -> lang.equals(d.getLang()))
+                .findFirst().orElse(null);
     }
 
     /**
@@ -204,22 +230,32 @@ public final class IssuePublicationMapping {
      */
     private static IssueNaming.Numbers numbersOf(PublicationIssue issue) {
         Integer edition = editionNumber(issue);
+        ZoneId zone = zoneOf(issue.getSeries());
 
-        if (issue.getWeek() != null && issue.getYear() != null) {
-            java.util.Calendar cal = java.util.Calendar.getInstance(zoneOf(issue.getSeries()) == null
-                    ? java.util.TimeZone.getTimeZone("UTC")
-                    : java.util.TimeZone.getTimeZone(zoneOf(issue.getSeries())));
-            if (issue.getCutoffStampedAt() != null) {
-                cal.setTime(issue.getCutoffStampedAt());
-            }
-            int month = issue.getCutoffStampedAt() == null ? 1 : cal.get(java.util.Calendar.MONTH) + 1;
-            int day = issue.getCutoffStampedAt() == null ? 1 : cal.get(java.util.Calendar.DAY_OF_MONTH);
-            return new IssueNaming.Numbers(issue.getWeek(), issue.getWeekTo(), issue.getYear(),
-                    month, day, edition);
+        // The best available basis for the calendar tokens, in order. Month and day
+        // were previously hard-coded to 1 when there was no cut-off stamp, so a
+        // DAILY series whose citation format uses the day and month tokens --
+        // added for exactly that cadence -- printed 1-1 into the message and
+        // stored it there.
+        Date basis = issue.getCutoffStampedAt() != null ? issue.getCutoffStampedAt()
+                : issue.getIntervalTo() != null ? issue.getIntervalTo()
+                : issue.getIntervalFrom();
+
+        if (basis == null) {
+            return null;
         }
 
-        return IssueNaming.derive(issue.getCutoffStampedAt(), issue.getIntervalFrom(),
-                zoneOf(issue.getSeries()), edition);
+        if (issue.getWeek() != null && issue.getYear() != null) {
+            // The STORED week and year win -- they were fixed when the issue was
+            // published, and re-deriving them would let a later timezone change
+            // renumber a citation already in print. Month and day come from the
+            // basis, because they are not stored at all.
+            ZonedDateTime at = Instant.ofEpochMilli(basis.getTime()).atZone(zone);
+            return new IssueNaming.Numbers(issue.getWeek(), issue.getWeekTo(), issue.getYear(),
+                    at.getMonthValue(), at.getDayOfMonth(), edition);
+        }
+
+        return IssueNaming.derive(basis, issue.getIntervalFrom(), zone, edition);
     }
 
     /** The edition, where it is a number. A non-numeric edition simply has no token value. */

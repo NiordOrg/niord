@@ -240,12 +240,22 @@ public class PublicationRestService extends AbstractBatchableRestService {
         // The tier comes from the caller: the class is @PermitAll, so an
         // anonymous request reaches it, and an OPEN issue must not be readable
         // by anyone who guesses an id.
-        PublicationMemberSetSource.Audience audience = userService.currentUser() != null
-                ? PublicationMemberSetSource.Audience.INTERNAL
-                : PublicationMemberSetSource.Audience.PUBLIC;
-
+        // INTERNAL, unconditionally, and NOT derived from the caller.
+        //
+        // This endpoint renders stored citations for the editor, and the previous
+        // implementation applied no status or category filter at all -- it returned
+        // whatever row the id named. Deriving the tier from the caller narrowed it
+        // for anonymous callers, so a citation into a DRAFT, RECORDING or INACTIVE
+        // publication silently stopped rendering. That is a behaviour change to an
+        // endpoint this redesign is not supposed to touch, and it is the opposite
+        // of what a citation renderer wants: a citation that resolves nowhere is
+        // exactly the case the reader needs to see.
+        //
+        // The tier gate belongs on the message SEARCH, where it decides what
+        // content is served. Here it only decides whether a title renders.
         return Arrays.stream(publicationIds.split(","))
-                .map(id -> publicationResolver.publicVo(id, null, audience))
+                .map(id -> publicationResolver.publicVo(
+                        id, null, PublicationMemberSetSource.Audience.INTERNAL))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }

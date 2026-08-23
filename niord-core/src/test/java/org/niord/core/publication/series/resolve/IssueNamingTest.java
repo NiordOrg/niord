@@ -176,4 +176,42 @@ public class IssueNamingTest {
         assertEquals(1, utc.week(), "4.1.2026 23:30 UTC is still ISO week 1");
         assertEquals(2, dk.week(), "the same instant is 5.1 in Copenhagen, which is ISO week 2");
     }
+    // ============================================ the deferred citation token
+
+    /**
+     * A citation format may carry ${parameters}; a file name may not.
+     *
+     * These are two different questions and one answer cannot serve both. Reject
+     * ${parameters} for citations and no citable series can be saved at all --
+     * S-14 fails the format and S-13 requires one. Accept it for file names and
+     * the token reaches a public URL, which is how production came to serve a PDF
+     * at .../Skydeomraader-%24%7Byear%7D.pdf.
+     */
+    @Test
+    public void theCitationVocabularyAdmitsParametersAndTheStrictOneDoesNot() {
+        String citation = "EfS ${week}/${year} ${parameters}";
+
+        assertTrue(IssueNaming.isCitationExpandable(citation),
+                "the canonical citation format was rejected; with S-13 also requiring a reference "
+                        + "format, no citable series could be configured at all");
+        assertFalse(IssueNaming.isExpandable(citation),
+                "${parameters} was accepted by the strict vocabulary, so it can reach a file name "
+                        + "and then a public URL");
+    }
+
+    /** Both vocabularies still reject a token that is in neither. */
+    @Test
+    public void neitherVocabularyAdmitsAnUnknownToken() {
+        assertFalse(IssueNaming.isExpandable("EfS ${nope}"));
+        assertFalse(IssueNaming.isCitationExpandable("EfS ${nope}"));
+    }
+
+    /** And expansion leaves the deferred token for the citation layer, expanding the rest. */
+    @Test
+    public void expandCitationLeavesOnlyTheDeferredToken() {
+        IssueNaming.Numbers n = new IssueNaming.Numbers(33, null, 2017, 8, 15, null);
+
+        assertEquals("EfS 33/2017 ${parameters}",
+                IssueNaming.expandCitation("EfS ${week}/${year} ${parameters}", n));
+    }
 }

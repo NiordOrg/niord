@@ -212,10 +212,29 @@ public class MessageService extends BaseService {
      * What the publication= ids designate, resolved at most once per search.
      *
      * A REST layer resolves first, because it needs the answer before this point
-     * to decide whether to widen. Anything reaching the search directly -- a
-     * mailing-list trigger, a report -- resolves here instead. Without this
+     * to decide whether to widen, and it derives the tier from its caller.
+     * Anything reaching the search directly resolves here instead -- without this
      * branch those callers parse publication= and then ignore it, which is the
      * behaviour they have today.
+     *
+     * THE PUBLIC TIER, for the direct path, and the direction matters.
+     *
+     * In practice exactly one kind of caller reaches here carrying publications: a
+     * mailing-list trigger, whose stored message query is parsed by
+     * MessageSearchParams.instantiate. Every other system caller builds its params
+     * programmatically and never sets publications at all, so the tier is moot for
+     * them. A mailing list sends to recipients this system does not control.
+     *
+     * So the two failures are not symmetric. At the internal tier, a trigger
+     * naming an issue that is still OPEN mails the contents of an unpublished
+     * issue to external recipients -- unrecoverable, because the mail is sent, and
+     * invisible, because it looks like an ordinary send. At the public tier, that
+     * same trigger is refused, the refusal is logged against the trigger id, and
+     * the other triggers in the run are unaffected. The second failure is the one
+     * to prefer.
+     *
+     * A caller that genuinely needs the internal tier resolves for itself and sets
+     * the designation on the params, exactly as the two REST layers do.
      */
     private MemberSetDesignation designation(MessageSearchParams param) {
         if (param.getMemberSetDesignation() != null) {
@@ -225,7 +244,7 @@ public class MessageService extends BaseService {
         MemberSetDesignation designation = param.getPublications().isEmpty()
                 ? MemberSetDesignation.NONE
                 : memberSetSource.designate(
-                        param.getPublications(), PublicationMemberSetSource.Audience.INTERNAL);
+                        param.getPublications(), PublicationMemberSetSource.Audience.PUBLIC);
 
         param.memberSetDesignation(designation);
         return designation;
@@ -1204,36 +1223,65 @@ public class MessageService extends BaseService {
 
         // ONE join for both sources of tag. Two LEFT JOINs on the same collection
         // would multiply the rows before the OR ever ran.
-        Set<String> tagIds = new LinkedHashSet<>(param.getTags());
-        tagIds.addAll(designation.tagIds());
+        final Join<Message, MessageTag> tags =
+                param.getTags().isEmpty() && designation.tagIds().isEmpty()
+                        ? null
+                        : msgRoot.join("tags", JoinType.LEFT);
 
-        if (!tagIds.isEmpty()) {
-            Join<Message, MessageTag> tags = msgRoot.join("tags", JoinType.LEFT);
-            List<Predicate> tagMatch = messageTagService.findTags(tagIds.toArray(new String[0])).stream()
-                    .map(t -> builder.equal(tags.get("id"), t.getId()))
+        // The caller's own tag= parameter, VISIBILITY-CHECKED as it always was.
+        //
+        // An empty result here still means zero messages. The previous code got
+        // that for free from builder.or() of an empty array; collecting predicates
+        // into a shared list loses it, and losing it turns a tag the caller cannot
+        // see into no filter at all.
+        if (!param.getTags().isEmpty()) {
+            String[] callerTagIds = param.getTags().toArray(new String[0]);
+            List<Predicate> callerMatch = messageTagService.findTags(callerTagIds).stream()
+                    .map(mt -> builder.equal(tags.get("id"), mt.getId()))
                     .collect(Collectors.toList());
 
-            // A tag the caller may not see produces no predicate, and that has to
-            // mean ZERO messages. The previous code got this for free, because
-            // builder.or() of an empty array is FALSE; collecting the predicates
-            // into a shared disjunction loses it, and losing it turns an invisible
-            // tag into no filter at all -- the same widening this whole change
-            // exists to remove.
-            memberSet.add(tagMatch.isEmpty()
+            memberSet.add(callerMatch.isEmpty()
                     ? builder.disjunction()
-                    : builder.or(tagMatch.toArray(new Predicate[0])));
+                    : builder.or(callerMatch.toArray(new Predicate[0])));
         }
 
         if (designation.designatesMemberSet()) {
+            // Publication-derived tags are NOT visibility-checked, and that is the
+            // restriction lift rather than an oversight.
+            //
+            // findTags applies validateAccess against the CURRENT domain, so a
+            // DOMAIN-typed publication tag is dropped whenever the caller is in
+            // another domain -- or, on the public API, in no domain at all. The
+            // predicate then collapses to FALSE and ?publication=<id> answers 200
+            // with zero messages: precisely the "returns nothing, quietly" outcome
+            // this redesign exists to remove, wearing the shape of a fix.
+            //
+            // A publication is an official, published document. Its contents do not
+            // depend on which domain the reader happens to be browsing, and 17 live
+            // publications have no domain at all.
+            List<Integer> pubTagIds = designation.tagIds().isEmpty()
+                    ? List.of()
+                    : em.createNamedQuery("MessageTag.findTagsByTagIds", MessageTag.class)
+                            .setParameter("tagIds", designation.tagIds())
+                            .getResultList().stream()
+                            .map(MessageTag::getId)
+                            .collect(Collectors.toList());
+
+            for (Integer tagId : pubTagIds) {
+                memberSet.add(builder.equal(tags.get("id"), tagId));
+            }
+
             if (!designation.memberUids().isEmpty()) {
                 // A frozen snapshot is an explicit uid list. Served verbatim: no
                 // date window, so none of adjustDateInterval's whole-day rounding.
                 memberSet.add(msgRoot.get("uid").in(designation.memberUids()));
             }
-            if (designation.isEmptyDesignation()) {
-                // A publication that designates nothing means ZERO messages. Never
-                // in (), and never a fall-through to the widening branch -- the
-                // fall-through is what returns every published message today.
+
+            if (pubTagIds.isEmpty() && designation.memberUids().isEmpty()) {
+                // The designation resolved but contributes nothing -- either it
+                // genuinely has no members, or its tag no longer exists. Zero
+                // messages. Never in (), and never a fall-through to the widening
+                // branch, which is what returns every published message today.
                 memberSet.add(builder.disjunction());
             }
         }

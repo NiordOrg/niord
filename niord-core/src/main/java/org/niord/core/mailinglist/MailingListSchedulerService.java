@@ -66,7 +66,11 @@ public class MailingListSchedulerService extends BaseService {
                     mailingListExecutionService.executeScheduledTrigger(triggerId);
                     mailingListExecutionService.computeNextScheduledExecution(triggerId);
                 } catch (Exception e) {
-                    log.error("Failed executing scheduled mailing list trigger " + triggerId + ": " + e);
+                    // Per trigger, so one bad trigger does not stop the rest of the
+                    // run -- and WITH the trace, because the most likely cause is
+                    // now a stale publication= id in the stored query, and the id
+                    // is in the exception rather than in this message.
+                    log.error("Failed executing scheduled mailing list trigger " + triggerId, e);
                 }
             }
             log.debug(String.format("Executed %d scheduled mailing list triggers in %d ms",

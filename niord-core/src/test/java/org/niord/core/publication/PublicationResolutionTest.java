@@ -441,6 +441,142 @@ public class PublicationResolutionTest {
         assertNull(resolver.sortDomain(null));
     }
 
+    // ============================================ the system tier
+
+    /**
+     * A search reached directly resolves at the PUBLIC tier, not the internal one.
+     *
+     * The caller that reaches here carrying publications is a mailing-list
+     * trigger, whose stored query is parsed rather than built, and whose
+     * recipients this system does not control. At the internal tier a trigger
+     * naming an issue that is still OPEN would mail an unpublished issue's
+     * contents outward -- unrecoverable, because the mail is sent, and invisible,
+     * because it looks like an ordinary send.
+     *
+     * Refusing is the failure to prefer: it is logged against the trigger id and
+     * the rest of the run is unaffected.
+     */
+    @Test
+    @Transactional
+    public void aDirectSearchResolvesAtThePublicTier() {
+        PublicationIssue open = openIssue();
+
+        MessageSearchParams params = new MessageSearchParams()
+                .publications(ordered(open.getPublicId()));
+        params.maxSize(10);
+
+        assertThrows(TransitionRefusedException.class,
+                () -> messageService.search(params),
+                "a search with no declared tier resolved an OPEN issue; a mailing-list trigger "
+                        + "naming an unpublished issue would mail its contents to external recipients");
+    }
+
+    /** And a caller that needs the internal tier says so by setting the designation. */
+    @Test
+    @Transactional
+    public void acallerThatNeedsTheInternalTierSetsTheDesignationItself() {
+        PublicationIssue open = openIssue();
+        em.flush();
+
+        MessageSearchParams params = new MessageSearchParams()
+                .publications(ordered(open.getPublicId()))
+                .memberSetDesignation(
+                        resolver.designate(ordered(open.getPublicId()), Audience.INTERNAL));
+        params.maxSize(10);
+
+        assertEquals(0, messageService.search(params).getData().size(),
+                "the pre-set designation was ignored and re-resolved");
+    }
+
+    // ============================================ the blank parameter
+
+    /**
+     * "?publication=" with no value names no publication.
+     *
+     * It parses to a set holding one empty string. Skipping the blank inside the
+     * loop still returned a designation -- an always-false one -- so a UI clearing
+     * its filter blanked the result list AND suppressed the default published
+     * domains, with a 200 and no indication anything had been filtered.
+     */
+    @Test
+    @Transactional
+    public void anEmptyPublicationParameterDesignatesNothing() {
+        assertFalse(resolver.designate(ordered(""), Audience.PUBLIC).designatesMemberSet(),
+                "an empty publication= value produced a designation, which is an always-false "
+                        + "filter rather than no filter");
+        assertFalse(resolver.designate(ordered("", "   "), Audience.PUBLIC).designatesMemberSet());
+        assertEquals(MemberSetDesignation.NONE, resolver.designate(ordered(""), Audience.INTERNAL));
+
+        MessageSearchParams params = new MessageSearchParams().publications(ordered(""));
+        params.maxSize(10);
+        assertFalse(messageService.search(params).getData().isEmpty(),
+                "a cleared publication filter blanked the result list");
+    }
+
+    /** A blank alongside a real id is ignored, not treated as a failed resolution. */
+    @Test
+    @Transactional
+    public void aBlankAlongsideARealIdIsIgnored() {
+        PublicationIssue issue = publishedIssueWith(someMessageUids(2));
+
+        MemberSetDesignation d = resolver.designate(
+                ordered("", issue.getPublicId()), Audience.PUBLIC);
+
+        assertTrue(d.designatesMemberSet());
+        assertEquals(2, d.memberUids().size(),
+                "the blank was counted as an unresolvable id and refused the whole request");
+    }
+
+    // ============================================ the cutover window
+
+    /**
+     * An imported issue that is not yet published falls back to its legacy row.
+     *
+     * During cutover an issue adopts the legacy publicationId as its own publicId
+     * and sits at OPEN until it is first published. Resolving new-model-first and
+     * refusing there -- rather than falling through -- takes that id dark for
+     * every anonymous caller for the whole of that window, while the legacy row is
+     * still ACTIVE and still the right answer. Every stored citation into it
+     * breaks, and comes back on its own later, which is the worst way to find out.
+     */
+    @Test
+    @Transactional
+    public void anImportedIssueNotYetPublishedFallsBackToTheLegacyRow() {
+        Publication legacy = legacyPublication(PublicationStatus.ACTIVE);
+        String sharedId = legacy.getPublicationId();
+
+        PublicationIssue imported = issue(IssueStatus.OPEN);
+        imported.setLegacyPublicationId(sharedId);
+        imported.setPublicId(sharedId);
+        em.flush();
+
+        MemberSetDesignation d = resolver.designate(ordered(sharedId), Audience.PUBLIC);
+        assertTrue(d.designatesMemberSet(),
+                "the id was refused for a public caller even though the legacy row is ACTIVE; "
+                        + "every citation into it goes dark until the issue is first published");
+
+        assertNotNull(resolver.publicVo(sharedId, "da", Audience.PUBLIC),
+                "the public detail endpoint 404s for an id whose legacy row is still served");
+    }
+
+    /** Once the issue IS published, the new model wins and the legacy row is not consulted. */
+    @Test
+    @Transactional
+    public void oncePublishedTheIssueTakesOverTheId() {
+        Publication legacy = legacyPublication(PublicationStatus.ACTIVE);
+        String sharedId = legacy.getPublicationId();
+
+        PublicationIssue imported = publishedIssueWith(someMessageUids(2));
+        imported.setLegacyPublicationId(sharedId);
+        imported.setPublicId(sharedId);
+        em.flush();
+
+        MemberSetDesignation d = resolver.designate(ordered(sharedId), Audience.PUBLIC);
+        assertEquals(2, d.memberUids().size(),
+                "after publish the id must resolve to the ISSUE, not to the legacy row it replaced");
+        assertTrue(d.tagIds().isEmpty());
+    }
+
     // ------------------------------------------------------------------ fixtures
 
     private static Set<String> ordered(String... ids) {

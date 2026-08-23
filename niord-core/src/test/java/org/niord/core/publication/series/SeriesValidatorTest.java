@@ -86,6 +86,38 @@ public class SeriesValidatorTest {
         assertClean(valid());
     }
 
+    // -------------------------------------------------- the citable series
+
+    /**
+     * A series that can actually be cited passes validation.
+     *
+     * This is the end-to-end shape, and it is the one that was missing: the token
+     * vocabulary and the citation expander were each tested alone and both were
+     * right alone. S-14 validated messageReferenceFormat against the STRICT
+     * vocabulary, which does not admit the deferred token, while S-13 required a
+     * reference format for any series with messagePublication != NONE -- so a
+     * citable series could not be saved at all, and neither unit test could see it.
+     */
+    @Test
+    public void aCitableSeriesWithTheCanonicalFormatIsValid() {
+        PublicationSeries s = valid();
+        s.setMessagePublication(MessagePublication.EXTERNAL);
+        s.getDescs().forEach(d -> d.setMessageReferenceFormat("EfS ${week}/${year} ${parameters}"));
+
+        List<SeriesValidator.FieldError> errors = SeriesValidator.validate(s, LANGS);
+        assertTrue(errors.isEmpty(),
+                "a series with the canonical citation format could not be saved: " + errors);
+    }
+
+    /** But the deferred token is still refused where it would reach a public URL. */
+    @Test
+    public void theDeferredTokenIsStillRefusedInAFileName() {
+        PublicationSeries s = valid();
+        s.getDescs().forEach(d -> d.setFileNamePattern("EfS-${parameters}.pdf"));
+
+        assertFires("S-14", s);
+    }
+
     // ---------------------------------------------------------- one case per rule
 
     @BindsRule({"S-1", "S-2", "S-3", "S-4", "S-5", "S-6", "S-7", "S-8", "S-9", "S-10", "S-11", "S-12", "S-13", "S-14", "S-15", "S-16", "S-17", "S-18", "D-7"})

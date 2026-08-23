@@ -24,15 +24,10 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
-import org.niord.core.publication.PublicationSearchParams;
-import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.series.PublicationPublicAdapter;
-import org.niord.core.publication.PublicationService;
-import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.message.MemberSetDesignation;
 import org.niord.core.message.PublicationMemberSetSource;
-import org.niord.model.DataFilter;
 import org.niord.model.publication.PublicationVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
@@ -43,12 +38,10 @@ import jakarta.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.niord.core.publication.vo.PublicationStatus.ACTIVE;
 
 /**
  * Abstract base class for the API services
@@ -63,9 +56,6 @@ public abstract class AbstractApiService {
 
     @Inject
     MessageService messageService;
-
-    @Inject
-    PublicationService publicationService;
 
     @Inject
     PublicationResolver publicationResolver;

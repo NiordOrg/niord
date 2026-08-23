@@ -49,6 +49,104 @@ public class PublicationPublicAdapterTest {
     @Inject
     EntityManager em;
 
+    // ============================================ the null-parameter semantics
+
+    /**
+     * A null from or to means NO bound on that side -- it does not mean now.
+     *
+     * CriteriaHelper.overlaps emits one predicate per non-null parameter, so
+     * ?from=<t> alone has no upper bound at all. Defaulting the missing side to
+     * "now" reads like a harmless convenience and is not one: it hides every
+     * publication whose window has not opened yet from a caller who asked only
+     * for a lower bound.
+     */
+    @Test
+    @Transactional
+    public void aMissingBoundIsNoBoundRatherThanNow() {
+        Date now = new Date(1_700_000_000_000L);
+        Date nextYear = new Date(now.getTime() + 365L * 24 * 3600_000L);
+
+        Publication future = publishingLegacy(UUID.randomUUID().toString(), nextYear);
+        em.persist(future);
+        Publication past = publishingLegacy(UUID.randomUUID().toString(),
+                new Date(now.getTime() - 365L * 24 * 3600_000L));
+        past.setPublishDateTo(new Date(now.getTime() - 300L * 24 * 3600_000L));
+        em.persist(past);
+        em.flush();
+        em.clear();
+
+        List<String> lowerBoundOnly = adapter.list(now, null).stream()
+                .map(PublicationPublicAdapter.PublicPublication::publicationId).toList();
+        assertTrue(lowerBoundOnly.contains(future.getPublicationId()),
+                "?from= alone acquired an upper bound of now, so a publication whose window opens "
+                        + "later vanished");
+
+        List<String> upperBoundOnly = adapter.list(null, now).stream()
+                .map(PublicationPublicAdapter.PublicPublication::publicationId).toList();
+        assertTrue(upperBoundOnly.contains(past.getPublicationId()),
+                "?to= alone acquired a lower bound of now, so an already-expired publication vanished");
+    }
+
+    // ============================================ the cutover window
+
+    /**
+     * An imported issue sitting at OPEN does not remove its legacy row from the list.
+     *
+     * newHalf only emits PUBLISHED issues. If the exclusion subquery is ungated,
+     * the legacy row is taken out while nothing is put in its place, and the
+     * publication simply disappears from the public site for the whole window
+     * between import and first publish.
+     */
+    @Test
+    @Transactional
+    public void anUnpublishedImportedIssueDoesNotHideItsLegacyRow() {
+        Date stamp = new Date(1_700_000_000_000L);
+        Date now = new Date(stamp.getTime() + 3600_000L);
+
+        Publication legacy = publishingLegacy(UUID.randomUUID().toString(), stamp);
+        String sharedId = legacy.getPublicationId();
+        em.persist(legacy);
+
+        PublicationSeries cutOver = series(PublicAuthority.NEW);
+        PublicationIssue imported = lifecycle.create(cutOver,
+                new Date(stamp.getTime() - 86_400_000L), IntervalBoundSource.RECOVERED, null);
+        imported.setLegacyPublicationId(sharedId);
+        em.flush();
+        em.clear();
+
+        List<String> ids = adapter.list(now, now).stream()
+                .map(PublicationPublicAdapter.PublicPublication::publicationId).toList();
+
+        assertTrue(ids.contains(sharedId),
+                "the legacy row was excluded by an issue that has not been published, so the "
+                        + "publication is on neither half of the union and is simply gone");
+    }
+
+    // ============================================ the value-object list
+
+    /** listVo is what serves the endpoint, so it carries the language and the mapping. */
+    @Test
+    @Transactional
+    public void theValueObjectListCarriesTheLanguageAndTheWindow() {
+        Date stamp = new Date(1_700_000_000_000L);
+        Date now = new Date(stamp.getTime() + 3600_000L);
+
+        PublicationSeries s = series(PublicAuthority.NEW);
+        PublicationIssue issue = publishAt(s, new Date(stamp.getTime() - 86_400_000L), stamp);
+        em.flush();
+        em.clear();
+
+        var vo = adapter.listVo(now, now, "da").stream()
+                .filter(v -> v.getPublicationId().equals(issue.getPublicId()))
+                .findFirst().orElse(null);
+
+        assertNotNull(vo, "the published issue is missing from the value-object list");
+        assertEquals(1, vo.getDescs().size(), "the language filter did not reach the descs");
+        assertEquals("da", vo.getDescs().get(0).getLang());
+        assertEquals(issue.getCutoffStampedAt(), vo.getPublishDateFrom(),
+                "publishDateFrom must be the stamped cut-off, not the interval start");
+    }
+
     // ------------------------------------------------------------------ fixtures
 
     private PublicationSeries series(PublicAuthority authority) {

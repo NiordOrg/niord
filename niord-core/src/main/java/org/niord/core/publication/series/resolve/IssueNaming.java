@@ -221,14 +221,45 @@ public final class IssueNaming {
         return out.toString();
     }
 
-    /** True when every token in the pattern is one this vocabulary declares. */
+    /**
+     * True when every token in the pattern is one this vocabulary declares.
+     *
+     * STRICT. ${parameters} is NOT accepted here, and that is the point: this
+     * validates file-name, name and link patterns, where a surviving token
+     * becomes part of a public URL. Production already serves a real PDF at
+     * .../Skydeomraader-%24%7Byear%7D.pdf because one did.
+     *
+     * Citation formats are validated by {@link #isCitationExpandable} instead.
+     */
     public static boolean isExpandable(String pattern) {
+        return expandableWith(pattern, false);
+    }
+
+    /**
+     * True when a CITATION format is expandable -- ${parameters} included.
+     *
+     * Separate from {@link #isExpandable} because the two answers genuinely
+     * differ, and conflating them breaks in one direction or the other: reject
+     * ${parameters} here and no citable series can be configured at all, since
+     * S-13 requires a reference format for any series that may be cited and the
+     * legacy convention puts ${parameters} in it. Accept it there and it reaches
+     * a file name.
+     */
+    public static boolean isCitationExpandable(String pattern) {
+        return expandableWith(pattern, true);
+    }
+
+    private static boolean expandableWith(String pattern, boolean allowDeferred) {
         if (pattern == null) {
             return true;
         }
         Matcher m = TOKEN.matcher(pattern);
         while (m.find()) {
-            if (!TOKENS.contains(m.group(1))) {
+            String token = m.group(1);
+            if (allowDeferred && DEFERRED_TOKEN.equals(token)) {
+                continue;
+            }
+            if (!TOKENS.contains(token)) {
                 return false;
             }
         }
