@@ -147,11 +147,89 @@ public class PublicationPublicAdapterTest {
                 "publishDateFrom must be the stamped cut-off, not the interval start");
     }
 
+    /**
+     * Retiring an IMPORTED issue does not resurrect the legacy row it replaced.
+     *
+     * The exclusion used to key on status = PUBLISHED. newHalf also emits only
+     * PUBLISHED issues, so retiring an imported issue dropped it from the new half
+     * AND lapsed the exclusion -- and the ACTIVE legacy row returned to the public
+     * list with its original, uncapped window. No duplicate id, no ERROR log, and
+     * the existing retired-issue test uses fixtures with no legacyPublicationId,
+     * so it passed throughout.
+     *
+     * Retiring withdraws a document. It must not republish the one it replaced.
+     */
+    @Test
+    @Transactional
+    public void retiringAnImportedIssueDoesNotResurrectItsLegacyRow() {
+        Date stamp = new Date(1_700_000_000_000L);
+        Date now = new Date(stamp.getTime() + 3600_000L);
+
+        Publication legacy = publishingLegacy(UUID.randomUUID().toString(), stamp);
+        String sharedId = legacy.getPublicationId();
+        em.persist(legacy);
+
+        PublicationSeries cutOver = series(PublicAuthority.NEW);
+        PublicationIssue imported = lifecycle.create(cutOver,
+                new Date(stamp.getTime() - 86_400_000L), IntervalBoundSource.RECOVERED, null);
+        imported.setLegacyPublicationId(sharedId);
+        em.flush();
+        publishService.publish(imported.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+        em.flush();
+
+        assertFalse(adapter.list(now, now).stream()
+                        .anyMatch(p -> p.publicationId().equals(sharedId) && "LEGACY".equals(p.source())),
+                "the legacy row is served while its imported issue is PUBLISHED");
+
+        lifecycle.retire(em.find(PublicationIssue.class, imported.getId()), null, "withdrawn");
+        em.flush();
+        em.clear();
+
+        assertFalse(adapter.list(now, now).stream()
+                        .anyMatch(p -> p.publicationId().equals(sharedId)),
+                "retiring the imported issue brought its legacy row back to the public list, "
+                        + "carrying the window the issue had replaced");
+    }
+
+    /**
+     * A cut-over series in a non-publishing category stays off the public list.
+     *
+     * legacyHalf has always applied the category publish flag. Omitting it from
+     * newHalf means flipping publicAuthority publishes issues whose legacy rows
+     * were correctly hidden -- the flip itself becomes a disclosure.
+     */
+    @Test
+    @Transactional
+    public void aCutOverSeriesInANonPublishingCategoryIsNotServed() {
+        Date stamp = new Date(1_700_000_000_000L);
+        Date now = new Date(stamp.getTime() + 3600_000L);
+
+        PublicationSeries internal = series(PublicAuthority.NEW);
+        internal.getCategory().setPublish(false);
+        em.flush();
+
+        PublicationIssue issue = publishAt(internal, new Date(stamp.getTime() - 86_400_000L), stamp);
+        em.flush();
+        em.clear();
+
+        assertFalse(adapter.list(now, now).stream()
+                        .anyMatch(p -> p.publicationId().equals(issue.getPublicId())),
+                "an issue of a series in a non-publishing category reached the public list");
+    }
+
     // ------------------------------------------------------------------ fixtures
 
     private PublicationSeries series(PublicAuthority authority) {
         PublicationCategory c = new PublicationCategory();
         c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        // publish defaults to FALSE. Until newHalf read the flag this fixture was
+        // silently modelling an INTERNAL category, and every window and ordering
+        // test above was asserting against a series that should never have been
+        // public at all. aCutOverSeriesInANonPublishingCategoryIsNotServed covers
+        // the false case deliberately.
+        c.setPublish(true);
+        c.setPriority(100);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();

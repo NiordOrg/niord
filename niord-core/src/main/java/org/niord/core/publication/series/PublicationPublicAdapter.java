@@ -121,8 +121,14 @@ public class PublicationPublicAdapter extends BaseService {
         // One predicate per NON-NULL bound. A null from or to means no bound on
         // that side; it does not mean now. See legacyHalf for why that matters.
         StringBuilder jpql = new StringBuilder(
-                "SELECT i FROM PublicationIssue i JOIN i.series s "
+                "SELECT i FROM PublicationIssue i JOIN i.series s JOIN s.category c "
                         + "WHERE s.publicAuthority = :authority "
+                        // The category publish flag applies to BOTH halves.
+                        // legacyHalf has always had it; without it here a cut-over
+                        // series in a non-publishing category puts its issues on
+                        // the public site the moment it is flipped, while the
+                        // legacy rows it replaced were correctly hidden.
+                        + "AND c.publish = TRUE "
                         + "AND i.status = :published "
                         + "AND i.publicFrom IS NOT NULL");
         if (to != null) {
@@ -184,13 +190,24 @@ public class PublicationPublicAdapter extends BaseService {
         jpql.append(" AND p.publicationId NOT IN ("
                 + "  SELECT i.legacyPublicationId FROM PublicationIssue i "
                 + "  WHERE i.legacyPublicationId IS NOT NULL "
-                + "  AND i.status = :published "
+                // HAVING BEEN PUBLISHED, not being published now.
+                //
+                // Gating on the current status gets one case wrong in each
+                // direction. An imported issue at OPEN has NOT taken over: exclude
+                // on that and the legacy row vanishes with nothing in its place.
+                // An issue published and then RETIRED HAS taken over, permanently:
+                // gate on status = PUBLISHED and the exclusion lapses on retire,
+                // and the ACTIVE legacy row silently returns to the public list
+                // carrying its original uncapped window -- so retiring an issue
+                // resurrects the document it replaced, with no duplicate id and no
+                // ERROR to notice it. publishedAt settles both: set at publish,
+                // never cleared, including by retire.
+                + "  AND i.publishedAt IS NOT NULL "
                 + "  AND i.series.publicAuthority = :authority)");
 
         TypedQuery<Publication> q = em.createQuery(jpql.toString(), Publication.class)
                 .setParameter("active", PublicationStatus.ACTIVE)
                 .setParameter("mainType", PublicationMainType.PUBLICATION)
-                .setParameter("published", IssueStatus.PUBLISHED)
                 .setParameter("authority", PublicAuthority.NEW);
         if (to != null) {
             q.setParameter("to", to);
