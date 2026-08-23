@@ -1,0 +1,101 @@
+{
+  "activeWithoutMessageTag": 27,
+  "byMessagePublication": {
+    "EXTERNAL": 24,
+    "INTERNAL": 2,
+    "NONE": 1051
+  },
+  "byStatus": {
+    "ACTIVE": 1042,
+    "DRAFT": 1,
+    "INACTIVE": 31,
+    "RECORDING": 3
+  },
+  "byType": {
+    "LINK": 7,
+    "MESSAGE_REPORT": 1044,
+    "NONE": 2,
+    "REPOSITORY": 24
+  },
+  "capturedFrom": "https://niord.t-dma.dk/rest",
+  "distinctMessageTagFilters": [
+    {
+      "filter": "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED",
+      "publications": 501
+    },
+    {
+      "filter": "data.phase == 'msg-status-change' && msg.status == Status.PUBLISHED",
+      "publications": 387
+    },
+    {
+      "filter": "(null)",
+      "publications": 159
+    },
+    {
+      "filter": "msg.status == Status.PUBLISHED",
+      "publications": 29
+    },
+    {
+      "filter": "",
+      "publications": 1
+    }
+  ],
+  "publications": 1077,
+  "sharedTags": [
+    {
+      "publications": [
+        "21868ad4-b2dd-48dc-b15c-8fef153322be",
+        "41bf44a1-d183-4afc-8db8-cfcd6b62c839",
+        "98257761-971f-4b82-af9e-616d676e9740"
+      ],
+      "tagId": "00b8e7a2-3088-4f03-87f2-66169b5318ce"
+    },
+    {
+      "publications": [
+        "040756cf-e2ea-4c52-a29c-693c6b06c7bf",
+        "2456d497-f026-4167-a5c8-d9c50c1f8ba0",
+        "71ef4924-8edd-43ae-ab5f-5d34e1014f62"
+      ],
+      "tagId": "13ab4a21-524e-4328-ae33-0812cd6cae55"
+    },
+    {
+      "publications": [
+        "1037bb70-8c08-4346-b483-ef3027bdb29b",
+        "c8d4c4b5-ea2e-4525-9d9f-d638e371c135"
+      ],
+      "tagId": "16550b0e-b625-4af4-b8d5-d8fa0240e48c"
+    },
+    {
+      "publications": [
+        "600578fb-d72e-456c-b9d7-9a07e88b6226",
+        "edc1b215-22a9-4a11-b590-c62489aa5554"
+      ],
+      "tagId": "28f4d7f5-3022-4628-9002-e03595f29a2d"
+    },
+    {
+      "publications": [
+        "131ef432-26f3-4752-a405-1a5e91dd6e82",
+        "c373d5ae-6bfd-4530-887e-bf6ef265eb5a"
+      ],
+      "tagId": "3948b899-b21a-45cc-8169-c5a060746ec0"
+    },
+    {
+      "publications": [
+        "18dc986f-44ac-4d28-b73f-c1580ee7d665",
+        "45938471-4421-4767-8940-3b53fcfacca2"
+      ],
+      "tagId": "741263b1-69ed-4b80-9e03-c2a0d3e20eaa"
+    },
+    {
+      "publications": [
+        "02eeba88-09a5-4abf-a4f7-7b74cb2f3ec3",
+        "e982d095-b1dc-4689-bd04-4d6b19406b90"
+      ],
+      "tagId": "c5a10e6d-f093-443c-8804-03118e11c405"
+    }
+  ],
+  "snapshot": "static full-production snapshot of 17.08.2026",
+  "templates": 12,
+  "withMessageTag": 1036,
+  "withoutDomain": 17
+}

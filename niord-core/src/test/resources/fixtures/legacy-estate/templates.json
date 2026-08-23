@@ -1,0 +1,816 @@
+[
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481796579000,
+    "descs": [
+      {
+        "fileName": "EfS-PT-uge-1-2026.pdf",
+        "lang": "da",
+        "title": "DONT USE - Ugentlig EfS P&T uge 1 2026",
+        "titleFormat": "Aktive P&T uge 1 - 2026"
+      },
+      {
+        "fileName": "NtM-PT-Week-1-2026.pdf",
+        "lang": "en",
+        "title": "DONT USE - Weekly NtM P&T week 1 2026",
+        "titleFormat": "Active P&T Week 1 - 2026"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "atons": false,
+      "color": "#5a5",
+      "domainId": "niord-nm",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "YEARLY",
+          "seriesId": "dma-nm",
+          "shortFormat": "NM-${number-3-digits}-${year-2-digits}"
+        }
+      ],
+      "name": "NM",
+      "publish": true,
+      "sortOrder": 3,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFilter": "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED",
+    "messageTagFormat": "nm-pt-w01-2026",
+    "periodicalType": "WEEKLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-tp-report"
+    },
+    "publicationId": "0462f851-d27b-4d64-9f58-84f21f92bf59",
+    "repoPath": "publications/0/46/0462f851-d27b-4d64-9f58-84f21f92bf59",
+    "reportParams": {
+      "week": "1",
+      "year": "2026"
+    },
+    "revision": 2,
+    "status": "ACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1767703997000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-nm-annex",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Bilag - Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Annexes - Notices to Mariners"
+        }
+      ],
+      "priority": 20,
+      "publish": true
+    },
+    "created": 1483270092000,
+    "descs": [
+      {
+        "fileName": "EfS-A-v${edition}-${year}.pdf",
+        "lang": "da",
+        "title": "EfS A",
+        "titleFormat": "EfS A - ${year}"
+      },
+      {
+        "fileName": "NtM-A-v${edition}-${year}.pdf",
+        "lang": "en",
+        "title": "EfS A",
+        "titleFormat": "EfS A - ${year}"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "color": "lightgray",
+      "domainId": "niord-almanac",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "MANUAL",
+          "seriesId": "dma-nm-almanac",
+          "shortFormat": "A/${number} ${year}"
+        }
+      ],
+      "messageSortOrder": "ID ASC",
+      "name": "NM Almanac",
+      "publish": false,
+      "sortOrder": 7,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFilter": "msg.status == Status.PUBLISHED",
+    "messageTagFormat": "nm-almanac-${year}-v${edition}",
+    "periodicalType": "YEARLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-almanac"
+    },
+    "publicationId": "0694eb8a-ff23-4d66-a910-d400506c0d28",
+    "repoPath": "publications/0/69/0694eb8a-ff23-4d66-a910-d400506c0d28",
+    "reportParams": {},
+    "revision": 4,
+    "status": "ACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1489128361000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481800035000,
+    "descs": [
+      {
+        "lang": "da",
+        "title": "Akkumuleret Årlig EfS",
+        "titleFormat": "Akkumuleret EfS - ${year}"
+      },
+      {
+        "lang": "en",
+        "title": "Accumulated Yearly NtM",
+        "titleFormat": "Accumulated NtM - ${year}"
+      }
+    ],
+    "languageSpecific": false,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "periodicalType": "YEARLY",
+    "printSettings": {},
+    "publicationId": "0f5bd1f1-7e27-421e-a820-cebf5eb6e45b",
+    "repoPath": "publications/0/f5/0f5bd1f1-7e27-421e-a820-cebf5eb6e45b",
+    "reportParams": {},
+    "revision": 2,
+    "status": "ACTIVE",
+    "type": "REPOSITORY",
+    "updated": 1546598570000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481796579000,
+    "descs": [
+      {
+        "fileName": "EfS-PT-uge-${week}-${year}.pdf",
+        "lang": "da",
+        "title": "Ugentlig EfS P&T",
+        "titleFormat": "Aktive P&T uge ${week} - ${year}"
+      },
+      {
+        "fileName": "NtM-PT-Week-${week}-${year}.pdf",
+        "lang": "en",
+        "title": "Weekly NtM P&T",
+        "titleFormat": "Active P&T Week ${week} - ${year}"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "atons": false,
+      "color": "#5a5",
+      "domainId": "niord-nm",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "YEARLY",
+          "seriesId": "dma-nm",
+          "shortFormat": "NM-${number-3-digits}-${year-2-digits}"
+        }
+      ],
+      "name": "NM",
+      "publish": true,
+      "sortOrder": 3,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFilter": "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED",
+    "messageTagFormat": "nm-pt-w${week-2-digits}-${year}",
+    "periodicalType": "WEEKLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-tp-report"
+    },
+    "publicationId": "11262933-2e62-4d16-a498-39e238467fa6",
+    "repoPath": "publications/1/12/11262933-2e62-4d16-a498-39e238467fa6",
+    "reportParams": {
+      "week": "${week}",
+      "year": "${year}"
+    },
+    "revision": 4,
+    "status": "ACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1483268872000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481796579000,
+    "descs": [
+      {
+        "fileName": "EfS-PT-uge-2-${year}.pdf",
+        "lang": "da",
+        "title": "DONT USE - Ugentlig EfS P&T uge 2",
+        "titleFormat": "Aktive P&T uge 2 - ${year}"
+      },
+      {
+        "fileName": "NtM-PT-Week-2-${year}.pdf",
+        "lang": "en",
+        "title": "DONT USE - Weekly NtM P&T week 2",
+        "titleFormat": "Active P&T Week 2 - ${year}"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "atons": false,
+      "color": "#5a5",
+      "domainId": "niord-nm",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "YEARLY",
+          "seriesId": "dma-nm",
+          "shortFormat": "NM-${number-3-digits}-${year-2-digits}"
+        }
+      ],
+      "name": "NM",
+      "publish": true,
+      "sortOrder": 3,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFilter": "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED",
+    "messageTagFormat": "nm-pt-w01-${year}",
+    "periodicalType": "WEEKLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-tp-report"
+    },
+    "publicationId": "1776882d-07be-43dc-85a9-8c024348dd2e",
+    "repoPath": "publications/1/77/1776882d-07be-43dc-85a9-8c024348dd2e",
+    "reportParams": {
+      "week": "2",
+      "year": "${year}"
+    },
+    "revision": 1,
+    "status": "INACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1736424894000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-nm-annex",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Bilag - Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Annexes - Notices to Mariners"
+        }
+      ],
+      "priority": 20,
+      "publish": true
+    },
+    "created": 1483269330000,
+    "descs": [
+      {
+        "fileName": "Skydeomraader-${year}.pdf",
+        "lang": "da",
+        "messagePublicationFormat": "Skydeområder på søterritoriet ${year}, punkt ${parameters}",
+        "title": "Skydeområder",
+        "titleFormat": "Skydeområder på søterritoriet ${year}"
+      },
+      {
+        "fileName": "Firing-Areas-${year}.pdf",
+        "lang": "en",
+        "messagePublicationFormat": "Firing Practice Areas at Sea ${year}, section ${parameters}",
+        "title": "Firing Practice Areas",
+        "titleFormat": "Firing Practice Areas at Sea ${year}"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "color": "#f55",
+      "domainId": "niord-fa",
+      "firingSchedule": true,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "MANUAL",
+          "seriesId": "dma-fa",
+          "shortFormat": "",
+          "types": [
+            "MISCELLANEOUS_NOTICE"
+          ]
+        }
+      ],
+      "name": "Firing Areas",
+      "publish": false,
+      "sortOrder": 5,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "EXTERNAL",
+    "messageTagFilter": "msg.status == Status.PUBLISHED",
+    "messageTagFormat": "firing-areas-${year}-v${edition}",
+    "periodicalType": "YEARLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "fa-list"
+    },
+    "publicationId": "51387a4e-8f9b-46b0-afb6-43b71c62d9bb",
+    "repoPath": "publications/5/13/51387a4e-8f9b-46b0-afb6-43b71c62d9bb",
+    "reportParams": {},
+    "revision": 5,
+    "status": "ACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1483362334000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481796579000,
+    "descs": [
+      {
+        "fileName": "EfS-PT-Uge-52-2024-Uge-1-2025.pdf",
+        "lang": "da",
+        "title": "DONT USE - Ugentlig EfS P&T uge 52 og 01",
+        "titleFormat": "Aktive P&T uge 52 - 2024 og uge 1 - 2025"
+      },
+      {
+        "fileName": "NtM-PT-Week-52-2024-Week-1-2025.pdf",
+        "lang": "en",
+        "title": "DONT USE - Weekly NtM P&T week 52 and 01",
+        "titleFormat": "Active P&T Week 52 - 2024 and week 1 - 2025"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "atons": false,
+      "color": "#5a5",
+      "domainId": "niord-nm",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "YEARLY",
+          "seriesId": "dma-nm",
+          "shortFormat": "NM-${number-3-digits}-${year-2-digits}"
+        }
+      ],
+      "name": "NM",
+      "publish": true,
+      "sortOrder": 3,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFilter": "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED",
+    "messageTagFormat": "nm-pt-w52-2024",
+    "periodicalType": "WEEKLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-tp-report"
+    },
+    "publicationId": "5dbe9e77-89db-4c27-ab7f-0a40014a1b98",
+    "repoPath": "publications/5/db/5dbe9e77-89db-4c27-ab7f-0a40014a1b98",
+    "reportParams": {
+      "week": "52-2024",
+      "year": "01-2025"
+    },
+    "revision": 1,
+    "status": "INACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1736424900000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481796579000,
+    "descs": [
+      {
+        "fileName": "EfS-Uge-2-${year}.pdf",
+        "lang": "da",
+        "title": "DONT USE - Ugentlig EfS - uge 2",
+        "titleFormat": "EfS uge 2 - ${year}"
+      },
+      {
+        "fileName": "NtM-Week-2-${year}.pdf",
+        "lang": "en",
+        "title": "DONT USE - Weekly NtM - week 2",
+        "titleFormat": "NtM Week 2 - ${year}"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "atons": false,
+      "color": "#5a5",
+      "domainId": "niord-nm",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "YEARLY",
+          "seriesId": "dma-nm",
+          "shortFormat": "NM-${number-3-digits}-${year-2-digits}"
+        }
+      ],
+      "name": "NM",
+      "publish": true,
+      "sortOrder": 3,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFilter": "",
+    "messageTagFormat": "nm-w01-${year}",
+    "periodicalType": "WEEKLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-report"
+    },
+    "publicationId": "6c5018df-26ec-4b35-8570-ee3f0c7ca891",
+    "repoPath": "publications/6/c5/6c5018df-26ec-4b35-8570-ee3f0c7ca891",
+    "reportParams": {
+      "week": "2",
+      "year": "${year}"
+    },
+    "revision": 4,
+    "status": "INACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1736424863000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481796579000,
+    "descs": [
+      {
+        "fileName": "EfS-Uge-${week}-${year}.pdf",
+        "lang": "da",
+        "title": "Ugentlig EfS",
+        "titleFormat": "EfS uge ${week} - ${year}"
+      },
+      {
+        "fileName": "NtM-Week-${week}-${year}.pdf",
+        "lang": "en",
+        "title": "Weekly NtM",
+        "titleFormat": "NtM Week ${week} - ${year}"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "atons": false,
+      "color": "#5a5",
+      "domainId": "niord-nm",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "YEARLY",
+          "seriesId": "dma-nm",
+          "shortFormat": "NM-${number-3-digits}-${year-2-digits}"
+        }
+      ],
+      "name": "NM",
+      "publish": true,
+      "sortOrder": 3,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFormat": "nm-w${week-2-digits}-${year}",
+    "periodicalType": "WEEKLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-report"
+    },
+    "publicationId": "a8e661ee-49b8-45ea-a176-952e99253fec",
+    "repoPath": "publications/a/8e/a8e661ee-49b8-45ea-a176-952e99253fec",
+    "reportParams": {
+      "week": "${week}",
+      "year": "${year}"
+    },
+    "revision": 3,
+    "status": "ACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1483268778000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481796579000,
+    "descs": [
+      {
+        "fileName": "EfS-Uge-1-2026.pdf",
+        "lang": "da",
+        "title": "DONT USE - Ugentlig EfS - uge 1 2026",
+        "titleFormat": "EfS uge 1 - 2026"
+      },
+      {
+        "fileName": "NtM-Week-1-2026.pdf",
+        "lang": "en",
+        "title": "DONT USE - Weekly NtM - week 1 2026",
+        "titleFormat": "NtM Week 1 - 2026"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "atons": false,
+      "color": "#5a5",
+      "domainId": "niord-nm",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "YEARLY",
+          "seriesId": "dma-nm",
+          "shortFormat": "NM-${number-3-digits}-${year-2-digits}"
+        }
+      ],
+      "name": "NM",
+      "publish": true,
+      "sortOrder": 3,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFilter": "",
+    "messageTagFormat": "nm-w01-2026",
+    "periodicalType": "WEEKLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-report"
+    },
+    "publicationId": "aed6002d-99e2-49b0-9d72-8a9efe92f412",
+    "repoPath": "publications/a/ed/aed6002d-99e2-49b0-9d72-8a9efe92f412",
+    "reportParams": {
+      "week": "1",
+      "year": "2026"
+    },
+    "revision": 3,
+    "status": "ACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1767703976000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-weekly-nm-publications",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Notices to Mariners"
+        }
+      ],
+      "priority": 10,
+      "publish": true
+    },
+    "created": 1481796579000,
+    "descs": [
+      {
+        "fileName": "EfS-Uge-52-2024-Uge-1-2025.pdf",
+        "lang": "da",
+        "title": "DONT USE - Ugentlig EfS - uge 52 og 1",
+        "titleFormat": "EfS uge 52 - 2024 og uge 1 - 2025"
+      },
+      {
+        "fileName": "NtM-Week-52-2024-Week-1-2025.pdf",
+        "lang": "en",
+        "title": "DONT USE - Weekly NtM - week 52 and 1",
+        "titleFormat": "NtM Week 52 - 2024 and week 1 - 2025"
+      }
+    ],
+    "domain": {
+      "active": true,
+      "atons": false,
+      "color": "#5a5",
+      "domainId": "niord-nm",
+      "firingSchedule": false,
+      "messageSeries": [
+        {
+          "mainType": "NM",
+          "numberSequenceType": "YEARLY",
+          "seriesId": "dma-nm",
+          "shortFormat": "NM-${number-3-digits}-${year-2-digits}"
+        }
+      ],
+      "name": "NM",
+      "publish": true,
+      "sortOrder": 3,
+      "timeZone": "Europe/Copenhagen"
+    },
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "messageTagFilter": "",
+    "messageTagFormat": "nm-w52-2024",
+    "periodicalType": "WEEKLY",
+    "printSettings": {
+      "mapThumbnails": false,
+      "pageOrientation": "portrait",
+      "pageSize": "A4",
+      "report": "nm-report"
+    },
+    "publicationId": "b0fe5e0f-75b1-4a36-9dd7-b941a92df039",
+    "repoPath": "publications/b/0f/b0fe5e0f-75b1-4a36-9dd7-b941a92df039",
+    "reportParams": {
+      "week": "52-2024",
+      "year": "01-2025"
+    },
+    "revision": 2,
+    "status": "INACTIVE",
+    "type": "MESSAGE_REPORT",
+    "updated": 1736424881000
+  },
+  {
+    "category": {
+      "categoryId": "dk-dma-nm-annex",
+      "descs": [
+        {
+          "lang": "da",
+          "name": "Bilag - Efterretninger for Søfarende"
+        },
+        {
+          "lang": "en",
+          "name": "Annexes - Notices to Mariners"
+        }
+      ],
+      "priority": 20,
+      "publish": true
+    },
+    "created": 1609930177000,
+    "descs": [
+      {
+        "lang": "da",
+        "title": "NCAGS 2021"
+      }
+    ],
+    "edition": 1,
+    "languageSpecific": true,
+    "mainType": "TEMPLATE",
+    "messagePublication": "NONE",
+    "periodicalType": "YEARLY",
+    "printSettings": {},
+    "publicationId": "ebf7e99d-7914-48bf-8919-7525c2f2aee8",
+    "repoPath": "publications/e/bf/ebf7e99d-7914-48bf-8919-7525c2f2aee8",
+    "reportParams": {},
+    "revision": 2,
+    "status": "DRAFT",
+    "type": "REPOSITORY",
+    "updated": 1609930177000
+  }
+]
