@@ -1,6 +1,28 @@
 variables:
   maven-version: "3.9.9"
 
+  # Both Maven invocations below share one local repository. It lives outside the
+  # sources directory so that 'clean' cannot reach it, and so the Cache task can
+  # restore it before the first build starts.
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+
+  # Passed to both Maven tasks.
+  #
+  # The retryHandler settings are the point of this. Maven Resolver already
+  # treats HTTP 429 as retryable, but only three attempts about five seconds
+  # apart -- so a build gives up on Maven Central roughly half a minute after
+  # first being throttled, which is far shorter than a rate-limit window lasts.
+  # Ten attempts fifteen seconds apart spreads one build over several minutes
+  # instead. That is the timescale the throttle actually clears on.
+  #
+  # Maven ignores system properties it does not recognise, so if these names ever
+  # change the consequence is that the tuning stops applying -- not that the
+  # build breaks.
+  MAVEN_TUNING: >-
+    -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)
+    -Daether.connector.http.retryHandler.count=10
+    -Daether.connector.http.retryHandler.interval=15000
+
 stages:
   - stage: Build_niord
     displayName: Build niord application(niord -> niord-dk)
@@ -23,12 +45,31 @@ stages:
               archiveFilePatterns: 'apache-maven-$(maven-version)-bin.tar.gz'
               destinationFolder: '$(build.sourcesdirectory)/maven'
 
+        # A warm cache is the real protection: a restored repository asks Central
+        # for almost nothing, so the throttle has nothing to throttle. Note this
+        # only helps once a build has succeeded -- the cache is written in a
+        # post-job step, so a run that fails leaves nothing behind for the next
+        # one.
+        #
+        # The key covers niord's poms only, because niord-dk is cloned further
+        # down and its poms do not exist yet at this point. A niord-dk dependency
+        # change therefore does not invalidate the cache; Maven simply fetches
+        # what is missing, which is the correct behaviour anyway.
+        - task: Cache@2
+          displayName: 'Restore the Maven repository'
+          inputs:
+            key: 'maven | "$(Agent.OS)" | **/pom.xml'
+            restoreKeys: |
+              maven | "$(Agent.OS)"
+              maven
+            path: $(MAVEN_CACHE_FOLDER)
+
         - task: Maven@3
           displayName: 'Build niord'
           retryCountOnTaskFailure: 3
           inputs:
             mavenPomFile: 'pom.xml'
-            mavenOptions: '-Xmx3072m'
+            mavenOptions: '-Xmx3072m $(MAVEN_TUNING)'
             javaHomeOption: 'JDKVersion'
             jdkVersionOption: '1.21'
             jdkArchitectureOption: 'x64'
@@ -50,7 +91,7 @@ stages:
           retryCountOnTaskFailure: 3
           inputs:
             mavenPomFile: './niord-dk/pom.xml'
-            mavenOptions: '-Xmx3072m'
+            mavenOptions: '-Xmx3072m $(MAVEN_TUNING)'
             javaHomeOption: 'JDKVersion'
             jdkVersionOption: '1.21'
             jdkArchitectureOption: 'x64'
