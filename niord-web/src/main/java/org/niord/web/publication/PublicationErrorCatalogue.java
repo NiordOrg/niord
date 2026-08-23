@@ -38,6 +38,10 @@ public final class PublicationErrorCatalogue {
         // resource being addressed -- and the same 400 whether the id is a typo
         // or an issue this caller is not allowed to know exists.
         put("PUBLICATION_UNRESOLVABLE", 400);
+        // Citing a publication into a language it has no format for. The caller
+        // named the language, so the request is the thing that is wrong -- and
+        // retrying it unchanged cannot help until somebody adds the format.
+        put("CITATION_FORMAT_MISSING", 400);
 
         // 404 -- nothing of that identity exists.
         put("SERIES_NOT_FOUND", 404);

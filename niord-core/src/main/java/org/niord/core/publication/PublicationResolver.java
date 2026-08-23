@@ -6,10 +6,14 @@ import org.niord.core.domain.Domain;
 import org.niord.core.message.MemberSetDesignation;
 import org.niord.core.message.PublicationMemberSetSource;
 import org.niord.core.publication.series.IssueLifecycleService.TransitionRefusedException;
+import org.niord.core.publication.series.IssuePublicationMapping;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.vo.PublicationStatus;
+import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.service.BaseService;
+import org.niord.model.DataFilter;
+import org.niord.model.publication.PublicationVo;
 import org.niord.model.publication.PublicationType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,6 +144,72 @@ public class PublicationResolver extends BaseService implements PublicationMembe
                 .setMaxResults(1)
                 .getResultList();
         return found.isEmpty() ? null : found.get(0);
+    }
+
+    /**
+     * A citation, in the public shape. New model first, then legacy, then null.
+     *
+     * Order matters and it is the same order the search uses: an imported issue
+     * carries the legacy id as its own publicId, so checking legacy first would
+     * keep serving the old row forever after cutover.
+     *
+     * Null rather than an exception. This backs endpoints that answer 404 for an
+     * unknown id, and turning that into a 400 would change a shape clients have
+     * relied on since before the redesign.
+     */
+    @Transactional
+    public PublicationVo publicVo(String publicationId, String lang, Audience audience) {
+        if (publicationId == null || publicationId.isBlank()) {
+            return null;
+        }
+
+        PublicationIssue issue = findIssue(publicationId);
+        if (issue != null) {
+            return servable(issue, audience)
+                    ? IssuePublicationMapping.toPublicationVo(issue, lang)
+                    : null;
+        }
+
+        Publication legacy = findLegacy(publicationId);
+        if (legacy == null || !servable(legacy, audience)) {
+            return null;
+        }
+        // The publish flag of the CATEGORY, matching what the public list has
+        // always applied. A publication in a non-publishing category is internal
+        // even when it is ACTIVE.
+        if (audience == Audience.PUBLIC
+                && (legacy.getCategory() == null || !legacy.getCategory().isPublish())) {
+            return null;
+        }
+        return legacy.toVo(PublicationVo.class, DataFilter.get().lang(lang));
+    }
+
+    /**
+     * A citation, in the system shape, for the editor.
+     *
+     * This is what makes the legacy citation machinery work unchanged against a
+     * new-model issue: extract-message-publication and
+     * update-message-publications read publicationId, messagePublication and the
+     * per-language link and format, and an issue wearing this shape supplies all
+     * four.
+     *
+     * No tier gate. Both endpoints that use it are EDITOR-only, and an editor
+     * citing an issue that is still OPEN is the ordinary case -- the citation is
+     * written while the issue is being prepared.
+     */
+    @Transactional
+    public SystemPublicationVo systemVo(String publicationId, String lang) {
+        if (publicationId == null || publicationId.isBlank()) {
+            return null;
+        }
+
+        PublicationIssue issue = findIssue(publicationId);
+        if (issue != null) {
+            return IssuePublicationMapping.toSystemPublicationVo(issue, lang);
+        }
+
+        Publication legacy = findLegacy(publicationId);
+        return legacy == null ? null : legacy.toVo(SystemPublicationVo.class, DataFilter.get());
     }
 
     /**

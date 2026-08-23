@@ -20,6 +20,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.niord.core.message.vo.MessagePublicationVo;
+import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.util.TextUtils;
@@ -117,13 +118,27 @@ public class PublicationUtils {
             if (updatedPubHtml == null) {
                 // No citation format in THIS language.
                 //
-                // The line below used to append " " + updatedPubHtml regardless,
-                // which writes the four characters " null" into the message's
-                // publication field -- rendered to the public site, and invisible
-                // to the editor who typed nothing wrong. Skipping the language is
-                // the only safe answer: a publication may legitimately carry a
-                // format in one language and not another, so refusing the whole
-                // update would block a correct single-language citation.
+                // What must never happen either way: the line below used to
+                // append " " + updatedPubHtml regardless, which writes the four
+                // characters " null" into the publication field -- rendered to
+                // the public site, and invisible to the editor, who typed nothing
+                // wrong.
+                //
+                // What happens instead depends on what was asked. A named
+                // language means "cite it into THIS language", and silently
+                // doing nothing would leave the editor looking at an empty field
+                // with no explanation -- so it is refused, with the language
+                // named. A null language means "cite it into every language", and
+                // a publication may legitimately carry a format in one language
+                // and not another; refusing there would block a correct Danish
+                // citation because English has none.
+                if (lang != null) {
+                    throw new IssueLifecycleService.TransitionRefusedException(
+                            "CITATION_FORMAT_MISSING",
+                            "publication " + publication.getPublicationId() + " has no citation format "
+                                    + "in " + lang + ", so there is nothing to cite it as. Legacy wrote "
+                                    + "the literal text \" null\" into the message here.");
+                }
                 return;
             }
 

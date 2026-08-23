@@ -33,6 +33,7 @@ import org.niord.core.message.vo.MessagePublicationVo;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.PromulgationManager;
 import org.niord.core.publication.Publication;
+import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.PublicationUtils;
 import org.niord.core.publication.vo.SystemPublicationVo;
@@ -107,6 +108,9 @@ public class MessageRestService  {
 
     @Inject
     PublicationService publicationService;
+
+    @Inject
+    PublicationResolver publicationResolver;
 
     @Inject
     PromulgationManager promulgationManager;
@@ -885,12 +889,17 @@ public class MessageRestService  {
             @QueryParam("lang") @DefaultValue("en") String lang,
             @QueryParam("publicationId") String publicationId,
             MessageVo message) throws Exception {
-        Publication publication = publicationService.findByPublicationId(publicationId);
+        // The shared resolver: a new-model issue answers here in exactly the
+        // shape the legacy citation machinery reads, so nothing below had to
+        // learn about issues.
+        //
+        // The null branch is preserved deliberately. The frontend reads null as
+        // "this publication is not embedded in this message" and shows an empty
+        // form; turning it into a 404 would make the editor show an error where
+        // it used to show a blank field.
+        SystemPublicationVo publication = publicationResolver.systemVo(publicationId, lang);
         if (publication != null) {
-            return PublicationUtils.extractMessagePublication(
-                    message,
-                    publication.toVo(SystemPublicationVo.class, DataFilter.get()),
-                    lang);
+            return PublicationUtils.extractMessagePublication(message, publication, lang);
         }
         return null;
     }
@@ -910,14 +919,13 @@ public class MessageRestService  {
             @QueryParam("link") String link,
             @QueryParam("lang") String lang,
             MessageVo message) throws Exception {
-        Publication publication = publicationService.findByPublicationId(publicationId);
+        // As above: one resolver, both halves of the transition, and the silent
+        // branch kept. Returning the message unchanged for an unknown id is what
+        // the frontend expects.
+        SystemPublicationVo publication = publicationResolver.systemVo(publicationId, lang);
         if (publication != null) {
             return PublicationUtils.updateMessagePublications(
-                    message,
-                    publication.toVo(SystemPublicationVo.class, DataFilter.get()),
-                    parameters,
-                    link,
-                    lang);
+                    message, publication, parameters, link, lang);
         }
         return message;
     }

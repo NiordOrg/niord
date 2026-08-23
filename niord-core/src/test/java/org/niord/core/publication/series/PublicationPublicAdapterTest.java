@@ -10,6 +10,8 @@ import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
+import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.publication.vo.PublicationStatus;
 
 import java.util.Date;
 import java.util.List;
@@ -71,6 +73,24 @@ public class PublicationPublicAdapterTest {
         s.createDesc("da").setName("Test series");
         em.persist(s);
         return s;
+    }
+
+    /** A legacy publication the public list would actually serve. */
+    private Publication publishingLegacy(String publicationId, Date from) {
+        PublicationCategory c = new PublicationCategory();
+        c.setCategoryId("legacy-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setPublish(true);
+        c.setPriority(50);
+        em.persist(c);
+
+        Publication legacy = new Publication();
+        legacy.setPublicationId(publicationId);
+        legacy.setStatus(PublicationStatus.ACTIVE);
+        legacy.setMainType(PublicationMainType.PUBLICATION);
+        legacy.setCategory(c);
+        legacy.setPublishDateFrom(from);
+        legacy.setPublishDateTo(new Date(from.getTime() + 7 * 24 * 3600_000L));
+        return legacy;
     }
 
     private PublicationIssue publishAt(PublicationSeries s, Date intervalFrom, Date stamp) {
@@ -220,12 +240,13 @@ public class PublicationPublicAdapterTest {
         Date now = new Date(stamp.getTime() + 3600_000L);
 
         // A legacy row, and a cut-over issue that took it over.
-        Publication legacy = new Publication();
+        //
+        // ACTIVE, PUBLICATION and a publishing category on purpose: the legacy
+        // half applies the filter the public list has always applied, so a DRAFT
+        // fixture would be excluded for the wrong reason and this test would pass
+        // without exercising the exclusion subquery at all.
         String sharedId = UUID.randomUUID().toString();
-        legacy.setPublicationId(sharedId);
-        legacy.setPublishDateFrom(stamp);
-        legacy.setPublishDateTo(new Date(stamp.getTime() + 7 * 24 * 3600_000L));
-        em.persist(legacy);
+        em.persist(publishingLegacy(sharedId, stamp));
 
         PublicationSeries cutOver = series(PublicAuthority.NEW);
         PublicationIssue imported = lifecycle.create(cutOver,
@@ -291,5 +312,140 @@ public class PublicationPublicAdapterTest {
 
         assertNull(adapter.resolve("no-such-publication-id"),
                 "an unknown id resolved to something");
+    }
+
+    // ==================================================== the emitted order
+
+    /**
+     * CATEGORY PRIORITY orders the list, before the window.
+     *
+     * The legacy public list has always ordered by category priority ascending
+     * and publish date descending, and the sections of the public page are built
+     * from that order. Sorting by date alone reshuffles every section -- a
+     * regression that looks like nothing at all in a diff.
+     */
+    @Test
+    @Transactional
+    public void categoryPriorityOrdersBeforeTheWindow() {
+        Date stamp = new Date(1_700_000_000_000L);
+        Date now = new Date(stamp.getTime() + 3600_000L);
+        long week = 7L * 24 * 3600_000L;
+
+        // The OLDER issue is in the higher-priority category, so date ordering
+        // alone would put it second.
+        PublicationSeries high = series(PublicAuthority.NEW);
+        high.getCategory().setPriority(1);
+        PublicationSeries low = series(PublicAuthority.NEW);
+        low.getCategory().setPriority(99);
+        em.flush();
+
+        PublicationIssue older = publishAt(high, new Date(stamp.getTime() - 2 * week),
+                new Date(stamp.getTime() - week));
+        PublicationIssue newer = publishAt(low, new Date(stamp.getTime() - week), stamp);
+        em.flush();
+        em.clear();
+
+        List<String> ids = adapter.list(now, now).stream()
+                .map(PublicationPublicAdapter.PublicPublication::publicationId)
+                .filter(id -> id.equals(older.getPublicId()) || id.equals(newer.getPublicId()))
+                .toList();
+
+        assertEquals(List.of(older.getPublicId(), newer.getPublicId()), ids,
+                "the list is not ordered by category priority first; the public page builds its "
+                        + "sections from that order");
+    }
+
+    /**
+     * A legacy publication with an open-ended window is still served.
+     *
+     * The legacy helper treats a null bound as "no bound", so a publication with
+     * no publishDateFrom is on the public list today. Requiring the bound here --
+     * which reads like tightening a query -- would silently remove live rows from
+     * the public site.
+     */
+    @Test
+    @Transactional
+    public void aLegacyPublicationWithAnOpenEndedWindowIsStillServed() {
+        Date stamp = new Date(1_700_000_000_000L);
+        Date now = new Date(stamp.getTime() + 3600_000L);
+
+        Publication noStart = publishingLegacy(UUID.randomUUID().toString(), stamp);
+        noStart.setPublishDateFrom(null);
+        em.persist(noStart);
+
+        Publication noEnd = publishingLegacy(UUID.randomUUID().toString(), stamp);
+        noEnd.setPublishDateTo(null);
+        em.persist(noEnd);
+        em.flush();
+        em.clear();
+
+        List<String> ids = adapter.list(now, now).stream()
+                .map(PublicationPublicAdapter.PublicPublication::publicationId).toList();
+
+        assertTrue(ids.contains(noStart.getPublicationId()),
+                "a publication with no publishDateFrom vanished from the public list");
+        assertTrue(ids.contains(noEnd.getPublicationId()),
+                "a publication with no publishDateTo vanished from the public list");
+    }
+
+    // ==================================================== the value-object list
+
+    /** listVo emits the same ids, in the same order, as list. */
+    @Test
+    @Transactional
+    public void theValueObjectListMatchesTheRecordList() {
+        Date stamp = new Date(1_700_000_000_000L);
+        Date now = new Date(stamp.getTime() + 3600_000L);
+
+        PublicationSeries s = series(PublicAuthority.NEW);
+        publishAt(s, new Date(stamp.getTime() - 86_400_000L), stamp);
+        em.flush();
+        em.clear();
+
+        List<String> records = adapter.list(now, now).stream()
+                .map(PublicationPublicAdapter.PublicPublication::publicationId).toList();
+        List<String> vos = adapter.listVo(now, now, "da").stream()
+                .map(org.niord.model.publication.PublicationVo::getPublicationId).toList();
+
+        assertEquals(records, vos,
+                "the record list and the value-object list disagree; they are supposed to be one "
+                        + "union expressed twice, not two unions");
+    }
+
+    /**
+     * A DRAFT legacy publication is not on the public list.
+     *
+     * The adapter now backs /public/v1/publications, so its legacy half has to
+     * apply the same status, main-type and category-publish filter the endpoint
+     * has always applied. Without it, taking over the endpoint would put every
+     * DRAFT publication on the public site.
+     */
+    @Test
+    @Transactional
+    public void aDraftLegacyPublicationIsNotServed() {
+        Date stamp = new Date(1_700_000_000_000L);
+        Date now = new Date(stamp.getTime() + 3600_000L);
+
+        Publication draft = publishingLegacy(UUID.randomUUID().toString(), stamp);
+        draft.setStatus(PublicationStatus.DRAFT);
+        em.persist(draft);
+
+        Publication internal = publishingLegacy(UUID.randomUUID().toString(), stamp);
+        internal.getCategory().setPublish(false);
+        em.persist(internal);
+
+        Publication served = publishingLegacy(UUID.randomUUID().toString(), stamp);
+        em.persist(served);
+        em.flush();
+        em.clear();
+
+        List<String> ids = adapter.list(now, now).stream()
+                .map(PublicationPublicAdapter.PublicPublication::publicationId).toList();
+
+        assertTrue(ids.contains(served.getPublicationId()), "an ACTIVE publication was not served");
+        assertFalse(ids.contains(draft.getPublicationId()),
+                "a DRAFT publication reached the public list");
+        assertFalse(ids.contains(internal.getPublicationId()),
+                "a publication in a non-publishing category reached the public list");
     }
 }

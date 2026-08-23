@@ -27,6 +27,7 @@ import org.niord.core.message.MessageService;
 import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationResolver;
+import org.niord.core.publication.series.PublicationPublicAdapter;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.message.MemberSetDesignation;
@@ -41,6 +42,7 @@ import org.slf4j.Logger;
 import jakarta.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -67,6 +69,9 @@ public abstract class AbstractApiService {
 
     @Inject
     PublicationResolver publicationResolver;
+
+    @Inject
+    PublicationPublicAdapter publicationAdapter;
 
     @Inject
     PublicationMemberSetSource memberSetSource;
@@ -247,13 +252,12 @@ public abstract class AbstractApiService {
      * @return the publication with the given ID if it is public, or null
      */
     public PublicationVo getPublication(String publicationId, String language) {
-        Publication publication = publicationService.findByPublicationId(publicationId);
-
-        boolean isPublic = publication != null
-                && publication.getStatus() == ACTIVE
-                && publication.getCategory().isPublish();
-
-        return isPublic ? toPublicationVo(publication, language) : null;
+        // Through the shared resolver, so a citation into a cut-over series
+        // resolves here exactly as it does in the message search. The public
+        // tier: a PUBLISHED issue, or an ACTIVE publication in a publishing
+        // category, and nothing else.
+        return publicationResolver.publicVo(
+                publicationId, language, PublicationMemberSetSource.Audience.PUBLIC);
     }
 
 
@@ -261,33 +265,14 @@ public abstract class AbstractApiService {
      * Searches for publications
      */
     public List<PublicationVo> searchPublications(String language, Long from, Long to) {
-
-        PublicationSearchParams params = new PublicationSearchParams()
-                .language(language)
-                .from(from)
-                .to(to)
-                .statuses(ACTIVE)
-                .published(true)
-                .mainType(PublicationMainType.PUBLICATION);
-
-        return publicationService
-                .searchPublications(params)
-                .getData()
-                .stream()
-                .map(p -> toPublicationVo(p, language))
-                .collect(Collectors.toList());
-    }
-
-
-    /**
-     * The entity-to-value-object half of the conversion, with no externalization.
-     *
-     * PublicationVo is a published XSD with a fixed propOrder, so this must stay a
-     * plain filtered copy: a field added, renamed or reordered here changes an
-     * interchange format that is consumed outside this codebase.
-     */
-    private PublicationVo toPublicationVo(Publication pub, String language) {
-        return pub.toVo(PublicationVo.class, DataFilter.get().lang(language));
+        // The transition union: published issues of series that have cut over,
+        // plus the legacy rows none of them has taken over. Before the first flip
+        // the first half is empty and this is the legacy list, in the legacy
+        // order -- category priority, then publish date descending.
+        return publicationAdapter.listVo(
+                from == null ? null : new Date(from),
+                to == null ? null : new Date(to),
+                language);
     }
 
 

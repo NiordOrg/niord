@@ -2,7 +2,13 @@ package org.niord.core.publication.series;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import org.niord.core.publication.Publication;
+import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.service.BaseService;
+import org.niord.model.DataFilter;
+import org.niord.model.publication.PublicationVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +61,7 @@ public class PublicationPublicAdapter extends BaseService {
             String seriesId,
             Date publishDateFrom,
             Date publishDateTo,
+            Integer categoryPriority,
             String source) {
     }
 
@@ -68,12 +75,40 @@ public class PublicationPublicAdapter extends BaseService {
     public List<PublicPublication> list(Date from, Date to) {
         Date windowFrom = from == null ? new Date() : from;
         Date windowTo = to == null ? new Date() : to;
+        return ordered(newHalf(windowFrom, windowTo), legacyHalf(windowFrom, windowTo));
+    }
 
-        List<PublicPublication> merged = new ArrayList<>();
-        merged.addAll(newHalf(windowFrom, windowTo));
-        merged.addAll(legacyHalf(windowFrom, windowTo));
+    /**
+     * The same list, as the value objects the endpoint emits.
+     *
+     * Built from the SAME two halves and the SAME order as list(), not from a
+     * second pair of queries. Two implementations of one union is two chances
+     * for the public site and everything that checks it to disagree.
+     */
+    @Transactional
+    public List<PublicationVo> listVo(Date from, Date to, String lang) {
+        Date windowFrom = from == null ? new Date() : from;
+        Date windowTo = to == null ? new Date() : to;
 
-        return dedupeThenSort(merged);
+        List<PublicationIssue> issues = newHalf(windowFrom, windowTo);
+        List<Publication> legacy = legacyHalf(windowFrom, windowTo);
+
+        Map<String, PublicationIssue> issuesById = new LinkedHashMap<>();
+        issues.forEach(i -> issuesById.put(i.getPublicId(), i));
+        Map<String, Publication> legacyById = new LinkedHashMap<>();
+        legacy.forEach(l -> legacyById.put(l.getPublicationId(), l));
+
+        DataFilter filter = DataFilter.get().lang(lang);
+        List<PublicationVo> out = new ArrayList<>();
+
+        for (PublicPublication row : ordered(issues, legacy)) {
+            if ("NEW".equals(row.source())) {
+                out.add(IssuePublicationMapping.toPublicationVo(issuesById.get(row.publicationId()), lang));
+            } else {
+                out.add(legacyById.get(row.publicationId()).toVo(PublicationVo.class, filter));
+            }
+        }
+        return out;
     }
 
     /**
@@ -83,28 +118,20 @@ public class PublicationPublicAdapter extends BaseService {
      * from the listing, which is what retiring an issue means -- and the window
      * overlaps the requested one. The SERIES status is not consulted.
      */
-    private List<PublicPublication> newHalf(Date from, Date to) {
-        List<Object[]> rows = em.createQuery(
-                        "SELECT i.publicId, s.seriesId, i.publicFrom, i.publicTo "
-                                + "FROM PublicationIssue i JOIN i.series s "
+    private List<PublicationIssue> newHalf(Date from, Date to) {
+        return em.createQuery(
+                        "SELECT i FROM PublicationIssue i JOIN i.series s "
                                 + "WHERE s.publicAuthority = :authority "
                                 + "AND i.status = :published "
                                 + "AND i.publicFrom IS NOT NULL "
                                 + "AND i.publicFrom <= :to "
                                 + "AND (i.publicTo IS NULL OR i.publicTo >= :from)",
-                        Object[].class)
+                        PublicationIssue.class)
                 .setParameter("authority", PublicAuthority.NEW)
                 .setParameter("published", IssueStatus.PUBLISHED)
                 .setParameter("from", from)
                 .setParameter("to", to)
                 .getResultList();
-
-        List<PublicPublication> out = new ArrayList<>();
-        for (Object[] r : rows) {
-            // publicFrom and publicTo, never intervalFrom and intervalTo.
-            out.add(new PublicPublication((String) r[0], (String) r[1], (Date) r[2], (Date) r[3], "NEW"));
-        }
-        return out;
     }
 
     /**
@@ -113,28 +140,61 @@ public class PublicationPublicAdapter extends BaseService {
      * The exclusion is by legacyPublicationId rather than by series, because a
      * series cuts over as a whole but its legacy rows are individual.
      */
-    private List<PublicPublication> legacyHalf(Date from, Date to) {
-        List<Object[]> rows = em.createQuery(
-                        "SELECT p.publicationId, p.publishDateFrom, p.publishDateTo "
-                                + "FROM Publication p "
-                                + "WHERE p.publishDateFrom IS NOT NULL "
-                                + "AND p.publishDateFrom <= :to "
+    private List<Publication> legacyHalf(Date from, Date to) {
+        // status, mainType and the category publish flag are the filter the
+        // public list has always applied. Omitting them here would put DRAFT
+        // publications and internal categories on the public site the moment the
+        // adapter took over the endpoint -- a regression wearing the shape of a
+        // new feature.
+        return em.createQuery(
+                        "SELECT p FROM Publication p JOIN p.category c "
+                                + "WHERE p.status = :active "
+                                + "AND p.mainType = :mainType "
+                                + "AND c.publish = TRUE "
+                                // An OPEN-ENDED window at EITHER end matches. This
+                                // reproduces CriteriaHelper.overlaps exactly, which
+                                // treats a null bound as "no bound" rather than as
+                                // "not current" -- so a publication with no
+                                // publishDateFrom is served today, and dropping it
+                                // here would take live rows off the public site the
+                                // moment the adapter took over the endpoint.
+                                + "AND (p.publishDateFrom IS NULL OR p.publishDateFrom <= :to) "
                                 + "AND (p.publishDateTo IS NULL OR p.publishDateTo >= :from) "
                                 + "AND p.publicationId NOT IN ("
                                 + "  SELECT i.legacyPublicationId FROM PublicationIssue i "
                                 + "  WHERE i.legacyPublicationId IS NOT NULL "
                                 + "  AND i.series.publicAuthority = :authority)",
-                        Object[].class)
+                        Publication.class)
+                .setParameter("active", PublicationStatus.ACTIVE)
+                .setParameter("mainType", PublicationMainType.PUBLICATION)
                 .setParameter("from", from)
                 .setParameter("to", to)
                 .setParameter("authority", PublicAuthority.NEW)
                 .getResultList();
+    }
 
-        List<PublicPublication> out = new ArrayList<>();
-        for (Object[] r : rows) {
-            out.add(new PublicPublication((String) r[0], null, (Date) r[1], (Date) r[2], "LEGACY"));
+    /** Both halves as rows, deduplicated and put in the emitted order. */
+    private List<PublicPublication> ordered(List<PublicationIssue> issues, List<Publication> legacy) {
+        List<PublicPublication> merged = new ArrayList<>();
+
+        for (PublicationIssue i : issues) {
+            // publicFrom and publicTo, never intervalFrom and intervalTo.
+            merged.add(new PublicPublication(i.getPublicId(),
+                    i.getSeries() == null ? null : i.getSeries().getSeriesId(),
+                    i.getPublicFrom(), i.getPublicTo(),
+                    priorityOf(i.getSeries() == null ? null : i.getSeries().getCategory()),
+                    "NEW"));
         }
-        return out;
+        for (Publication p : legacy) {
+            merged.add(new PublicPublication(p.getPublicationId(), null,
+                    p.getPublishDateFrom(), p.getPublishDateTo(),
+                    priorityOf(p.getCategory()), "LEGACY"));
+        }
+        return dedupeThenSort(merged);
+    }
+
+    private static Integer priorityOf(PublicationCategory category) {
+        return category == null ? Integer.MAX_VALUE : category.getPriority();
     }
 
     /**
@@ -161,11 +221,21 @@ public class PublicationPublicAdapter extends BaseService {
 
         List<PublicPublication> out = new ArrayList<>(byId.values());
 
-        // A TOTAL order. Without the id tiebreak the EfS and P&T twins -- which
-        // share a window to the millisecond -- come back in whatever order the
-        // database chose, and two calls disagree.
+        // CATEGORY PRIORITY FIRST, then the window, then the id.
+        //
+        // The priority is not decoration: the legacy public list has always
+        // ordered by category priority ascending and publish date descending, and
+        // that is the order the sections of the public page are built from.
+        // Sorting by date alone -- which is what this did while the adapter was
+        // not yet wired to the endpoint -- reshuffles every section on the page.
+        //
+        // The id tiebreak is the addition (OQ-17). Without it the EfS and P&T
+        // twins, which share a window to the millisecond, come back in whatever
+        // order the database chose and two calls disagree.
         out.sort(Comparator
-                .comparing(PublicPublication::publishDateFrom,
+                .comparing(PublicPublication::categoryPriority,
+                        Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(PublicPublication::publishDateFrom,
                         Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(PublicPublication::publicationId));
         return out;
@@ -188,7 +258,7 @@ public class PublicationPublicAdapter extends BaseService {
 
         if (!asIssue.isEmpty()) {
             Object[] r = asIssue.get(0);
-            return new PublicPublication((String) r[0], (String) r[1], (Date) r[2], (Date) r[3], "NEW");
+            return new PublicPublication((String) r[0], (String) r[1], (Date) r[2], (Date) r[3], null, "NEW");
         }
 
         List<Object[]> asLegacy = em.createQuery(
@@ -199,7 +269,7 @@ public class PublicationPublicAdapter extends BaseService {
 
         if (!asLegacy.isEmpty()) {
             Object[] r = asLegacy.get(0);
-            return new PublicPublication((String) r[0], null, (Date) r[1], (Date) r[2], "LEGACY");
+            return new PublicPublication((String) r[0], null, (Date) r[1], (Date) r[2], null, "LEGACY");
         }
         return null;
     }

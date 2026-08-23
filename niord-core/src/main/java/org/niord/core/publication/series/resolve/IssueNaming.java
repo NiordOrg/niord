@@ -178,6 +178,49 @@ public final class IssueNaming {
         return expanded;
     }
 
+    /**
+     * The one token that is expanded LATER, by the citation layer.
+     *
+     * A citation format reads "EfS ${week}/${year} ${parameters}": the naming
+     * tokens belong to the issue and are fixed the moment it is published, but
+     * ${parameters} is whatever the editor types at the moment of citing. It
+     * cannot be resolved here, and it must not be treated as unknown.
+     */
+    public static final String DEFERRED_TOKEN = "parameters";
+
+    /**
+     * Expands a citation format, leaving ${parameters} for the citation layer.
+     *
+     * Separate from expand() rather than a flag on it, because for every OTHER
+     * use a surviving ${...} is a bug -- production serves a real PDF at
+     * .../Skydeomraader-%24%7Byear%7D.pdf because an unexpanded token reached a
+     * file name and then a URL. This is the single place where one surviving
+     * token is correct, and it survives by name.
+     */
+    public static String expandCitation(String pattern, Numbers numbers) {
+        if (pattern == null) {
+            return null;
+        }
+        Map<String, String> values = valuesOf(numbers);
+
+        Matcher m = TOKEN.matcher(pattern);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            String token = m.group(1);
+            if (DEFERRED_TOKEN.equals(token)) {
+                // Put it back verbatim.
+                m.appendReplacement(out, Matcher.quoteReplacement("${" + DEFERRED_TOKEN + "}"));
+                continue;
+            }
+            if (!TOKENS.contains(token)) {
+                throw new UnknownTokenException(token);
+            }
+            m.appendReplacement(out, Matcher.quoteReplacement(values.getOrDefault(token, "")));
+        }
+        m.appendTail(out);
+        return out.toString();
+    }
+
     /** True when every token in the pattern is one this vocabulary declares. */
     public static boolean isExpandable(String pattern) {
         if (pattern == null) {

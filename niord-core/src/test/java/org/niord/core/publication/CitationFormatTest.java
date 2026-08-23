@@ -1,6 +1,7 @@
 package org.niord.core.publication;
 
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.model.message.MessageDescVo;
@@ -14,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -105,6 +107,44 @@ public class CitationFormatTest {
                 "an INTERNAL publication reached the public field; which field a citation lands in is "
                         + "exactly what messagePublication decides, and it is why that value cannot "
                         + "change once citations exist");
+    }
+
+    /**
+     * Citing into a NAMED language that has no format is refused.
+     *
+     * Different from the all-languages case above, and deliberately so. "Cite it
+     * into English" is a specific instruction; silently doing nothing would leave
+     * the editor looking at an empty field having been told nothing. The refusal
+     * names the language, so it is actionable.
+     */
+    @Test
+    public void citingIntoANamedLanguageWithNoFormatIsRefused() {
+        MessageVo message = message("da", "en");
+        SystemPublicationVo publication = publicationWithFormatIn("da");
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> PublicationUtils.updateMessagePublications(
+                                message, publication, null, null, "en"),
+                        "citing into a language with no format was accepted; legacy wrote the "
+                                + "literal \" null\" there");
+
+        assertEquals("CITATION_FORMAT_MISSING", e.code());
+        assertNull(desc(message, "en").getPublication(),
+                "the field was written to before the refusal");
+    }
+
+    /** And citing into a named language that HAS a format still works. */
+    @Test
+    public void citingIntoANamedLanguageThatHasAFormatWorks() {
+        MessageVo message = message("da", "en");
+
+        PublicationUtils.updateMessagePublications(
+                message, publicationWithFormatIn("da"), null, null, "da");
+
+        assertNotNull(desc(message, "da").getPublication());
+        assertNull(desc(message, "en").getPublication(),
+                "a single-language citation must not touch the other language");
     }
 
     // ------------------------------------------------------------------ helpers

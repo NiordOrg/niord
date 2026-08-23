@@ -29,6 +29,8 @@ import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.PublicationService;
+import org.niord.core.message.PublicationMemberSetSource;
+import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
@@ -85,6 +87,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
     @Inject
     PublicationService publicationService;
+
+    @Inject
+    PublicationResolver publicationResolver;
 
     @Inject
     UserService userService;
@@ -226,8 +231,22 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     public List<PublicationVo> getPublications(@PathParam("publicationIds") String publicationIds) throws Exception {
-        return publicationService.findByPublicationIds(publicationIds.split(",")).stream()
-                .map(p -> p.toVo(PublicationVo.class, DataFilter.get()))
+        // Through the shared resolver, one id at a time, so a citation into a
+        // cut-over series renders here as well as on the public site. This
+        // endpoint is what the editor calls to draw a stored citation, and a
+        // citation that resolves in one place and not the other is worse than
+        // one that resolves nowhere.
+        //
+        // The tier comes from the caller: the class is @PermitAll, so an
+        // anonymous request reaches it, and an OPEN issue must not be readable
+        // by anyone who guesses an id.
+        PublicationMemberSetSource.Audience audience = userService.currentUser() != null
+                ? PublicationMemberSetSource.Audience.INTERNAL
+                : PublicationMemberSetSource.Audience.PUBLIC;
+
+        return Arrays.stream(publicationIds.split(","))
+                .map(id -> publicationResolver.publicVo(id, null, audience))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
