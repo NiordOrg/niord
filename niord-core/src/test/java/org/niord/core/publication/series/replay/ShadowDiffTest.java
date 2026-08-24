@@ -203,6 +203,147 @@ public class ShadowDiffTest {
         assertNotNull(run.getSkipReason(), "and the reason is what keeps that honest");
     }
 
+    // ------------------------------------------------ a skip is not an answer
+
+    /**
+     * A skipped release is compared again once the imported side exists.
+     *
+     * This is the one that bit. The run is keyed on the LEGACY row's updated
+     * stamp, but every skip reason is a fact about the IMPORTED side -- no series,
+     * no membership semantics, a file replaced by hand -- and the imported side is
+     * replaced wholesale every time the archive is re-imported.
+     *
+     * One scheduled tick fired while an undo had emptied the estate. It wrote
+     * NO_IMPORTED_SERIES against all 1,077 releases, and because a frozen archive's
+     * updated stamp never changes again, every one of them was excluded from ever
+     * being compared. The cutover precondition counts green weeks; it could not
+     * have accumulated a single one.
+     */
+    @Test
+    @Transactional
+    public void aSkippedReleaseIsComparedOnceTheImportedSideExists() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        // A template no series points at yet: exactly the shape of an estate that
+        // has been undone, or not imported yet.
+        Publication orphanTemplate = new Publication();
+        orphanTemplate.setPublicationId(UUID.randomUUID().toString());
+        em.persist(orphanTemplate);
+        em.flush();
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(orphanTemplate, t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+
+        ShadowDiffRun skipped = shadowDiff.diff(week);
+        assertEquals("NO_IMPORTED_SERIES", skipped.getSkipReason(),
+                "nothing is imported, so there is nothing to compare against");
+
+        // The archive is imported: the series now resolves.
+        series.setLegacyTemplateId(orphanTemplate.getPublicationId());
+        em.flush();
+
+        ShadowDiffRun compared = shadowDiff.diff(week);
+        assertNull(compared.getSkipReason(),
+                "the imported side exists now, so this release must actually be compared "
+                        + "-- caching the skip is caching an answer about state that is gone");
+
+        List<ShadowDiffRun> runs = runsFor(week);
+        assertEquals(1, runs.size(),
+                "the worthless skip is replaced, not kept beside the comparison");
+        assertNull(runs.get(0).getSkipReason());
+    }
+
+    /**
+     * Re-diffing something that still cannot be compared does not accumulate rows.
+     *
+     * Without this the fix above trades one bug for a slower one: a release nothing
+     * can ever compare -- a hand-replaced file, say -- would collect a row every
+     * hour for as long as the system runs.
+     */
+    @Test
+    @Transactional
+    public void aReleaseThatStillCannotBeComparedDoesNotAccumulateRows() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(template(series), t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+        importedIssueWithStickyFile(series, week);
+
+        for (int tick = 0; tick < 3; tick++) {
+            assertNotNull(shadowDiff.diff(week).getSkipReason(),
+                    "a hand-replaced file is never comparable, on any tick");
+        }
+
+        assertEquals(1, runsFor(week).size(),
+                "three ticks, one row -- a skip carries no evidence, so there is nothing to keep");
+    }
+
+    /**
+     * The scheduler picks a skipped release back up, and leaves a compared one alone.
+     *
+     * Through runOnce, which is the path that actually failed: the defect was never
+     * in diff() but in the query feeding it, which treated any row at the stamp as
+     * settling the release. One row per release-stamp is a schema constraint
+     * (UK_shadowdiff_publication_stamp), so a skip is not merely stale evidence --
+     * it occupies the only slot the real comparison could ever use.
+     */
+    @Test
+    @Transactional
+    public void theSchedulerRetriesASkippedReleaseAndLeavesAComparedOneAlone() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Publication orphanTemplate = new Publication();
+        orphanTemplate.setPublicationId(UUID.randomUUID().toString());
+        em.persist(orphanTemplate);
+        em.flush();
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(orphanTemplate, t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+        week.setUpdated(new Date(t1.getTime() + HOUR));
+        em.flush();
+
+        assertNotNull(shadowDiff.diff(week).getSkipReason(), "nothing is imported yet");
+
+        // The archive lands. The legacy row has not changed -- it never does again
+        // for a frozen archive -- so only the skip clause can bring this back.
+        series.setLegacyTemplateId(orphanTemplate.getPublicationId());
+        em.flush();
+
+        shadowDiff.runOnce();
+        List<ShadowDiffRun> afterImport = runsFor(week);
+        assertEquals(1, afterImport.size(), "one row per release-stamp, by constraint");
+        assertNull(afterImport.get(0).getSkipReason(),
+                "the scheduler must retry a release it could not compare; otherwise the skip "
+                        + "holds the only slot forever and no green week can ever be recorded");
+
+        // And a settled release is left alone: the comparison is the evidence B6.3
+        // counts, so re-running must not disturb it.
+        Date settledAt = afterImport.get(0).getComparedAt();
+        shadowDiff.runOnce();
+        List<ShadowDiffRun> afterRerun = runsFor(week);
+        assertEquals(1, afterRerun.size());
+        assertEquals(settledAt, afterRerun.get(0).getComparedAt(),
+                "a compared release is settled and must not be re-compared");
+    }
+
+    private List<ShadowDiffRun> runsFor(Publication release) {
+        em.flush();
+        return em.createQuery(
+                        "SELECT r FROM ShadowDiffRun r WHERE r.legacyPublicationId = :id",
+                        ShadowDiffRun.class)
+                .setParameter("id", release.getPublicationId())
+                .getResultList();
+    }
+
     // ------------------------------------------------------------- fixtures
 
     private MessageSeries messageSeries(String seriesId) {

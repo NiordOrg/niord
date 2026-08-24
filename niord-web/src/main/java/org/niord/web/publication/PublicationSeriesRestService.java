@@ -390,6 +390,29 @@ public class PublicationSeriesRestService {
      * Read-only. A shadow-diff that could change what it measures would not be
      * a measurement, and neither would an endpoint that could.
      */
+    /**
+     * Runs the shadow diff now, rather than waiting for the hourly tick.
+     *
+     * The scheduler is the normal path. This exists because the evidence is read
+     * during a cutover window, where waiting up to an hour to find out whether the
+     * last import produced comparable rows is the wrong shape of feedback -- and
+     * because a re-import invalidates every skip, so somebody will want the answer
+     * immediately after one.
+     *
+     * Idempotent: it compares only what has no comparison at its current stamp.
+     * Running it twice writes nothing the second time.
+     */
+    @POST
+    @Path("/shadow-diff/run")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Map<String, Object> runShadowDiff() {
+        int written = shadowDiff.runOnce();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("written", written);
+        return out;
+    }
+
     @GET
     @Path("/shadow-diff")
     @Produces(MediaType.APPLICATION_JSON)

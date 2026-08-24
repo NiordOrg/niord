@@ -101,12 +101,25 @@ public class ShadowDiffService {
     }
 
     /**
-     * Releases with no ShadowDiffRun at their current updated stamp.
+     * Releases this stamp has no COMPARISON for.
      *
      * Keyed on the stamp rather than on existence, so a retire-and-republish is
      * picked up as the second release it is. Restricted to publications that
      * carry a tag: without one there is nothing recorded to diff against, and
      * the comparison would be against absence.
+     *
+     * A SKIP does not settle a release, and that clause is load-bearing. Every
+     * skip reason is a fact about the IMPORTED side -- no series, no membership
+     * semantics, a file replaced by hand -- while the key is the LEGACY side, and
+     * the imported side changes completely every time the archive is re-imported.
+     * Treating a skip as final caches an answer about state that has since been
+     * replaced.
+     *
+     * It happened: one scheduled tick fired while an undo had emptied the estate,
+     * wrote NO_IMPORTED_SERIES against all 1,077 releases, and -- because a frozen
+     * archive's `updated` never changes again -- permanently excluded every one of
+     * them from ever being compared. The cutover precondition counts green weeks,
+     * so it could never have accumulated one.
      */
     private List<Publication> undiffedReleases() {
         return em.createQuery(
@@ -116,13 +129,24 @@ public class ShadowDiffService {
                                 + "AND NOT EXISTS ("
                                 + "  SELECT r FROM ShadowDiffRun r "
                                 + "  WHERE r.legacyPublicationId = p.publicationId "
-                                + "  AND r.legacyUpdatedAt = p.updated) "
+                                + "  AND r.legacyUpdatedAt = p.updated "
+                                + "  AND r.skipReason IS NULL) "
                                 + "ORDER BY p.updated", Publication.class)
                 .getResultList();
     }
 
     /** Diffs one release and records the result, whatever it is. */
     ShadowDiffRun diff(Publication release) {
+        // Any earlier SKIP for this release is discarded rather than kept beside
+        // the new row. A skip recorded no evidence, so nothing is lost -- and
+        // without this a release nothing can compare would accumulate one row per
+        // scheduler tick, forever. Real comparisons are never touched: they are
+        // the evidence the cutover decision is made from.
+        em.createQuery("DELETE FROM ShadowDiffRun r WHERE r.legacyPublicationId = :id "
+                        + "AND r.skipReason IS NOT NULL")
+                .setParameter("id", release.getPublicationId())
+                .executeUpdate();
+
         ShadowDiffRun run = new ShadowDiffRun();
         run.setLegacyPublicationId(release.getPublicationId());
         run.setLegacyUpdatedAt(release.getUpdated());
