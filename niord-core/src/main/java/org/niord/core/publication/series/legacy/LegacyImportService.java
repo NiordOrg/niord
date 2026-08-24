@@ -681,9 +681,12 @@ public class LegacyImportService extends BaseService {
 
                     // RETIRED counts as released: it was published and then withdrawn,
                     // so a release instant exists. OPEN is the one that never had one.
+                    // Bounded by the interval just derived: a stage whose answer falls
+                    // outside the period it supposedly closes is not believed.
                     CutoffRecovery.Recovered cutoff = CutoffRecovery.recover(
                             legacy, CutoffRecovery.nextTagCreated(chain, i), null,
-                            issue.getStatus() != IssueStatus.OPEN);
+                            issue.getStatus() != IssueStatus.OPEN,
+                            new CutoffRecovery.Bounds(issue.getIntervalFrom(), issue.getIntervalTo()));
                     issue.setCutoffStampedAt(cutoff.cutoff());
                     issue.setCutoffSource(cutoff.source());
                     issue.setCutoffReconstructed(cutoff.reconstructed());

@@ -2,6 +2,7 @@ package org.niord.core.publication.series.legacy;
 
 import org.niord.core.publication.Publication;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -64,6 +65,41 @@ public final class CutoffRecovery {
     public record Recovered(Date cutoff, String source, boolean reconstructed) {
     }
 
+    /**
+     * The interval a recovered cut-off has to be believable within.
+     *
+     * Every stage below reads a timestamp off a legacy row, and a timestamp being
+     * present is not the same as it being this release. The bounds are what turns
+     * a plausible date into a checkable claim.
+     */
+    public record Bounds(Date from, Date to) {
+
+        /** No interval to check against -- an in-force issue, or the head of a chain. */
+        public static final Bounds NONE = new Bounds(null, null);
+
+        /**
+         * Whether a candidate could be this period's close.
+         *
+         * Strictly after the open, because a period cannot close before it begins.
+         * The upper bound is deliberately loose -- a full period past the nominal
+         * close -- because the release action legitimately runs a little AFTER the
+         * bound it closes at, and a tight ceiling would reject the ordinary case.
+         */
+        boolean believable(Date candidate) {
+            if (candidate == null) {
+                return false;
+            }
+            if (from != null && !candidate.after(from)) {
+                return false;
+            }
+            if (from != null && to != null) {
+                long period = to.getTime() - from.getTime();
+                return candidate.getTime() <= to.getTime() + period;
+            }
+            return true;
+        }
+    }
+
     private CutoffRecovery() {
     }
 
@@ -78,9 +114,22 @@ public final class CutoffRecovery {
      * never OPEN. It is a REQUIRED argument rather than a defaulted one because
      * every stage below reads a timestamp that exists on an unreleased row too,
      * and each of them would happily return it.
+     *
+     * bounds is the issue's own interval. A stage whose answer falls outside it is
+     * not believed, and the cascade moves on rather than returning it -- because a
+     * cut-off outside the period it supposedly closes is wrong however respectable
+     * its provenance. NtM Week 52 - 2025 covered 17-24 December and recovered a
+     * cut-off of 2 January, 349 days early, from an `updated` stamp that looks like
+     * a placeholder row created in January for the year-end edition and never
+     * touched again. Its 19 members were all published inside the interval, so
+     * nothing else about the row was wrong.
+     *
+     * When nothing fits, the answer is MANUAL with no date. For a tiling issue
+     * that is not a loss: intervalTo IS the nominal close, and effectiveCutoff
+     * already coalesces onto it.
      */
     public static Recovered recover(Publication legacy, Date nextTagCreated, Date coverDate,
-                                    boolean released) {
+                                    boolean released, Bounds bounds) {
         // Before any stage runs. A row nobody released has no release instant, and
         // every source below would still produce a date for it: `updated` on a
         // never-published issue is when its PREDECESSOR was released, because that
@@ -98,18 +147,36 @@ public final class CutoffRecovery {
         // Ordered this way round deliberately: `updated` is present on every row
         // and so would always win a first-non-null race, which is exactly the
         // "key on updated alone" failure this cascade exists to avoid.
-        if (nextTagCreated != null
+        boolean tagOutranksUpdated = nextTagCreated != null
                 && (updated == null
-                    || Math.abs(nextTagCreated.getTime() - updated.getTime()) > AGREEMENT_WINDOW_MS)) {
-            return new Recovered(nextTagCreated, FROM_NEXT_TAG, true);
-        }
+                    || Math.abs(nextTagCreated.getTime() - updated.getTime()) > AGREEMENT_WINDOW_MS);
 
-        if (updated != null) {
-            return new Recovered(updated, FROM_UPDATED, true);
+        List<Recovered> candidates = new ArrayList<>();
+        if (tagOutranksUpdated) {
+            candidates.add(new Recovered(nextTagCreated, FROM_NEXT_TAG, true));
+            if (updated != null) {
+                candidates.add(new Recovered(updated, FROM_UPDATED, true));
+            }
+        } else {
+            if (updated != null) {
+                candidates.add(new Recovered(updated, FROM_UPDATED, true));
+            }
+            if (nextTagCreated != null) {
+                candidates.add(new Recovered(nextTagCreated, FROM_NEXT_TAG, true));
+            }
         }
-
         if (coverDate != null) {
-            return new Recovered(coverDate, FROM_COVER, true);
+            candidates.add(new Recovered(coverDate, FROM_COVER, true));
+        }
+
+        // The precedence is unchanged; what is new is that a stage has to produce a
+        // date that could BE this period's close. The lower-ranked stages are tried
+        // rather than skipped, because the next witness is still better evidence
+        // than no witness.
+        for (Recovered candidate : candidates) {
+            if (bounds == null || bounds.believable(candidate.cutoff())) {
+                return candidate;
+            }
         }
 
         return new Recovered(null, MANUAL, true);
