@@ -462,8 +462,10 @@ public class LegacyImportService extends BaseService {
                     issue.setCutoffSource(cutoff.source());
                     issue.setCutoffReconstructed(cutoff.reconstructed());
 
+                    List<MemberSnapshotImport.MemberFacts> facts = memberFacts(legacy);
+                    assertMembersCanBeFrozen(plan, legacy, facts);
                     List<IssueMember> members = MemberSnapshotImport.apply(
-                            issue, legacy, memberUids(legacy), byTag);
+                            issue, legacy, facts, byTag);
 
                     plan.issues().put(legacy.getPublicationId(), issue);
                     plan.members().put(legacy.getPublicationId(), members);
@@ -510,15 +512,47 @@ public class LegacyImportService extends BaseService {
      * publications, so a name lookup returns the wrong tag for at least ten rows
      * and cannot tell that it did.
      */
-    private List<String> memberUids(Publication legacy) {
+    private List<MemberSnapshotImport.MemberFacts> memberFacts(Publication legacy) {
         if (legacy.getMessageTag() == null || legacy.getMessageTag().getId() == null) {
             return List.of();
         }
         return em.createQuery(
-                        "SELECT m.uid FROM MessageTag t JOIN t.messages m WHERE t.id = :id",
-                        String.class)
+                        "SELECT m.uid, m.shortId, m.mainType, m.type, m.status, "
+                                + "m.publishDateFrom, m.publishDateTo "
+                                + "FROM MessageTag t JOIN t.messages m WHERE t.id = :id",
+                        Object[].class)
                 .setParameter("id", legacy.getMessageTag().getId())
-                .getResultList();
+                .getResultStream()
+                .map(r -> new MemberSnapshotImport.MemberFacts(
+                        (String) r[0],
+                        (String) r[1],
+                        r[2] == null ? null : r[2].toString(),
+                        r[3] == null ? null : r[3].toString(),
+                        r[4] == null ? null : r[4].toString(),
+                        (Date) r[5],
+                        (Date) r[6]))
+                .toList();
+    }
+
+    /**
+     * A member whose message cannot fill the frozen caption fails at PLAN time.
+     *
+     * frozenMainType, frozenType and frozenStatus are NOT NULL. The first version
+     * of this importer set none of them and died on the constraint -- AFTER the
+     * dry run had reported the whole estate clean, because plan() never persists
+     * and so could not see it. Checking here is what makes that class of failure
+     * visible to a dry run instead of to a 500 on the real thing.
+     */
+    private void assertMembersCanBeFrozen(Plan plan, Publication legacy,
+                                          List<MemberSnapshotImport.MemberFacts> members) {
+        for (MemberSnapshotImport.MemberFacts facts : members) {
+            if (!facts.isComplete()) {
+                problem(plan, "MEMBER_CANNOT_BE_FROZEN", legacy,
+                        "message '" + facts.uid() + "' has no " + facts.missing()
+                                + ", and a frozen member row cannot be written without it. The row is "
+                                + "what lets a retired issue still be read years later.");
+            }
+        }
     }
 
     /**

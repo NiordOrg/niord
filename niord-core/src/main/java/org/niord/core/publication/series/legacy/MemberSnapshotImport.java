@@ -7,6 +7,7 @@ import org.niord.core.publication.series.MembershipProvenance;
 import org.niord.core.publication.series.PublicationIssue;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,6 +32,48 @@ import java.util.Set;
  * a decision in the audit trail that nobody made.
  */
 public final class MemberSnapshotImport {
+
+    /**
+     * What a member row freezes about its message.
+     *
+     * frozenMainType, frozenType and frozenStatus are NOT NULL, and they are the
+     * reason this is a record rather than a list of uids: the first version of
+     * the importer passed uids alone, set none of the three, and died on the
+     * constraint AFTER the dry run had reported the estate clean. The dry run
+     * could not have caught it, because plan() never persists -- which is why
+     * these facts are now gathered and CHECKED at plan time.
+     *
+     * They are frozen rather than joined so a retired issue can still be read
+     * years later without touching a message that may have been re-typed,
+     * re-numbered or withdrawn since.
+     */
+    public record MemberFacts(String uid, String shortId, String mainType, String type,
+                              String status, Date publishFrom, Date publishTo) {
+
+        /** True when the row can be written -- the three NOT NULL columns are present. */
+        public boolean isComplete() {
+            return notBlank(mainType) && notBlank(type) && notBlank(status);
+        }
+
+        /** Names what is missing, for a report an admin can act on. */
+        public String missing() {
+            List<String> gaps = new ArrayList<>();
+            if (!notBlank(mainType)) {
+                gaps.add("mainType");
+            }
+            if (!notBlank(type)) {
+                gaps.add("type");
+            }
+            if (!notBlank(status)) {
+                gaps.add("status");
+            }
+            return String.join(", ", gaps);
+        }
+
+        private static boolean notBlank(String s) {
+            return s != null && !s.isBlank();
+        }
+    }
 
     private MemberSnapshotImport() {
     }
@@ -67,7 +110,7 @@ public final class MemberSnapshotImport {
      * rows and cannot tell that it did.
      */
     public static List<IssueMember> apply(PublicationIssue issue, Publication legacy,
-                                          List<String> memberUids,
+                                          List<MemberFacts> members,
                                           Map<String, List<Publication>> publicationsPerTag) {
         MemberProvenanceRules.Decision decision =
                 MemberProvenanceRules.decide(legacy, publicationsPerTag);
@@ -75,28 +118,39 @@ public final class MemberSnapshotImport {
         issue.setMembershipProvenance(decision.provenance());
         issue.setMembershipProvenanceNote(decision.note());
 
-        List<IssueMember> members = new ArrayList<>();
-        if (memberUids != null) {
+        List<IssueMember> rows = new ArrayList<>();
+        if (members != null) {
             // Duplicates collapse rather than becoming two rows for one message:
             // a tag holding the same uid twice is a legacy artefact, not two
             // memberships, and a duplicate row would double-count in memberCount.
-            Set<String> unique = new LinkedHashSet<>(memberUids);
+            Set<String> seen = new LinkedHashSet<>();
             int sortIndex = 0;
-            for (String uid : unique) {
-                if (uid == null || uid.isBlank()) {
+            for (MemberFacts facts : members) {
+                if (facts == null || facts.uid() == null || facts.uid().isBlank()
+                        || !seen.add(facts.uid())) {
                     continue;
                 }
                 IssueMember m = new IssueMember();
                 m.setIssue(issue);
-                m.setMessageUid(uid);
+                m.setMessageUid(facts.uid());
                 m.setSortIndex(sortIndex++);
+
+                // The frozen caption. NOT NULL on three of these, and the whole
+                // point of the other three: what this message WAS at freeze, so a
+                // retired issue reads correctly however the message changed since.
+                m.setFrozenShortId(facts.shortId());
+                m.setFrozenMainType(facts.mainType());
+                m.setFrozenType(facts.type());
+                m.setFrozenStatus(facts.status());
+                m.setFrozenPublishDateFrom(facts.publishFrom());
+                m.setFrozenPublishDateTo(facts.publishTo());
 
                 // IMPORTED, not CRITERIA: nothing here was derived by running a
                 // query. Labelling these CRITERIA would tell the replay it may
                 // check them against one, which is the claim B5.5 is careful not
                 // to make.
                 m.setSource(MemberSource.IMPORTED);
-                members.add(m);
+                rows.add(m);
             }
         }
 
@@ -105,8 +159,8 @@ public final class MemberSnapshotImport {
         // count is written here. Returning them rather than stashing them keeps
         // this a pure function, which is what lets the tests run it over all
         // 1,077 rows without a database.
-        issue.setMemberCount(members.size());
-        return members;
+        issue.setMemberCount(rows.size());
+        return rows;
     }
 
     /**

@@ -47,11 +47,19 @@ public class MemberSnapshotImportTest {
         }
     }
 
-    /** Synthetic uids of the recorded cardinality. See the class comment. */
-    private static List<String> uids(String publicationId, int n) {
-        List<String> out = new ArrayList<>();
+    /**
+     * Synthetic members of the recorded cardinality. See the class comment.
+     *
+     * The caption fields are filled because three of them are NOT NULL -- which
+     * the importer learned the hard way, having shipped a version that set none
+     * of them and died on the constraint after a clean dry run.
+     */
+    private static List<MemberSnapshotImport.MemberFacts> members(String publicationId, int n) {
+        List<MemberSnapshotImport.MemberFacts> out = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            out.add(publicationId + "#" + i);
+            out.add(new MemberSnapshotImport.MemberFacts(
+                    publicationId + "#" + i, "NM-" + i + "-26", "NM", "TEMPORARY_NOTICE",
+                    "PUBLISHED", new java.util.Date(0L), null));
         }
         return out;
     }
@@ -70,7 +78,7 @@ public class MemberSnapshotImportTest {
             int n = MemberSnapshotImport.importsMemberRows(p)
                     ? counts.getOrDefault(p.getPublicationId(), 0) : 0;
             List<IssueMember> members = MemberSnapshotImport.apply(
-                    issue, p, uids(p.getPublicationId(), n), byTag);
+                    issue, p, members(p.getPublicationId(), n), byTag);
             out.put(p.getPublicationId(), new Imported(issue, members));
         }
         return out;
@@ -221,15 +229,63 @@ public class MemberSnapshotImportTest {
                 rows++;
                 assertNotNull(m.getMessageUid(), "uid is the key");
                 assertFalse(m.getMessageUid().isBlank());
-                assertNull(m.getFrozenShortId(),
-                        "frozenShortId is a caption for reading a retired issue, not a lookup key: "
-                                + "short ids are assigned per series per year and are not unique");
+                // frozenShortId IS populated -- it is the caption. The rule is that
+                // nothing LOOKS UP by it, which is asserted separately over the
+                // importer's source. An earlier version of this test asserted the
+                // column was null, conflating "never a key" with "never written",
+                // and that is precisely the confusion the caption exists to avoid.
+                assertNotNull(m.getFrozenShortId(), "the caption is what makes a retired issue readable");
                 assertEquals(MemberSource.IMPORTED, m.getSource(),
                         "labelling these CRITERIA would tell the replay it may check them against a "
                                 + "query that was never run");
             }
         }
         assertTrue(rows > 10_000, "the estate holds ~10,200 member rows; only " + rows + " were built");
+    }
+
+    /**
+     * Nothing in the importer LOOKS UP by frozenShortId.
+     *
+     * Short ids are assigned per series per year and are not unique, so a lookup
+     * by one silently attaches the wrong message. The column exists so a retired
+     * issue can still be READ without joining to a message that may have moved --
+     * a caption, never a key.
+     *
+     * Asserted over the source because it is a rule about how the code is
+     * written, and no runtime state can show that a query was never made.
+     */
+    @Test
+    public void nothingInTheImporterLooksUpByShortId() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Path.of(
+                "src", "main", "java", "org", "niord", "core", "publication", "series", "legacy");
+        List<String> offenders = new ArrayList<>();
+
+        try (var files = java.nio.file.Files.walk(dir)) {
+            for (java.nio.file.Path f : files.filter(x -> x.toString().endsWith(".java")).toList()) {
+                for (String line : java.nio.file.Files.readAllLines(f)) {
+                    String code = line.trim();
+                    if (code.startsWith("//") || code.startsWith("*")) {
+                        continue;
+                    }
+                    // A WHERE, a setParameter or a map lookup keyed on the caption.
+                    // A lookup keyed on the caption: a JPQL predicate on the column,
+                    // or a map/compare against the short id in Java. No regex --
+                    // plain containment, so the check itself cannot be subtly wrong.
+                    boolean jpqlPredicate = code.contains("frozenShortId =")
+                            || code.contains("frozenShortId IN")
+                            || code.contains("frozenShortId=");
+                    boolean javaLookup = code.contains(".get(facts.shortId())")
+                            || code.contains("getFrozenShortId()) ==")
+                            || code.contains("getFrozenShortId().equals(");
+                    if (jpqlPredicate || javaLookup) {
+                        offenders.add(f.getFileName() + ": " + code);
+                    }
+                }
+            }
+        }
+
+        assertTrue(offenders.isEmpty(),
+                "short ids are not unique, so a lookup by one attaches the wrong message: " + offenders);
     }
 
     /** The importer creates no overrides, on any row. */
@@ -263,10 +319,51 @@ public class MemberSnapshotImportTest {
         PublicationIssue issue = new PublicationIssue();
 
         List<IssueMember> members = MemberSnapshotImport.apply(
-                issue, p, List.of("uid-a", "uid-b", "uid-a"), Map.of());
+                issue, p, List.of(facts("uid-a"), facts("uid-b"), facts("uid-a")), Map.of());
 
         assertEquals(2, members.size(), "a tag holding one uid twice is an artefact, not two memberships");
         assertEquals(2, issue.getMemberCount());
+    }
+
+    /**
+     * Every member row carries the frozen caption its columns demand.
+     *
+     * frozenMainType, frozenType and frozenStatus are NOT NULL. The importer set
+     * none of them until 2026-08-24, and the DRY RUN COULD NOT SEE IT -- plan()
+     * never persists, so the estate reported clean and the real import died on
+     * the constraint. That is why the facts are now checked at plan time, and why
+     * this asserts the row is writable rather than merely present.
+     */
+    @Test
+    public void everyMemberRowCarriesTheFrozenCaption() throws Exception {
+        int checked = 0;
+        for (Imported result : importAll().values()) {
+            for (IssueMember m : result.members()) {
+                checked++;
+                assertNotNull(m.getFrozenMainType(), "frozenMainType is NOT NULL");
+                assertNotNull(m.getFrozenType(), "frozenType is NOT NULL");
+                assertNotNull(m.getFrozenStatus(), "frozenStatus is NOT NULL");
+            }
+        }
+        assertTrue(checked > 10_000, "only " + checked + " rows were checked");
+    }
+
+    /** A message missing any of the three is reported rather than written. */
+    @Test
+    public void amemberThatCannotBeFrozenIsNamed() {
+        MemberSnapshotImport.MemberFacts incomplete = new MemberSnapshotImport.MemberFacts(
+                "uid-x", "NM-001-26", null, "TEMPORARY_NOTICE", null, null, null);
+
+        assertFalse(incomplete.isComplete());
+        assertTrue(incomplete.missing().contains("mainType"));
+        assertTrue(incomplete.missing().contains("status"));
+        assertFalse(incomplete.missing().contains("type"), "type is present and must not be named");
+    }
+
+    /** Well-formed synthetic facts for a single uid. */
+    private static MemberSnapshotImport.MemberFacts facts(String uid) {
+        return new MemberSnapshotImport.MemberFacts(uid, "NM-001-26", "NM", "TEMPORARY_NOTICE",
+                "PUBLISHED", null, null);
     }
 
     /** A publication with no tag gets NO_MEMBERSHIP and says so. */
