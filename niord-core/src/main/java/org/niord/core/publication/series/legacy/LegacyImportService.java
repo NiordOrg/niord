@@ -305,17 +305,17 @@ public class LegacyImportService extends BaseService {
     }
 
     /**
-     * A one-off series for every publication that has no template. Ruling B5-v.
+     * Files the template-less publications, per ruling B5-v as revised.
      *
-     * 39 rows in the estate are in this position -- 11 NCAGS, the ice-service
-     * notices, the standalone references (Danish List of Lights and friends), and
-     * 9 double-week issues made by hand rather than from the weekly template. An
-     * issue must belong to a series, so they need one; giving each its own infers
-     * nothing about which are really the same publication, and leaves that to the
-     * DRAFT review.
+     * 39 rows, and they are NOT 39 series. 11 NCAGS annexes are one series, 8
+     * ice-service annexes are another, the 4 Danish List of Lights editions a
+     * third, and the 10 double-week issues belong to the weekly series they were
+     * hand-assembled out of. Only 6 are genuinely standalone. So the import
+     * creates 3 shared series and 6 one-offs, and files 10 issues onto series
+     * that already exist.
      *
      * Keyed into the same map as the templates, under the PUBLICATION's id, so
-     * planIssues has one place to look.
+     * planIssues has one place to look regardless of how a row got there.
      */
     private void planOrphanSeries(Plan plan, List<Publication> publications,
                                   Map<String, PublicationSeries> seriesByTemplate) {
@@ -326,13 +326,75 @@ public class LegacyImportService extends BaseService {
             return;
         }
 
-        Map<String, String> ids = LegacySeriesTranslation.authorOrphanSeriesIds(orphans);
+        Map<String, List<Publication>> shared = new LinkedHashMap<>();
+        List<Publication> ownSeries = new ArrayList<>();
 
         for (Publication orphan : orphans) {
+            LegacyOrphanGrouping.Placement place = LegacyOrphanGrouping.placeOf(orphan);
+            switch (place.kind()) {
+                case EXISTING_SERIES -> {
+                    // Filed onto a series translated from a template. If that
+                    // template failed to translate the issue has nowhere to go,
+                    // and planIssues reports it rather than inventing a home.
+                    PublicationSeries destination = seriesByTemplate.get(place.seriesId());
+                    if (destination != null) {
+                        seriesByTemplate.put(orphan.getPublicationId(), destination);
+                    }
+                }
+                case SHARED_SERIES ->
+                        shared.computeIfAbsent(place.seriesId(), k -> new ArrayList<>()).add(orphan);
+                case OWN_SERIES -> ownSeries.add(orphan);
+            }
+        }
+
+        planSharedOrphanSeries(plan, shared, seriesByTemplate);
+        planStandaloneOrphanSeries(plan, ownSeries, seriesByTemplate);
+    }
+
+    /** One series per group, configured from the group's newest member. */
+    private void planSharedOrphanSeries(Plan plan, Map<String, List<Publication>> shared,
+                                        Map<String, PublicationSeries> seriesByTemplate) {
+        for (Map.Entry<String, List<Publication>> e : shared.entrySet()) {
+            List<Publication> group = e.getValue();
+            Publication source = LegacyOrphanGrouping.configurationSource(group);
+            LegacyOrphanGrouping.Placement place = LegacyOrphanGrouping.placeOf(source);
+
             try {
-                // Translated from the publication itself: a template-less row
-                // carries the same fields a template does -- category, cadence,
-                // filter, descs -- because legacy made it BY copying one.
+                PublicationSeries series =
+                        LegacySeriesTranslation.translate(source, e.getKey(), importSource());
+                LegacySeriesTranslation.assertReportSettingsAreComplete(
+                        series, source.getPublicationId());
+                assertReferencesResolve(plan, source, series);
+
+                // The ruling names the category for the annex series; otherwise it
+                // is whatever the publications themselves carry.
+                if (place.categoryId() != null) {
+                    plan.categoryOfSeries().put(series.getSeriesId(), place.categoryId());
+                } else {
+                    planCategoryOf(plan, source, series);
+                }
+
+                plan.series().add(series);
+                group.forEach(member ->
+                        seriesByTemplate.put(member.getPublicationId(), series));
+            } catch (LegacySeriesTranslation.ImportRefusedException ex) {
+                problem(plan, ex.getCode(), source, ex.getMessage());
+            } catch (RuntimeException ex) {
+                problem(plan, "ORPHAN_SERIES_UNTRANSLATABLE", source, ex.getMessage());
+            }
+        }
+    }
+
+    /** The six that really are one-offs, each with its own authored id. */
+    private void planStandaloneOrphanSeries(Plan plan, List<Publication> standalone,
+                                            Map<String, PublicationSeries> seriesByTemplate) {
+        if (standalone.isEmpty()) {
+            return;
+        }
+        Map<String, String> ids = LegacySeriesTranslation.authorOrphanSeriesIds(standalone);
+
+        for (Publication orphan : standalone) {
+            try {
                 PublicationSeries series = LegacySeriesTranslation.translate(
                         orphan, ids.get(orphan.getPublicationId()), importSource());
                 LegacySeriesTranslation.assertReportSettingsAreComplete(
