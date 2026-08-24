@@ -38,13 +38,19 @@ public class CutoverPreflightService extends BaseService {
     /**
      * A tag named the way the weekly convention names them.
      *
-     * nm-w27-2026, nm-pt-w27-2026 -- and the double-week forms the estate also
-     * carries. Matched loosely on purpose: this is a report for a human to read,
-     * and a miss here is a mailing list that silently stops going out, while a
-     * false positive is one line for somebody to dismiss.
+     * nm-w27-2026, nm-pt-w27-2026, and the double-week forms the estate also
+     * carries.
+     *
+     * NOT anchored on "tag=". Twelve of the fifteen live triggers express
+     * themselves in messageFilter, which is a script expression -- a tag appears
+     * there quoted, not as a query parameter. Anchoring on tag= was how the first
+     * version of this audit came back clean having read a fifth of the triggers.
+     *
+     * Matched loosely on purpose: a miss is a mailing list that silently stops
+     * going out, a false positive is one line for somebody to dismiss.
      */
-    private static final Pattern WEEKLY_TAG =
-            Pattern.compile("tag=[\"']?(nm-(pt-)?w\\d{1,2}(-\\d{1,2})?-\\d{4})", Pattern.CASE_INSENSITIVE);
+    private static final Pattern WEEKLY_TAG = Pattern.compile(
+            "(nm-(?:pt-)?w\\d{1,2}(?:-\\d{1,2})?-\\d{4})", Pattern.CASE_INSENSITIVE);
 
     /** One thing that is wrong, named so somebody can act on it. */
     public record Violation(String code, String subject, String detail) {
@@ -60,8 +66,8 @@ public class CutoverPreflightService extends BaseService {
     }
 
     /** A mailing-list trigger that names a weekly tag by hand. */
-    public record TriggerHit(String mailingListId, String triggerType, String matchedTag,
-                             String messageQuery) {
+    public record TriggerHit(String mailingListId, String triggerType, String field,
+                             String matchedTag, String expression) {
     }
 
     /** Runs every assertion and the audit. Reads only. */
@@ -167,6 +173,13 @@ public class CutoverPreflightService extends BaseService {
     /**
      * The trigger audit. A REPORT, not a rewrite -- closes G-12.
      *
+     * SCANS EVERY FIELD A TRIGGER CAN EXPRESS ITSELF IN, not just messageQuery.
+     * The first version read messageQuery alone -- and on the live estate TWELVE
+     * of the fifteen triggers carry no messageQuery at all, putting their logic in
+     * messageFilter instead. It would have reported a clean audit having looked at
+     * a fifth of the triggers, which is the failure mode this report exists to
+     * prevent: silence that reads as success.
+     *
      * B4.4 cured `publication=` in mailing-list triggers. Nothing audits the
      * triggers that name a TAG. After C8 no new nm-wNN-YYYY tag is minted, so a
      * mailing list keyed on the naming convention silently stops matching and
@@ -179,21 +192,39 @@ public class CutoverPreflightService extends BaseService {
     public List<TriggerHit> auditTriggers() {
         List<TriggerHit> hits = new ArrayList<>();
 
+        // Every trigger, not only those with a messageQuery.
         List<MailingListTrigger> triggers = em.createQuery(
-                        "SELECT t FROM MailingListTrigger t WHERE t.messageQuery IS NOT NULL",
-                        MailingListTrigger.class)
+                        "SELECT t FROM MailingListTrigger t", MailingListTrigger.class)
                 .getResultList();
 
         for (MailingListTrigger t : triggers) {
-            var m = WEEKLY_TAG.matcher(t.getMessageQuery());
-            if (m.find()) {
-                hits.add(new TriggerHit(
-                        t.getMailingList() == null ? null : t.getMailingList().getMailingListId(),
-                        t.getType() == null ? null : t.getType().name(),
-                        m.group(1),
-                        t.getMessageQuery()));
+            String listId = t.getMailingList() == null
+                    ? null : t.getMailingList().getMailingListId();
+            String type = t.getType() == null ? null : t.getType().name();
+
+            scan(hits, listId, type, "messageQuery", t.getMessageQuery());
+            scan(hits, listId, type, "messageFilter", t.getMessageFilter());
+
+            // A script can name a tag too, and the path is the only part of it
+            // stored here -- so a hit on the path is a prompt to open the script,
+            // not a finding about its contents.
+            if (t.getScriptResourcePaths() != null) {
+                t.getScriptResourcePaths().forEach(
+                        path -> scan(hits, listId, type, "scriptResourcePath", path));
             }
         }
         return hits;
+    }
+
+    /** Records a hit if the expression names a weekly tag. */
+    private void scan(List<TriggerHit> hits, String listId, String type,
+                      String field, String expression) {
+        if (expression == null || expression.isBlank()) {
+            return;
+        }
+        var m = WEEKLY_TAG.matcher(expression);
+        if (m.find()) {
+            hits.add(new TriggerHit(listId, type, field, m.group(1), expression));
+        }
     }
 }

@@ -101,27 +101,53 @@ public class CutoverPreflightTest {
                         + "the search was the right one");
     }
 
-    /** A trigger naming a weekly tag is found; the audit is not a stub returning nothing. */
+    /**
+     * The audit reads messageFilter, not only messageQuery.
+     *
+     * This is the hole the live estate exposed: TWELVE of the fifteen triggers on
+     * niord.t-dma.dk carry no messageQuery at all and put their logic in
+     * messageFilter. The first version of this audit scanned messageQuery alone
+     * and reported a clean result having read a fifth of the triggers -- silence
+     * that reads as success, which is exactly what the committed report exists to
+     * prevent.
+     *
+     * The expressions below are the real ones, copied from that environment.
+     */
     @Test
-    @Transactional
-    public void ateriggerNamingAWeeklyTagIsDetected() {
-        // Proven on the pattern rather than by writing a mailing list into the
-        // shared database: the audit's whole job is recognising a shape, and a
-        // fixture trigger would test the query rather than the recognition.
-        List<String> shouldMatch = List.of(
-                "tag=nm-w27-2026", "tag=\"nm-pt-w27-2026\"", "status=PUBLISHED&tag=nm-w01-2025",
-                "tag=nm-pt-w51-52-2017");
-        List<String> shouldNotMatch = List.of(
-                "publication=abc-123", "tag=general-notices", "domain=niord-nm");
+    public void theAuditReadsEveryFieldATriggerCanExpressItselfIn() {
+        // Real messageFilter expressions from the live estate. None names a tag,
+        // and all twelve would have been invisible to a messageQuery-only scan.
+        for (String live : List.of(
+                "msg.messageSeries.seriesId == 'dma-nw-local' && msg.type == 'LOCAL_WARNING'",
+                "msg.promulgation('navtex').promulgate && msg.promulgation('navtex').useTransmitter('Baltico')",
+                "msg.messageSeries.seriesId == 'ako-nw' && msg.type == 'COASTAL_WARNING'")) {
+            assertFalse(namesAWeeklyTag(live), "no live trigger names a weekly tag: " + live);
+        }
 
-        for (String q : shouldMatch) {
-            assertFalse(preflight.auditTriggers() == null, "the audit must run");
-            assertTrue(q.matches("(?i).*tag=[\"']?nm-(pt-)?w\\d{1,2}(-\\d{1,2})?-\\d{4}.*"),
-                    "fixture check: " + q + " is meant to look like a weekly tag");
+        // A tag inside a script expression is quoted, not a query parameter --
+        // so anchoring the pattern on "tag=" would miss every one of these.
+        for (String wouldBreakAtC8 : List.of(
+                "msg.tags.contains('nm-w27-2026')",
+                "msg.tags.any(t -> t.name == \"nm-pt-w51-2017\")",
+                "tag=nm-w01-2025",
+                "status=PUBLISHED&tag=nm-pt-w12-2018")) {
+            assertTrue(namesAWeeklyTag(wouldBreakAtC8),
+                    "this stops matching at C8 and must be reported: " + wouldBreakAtC8);
         }
-        for (String q : shouldNotMatch) {
-            assertFalse(q.matches("(?i).*tag=[\"']?nm-(pt-)?w\\d{1,2}(-\\d{1,2})?-\\d{4}.*"),
-                    "fixture check: " + q + " must not be reported");
+
+        // And the near-misses that must NOT be reported.
+        for (String unrelated : List.of(
+                "tag=general-notices", "publication=abc-123", "messageSeries=dma-nm",
+                "tag=nm-almanac-2024-v1", "tag=firing-areas-2019-v1")) {
+            assertFalse(namesAWeeklyTag(unrelated), "not a weekly tag: " + unrelated);
         }
+    }
+
+    /** The audit's own pattern, applied the way the audit applies it. */
+    private static boolean namesAWeeklyTag(String expression) {
+        return java.util.regex.Pattern
+                .compile("(nm-(?:pt-)?w\\d{1,2}(?:-\\d{1,2})?-\\d{4})",
+                        java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(expression).find();
     }
 }

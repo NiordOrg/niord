@@ -14,10 +14,11 @@ After `C8` no new `nm-wNN-YYYY` tag is minted. A mailing list whose `messageQuer
 visible failure is a mailing that does not go out, which surfaces when a recipient eventually asks why
 they stopped receiving it, by which time the cause is weeks behind.
 
-Searched shape (case-insensitive), against every `MailingListTrigger.messageQuery`:
+Searched shape (case-insensitive), against **every expression a trigger carries** --
+`messageQuery`, `messageFilter` and `scriptResourcePaths`:
 
 ```
-tag=["']?nm-(pt-)?w\d{1,2}(-\d{1,2})?-\d{4}
+(nm-(?:pt-)?w\d{1,2}(?:-\d{1,2})?-\d{4})
 ```
 
 Deliberately loose. This is a report a person reads: a miss is a mailing list that quietly dies, a false
@@ -25,38 +26,46 @@ positive is one line to dismiss.
 
 ---
 
-## Findings — test environment, 2026-08-24
+## Findings — 2026-08-24
 
-**Run against `niord.t-dma.dk`. Result: no hits. This is a real answer, not an empty haystack.**
+**No hits, and the reason is stronger than "we looked and found none".**
 
 | | |
 |---|---:|
 | Mailing lists | **9** |
 | Triggers | **15** |
-| Triggers carrying a `messageQuery` | **3** |
+| ... carrying a `messageQuery` | **3** |
+| ... carrying a `messageFilter` | **12** |
 | Triggers naming a weekly tag | **0** |
 
-The three queries that exist, in full:
+### Every mailing list is a NAVIGATIONAL WARNING feature. Publications are NOTICES TO MARINERS.
 
-| Mailing list | Type | `messageQuery` |
-|---|---|---|
-| `audio-broadcast` | `SCHEDULED` | `messageSeries=dma-nw&messageSeries=dma-nw-local&status=PUBLISHED&promulgationType=audio` |
-| `navwarn-overview` | `SCHEDULED` | `messageSeries=dma-nw&status=PUBLISHED&type=COASTAL_WARNING&sortBy=ID` |
-| `navwarn-overview-GL` | `SCHEDULED` | `messageSeries=ako-nw&status=PUBLISHED&type=COASTAL_WARNING&sortBy=ID` |
+That is the finding. The three scheduled triggers key on `messageSeries=dma-nw`,
+`dma-nw-local` and `ako-nw`; the twelve status-change triggers key on
+`msg.messageSeries.seriesId` for those same series, or on `msg.promulgation('navtex')`. The lists are
+`audio-broadcast`, `navwarn-*`, `navtex-*` and `LW-update`.
 
-**All three key on `messageSeries=`, none on `tag=`.** So none of them depends on the weekly tag naming
-convention, and none breaks at `C8`. The 12 remaining triggers carry no `messageQuery` at all.
+The weekly `nm-wNN-YYYY` tags belong to the NM publication machinery — `dma-nm`, `dma-nm-almanac`,
+`dma-nm-annex`. **No mailing list touches NM at all.**
 
-Worth noting: none uses `publication=` either, so `B4.4`'s cure is not exercised on this environment.
+So G-12's premise — "a mailing list keyed on the tag naming convention silently stops matching after C8"
+— has no instance in this system. Not "none found today": the two features do not overlap. A new
+NM-driven mailing list could reintroduce the risk, which is why the audit stays in the pre-flight.
 
-### Still to do — run it on PRODUCTION before `B7.1`
+Worth noting: none uses `publication=` either, so `B4.4`'s cure is not exercised by any live trigger.
 
-The figures above are the test environment's. Production carries its own mailing lists, and the whole
-point of this audit is the list somebody set up years ago and nobody has looked at since — exactly the
-kind that exists in production and not in test.
+### The hole this exposed in the audit itself
 
-**This audit is not discharged until it has run against production.** Re-run
-`GET /rest/publication-series/cutover-preflight`, and record the result here beside the test figures.
+The first version scanned **`messageQuery` only**. Twelve of the fifteen triggers carry no
+`messageQuery` at all — they express themselves in `messageFilter` — so that version read **a fifth of
+the triggers and reported a clean result**. Silence that reads as success, which is the exact failure
+this committed report exists to prevent.
+
+The audit now scans `messageQuery`, `messageFilter` and `scriptResourcePaths`, and the pattern is no
+longer anchored on `tag=`: in a script expression a tag appears quoted (`msg.tags.contains('nm-w27-2026')`),
+not as a query parameter. Each hit records which field it came from.
+
+Found by Rasmus asking whether these lists use tags at all.
 
 ## The other three assertions
 
