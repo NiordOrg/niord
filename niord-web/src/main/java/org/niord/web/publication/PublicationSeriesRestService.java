@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.replay.ShadowDiffService;
+import org.niord.core.publication.series.replay.DiagnosticReportService;
 import org.niord.core.publication.series.replay.ShadowDiffRun;
 import org.niord.core.publication.series.legacy.LegacyImportReportVo;
 import org.niord.core.publication.series.legacy.CutoverPreflightService;
@@ -70,6 +71,9 @@ public class PublicationSeriesRestService {
 
     @Inject
     ShadowDiffService shadowDiff;
+
+    @Inject
+    DiagnosticReportService diagnostics;
 
     @Inject
     PublicationCategoryService categoryService;
@@ -350,6 +354,27 @@ public class PublicationSeriesRestService {
         return report.deleted()
                 ? Response.ok(report).build()
                 : Response.status(409).entity(report).build();
+    }
+
+    /**
+     * B6.3. The diagnostic report, as markdown.
+     *
+     * Markdown rather than JSON because the decision it supports is made by
+     * people reading it and arguing about it. The same numbers are available
+     * structurally from /shadow-diff; this is the version somebody pastes into
+     * a meeting, and it says in words what a table of counts does not: that a
+     * skipped week is not a green one, and what was never examined.
+     *
+     * historical=true also runs B6.1's full replay. Off by default because it
+     * re-resolves every imported issue, which is minutes of work and not
+     * something to trigger on a page refresh.
+     */
+    @GET
+    @Path("/diagnostic-report")
+    @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed("admin")
+    public String diagnosticReport(@QueryParam("historical") boolean historical) {
+        return diagnostics.render(historical);
     }
 
     /**
