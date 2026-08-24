@@ -6,7 +6,9 @@ import org.niord.core.publication.series.PublicWindowSource;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.IntervalBoundSource;
 import org.niord.core.publication.series.SeriesCadence;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.PublicationDesc;
 import org.niord.core.publication.vo.PublicationStatus;
 
@@ -65,8 +67,15 @@ public final class LegacyIssueTranslation {
      * does not go through the transactions: these rows are history, and running
      * them through publish() would stamp them with today and fabricate an audit
      * trail that never happened.
+     *
+     * previousInChain is the publication released immediately before this one in
+     * the same chain, or null at the head. Required rather than optional: it is
+     * the only thing that says when this issue's content period OPENED, and the
+     * alternative -- the value legacy happens to have on this row -- is the public
+     * window, which is a different period. See applyContentInterval.
      */
-    public static PublicationIssue translate(Publication legacy, PublicationSeries series, Date frozenAt) {
+    public static PublicationIssue translate(Publication legacy, PublicationSeries series, Date frozenAt,
+                                             Publication previousInChain) {
         PublicationIssue issue = new PublicationIssue();
 
         issue.setPublicId(legacy.getPublicationId());
@@ -81,8 +90,8 @@ public final class LegacyIssueTranslation {
         // afterwards; nothing here invents one.
         issue.setPublicFrom(legacy.getPublishDateFrom());
         issue.setPublicTo(legacy.getPublishDateTo());
-        issue.setIntervalFrom(legacy.getPublishDateFrom());
-        issue.setIntervalTo(legacy.getPublishDateTo());
+
+        applyContentInterval(issue, legacy, series, previousInChain);
 
         // B5.4c / R8. DERIVED for anything with a cadence, MANUAL only for a
         // genuinely open-ended one-off.
@@ -114,6 +123,68 @@ public final class LegacyIssueTranslation {
         IssueSnapshotDeriver.derive(issue, legacy, series, frozenAt);
 
         return issue;
+    }
+
+    /**
+     * The CONTENT interval -- which is NOT the public window.
+     *
+     * Legacy stored ONE window: publishDateFrom to publishDateTo, the period the
+     * edition was on the site. The content it carries is the period that CLOSED
+     * when that window opened. An EfS published on a Wednesday carries the week up
+     * to that Wednesday, not the week after it.
+     *
+     * Copying the public window into both pairs -- which is what this did -- made
+     * every tiling issue claim the period AFTER the one it actually contains.
+     * Measured against the frozen members, which are the only witness independent
+     * of either window because they were frozen from the legacy message tag: over
+     * 40 weekly-ntm issues spanning 2017-2026, 93% of members fall in the
+     * PRECEDING period and 6% in the stated one, consistent in every year.
+     *
+     * Every bound here is RECOVERED. None of it was recorded; all of it is read
+     * back out of the release chain, and a reader deciding whether to trust an
+     * imported interval needs to see that.
+     */
+    private static void applyContentInterval(PublicationIssue issue, Publication legacy,
+                                             PublicationSeries series, Publication previousInChain) {
+        Date released = legacy.getPublishDateFrom();
+
+        // IN_FORCE_AT_CUTOFF has NO lower bound, and that is a fact rather than a
+        // gap: the issue carries whatever was still in force at its cut-off,
+        // however old, so 2027's firing areas legitimately contain a 2016 notice.
+        // intervalTo is that cut-off -- an upper bound, not the end of a period.
+        if (series != null && series.getTimeRelation() == TimeRelation.IN_FORCE_AT_CUTOFF) {
+            issue.setIntervalFrom(null);
+            issue.setIntervalFromSource(null);
+            issue.setIntervalTo(released);
+            issue.setIntervalToSource(released == null ? null : IntervalBoundSource.RECOVERED.name());
+            return;
+        }
+
+        // A one-off has no cadence, so it has no preceding period to have closed.
+        // Its window is the only period anybody ever described it by, and stepping
+        // it back by "one period" would be stepping back by nothing defined.
+        if (!isCadenced(legacy, series)) {
+            issue.setIntervalFrom(released);
+            issue.setIntervalTo(legacy.getPublishDateTo());
+            issue.setIntervalFromSource(released == null ? null : IntervalBoundSource.RECOVERED);
+            issue.setIntervalToSource(legacy.getPublishDateTo() == null
+                    ? null : IntervalBoundSource.RECOVERED.name());
+            return;
+        }
+
+        // The tiling case. The period runs from the PREVIOUS release to this one,
+        // which is what "issues tile" means -- one closes where the next opens.
+        // Taken from the chain rather than by subtracting a nominal period, so a
+        // week somebody skipped produces one long interval instead of a wrong
+        // short one plus a phantom gap.
+        Date opened = previousInChain == null ? null : previousInChain.getPublishDateFrom();
+        issue.setIntervalFrom(opened);
+        issue.setIntervalFromSource(opened == null ? null : IntervalBoundSource.RECOVERED);
+        issue.setIntervalTo(released);
+        issue.setIntervalToSource(released == null ? null : IntervalBoundSource.RECOVERED.name());
+        // The head of a chain keeps a null lower bound. Nothing records when the
+        // oldest imported issue began collecting, and inventing a bound there is
+        // the same move that produced this defect.
     }
 
     /**

@@ -173,7 +173,7 @@ public class OrphanGroupingTest {
     public void groupingByTitleDoesNotTouchTheIdSpace() {
         for (Publication p : orphans()) {
             assertEquals(p.getPublicationId(),
-                    LegacyIssueTranslation.translate(p, null, new java.util.Date(0L)).getPublicId(),
+                    LegacyIssueTranslation.translate(p, null, new java.util.Date(0L), null).getPublicId(),
                     "the grouping decides the series, never the id");
         }
     }

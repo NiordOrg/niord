@@ -52,7 +52,7 @@ public class OrphanSeriesAndWindowSourceTest {
         List<String> offenders = new ArrayList<>();
         for (Publication p : LegacyEstateFixture.publications()) {
             PublicationSeries series = p.getTemplate() == null ? null : weekly;
-            PublicationIssue issue = LegacyIssueTranslation.translate(p, series, FROZEN);
+            PublicationIssue issue = LegacyIssueTranslation.translate(p, series, FROZEN, null);
 
             if (LegacyIssueTranslation.isCadenced(p, series)
                     && issue.getPublicWindowSource() != PublicWindowSource.DERIVED) {
@@ -82,7 +82,7 @@ public class OrphanSeriesAndWindowSourceTest {
 
         for (Publication p : weeklyOrphans) {
             assertEquals(PublicWindowSource.DERIVED,
-                    LegacyIssueTranslation.translate(p, null, FROZEN).getPublicWindowSource(),
+                    LegacyIssueTranslation.translate(p, null, FROZEN, null).getPublicWindowSource(),
                     p.getPublicationId() + " is cadenced and must not be MANUAL");
         }
     }
@@ -95,7 +95,7 @@ public class OrphanSeriesAndWindowSourceTest {
                 .findFirst().orElseThrow();
 
         assertEquals(PublicWindowSource.MANUAL,
-                LegacyIssueTranslation.translate(oneOff, null, FROZEN).getPublicWindowSource(),
+                LegacyIssueTranslation.translate(oneOff, null, FROZEN, null).getPublicWindowSource(),
                 "only a genuinely open-ended one-off is MANUAL");
     }
 

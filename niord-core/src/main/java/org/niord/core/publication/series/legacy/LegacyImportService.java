@@ -674,8 +674,10 @@ public class LegacyImportService extends BaseService {
                         continue;
                     }
 
-                    PublicationIssue issue =
-                            LegacyIssueTranslation.translate(legacy, series, frozenAt);
+                    // The previous release in this chain is what says when this
+                    // issue's content period opened; the chain is already ordered.
+                    PublicationIssue issue = LegacyIssueTranslation.translate(
+                            legacy, series, frozenAt, i > 0 ? chain.get(i - 1) : null);
 
                     // RETIRED counts as released: it was published and then withdrawn,
                     // so a release instant exists. OPEN is the one that never had one.

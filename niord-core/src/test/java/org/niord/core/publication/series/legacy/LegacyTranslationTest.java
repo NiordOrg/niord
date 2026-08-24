@@ -135,7 +135,7 @@ public class LegacyTranslationTest {
         List<String> broken = new ArrayList<>();
 
         for (Publication p : LegacyEstateFixture.publications()) {
-            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN);
+            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN, null);
             if (!p.getPublicationId().equals(issue.getPublicId())
                     || !p.getPublicationId().equals(issue.getLegacyPublicationId())) {
                 broken.add(p.getPublicationId());
@@ -154,7 +154,7 @@ public class LegacyTranslationTest {
     public void theImportedIdSpaceDoesNotCollide() {
         Set<String> seen = new HashSet<>();
         for (Publication p : LegacyEstateFixture.publications()) {
-            assertTrue(seen.add(LegacyIssueTranslation.translate(p, null, FROZEN).getPublicId()),
+            assertTrue(seen.add(LegacyIssueTranslation.translate(p, null, FROZEN, null).getPublicId()),
                     "duplicate publicId: " + p.getPublicationId());
         }
         assertEquals(1077, seen.size());
@@ -174,7 +174,7 @@ public class LegacyTranslationTest {
         List<String> broken = new ArrayList<>();
 
         for (Publication p : LegacyEstateFixture.publications()) {
-            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN);
+            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN, null);
             assertEquals(p.getRepoPath(), issue.getRepoPath(), "repoPath must not be re-derived");
 
             for (PublicationIssueDesc d : issue.getDescs()) {
@@ -217,7 +217,7 @@ public class LegacyTranslationTest {
         assertFalse(cursed.isEmpty(), "the ${year} rows are the evidence for this rule; none were found");
 
         for (Publication p : cursed) {
-            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN);
+            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN, null);
             assertEquals(p.getPublicationId(), issue.getPublicId());
             assertFalse(issue.getPublicId().contains("${"),
                     "a name-derived key would carry the literal placeholder into the new id space");
@@ -235,7 +235,7 @@ public class LegacyTranslationTest {
         Map<IssueStatus, Integer> distribution = new LinkedHashMap<>();
         for (Publication p : LegacyEstateFixture.publications()) {
             distribution.merge(
-                    LegacyIssueTranslation.translate(p, null, FROZEN).getStatus(), 1, Integer::sum);
+                    LegacyIssueTranslation.translate(p, null, FROZEN, null).getStatus(), 1, Integer::sum);
         }
 
         // The captured estate: 1042 ACTIVE, 31 INACTIVE, 3 RECORDING, 1 DRAFT.
@@ -248,7 +248,7 @@ public class LegacyTranslationTest {
     @Test
     public void theTranslationWritesTheSnapshotHeader() {
         for (Publication p : LegacyEstateFixture.publications()) {
-            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN);
+            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN, null);
             assertNotNull(issue.getSnapshotTimeRelation(), p.getPublicationId());
             assertNotNull(issue.getSnapshotAliveAtCutoff(), p.getPublicationId());
             assertEquals(FROZEN, issue.getSnapshotFrozenAt());
@@ -289,7 +289,7 @@ public class LegacyTranslationTest {
     public void everyIssueDescIsAttachedToItsIssue() {
         int checked = 0;
         for (Publication p : LegacyEstateFixture.publications()) {
-            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN);
+            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN, null);
             for (PublicationIssueDesc d : issue.getDescs()) {
                 assertSame(issue, d.getEntity(), p.getPublicationId() + "/" + d.getLang()
                         + ": desc is unattached, so it persists with a null entity_id");
