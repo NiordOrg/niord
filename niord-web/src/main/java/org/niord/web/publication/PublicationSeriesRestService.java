@@ -321,6 +321,33 @@ public class PublicationSeriesRestService {
     }
 
     /**
+     * S20. Undo the import.
+     *
+     * The importer refuses rather than merging, so a second attempt is blocked
+     * until the first one is cleared. Exposing this is not a convenience: the
+     * alternative is hand-written DELETE statements against a live archive during
+     * a cutover window, which is the worst possible time to be composing SQL.
+     *
+     * DELETE rather than POST because that is what it is, and the method itself
+     * should warn the reader.
+     *
+     * Returns 409 with every reason when it refuses -- an imported series that is
+     * no longer DRAFT, or one whose publicAuthority has been flipped. After B7.1
+     * those rows ARE the public list and undoing would withdraw published
+     * editions from under their readers.
+     */
+    @DELETE
+    @Path("/import-legacy")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Response undoImport() {
+        LegacyImportService.UndoReport report = importService.undo();
+        return report.deleted()
+                ? Response.ok(report).build()
+                : Response.status(409).entity(report).build();
+    }
+
+    /**
      * B5.7. The cutover pre-flight, and the mailing-list trigger audit.
      *
      * Read-only, and safe to run as often as you like. Exposed because the pass

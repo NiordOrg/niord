@@ -403,4 +403,97 @@ public class LegacyImportServiceTest {
         assertTrue(LegacyImportService.IMPORT_TIMEOUT_SECONDS > 240,
                 "a budget at or under the platform default is the bug this replaced");
     }
+
+    // ------------------------------------------------ I-18: one current issue
+
+    /**
+     * The three grouped series must serve exactly one current issue each.
+     *
+     * This is the violation the first successful import actually produced, over
+     * real rows: 4 Danish List of Lights editions, 7 NCAGS annexes and 4
+     * ice-service annexes all carrying publicTo IS NULL at once. Legacy never set
+     * an end date because each publication stood alone; grouping them is what
+     * made four current editions of one series possible.
+     *
+     * Driven over the captured estate rather than a fixture pair, because the
+     * shape that broke it -- same-day duplicates, and a legacy end date on some
+     * rows but not others -- does not occur in anything hand-built.
+     */
+    @Test
+    public void everyImportedSeriesServesExactlyOneCurrentIssue() {
+        LegacyImportService.Plan plan = importService.planFrom(
+                LegacyEstateFixture.templates(), LegacyEstateFixture.publications());
+
+        Map<String, Integer> open = new java.util.LinkedHashMap<>();
+        for (PublicationIssue issue : plan.issues().values()) {
+            if (issue.getPublicTo() == null && issue.getSeries() != null) {
+                open.merge(issue.getSeries().getSeriesId(), 1, Integer::sum);
+            }
+        }
+
+        List<String> forking = open.entrySet().stream()
+                .filter(e -> e.getValue() > 1)
+                .map(e -> e.getKey() + " has " + e.getValue())
+                .toList();
+
+        assertTrue(forking.isEmpty(),
+                "these series serve more than one current issue: " + forking);
+    }
+
+    /**
+     * A real legacy end date is never overwritten.
+     *
+     * The 2017 NCAGS edition ended on 23 December and the next opened on 1
+     * January. That nine-day gap is recorded data, not an artefact to normalise
+     * away, and the ruling is explicit that chaining fills in only what legacy
+     * left empty (Rasmus, 2026-08-24).
+     */
+    @Test
+    public void chainingFillsGapsAndNeverOverwritesARecordedEndDate() {
+        LegacyImportService.Plan plan = importService.planFrom(
+                LegacyEstateFixture.templates(), LegacyEstateFixture.publications());
+
+        for (Publication legacy : LegacyEstateFixture.publications()) {
+            if (legacy.getPublishDateTo() == null) {
+                continue;
+            }
+            PublicationIssue issue = plan.issues().get(legacy.getPublicationId());
+            if (issue == null) {
+                continue;
+            }
+            assertEquals(legacy.getPublishDateTo(), issue.getPublicTo(),
+                    "publication " + legacy.getPublicationId() + " had a recorded end date");
+        }
+
+        // The 2017 NCAGS annex, named because it is the row the ruling turned on.
+        PublicationIssue y2017 = plan.issues().get("5c05b168-7045-4f65-b3c4-9217cd319bc2");
+        assertNotNull(y2017);
+        assertNotNull(y2017.getPublicTo());
+        PublicationIssue y2018 = plan.issues().get("5219c871-d627-4c27-bf9e-d6b263bc47f1");
+        assertTrue(y2017.getPublicTo().before(y2018.getPublicFrom()),
+                "the nine-day gap between the 2017 and 2018 editions is real and survives");
+    }
+
+    /**
+     * Of two annexes released the same day, the one legacy marks ACTIVE stays open.
+     *
+     * Two NCAGS rows share 2026-01-07. Ordering them by publicationId would leave
+     * c8d4c4b5 open, which is the INACTIVE one; ordering by the legacy updated
+     * stamp leaves 1037bb70 open, which is the ACTIVE one. The middle sort key is
+     * doing real work here, and this is the row that proves it.
+     */
+    @Test
+    public void theSameDayTieIsBrokenTowardsTheEditionLegacyStillCallsActive() {
+        LegacyImportService.Plan plan = importService.planFrom(
+                LegacyEstateFixture.templates(), LegacyEstateFixture.publications());
+
+        PublicationIssue active = plan.issues().get("1037bb70-8c08-4346-b483-ef3027bdb29b");
+        PublicationIssue superseded = plan.issues().get("c8d4c4b5-ea2e-4525-9d9f-d638e371c135");
+
+        assertNotNull(active);
+        assertNotNull(superseded);
+        assertNull(active.getPublicTo(), "the ACTIVE 2026 edition is the current one");
+        assertNotNull(superseded.getPublicTo(),
+                "the INACTIVE edition released the same day is closed, not left current");
+    }
 }

@@ -11,6 +11,8 @@ import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.report.FmReportService;
 import org.niord.core.service.BaseService;
@@ -198,6 +200,94 @@ public class LegacyImportService extends BaseService {
 
     private static String seconds(long nanos) {
         return String.format("%.1f", nanos / 1_000_000_000.0);
+    }
+
+    /**
+     * S20. Deletes exactly what the import wrote, and nothing else.
+     *
+     * The import is deliberately not idempotent -- it refuses rather than
+     * merging -- which means a re-run is impossible until the previous attempt is
+     * gone. Until this existed the only way to get there was hand-written DELETE
+     * statements against the database, and the first time anybody would need them
+     * is in a production cutover window with the clock running. That is the worst
+     * possible moment to be composing SQL against a live archive.
+     *
+     * Scoped by importSource, so it can only ever touch rows this importer
+     * created. A series an admin authored by hand has no importSource and is
+     * invisible to this.
+     *
+     * REFUSED once the archive is public. Before B7.1 an imported series is DRAFT
+     * with publicAuthority = LEGACY and nobody can see it, so deleting it costs
+     * nothing. After the flip, those same rows ARE the public list, and undoing
+     * the import would withdraw published editions from under their readers. The
+     * check is on the data rather than on a flag somebody remembers to set.
+     */
+    public UndoReport undo() {
+        return QuarkusTransaction.requiringNew()
+                .timeout(IMPORT_TIMEOUT_SECONDS)
+                .call(this::undoInTransaction);
+    }
+
+    /** What the undo removed, or why it refused. */
+    public record UndoReport(boolean deleted, int series, int issues, int members,
+                             List<String> refusals) {
+    }
+
+    private UndoReport undoInTransaction() {
+        List<PublicationSeries> imported = em.createQuery(
+                        "SELECT s FROM PublicationSeries s WHERE s.importSource = :src",
+                        PublicationSeries.class)
+                .setParameter("src", importSource())
+                .getResultList();
+
+        if (imported.isEmpty()) {
+            return new UndoReport(false, 0, 0, 0,
+                    List.of("nothing to undo: no series carries importSource '"
+                            + importSource() + "'"));
+        }
+
+        // Every reason to refuse, not the first -- an admin clearing the way for a
+        // re-run needs to know everything standing in it.
+        List<String> refusals = new ArrayList<>();
+        for (PublicationSeries series : imported) {
+            if (series.getPublicAuthority() != PublicAuthority.LEGACY) {
+                refusals.add(series.getSeriesId() + " has publicAuthority "
+                        + series.getPublicAuthority() + ": its issues are being served to the "
+                        + "public, and undoing the import would withdraw published editions");
+            }
+            if (series.getStatus() != SeriesStatus.DRAFT) {
+                refusals.add(series.getSeriesId() + " is " + series.getStatus()
+                        + ", not DRAFT: somebody has taken it out of review, so it is no longer "
+                        + "just what the importer left behind");
+            }
+        }
+        if (!refusals.isEmpty()) {
+            return new UndoReport(false, 0, 0, 0, refusals);
+        }
+
+        // Children first: IssueMember and the issues are both FK-bound to what is
+        // about to go, and a bulk delete does not cascade the way a remove() does.
+        List<Integer> seriesIds = imported.stream().map(PublicationSeries::getId).toList();
+
+        int members = em.createQuery(
+                        "DELETE FROM IssueMember m WHERE m.issue IN "
+                                + "(SELECT i FROM PublicationIssue i WHERE i.series.id IN :ids)")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
+        int issues = em.createQuery(
+                        "DELETE FROM PublicationIssue i WHERE i.series.id IN :ids")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
+        int series = em.createQuery(
+                        "DELETE FROM PublicationSeries s WHERE s.id IN :ids")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
+        log.warn("legacy import undone: {} series, {} issues, {} members deleted",
+                series, issues, members);
+        return new UndoReport(true, series, issues, members, List.of());
     }
 
     // ---------------------------------------------------------------- planning
@@ -571,8 +661,93 @@ public class LegacyImportService extends BaseService {
             }
         }
 
+        closeSupersededIssues(plan, publications);
+
         plan.report().setIssuesByStatus(byStatus);
         plan.report().setIssuesByCutoffSource(byCutoffSource);
+    }
+
+    /**
+     * Closes every imported issue that a later one supersedes.
+     *
+     * I-18 says one series serves one current issue. The legacy model had no
+     * such rule -- each publication stood alone, so nothing ever needed to end,
+     * and 15 rows across the three grouped series carry no publishDateTo at all.
+     * Standalone that was harmless. Grouped, it is four Danish List of Lights
+     * editions all claiming to be current, which is the archive forking in
+     * public. The grouping ruling is what made it visible; the data was always
+     * like this.
+     *
+     * An issue closes where its successor opens. That is the only end date
+     * available that is not invented: it comes from a row that exists and says
+     * when it took over. A LEGACY publishDateTo is never overwritten -- the 2017
+     * NCAGS edition really did end on 23 December and the nine-day gap before
+     * 2018 is real data, not an artefact to tidy away (ruling, Rasmus
+     * 2026-08-24).
+     *
+     * Ordered by publicFrom, then by the legacy row's updated stamp, then by
+     * publicationId. The middle key is load-bearing rather than decorative:
+     * three NCAGS rows share 2023-01-04 and two share 2026-01-07, and the one
+     * that should stay open is the one legacy marks ACTIVE -- which is also the
+     * most recently updated, and is NOT the one publicationId order would pick.
+     *
+     * Applied to every imported series rather than only the grouped ones,
+     * because the invariant is about series with two current issues and not
+     * about how a series came to exist. Where a series already has exactly one
+     * open issue this changes nothing.
+     */
+    private void closeSupersededIssues(Plan plan, List<Publication> publications) {
+        Map<String, Publication> legacyById = new LinkedHashMap<>();
+        for (Publication p : publications) {
+            legacyById.put(p.getPublicationId(), p);
+        }
+
+        Map<String, List<String>> bySeries = new LinkedHashMap<>();
+        for (Map.Entry<String, PublicationIssue> e : plan.issues().entrySet()) {
+            PublicationSeries series = e.getValue().getSeries();
+            if (series != null) {
+                bySeries.computeIfAbsent(series.getSeriesId(), k -> new ArrayList<>())
+                        .add(e.getKey());
+            }
+        }
+
+        Comparator<String> order = Comparator
+                .comparing((String id) -> stamp(plan.issues().get(id).getPublicFrom()))
+                .thenComparing(id -> stamp(legacyById.containsKey(id)
+                        ? legacyById.get(id).getUpdated() : null))
+                .thenComparing(id -> id);
+
+        int closed = 0;
+        for (List<String> group : bySeries.values()) {
+            group.sort(order);
+
+            for (int i = 0; i < group.size() - 1; i++) {
+                PublicationIssue issue = plan.issues().get(group.get(i));
+                if (issue.getPublicTo() != null) {
+                    continue;
+                }
+                Date successorOpens = plan.issues().get(group.get(i + 1)).getPublicFrom();
+
+                // Only a successor that actually states when it opened can close
+                // anything, and it cannot close a window before that window began.
+                if (successorOpens == null || issue.getPublicFrom() == null
+                        || successorOpens.before(issue.getPublicFrom())) {
+                    continue;
+                }
+                issue.setPublicTo(successorOpens);
+                closed++;
+            }
+        }
+
+        if (closed > 0) {
+            log.info("closed {} superseded issue(s) at their successor's start; "
+                    + "legacy end dates left untouched", closed);
+        }
+    }
+
+    /** Null-safe key for ordering. A missing date sorts first, never last. */
+    private static long stamp(Date d) {
+        return d == null ? Long.MIN_VALUE : d.getTime();
     }
 
     /**
