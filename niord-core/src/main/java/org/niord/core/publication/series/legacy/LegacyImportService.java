@@ -2,7 +2,7 @@ package org.niord.core.publication.series.legacy;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
+import io.quarkus.narayana.jta.QuarkusTransaction;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.publication.Publication;
@@ -115,15 +115,55 @@ public class LegacyImportService extends BaseService {
     }
 
     /**
+     * How long the import is allowed to hold its transaction, in seconds.
+     *
+     * The default is 240s, and the import needs about 250 -- so it died twice at
+     * 240.2s and 240.8s, which reads like a data defect and is not one.
+     *
+     * IT CANNOT BE MADE MUCH FASTER, and the reason is structural. Every id in
+     * this system comes from one shared single-row hibernate_sequence with an
+     * increment of 1, so each of the ~65,000 rows costs a synchronous
+     * SELECT ... FOR UPDATE plus an UPDATE before its insert can even be queued.
+     * Measured at 5.4ms per allocation against a local database with no network
+     * in between, and 3.4ms against the deployed one: 65,347 rows is 220s of
+     * round trips and nothing else. JDBC insert batching does not help, because
+     * the allocations are serial no matter how the inserts are grouped.
+     *
+     * The alternatives were weighed and rejected. Raising the sequence increment
+     * changes id allocation for EVERY entity in the system, and production's
+     * sequence is mid-count with the AngularJS frontend still reading from it.
+     * Reserving a block and assigning ids by hand means bypassing @GeneratedValue
+     * for one table. Splitting into several transactions gives up all-or-nothing,
+     * and a half-imported archive is worse than none: the rows that landed look
+     * correct and nothing marks them as partial.
+     *
+     * So the operation is simply long, and the budget says so. 30 minutes is far
+     * more than the ~5 it needs, because the cost of a timeout is another cutover
+     * window and the cost of a generous ceiling is nothing at all.
+     */
+    static final int IMPORT_TIMEOUT_SECONDS = 1800;
+
+    /**
      * S19. Plans, and applies only if the plan is clean.
      *
      * Transactional so that a failure DURING apply -- a constraint nobody
      * predicted -- also leaves nothing behind. The clean check is the first
      * line of defence and the transaction is the second; neither is sufficient
      * alone, because plan() cannot foresee a database-level refusal.
+     *
+     * The transaction is opened by hand rather than by @Transactional because
+     * that annotation cannot carry a timeout, and this one operation needs a
+     * budget the rest of the application must not get.
      */
-    @Transactional
     public LegacyImportReportVo run() {
+        return QuarkusTransaction.requiringNew()
+                .timeout(IMPORT_TIMEOUT_SECONDS)
+                .call(this::runInTransaction);
+    }
+
+    private LegacyImportReportVo runInTransaction() {
+        long startedAt = System.nanoTime();
+
         Plan plan = plan();
         plan.report().setDryRun(false);
 
@@ -134,9 +174,30 @@ public class LegacyImportService extends BaseService {
             return plan.report();
         }
 
+        long planned = System.nanoTime();
         apply(plan);
+        long finished = System.nanoTime();
+
+        int rows = plan.series().size() + plan.issues().size()
+                + plan.members().values().stream().mapToInt(List::size).sum();
+
+        // Logged as rows and seconds because the two failures before this one
+        // were diagnosed by arithmetic on a stopwatch: 240.25s against a 240s
+        // budget is a timeout, and 37s is not. Whoever runs this next should not
+        // have to reconstruct that from a curl timing.
+        log.info("legacy import wrote {} rows in {}s (plan {}s, write {}s) of a {}s budget",
+                rows,
+                seconds(finished - startedAt),
+                seconds(planned - startedAt),
+                seconds(finished - planned),
+                IMPORT_TIMEOUT_SECONDS);
+
         plan.report().setWouldSucceed(true);
         return plan.report();
+    }
+
+    private static String seconds(long nanos) {
+        return String.format("%.1f", nanos / 1_000_000_000.0);
     }
 
     // ---------------------------------------------------------------- planning

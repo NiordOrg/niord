@@ -24,6 +24,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -375,4 +376,31 @@ public class LegacyImportServiceTest {
     // The legacy Publication rows here belong to other suites and most carry no
     // repoPath, so such a test would assert a property of ambient fixtures rather
     // than of the importer -- and would fail whenever another suite added a row.
+
+    // ------------------------------------------------- the transaction budget
+
+    /**
+     * run() must NOT carry @Transactional.
+     *
+     * The import needs about 250 seconds and the platform default is 240, so it
+     * failed twice at 240.2s and 240.8s -- a timeout that reads exactly like a
+     * data defect. The transaction is now opened by hand with an explicit
+     * budget, because @Transactional cannot carry one.
+     *
+     * Re-adding the annotation would put a 240s outer transaction back around
+     * the inner one and restore the failure in a form nobody would recognise:
+     * the code would still SAY 1800 seconds. This is cheap insurance against a
+     * tidy-up that looks obviously correct.
+     */
+    @Test
+    public void runOpensItsOwnTransactionSoItCanCarryATimeout() throws Exception {
+        java.lang.reflect.Method run = LegacyImportService.class.getMethod("run");
+
+        assertNull(run.getAnnotation(jakarta.transaction.Transactional.class),
+                "@Transactional on run() silently reimposes the 240s default, and the import "
+                        + "needs longer than that -- see IMPORT_TIMEOUT_SECONDS");
+
+        assertTrue(LegacyImportService.IMPORT_TIMEOUT_SECONDS > 240,
+                "a budget at or under the platform default is the bug this replaced");
+    }
 }
