@@ -28,8 +28,9 @@ public class GapSynthesisTest {
 
     private static final long WEEK = 7L * 24 * 3600_000L;
     private static final ZoneId CPH = ZoneId.of("Europe/Copenhagen");
-    private static final Map<String, String> PATTERNS =
-            Map.of("en", "NtM Week ${week} - ${year}");
+    private static final Map<String, GapSynthesis.Patterns> PATTERNS =
+            Map.of("en", new GapSynthesis.Patterns("NtM Week ${week} - ${year}",
+                    "ntm-${year}-${week}.pdf"));
 
     /** A Wednesday, 12:00 UTC, in 2026. */
     private static Date wed(int isoWeek) {
@@ -128,9 +129,15 @@ public class GapSynthesisTest {
         int endWeek = isoWeekOf(gap.intervalTo());
         assertNotEquals(startWeek, endWeek, "fixture is pointless unless the two bounds fall in different weeks");
 
-        assertEquals("NtM Week " + endWeek + " - " + gap.intervalTo().toInstant()
-                        .atZone(CPH).get(WeekFields.ISO.weekBasedYear()),
-                gap.suggestedNames().get("en"));
+        int endYear = gap.intervalTo().toInstant().atZone(CPH).get(WeekFields.ISO.weekBasedYear());
+        assertEquals("NtM Week " + endWeek + " - " + endYear,
+                gap.suggestions().get("en").name());
+
+        // The file name is expanded from the SAME numbers. A prefill whose title
+        // says one week and whose file name says another is how a week 27 issue
+        // gets filed as week 26.
+        assertEquals("ntm-" + endYear + "-" + endWeek + ".pdf",
+                gap.suggestions().get("en").fileName());
     }
 
     /** Exactly one UPCOMING: the period whose cut-off has not passed. */

@@ -162,9 +162,7 @@ public class IssueLifecycleService extends BaseService {
         if (seriesDesc != null && seriesDesc.getNameSuggestionPattern() != null
                 && !seriesDesc.getNameSuggestionPattern().isBlank() && basis != null) {
             try {
-                java.time.ZoneId zone = series.getNominalCutoffTimeZone() == null
-                        ? java.time.ZoneId.of("UTC")
-                        : java.time.ZoneId.of(series.getNominalCutoffTimeZone());
+                java.time.ZoneId zone = series.cutoffZone();
                 return org.niord.core.publication.series.resolve.IssueNaming.expand(
                         seriesDesc.getNameSuggestionPattern(),
                         org.niord.core.publication.series.resolve.IssueNaming.derive(basis, null, zone, null));

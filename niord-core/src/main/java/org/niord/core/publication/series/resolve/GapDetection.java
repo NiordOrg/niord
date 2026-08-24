@@ -26,8 +26,30 @@ public final class GapDetection {
     /** Missed cadence periods before a series is considered dormant. */
     public static final int DORMANCY_PERIODS = 3;
 
+    /**
+     * Why gap detection did or did not run, as something an API can render.
+     *
+     * The prose says it once, for a human reading a log or a diagnostic. The code
+     * is what a caller switches on and what a UI translates -- a client matching
+     * on the sentence would break the first time the sentence is improved.
+     */
+    public enum Reason {
+        /** The gate is open. */
+        TILING_SERIES,
+        /** Issues overlap rather than tile, so a missing period is a category error. */
+        RELATION_NOT_TILING,
+        /** A one-off has no period to be missing. */
+        NO_CADENCE,
+        /** Only an ACTIVE series is expected to keep producing. */
+        SERIES_NOT_ACTIVE,
+        /** Already flagged dormant; per-period warnings would bury that. */
+        SERIES_DORMANT,
+        /** A cadence whose period length could not be computed. */
+        CADENCE_PERIOD_UNKNOWN
+    }
+
     /** Why gap detection did or did not run. Carried so the answer is explainable. */
-    public record Gate(boolean enabled, String reason) {
+    public record Gate(boolean enabled, Reason code, String reason) {
     }
 
     /** A period with no issue. */
@@ -47,22 +69,45 @@ public final class GapDetection {
      */
     public static Gate gate(TimeRelation relation, String cadence, boolean active, boolean dormant) {
         if (relation != TimeRelation.PUBLISHED_IN_INTERVAL) {
-            return new Gate(false,
+            return new Gate(false, Reason.RELATION_NOT_TILING,
                     "issues of an IN_FORCE_AT_CUTOFF series overlap rather than tile, so a missing period "
                             + "is a category error rather than a gap");
         }
         if (cadence == null || "NONE".equals(cadence)) {
-            return new Gate(false, "a one-off has no cadence to be missing a period of");
+            return new Gate(false, Reason.NO_CADENCE,
+                    "a one-off has no cadence to be missing a period of");
         }
         if (!active) {
-            return new Gate(false, "only an ACTIVE series is expected to keep producing issues");
+            return new Gate(false, Reason.SERIES_NOT_ACTIVE,
+                    "only an ACTIVE series is expected to keep producing issues");
         }
         if (dormant) {
-            return new Gate(false,
+            return new Gate(false, Reason.SERIES_DORMANT,
                     "a dormant series is already flagged as such; warning about every period since would "
                             + "bury the one fact that matters");
         }
-        return new Gate(true, "an active, tiling series with a cadence");
+        return new Gate(true, Reason.TILING_SERIES, "an active, tiling series with a cadence");
+    }
+
+    /**
+     * The same gate, refusing to run when the cadence has no computable period.
+     *
+     * Not defensive padding. Adding a cadence constant without teaching
+     * periodMillisOf about it yields a period of zero, and a zero period makes the
+     * synthesizer return an empty list -- which a caller reporting the count alone
+     * renders as "0 gaps" for a series nothing examined. That reads exactly like a
+     * clean one, and it is the same confusion the reason code exists to prevent, so
+     * the branch is here rather than left to whoever adds the constant.
+     */
+    public static Gate gate(TimeRelation relation, String cadence, boolean active, boolean dormant,
+                            long periodMillis) {
+        Gate gate = gate(relation, cadence, active, dormant);
+        if (gate.enabled() && periodMillis <= 0) {
+            return new Gate(false, Reason.CADENCE_PERIOD_UNKNOWN,
+                    "the length of one " + cadence + " period could not be computed, so there is no "
+                            + "period to call missing");
+        }
+        return gate;
     }
 
     /**

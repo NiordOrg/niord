@@ -287,14 +287,7 @@ public final class IssuePublicationMapping {
     }
 
     private static ZoneId zoneOf(PublicationSeries series) {
-        if (series == null || !notBlank(series.getNominalCutoffTimeZone())) {
-            return ZoneId.of("UTC");
-        }
-        try {
-            return ZoneId.of(series.getNominalCutoffTimeZone());
-        } catch (RuntimeException e) {
-            return ZoneId.of("UTC");
-        }
+        return series == null ? ZoneId.of("UTC") : series.cutoffZone();
     }
 
     private static boolean notBlank(String value) {

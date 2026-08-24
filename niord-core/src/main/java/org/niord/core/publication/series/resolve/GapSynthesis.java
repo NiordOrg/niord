@@ -34,10 +34,18 @@ public final class GapSynthesis {
         UPCOMING
     }
 
+    /** What a series names a period, per language. */
+    public record Patterns(String namePattern, String fileNamePattern) {
+    }
+
+    /** What this period would be called, per language. */
+    public record Suggestion(String name, String fileName) {
+    }
+
     /**
      * One synthesized row.
      *
-     * suggestedNames is per language rather than one string, because a series
+     * suggestions is per language rather than one string, because a series
      * declares the languages it publishes in and a retro-create prefilled in only
      * one of them is how an issue gets created half-named.
      */
@@ -50,7 +58,7 @@ public final class GapSynthesis {
                       String precedingPublicId,
                       String followingPublicId,
                       long sortKey,
-                      Map<String, String> suggestedNames) {
+                      Map<String, Suggestion> suggestions) {
     }
 
     /**
@@ -76,14 +84,14 @@ public final class GapSynthesis {
      * rows rather than the count alone.
      *
      * @param issues ordered ASCENDING by effective cut-off
-     * @param namePatterns nameSuggestionPattern per language; may be empty
+     * @param patterns the naming patterns per language; may be empty
      */
     public static List<Row> synthesize(GapDetection.Gate gate,
                                        String seriesId,
                                        List<Issue> issues,
                                        long periodMillis,
                                        ZoneId zone,
-                                       Map<String, String> namePatterns,
+                                       Map<String, Patterns> patterns,
                                        Date now) {
         List<Row> out = new ArrayList<>();
         if (gate == null || !gate.enabled() || periodMillis <= 0 || issues == null || issues.isEmpty()) {
@@ -100,7 +108,7 @@ public final class GapSynthesis {
         for (GapDetection.Gap gap : GapDetection.gaps(gate, cutoffs, periodMillis)) {
             out.add(row(RowKind.MISSING, seriesId, gap.from(), gap.to(),
                     latestAtOrBefore(issues, gap.from()), earliestAfter(issues, gap.to()),
-                    zone, namePatterns));
+                    zone, patterns));
         }
 
         // After the newest issue. GapDetection.gaps looks only BETWEEN cut-offs, so
@@ -108,8 +116,14 @@ public final class GapSynthesis {
         // the one case somebody is actually looking for. Periods whose cut-off has
         // already passed are MISSING; the first that has not is UPCOMING, and there
         // is only ever one of those.
+        //
+        // Only from a cut-off that has actually PASSED. While the newest issue's own
+        // cut-off is still ahead, that issue IS the period being worked toward, and
+        // a row past it describes a period nobody has started -- offering a
+        // retro-create for the week after the one currently open.
         Issue newest = issues.get(issues.size() - 1);
-        if (newest.effectiveCutoff() != null && now != null) {
+        if (newest.effectiveCutoff() != null && now != null
+                && newest.effectiveCutoff().getTime() <= now.getTime()) {
             Date from = newest.effectiveCutoff();
             Issue preceding = newest;
             // Bounded by the dormancy gate rather than by a literal: a series nobody
@@ -119,7 +133,7 @@ public final class GapSynthesis {
                 Date to = GapDetection.nextCutoff(from, periodMillis);
                 boolean passed = to.getTime() <= now.getTime();
                 out.add(row(passed ? RowKind.MISSING : RowKind.UPCOMING, seriesId, from, to,
-                        preceding, null, zone, namePatterns));
+                        preceding, null, zone, patterns));
                 if (!passed) {
                     break;
                 }
@@ -134,7 +148,7 @@ public final class GapSynthesis {
 
     private static Row row(RowKind kind, String seriesId, Date from, Date to,
                            Issue preceding, Issue following, ZoneId zone,
-                           Map<String, String> namePatterns) {
+                           Map<String, Patterns> patterns) {
         return new Row(kind, seriesId, from, to,
                 // A preceding issue's stamped cut-off is a recorded bound. Anything
                 // else here is the cadence talking, and says so.
@@ -146,17 +160,36 @@ public final class GapSynthesis {
                 // cut-off, so a merged list is one sequence rather than two
                 // interleaved ones.
                 to.getTime(),
-                suggestedNames(to, zone, namePatterns));
-    }
-
-    private static IntervalBoundSource boundSource(Issue neighbour) {
-        return neighbour != null && neighbour.cutoffSource() == IntervalBoundSource.STAMPED
-                ? IntervalBoundSource.STAMPED
-                : IntervalBoundSource.NOMINAL;
+                suggestions(to, zone, patterns));
     }
 
     /**
-     * The name each language would give this period.
+     * Where a pseudo-row's bound came from: the neighbouring issue it chains
+     * off, or the cadence where there is no neighbour.
+     *
+     * RECOVERED is carried through rather than collapsed into NOMINAL. Most of
+     * the imported archive has a recovered cut-off, so collapsing it would drop
+     * the provenance marker from precisely the rows where somebody needs to know
+     * how firm the bound is before creating an issue against it.
+     *
+     * A neighbour whose cut-off an admin typed reads as STAMPED here. The marker
+     * distinguishes a recorded bound from an inferred one, and a hand-entered
+     * cut-off is recorded; MANUAL itself would claim somebody authored THIS
+     * period, which nobody has -- that is what makes the row a pseudo-row.
+     */
+    private static IntervalBoundSource boundSource(Issue neighbour) {
+        if (neighbour == null || neighbour.cutoffSource() == null) {
+            return IntervalBoundSource.NOMINAL;
+        }
+        return switch (neighbour.cutoffSource()) {
+            case STAMPED, MANUAL -> IntervalBoundSource.STAMPED;
+            case RECOVERED -> IntervalBoundSource.RECOVERED;
+            case NOMINAL -> IntervalBoundSource.NOMINAL;
+        };
+    }
+
+    /**
+     * What each language would call this period -- its title and its file name.
      *
      * Derived from the interval END, and the interval start is deliberately NOT
      * passed. IssueNaming.derive takes the start only to detect a multi-week
@@ -170,21 +203,35 @@ public final class GapSynthesis {
      * A real multi-week issue still names itself the other way. That is a property
      * of the issue somebody authored, not of a period nobody has authored yet.
      */
-    private static Map<String, String> suggestedNames(Date to, ZoneId zone,
-                                                      Map<String, String> namePatterns) {
-        Map<String, String> out = new LinkedHashMap<>();
-        if (namePatterns == null || namePatterns.isEmpty()) {
+    private static Map<String, Suggestion> suggestions(Date to, ZoneId zone,
+                                                       Map<String, Patterns> patterns) {
+        Map<String, Suggestion> out = new LinkedHashMap<>();
+        if (patterns == null || patterns.isEmpty()) {
             return out;
         }
         IssueNaming.Numbers numbers = IssueNaming.derive(to, null, zone, null);
-        for (Map.Entry<String, String> e : namePatterns.entrySet()) {
-            String pattern = e.getValue();
-            if (pattern == null || pattern.isBlank() || !IssueNaming.isExpandable(pattern)) {
+        for (Map.Entry<String, Patterns> e : patterns.entrySet()) {
+            Patterns p = e.getValue();
+            if (p == null) {
                 continue;
             }
-            out.put(e.getKey(), IssueNaming.expand(pattern, numbers));
+            String name = expand(p.namePattern(), numbers);
+            String fileName = expand(p.fileNamePattern(), numbers);
+            // A language whose patterns expand to nothing contributes no row at
+            // all. An entry carrying two nulls would prefill a retro-create with
+            // a blank name, which is worse than offering none.
+            if (name != null || fileName != null) {
+                out.put(e.getKey(), new Suggestion(name, fileName));
+            }
         }
         return out;
+    }
+
+    private static String expand(String pattern, IssueNaming.Numbers numbers) {
+        if (pattern == null || pattern.isBlank() || !IssueNaming.isExpandable(pattern)) {
+            return null;
+        }
+        return IssueNaming.expand(pattern, numbers);
     }
 
     private static Issue latestAtOrBefore(List<Issue> ascending, Date when) {

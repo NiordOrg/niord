@@ -330,7 +330,30 @@ public class PublicationApiContractTest {
         }
         // A List<SystemXVo> hides the element type at runtime, so read the generic.
         String generic = m.getGenericReturnType().getTypeName();
-        return generic.contains("SystemPublicationSeriesVo") || generic.contains("SystemPublicationIssueVo");
+        if (generic.contains("SystemPublicationSeriesVo") || generic.contains("SystemPublicationIssueVo")) {
+            return true;
+        }
+
+        // An ENVELOPE hides them one level further down. This matters more than
+        // it looks: wrapping a list of system VOs in a result type is an ordinary
+        // refactor, and without this the endpoint silently drops out of the tier
+        // check -- the check keeps passing, over one endpoint fewer.
+        return carriesSystemShape(returned);
+    }
+
+    /** Whether a type declares a field that is, or contains, a system VO. */
+    private static boolean carriesSystemShape(Class<?> type) {
+        if (type == null || type.getName().startsWith("java.")) {
+            return false;
+        }
+        for (var f : type.getDeclaredFields()) {
+            String declared = f.getGenericType().getTypeName();
+            if (declared.contains("SystemPublicationSeriesVo")
+                    || declared.contains("SystemPublicationIssueVo")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Set<String> declaredFields(Class<?> type) {

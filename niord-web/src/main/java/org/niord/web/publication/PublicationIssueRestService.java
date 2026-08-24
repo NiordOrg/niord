@@ -20,6 +20,7 @@ import org.niord.core.publication.series.IssueAuditEntry;
 import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueCurationService;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.IssueListService;
 import org.niord.core.user.UserService;
 import org.niord.core.publication.series.IntervalBoundSource;
 import org.niord.core.publication.series.PublicationSeriesService;
@@ -31,6 +32,7 @@ import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueService;
 import org.niord.core.publication.series.PublishChecklistService;
 import org.niord.core.publication.series.vo.IssueAuditEntryVo;
+import org.niord.core.publication.series.vo.IssueListResultVo;
 import org.niord.core.publication.series.vo.IssueMemberVo;
 import org.niord.core.publication.series.vo.PublicationIssueVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
@@ -78,6 +80,9 @@ public class PublicationIssueRestService {
 
     @Inject
     IssueCurationService curation;
+
+    @Inject
+    IssueListService issueList;
 
     @Inject
     IssueAuditService audit;
@@ -162,33 +167,23 @@ public class PublicationIssueRestService {
      *
      * Returns the EDITOR shape. The one caller is the admin section, and the
      * public list is served by the public adapter rather than from here.
+     *
+     * Wrapped in an envelope rather than returned as a bare array, because the
+     * rows alone cannot be read safely: a series with no MISSING rows and a
+     * series nobody examined for gaps produce the same array, and every
+     * imported series is DRAFT, so today that is all twenty of them.
      */
     @GET
     @Path("/series/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
-    public List<SystemPublicationIssueVo> bySeries(@PathParam("seriesId") String seriesId) {
+    public IssueListResultVo bySeries(@PathParam("seriesId") String seriesId) {
         PublicationSeries series = seriesService.findBySeriesId(seriesId);
         if (series == null) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
                     "no series '" + seriesId + "'");
         }
-
-        // Ordered in the database rather than in Java: an issue list is one of
-        // the few things here that can grow without bound, and a series with a
-        // decade of weeklies has ~500 rows.
-        //
-        // cutoffStampedAt DESC, then publicId, so the order is total -- issues
-        // sharing a cut-off (a retire-and-republish pair) would otherwise swap
-        // places between requests and the list would appear to reshuffle itself.
-        return em.createQuery(
-                        "SELECT i FROM PublicationIssue i WHERE i.series = :s "
-                                + "ORDER BY i.cutoffStampedAt DESC, i.publicId DESC",
-                        PublicationIssue.class)
-                .setParameter("s", series)
-                .getResultList().stream()
-                .map(i -> i.toVo(SystemPublicationIssueVo.class))
-                .toList();
+        return issueList.forSeries(series, new Date());
     }
 
     /** I4. Editor shape. */

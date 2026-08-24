@@ -539,7 +539,20 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             sys.setIntervalFrom(intervalFrom);
             sys.setIntervalTo(intervalTo);
             sys.setIntervalFromSource(intervalFromSource == null ? null : intervalFromSource.name());
+            sys.setIntervalToSource(intervalToSource);
             sys.setCutoffStampedAt(cutoffStampedAt);
+
+            // The coalesce is emitted rather than left to each client to repeat.
+            // A synthesized row sits in the same list and has no columns to
+            // coalesce, so both kinds have to answer "when did this period close"
+            // in one field, or the merged list cannot be sorted as one sequence.
+            Date effective = effectiveCutoff();
+            sys.setEffectiveCutoff(effective);
+            sys.setSortKey(effective == null ? null : effective.getTime());
+
+            // A real row computes to its stored status. MISSING and UPCOMING
+            // describe rows with no entity, and only the synthesizer sets those.
+            sys.setComputedStatus(status == null ? null : status.name());
             sys.setCutoffReconstructed(cutoffReconstructed);
             sys.setPublishedAt(publishedAt);
             sys.setPublishedBy(publishedBy == null ? null : publishedBy.getUsername());
@@ -555,4 +568,17 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         }
         return vo;
     }
+
+    /**
+     * When this period actually closed: the stamped cut-off where there is one,
+     * the nominal bound where there is not.
+     *
+     * The one place the coalesce is written. It decides list order, interval
+     * bounds and gap arithmetic alike, and a second copy that drifted would put
+     * a row in one position while bounding a gap at another.
+     */
+    public Date effectiveCutoff() {
+        return cutoffStampedAt != null ? cutoffStampedAt : intervalTo;
+    }
+
 }

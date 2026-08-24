@@ -17,6 +17,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -612,4 +613,25 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         }
         return vo;
     }
+
+    /**
+     * The time zone every cut-off of this series is reckoned in.
+     *
+     * Lives on the entity because the zone is a property of the series, and
+     * because three callers were each resolving it themselves -- naming, issue
+     * creation and gap synthesis. A blank or unparseable zone falls back to UTC
+     * rather than throwing: a misconfigured zone shifts a cut-off by hours, while
+     * throwing here would take out the screens that merely wanted to name a week.
+     */
+    public ZoneId cutoffZone() {
+        if (nominalCutoffTimeZone == null || nominalCutoffTimeZone.isBlank()) {
+            return ZoneId.of("UTC");
+        }
+        try {
+            return ZoneId.of(nominalCutoffTimeZone);
+        } catch (RuntimeException e) {
+            return ZoneId.of("UTC");
+        }
+    }
+
 }
