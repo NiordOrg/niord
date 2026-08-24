@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationDesc;
@@ -41,6 +42,9 @@ public class LegacyImportServiceTest {
 
     @Inject
     LegacyImportService importService;
+
+    @Inject
+    PublicationCategoryService categoryService;
 
     @Inject
     EntityManager em;
@@ -495,5 +499,77 @@ public class LegacyImportServiceTest {
         assertNull(active.getPublicTo(), "the ACTIVE 2026 edition is the current one");
         assertNotNull(superseded.getPublicTo(),
                 "the INACTIVE edition released the same day is closed, not left current");
+    }
+
+    // ------------------------------------------------------ B5.2: the categories
+
+    /**
+     * All five live category ids round-trip, carrying their real flags.
+     *
+     * Two of the five are publish = false and their four publications must stay
+     * off /public/v1, so the flags are the point of this step -- the ids alone
+     * would be satisfied by five bare rows that hide 1,085 publications.
+     *
+     * Note what "created" means in each setting. Against the DEPLOYED system the
+     * report says categoriesCreated: 0, because a legacy publication holds its
+     * category by foreign key and findByCategoryId resolves the existing row.
+     * Here the publications are deserialised fixtures rather than database rows,
+     * so nothing resolves and all five are planned for creation -- which is what
+     * puts the copy path under test at all. The two numbers disagree because they
+     * are answers to different questions, not because one of them is wrong.
+     */
+    @Test
+    public void allFiveLiveCategoriesRoundTripWithTheirFlags() {
+        LegacyImportService.Plan plan = importService.planFrom(
+                LegacyEstateFixture.templates(), LegacyEstateFixture.publications());
+
+        assertEquals(5, plan.report().getCategoriesSeen(),
+                "the estate references exactly five categories");
+
+        Map<String, Boolean> publishById = new java.util.LinkedHashMap<>();
+        plan.categoriesToCreate().forEach((id, c) -> publishById.put(id, c.isPublish()));
+
+        assertEquals(5, publishById.size());
+        assertEquals(Boolean.FALSE, publishById.get("dk-dma-internal-publications"));
+        assertEquals(Boolean.FALSE, publishById.get("dk-external-publications"));
+        assertEquals(Boolean.TRUE, publishById.get("dk-dma-weekly-nm-publications"));
+        assertEquals(Boolean.TRUE, publishById.get("dk-dma-publications"));
+        assertEquals(Boolean.TRUE, publishById.get("dk-dma-nm-annex"));
+
+        assertEquals(2, publishById.values().stream().filter(v -> !v).count(),
+                "exactly two categories are withheld from the public site");
+    }
+
+    /**
+     * A conjured category copies publish and priority rather than defaulting them.
+     *
+     * A bare PublicationCategory defaults publish to FALSE. Two of the five live
+     * categories really are false, so defaulting would be right by accident for
+     * those two and silently wrong for the other three -- and "silently" is the
+     * whole problem: the failure is 1,085 publications missing from the public
+     * site, with nothing anywhere saying why.
+     *
+     * Driven through apply() rather than by reading the planner, because the bug
+     * this replaces was in apply(): planCategories was correct and the doc comment
+     * claimed the copy happened, while the code built a bare entity.
+     */
+    @Test
+    public void aConjuredCategoryKeepsThePublishFlagItWasSeenWith() {
+        String categoryId = "cat-" + UUID.randomUUID().toString().substring(0, 8);
+
+        PublicationCategory source = new PublicationCategory();
+        source.setCategoryId(categoryId);
+        source.setPriority(77);
+        source.setPublish(true);
+
+        LegacyImportService.Plan plan = new LegacyImportService.Plan();
+        plan.categoriesToCreate().put(categoryId, source);
+        importService.apply(plan);
+
+        PublicationCategory created = categoryService.findByCategoryId(categoryId);
+        assertNotNull(created, "the category was created");
+        assertTrue(created.isPublish(),
+                "publish was seen as true and a bare entity would have defaulted it to false");
+        assertEquals(77, created.getPriority(), "priority travels verbatim too");
     }
 }

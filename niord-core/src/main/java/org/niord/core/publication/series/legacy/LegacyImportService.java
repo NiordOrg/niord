@@ -75,7 +75,7 @@ public class LegacyImportService extends BaseService {
         private final List<PublicationSeries> series = new ArrayList<>();
         private final Map<String, PublicationIssue> issues = new LinkedHashMap<>();
         private final Map<String, List<IssueMember>> members = new LinkedHashMap<>();
-        private final Set<String> categoriesToCreate = new LinkedHashSet<>();
+        private final Map<String, PublicationCategory> categoriesToCreate = new LinkedHashMap<>();
         private final Map<String, String> categoryOfSeries = new LinkedHashMap<>();
 
         public LegacyImportReportVo report() {
@@ -94,7 +94,8 @@ public class LegacyImportService extends BaseService {
             return members;
         }
 
-        public Set<String> categoriesToCreate() {
+        /** categoryId -> the legacy row it was seen on, which carries the flags to copy. */
+        public Map<String, PublicationCategory> categoriesToCreate() {
             return categoriesToCreate;
         }
 
@@ -389,8 +390,18 @@ public class LegacyImportService extends BaseService {
      * B5.2. Categories are upserted by categoryId, and a missing one is created.
      *
      * priority and publish travel verbatim: two of the five live categories carry
-     * publish = false, and their publications must stay off /public/v1. Defaulting
-     * that flag to true would publish four documents nobody asked to publish.
+     * publish = false, and their publications must stay off /public/v1.
+     *
+     * IN PRACTICE THIS NEVER CREATES ANYTHING, and that is structural rather than
+     * lucky. A legacy publication holds its category by foreign key, so a category
+     * it references necessarily exists as a row, and findByCategoryId resolves it.
+     * categoriesCreated is therefore 0 against any real estate -- worth knowing
+     * before somebody reads that 0 as a sign the step did not run.
+     *
+     * The branch stays because the acceptance names it and because the cost of
+     * being wrong is asymmetric: a category conjured with the wrong publish flag
+     * either hides publications from the public site or exposes ones that were
+     * deliberately withheld, and neither announces itself.
      */
     private void planCategories(Plan plan, List<Publication> templates, List<Publication> publications) {
         Set<String> seen = new LinkedHashSet<>();
@@ -403,7 +414,7 @@ public class LegacyImportService extends BaseService {
                 continue;
             }
             if (categoryService.findByCategoryId(id) == null) {
-                plan.categoriesToCreate().add(id);
+                plan.categoriesToCreate().put(id, p.getCategory());
             }
         }
         plan.report().setCategoriesSeen(seen.size());
@@ -909,9 +920,21 @@ public class LegacyImportService extends BaseService {
      */
     void apply(Plan plan) {
         em.unwrap(org.hibernate.Session.class).setJdbcBatchSize(FLUSH_EVERY);
-        for (String categoryId : plan.categoriesToCreate()) {
+        for (Map.Entry<String, PublicationCategory> e : plan.categoriesToCreate().entrySet()) {
+            PublicationCategory source = e.getValue();
             PublicationCategory category = new PublicationCategory();
-            category.setCategoryId(categoryId);
+            category.setCategoryId(e.getKey());
+
+            // priority and publish travel verbatim. A bare new category defaults
+            // publish to FALSE, and two of the five live categories really are
+            // false -- so defaulting would be right by accident for those two and
+            // silently wrong for the other three, hiding 1,085 publications from
+            // /public/v1. Copying is the only version that is right on purpose.
+            category.setPriority(source.getPriority());
+            category.setPublish(source.isPublish());
+            source.getDescs().forEach(d -> category.addDesc(
+                    new org.niord.core.publication.PublicationCategoryDesc(d.toVo())));
+
             categoryService.findOrCreatePublicationCategory(category);
         }
 
