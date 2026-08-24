@@ -415,6 +415,8 @@ public class LegacyImportService extends BaseService {
     private void planIssues(Plan plan, List<Publication> publications,
                             Map<String, PublicationSeries> seriesByTemplate, Date frozenAt) {
         Map<String, List<Publication>> byTag = MemberSnapshotImport.byTagName(publications);
+        Map<Integer, List<MemberSnapshotImport.MemberFacts>> factsByTag =
+                memberFactsByTag(publications);
         Map<String, List<Publication>> chains = chainsByTemplate(publications);
         Map<String, Integer> byStatus = new LinkedHashMap<>();
         Map<String, Integer> byCutoffSource = new LinkedHashMap<>();
@@ -462,7 +464,10 @@ public class LegacyImportService extends BaseService {
                     issue.setCutoffSource(cutoff.source());
                     issue.setCutoffReconstructed(cutoff.reconstructed());
 
-                    List<MemberSnapshotImport.MemberFacts> facts = memberFacts(legacy);
+                    List<MemberSnapshotImport.MemberFacts> facts =
+                            legacy.getMessageTag() == null || legacy.getMessageTag().getId() == null
+                                    ? List.of()
+                                    : factsByTag.getOrDefault(legacy.getMessageTag().getId(), List.of());
                     assertMembersCanBeFrozen(plan, legacy, facts);
                     List<IssueMember> members = MemberSnapshotImport.apply(
                             issue, legacy, facts, byTag);
@@ -512,26 +517,49 @@ public class LegacyImportService extends BaseService {
      * publications, so a name lookup returns the wrong tag for at least ten rows
      * and cannot tell that it did.
      */
-    private List<MemberSnapshotImport.MemberFacts> memberFacts(Publication legacy) {
-        if (legacy.getMessageTag() == null || legacy.getMessageTag().getId() == null) {
-            return List.of();
-        }
-        return em.createQuery(
-                        "SELECT m.uid, m.shortId, m.mainType, m.type, m.status, "
-                                + "m.publishDateFrom, m.publishDateTo "
-                                + "FROM MessageTag t JOIN t.messages m WHERE t.id = :id",
-                        Object[].class)
-                .setParameter("id", legacy.getMessageTag().getId())
-                .getResultStream()
-                .map(r -> new MemberSnapshotImport.MemberFacts(
-                        (String) r[0],
-                        (String) r[1],
-                        r[2] == null ? null : r[2].toString(),
-                        r[3] == null ? null : r[3].toString(),
-                        r[4] == null ? null : r[4].toString(),
-                        (Date) r[5],
-                        (Date) r[6]))
+    /**
+     * Every tag's members, in ONE query.
+     *
+     * This used to run per publication: 1,077 queries, each joining MessageTag to
+     * its messages, and the plan took 41 seconds of a 240-second transaction
+     * budget it shares with the write. One query keyed on the tag ids costs a
+     * single round trip.
+     *
+     * Keyed on tag ID rather than name, for the same reason everything else here
+     * is: seven tag names are shared, two of them by three publications, so a
+     * name lookup returns the wrong tag for at least ten rows and cannot tell.
+     */
+    private Map<Integer, List<MemberSnapshotImport.MemberFacts>> memberFactsByTag(
+            List<Publication> publications) {
+
+        List<Integer> tagIds = publications.stream()
+                .map(Publication::getMessageTag)
+                .filter(tag -> tag != null && tag.getId() != null)
+                .map(tag -> tag.getId())
+                .distinct()
                 .toList();
+        if (tagIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Integer, List<MemberSnapshotImport.MemberFacts>> out = new LinkedHashMap<>();
+        em.createQuery(
+                        "SELECT t.id, m.uid, m.shortId, m.mainType, m.type, m.status, "
+                                + "m.publishDateFrom, m.publishDateTo "
+                                + "FROM MessageTag t JOIN t.messages m WHERE t.id IN :ids",
+                        Object[].class)
+                .setParameter("ids", tagIds)
+                .getResultStream()
+                .forEach(r -> out.computeIfAbsent((Integer) r[0], k -> new ArrayList<>())
+                        .add(new MemberSnapshotImport.MemberFacts(
+                                (String) r[1],
+                                (String) r[2],
+                                r[3] == null ? null : r[3].toString(),
+                                r[4] == null ? null : r[4].toString(),
+                                r[5] == null ? null : r[5].toString(),
+                                (Date) r[6],
+                                (Date) r[7])));
+        return out;
     }
 
     /**
@@ -588,8 +616,36 @@ public class LegacyImportService extends BaseService {
 
     // ---------------------------------------------------------------- applying
 
-    /** Writes the plan. Only ever called with a clean one. */
+    /**
+     * How many rows to accumulate before flushing.
+     *
+     * Without a flush, Hibernate holds all ~13,000 entities and dirty-checks the
+     * whole set every time it does flush. With one, the work stays linear and the
+     * SQL leaves in batches instead of one enormous burst at commit.
+     */
+    private static final int FLUSH_EVERY = 500;
+
+    /**
+     * Writes the plan. Only ever called with a clean one.
+     *
+     * BATCHED, because the unbatched version did not finish. The estate is 21
+     * series, 1,077 issues and ~10,200 member rows -- about 13,000 inserts -- and
+     * sending them one statement at a time took roughly 200 seconds on top of a
+     * 41-second plan, against a 240-second transaction timeout
+     * (quarkus.transaction-manager.default-transaction-timeout in niord-dk). The
+     * import died at 240.25s having written nothing.
+     *
+     * Raising the timeout was the other option and is the worse one: it would
+     * leave a one-way operation running for minutes with no way to tell a slow
+     * import from a stuck one. Making the write fast is the fix; the timeout stays
+     * as the backstop it was meant to be.
+     *
+     * The JDBC batch size is set on THIS session rather than in application
+     * configuration, because it is this operation that needs it -- a global batch
+     * size would change how every other write in the system behaves.
+     */
     void apply(Plan plan) {
+        em.unwrap(org.hibernate.Session.class).setJdbcBatchSize(FLUSH_EVERY);
         for (String categoryId : plan.categoriesToCreate()) {
             PublicationCategory category = new PublicationCategory();
             category.setCategoryId(categoryId);
@@ -610,11 +666,30 @@ public class LegacyImportService extends BaseService {
             series.setCategory(category);
             em.persist(series);
         }
+        int written = 0;
         for (PublicationIssue issue : plan.issues().values()) {
             em.persist(issue);
+            if (++written % FLUSH_EVERY == 0) {
+                em.flush();
+            }
         }
+        em.flush();
+
+        // The member rows are the bulk of it -- ten of every eleven inserts.
+        //
+        // NOT cleared between batches: an IssueMember holds a reference to its
+        // issue, and clearing would detach every issue persisted so far, so the
+        // next member would attach to a detached parent. Flushing alone bounds the
+        // SQL without touching the identity map, which is the part that has to
+        // stay intact.
+        written = 0;
         for (List<IssueMember> members : plan.members().values()) {
-            members.forEach(em::persist);
+            for (IssueMember member : members) {
+                em.persist(member);
+                if (++written % FLUSH_EVERY == 0) {
+                    em.flush();
+                }
+            }
         }
         em.flush();
 
