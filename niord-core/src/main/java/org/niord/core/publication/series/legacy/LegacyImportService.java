@@ -355,7 +355,7 @@ public class LegacyImportService extends BaseService {
         Map<String, List<Publication>> byTag = MemberSnapshotImport.byTagName(publications);
         Map<String, List<Publication>> chains = chainsByTemplate(publications);
         Map<String, Integer> byStatus = new LinkedHashMap<>();
-        Map<String, Integer> byShape = new LinkedHashMap<>();
+        Map<String, Integer> byCutoffSource = new LinkedHashMap<>();
 
         for (List<Publication> chain : chains.values()) {
             for (int i = 0; i < chain.size(); i++) {
@@ -407,7 +407,7 @@ public class LegacyImportService extends BaseService {
                     plan.members().put(legacy.getPublicationId(), members);
 
                     byStatus.merge(issue.getStatus().name(), 1, Integer::sum);
-                    byShape.merge(cutoff.source(), 1, Integer::sum);
+                    byCutoffSource.merge(cutoff.source(), 1, Integer::sum);
                 } catch (RuntimeException e) {
                     problem(plan, "ISSUE_UNTRANSLATABLE", legacy, e.getMessage());
                 }
@@ -415,7 +415,7 @@ public class LegacyImportService extends BaseService {
         }
 
         plan.report().setIssuesByStatus(byStatus);
-        plan.report().setIssuesByFilterShape(byShape);
+        plan.report().setIssuesByCutoffSource(byCutoffSource);
     }
 
     /**

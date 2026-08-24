@@ -75,7 +75,7 @@ public class LegacyImportReportVo implements IJsonSerializable {
     private int seriesImported;
     private int issuesImported;
     private Map<String, Integer> issuesByStatus = new LinkedHashMap<>();
-    private Map<String, Integer> issuesByFilterShape = new LinkedHashMap<>();
+    private Map<String, Integer> issuesByCutoffSource = new LinkedHashMap<>();
     private List<ProblemVo> problems = new ArrayList<>();
 
     public boolean isDryRun() {
@@ -134,12 +134,12 @@ public class LegacyImportReportVo implements IJsonSerializable {
         this.issuesByStatus = issuesByStatus == null ? new LinkedHashMap<>() : issuesByStatus;
     }
 
-    public Map<String, Integer> getIssuesByFilterShape() {
-        return issuesByFilterShape;
+    public Map<String, Integer> getIssuesByCutoffSource() {
+        return issuesByCutoffSource;
     }
 
-    public void setIssuesByFilterShape(Map<String, Integer> issuesByFilterShape) {
-        this.issuesByFilterShape = issuesByFilterShape == null ? new LinkedHashMap<>() : issuesByFilterShape;
+    public void setIssuesByCutoffSource(Map<String, Integer> issuesByCutoffSource) {
+        this.issuesByCutoffSource = issuesByCutoffSource == null ? new LinkedHashMap<>() : issuesByCutoffSource;
     }
 
     public List<ProblemVo> getProblems() {

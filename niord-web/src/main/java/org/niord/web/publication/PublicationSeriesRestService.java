@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.legacy.LegacyImportReportVo;
+import org.niord.core.publication.series.legacy.CutoverPreflightService;
 import org.niord.core.publication.series.legacy.LegacyImportService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
@@ -61,6 +62,9 @@ public class PublicationSeriesRestService {
 
     @Inject
     LegacyImportService importService;
+
+    @Inject
+    CutoverPreflightService preflight;
 
     @Inject
     PublicationCategoryService categoryService;
@@ -314,6 +318,32 @@ public class PublicationSeriesRestService {
         return report.isWouldSucceed()
                 ? Response.ok(report).build()
                 : Response.status(422).entity(report).build();
+    }
+
+    /**
+     * B5.7. The cutover pre-flight, and the mailing-list trigger audit.
+     *
+     * Read-only, and safe to run as often as you like. Exposed because the pass
+     * was previously reachable only from a test -- which meant the one person who
+     * has to act on the trigger audit before B7.1 had no way to see it.
+     *
+     * Returns 200 with the report either way: an admin running a pre-flight is
+     * asking what the state IS, and a non-2xx would bury the answer in an error
+     * handler. Read "clear": false means do not flip publicAuthority yet.
+     */
+    @GET
+    @Path("/cutover-preflight")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Map<String, Object> cutoverPreflight() {
+        CutoverPreflightService.Preflight result = preflight.run();
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("clear", result.isClear());
+        out.put("counts", result.counts());
+        out.put("violations", result.violations());
+        out.put("triggerAudit", result.triggerAudit());
+        return out;
     }
 
     private PublicationSeries required(String seriesId) {
