@@ -106,7 +106,7 @@ public final class LegacyIssueTranslation {
             issue.setYear(yearOf(legacy.getPublishDateFrom()));
         }
 
-        issue.setDescs(descs(legacy));
+        attachDescs(legacy, issue);
 
         // B5.4a2. Derived from THIS publication's own filter, never from the
         // series row -- see IssueSnapshotDeriver for why that distinction is
@@ -150,23 +150,28 @@ public final class LegacyIssueTranslation {
         return c.get(java.util.Calendar.YEAR);
     }
 
-    private static List<PublicationIssueDesc> descs(Publication legacy) {
-        List<PublicationIssueDesc> out = new ArrayList<>();
+    /**
+     * Copies the legacy descs onto the issue THROUGH createDesc.
+     *
+     * createDesc is what sets the back-reference, and the back-reference is what
+     * the row is stored by: descs is mappedBy="entity", so a desc built with new
+     * and handed to setDescs is still cascaded on save -- with a null entity_id.
+     * The issue then reads back with no name and no file path, which is the whole
+     * of what an archived issue is.
+     */
+    private static void attachDescs(Publication legacy, PublicationIssue issue) {
         if (legacy.getDescs() == null) {
-            return out;
+            return;
         }
         for (PublicationDesc d : legacy.getDescs()) {
             if (d.getLang() == null || d.getLang().isBlank()) {
                 continue;
             }
-            PublicationIssueDesc desc = new PublicationIssueDesc();
-            desc.setLang(d.getLang());
+            PublicationIssueDesc desc = issue.createDesc(d.getLang());
             desc.setName(d.getTitle());
             desc.setFileName(d.getFileName());
             desc.setLink(d.getLink());
             desc.setFilePath(filePath(legacy, d.getFileName()));
-            out.add(desc);
         }
-        return out;
     }
 }

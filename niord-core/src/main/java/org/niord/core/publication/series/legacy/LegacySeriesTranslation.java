@@ -250,7 +250,7 @@ public final class LegacySeriesTranslation {
         applyPrintSettings(template, series);
         series.setReportParams(template.getReportParams());
         series.setLanguages(languages(template));
-        series.setDescs(descs(template));
+        attachDescs(template, series);
 
         return series;
     }
@@ -363,25 +363,30 @@ public final class LegacySeriesTranslation {
         return new ArrayList<>(langs);
     }
 
-    private static List<PublicationSeriesDesc> descs(Publication template) {
-        List<PublicationSeriesDesc> out = new ArrayList<>();
+    /**
+     * Copies the legacy descs onto the series THROUGH createDesc.
+     *
+     * createDesc is what sets the back-reference, and the back-reference is what
+     * the row is stored by: descs is mappedBy="entity", so a desc built with new
+     * and handed to setDescs is still cascaded on save -- with a null entity_id.
+     * It survives the import, passes any assertion made against the in-memory
+     * object, and then reads back as a series with no name at all.
+     */
+    private static void attachDescs(Publication template, PublicationSeries series) {
         if (template.getDescs() == null) {
-            return out;
+            return;
         }
         for (PublicationDesc d : template.getDescs()) {
             if (d.getLang() == null || d.getLang().isBlank()) {
                 continue;
             }
-            PublicationSeriesDesc desc = new PublicationSeriesDesc();
-            desc.setLang(d.getLang());
+            PublicationSeriesDesc desc = series.createDesc(d.getLang());
             desc.setName(d.getTitle());
             desc.setNameSuggestionPattern(d.getTitleFormat());
             desc.setFileNamePattern(d.getFileName());
             desc.setLinkPattern(d.getLink());
             desc.setMessageReferenceFormat(d.getMessagePublicationFormat());
-            out.add(desc);
         }
-        return out;
     }
 
     private static String titleOf(Publication template) {

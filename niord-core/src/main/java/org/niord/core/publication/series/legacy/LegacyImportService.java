@@ -230,7 +230,7 @@ public class LegacyImportService extends BaseService {
     }
 
     /** What the undo removed, or why it refused. */
-    public record UndoReport(boolean deleted, int series, int issues, int members,
+    public record UndoReport(boolean deleted, int series, int issues, int members, int descs,
                              List<String> refusals) {
     }
 
@@ -242,7 +242,7 @@ public class LegacyImportService extends BaseService {
                 .getResultList();
 
         if (imported.isEmpty()) {
-            return new UndoReport(false, 0, 0, 0,
+            return new UndoReport(false, 0, 0, 0, 0,
                     List.of("nothing to undo: no series carries importSource '"
                             + importSource() + "'"));
         }
@@ -263,12 +263,25 @@ public class LegacyImportService extends BaseService {
             }
         }
         if (!refusals.isEmpty()) {
-            return new UndoReport(false, 0, 0, 0, refusals);
+            return new UndoReport(false, 0, 0, 0, 0, refusals);
         }
 
         // Children first: IssueMember and the issues are both FK-bound to what is
         // about to go, and a bulk delete does not cascade the way a remove() does.
         List<Integer> seriesIds = imported.stream().map(PublicationSeries::getId).toList();
+
+        // Descs before their parents, for the same reason: a desc row owns the
+        // foreign key, and a bulk delete does not cascade the way remove() does.
+        int issueDescs = em.createQuery(
+                        "DELETE FROM PublicationIssueDesc d WHERE d.entity IN "
+                                + "(SELECT i FROM PublicationIssue i WHERE i.series.id IN :ids)")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
+        int seriesDescs = em.createQuery(
+                        "DELETE FROM PublicationSeriesDesc d WHERE d.entity.id IN :ids")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
 
         int members = em.createQuery(
                         "DELETE FROM IssueMember m WHERE m.issue IN "
@@ -286,9 +299,25 @@ public class LegacyImportService extends BaseService {
                 .setParameter("ids", seriesIds)
                 .executeUpdate();
 
-        log.warn("legacy import undone: {} series, {} issues, {} members deleted",
-                series, issues, members);
-        return new UndoReport(true, series, issues, members, List.of());
+        // An earlier importer built descs without attaching them, so they were
+        // written with a null entity_id: unreachable from any series or issue, and
+        // therefore invisible to every delete above. They are swept here because
+        // undo means the database is back as it was, and a row nothing can reach
+        // is still a row somebody has to explain later. Both tables belong to this
+        // feature alone, so a null parent in them means exactly this and nothing else.
+        int orphanedDescs = em.createQuery(
+                        "DELETE FROM PublicationIssueDesc d WHERE d.entity IS NULL")
+                .executeUpdate()
+                + em.createQuery(
+                        "DELETE FROM PublicationSeriesDesc d WHERE d.entity IS NULL")
+                .executeUpdate();
+
+        int descs = issueDescs + seriesDescs + orphanedDescs;
+
+        log.warn("legacy import undone: {} series, {} issues, {} members, {} descs deleted"
+                        + " (of which {} were orphaned by an earlier import)",
+                series, issues, members, descs, orphanedDescs);
+        return new UndoReport(true, series, issues, members, descs, List.of());
     }
 
     // ---------------------------------------------------------------- planning

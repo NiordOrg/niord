@@ -7,6 +7,7 @@ import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.vo.PublicationStatus;
 
@@ -252,5 +253,49 @@ public class LegacyTranslationTest {
             assertNotNull(issue.getSnapshotAliveAtCutoff(), p.getPublicationId());
             assertEquals(FROZEN, issue.getSnapshotFrozenAt());
         }
+    }
+    // ------------------------------------------- descs are ATTACHED, not merely held
+
+    /**
+     * Every translated desc points back at its series.
+     *
+     * descs is mappedBy="entity": the desc row owns the foreign key, so a desc
+     * that is merely present in the list is still cascaded on save and still
+     * written -- with a null entity_id. Nothing fails. The series simply reads
+     * back afterwards with no name, which is how the first import produced
+     * twenty archive rows displaying their own id where a title belongs.
+     *
+     * Asserting the back-reference rather than the list is the point: the list
+     * was always right.
+     */
+    @Test
+    public void everySeriesDescIsAttachedToItsSeries() {
+        int checked = 0;
+        for (PublicationSeries s : series()) {
+            assertFalse(s.getDescs().isEmpty(),
+                    s.getSeriesId() + " translated with no descs at all");
+            for (PublicationSeriesDesc d : s.getDescs()) {
+                assertSame(s, d.getEntity(), s.getSeriesId() + "/" + d.getLang()
+                        + ": desc is unattached, so it persists with a null entity_id");
+                assertNotNull(d.getName(), s.getSeriesId() + "/" + d.getLang());
+                checked++;
+            }
+        }
+        assertTrue(checked > 0, "the estate fixture carried no series descs to check");
+    }
+
+    /** The same over every issue -- where the name and the file path both live. */
+    @Test
+    public void everyIssueDescIsAttachedToItsIssue() {
+        int checked = 0;
+        for (Publication p : LegacyEstateFixture.publications()) {
+            PublicationIssue issue = LegacyIssueTranslation.translate(p, null, FROZEN);
+            for (PublicationIssueDesc d : issue.getDescs()) {
+                assertSame(issue, d.getEntity(), p.getPublicationId() + "/" + d.getLang()
+                        + ": desc is unattached, so it persists with a null entity_id");
+                checked++;
+            }
+        }
+        assertTrue(checked > 0, "the estate fixture carried no issue descs to check");
     }
 }
