@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5-v as revised: the 39 template-less publications are 9 series, not 39.
+ * B5-v as revised: the 39 template-less publications are 8 series, not 39.
  *
  * The counts are Rasmus's ruling, checked against the captured estate. They are
  * asserted as exact figures rather than "more than one" because the ruling IS the
@@ -54,17 +54,20 @@ public class OrphanGroupingTest {
                 "5 double weeks belong to the weekly P&T series");
         assertEquals(5, placed.get("EXISTING_SERIES:" + LegacyOrphanGrouping.WEEKLY_NTM_TEMPLATE),
                 "5 double weeks belong to the weekly NtM series");
-        assertEquals(6, placed.get("OWN_SERIES"),
-                "six are genuinely standalone");
+        assertEquals(1, placed.get("EXISTING_SERIES:" + LegacyOrphanGrouping.FIRING_PRACTICE_TEMPLATE),
+                "the 2016 Firing Practice Areas annex joins the series that runs 2017-2027");
+        assertEquals(5, placed.get("OWN_SERIES"),
+                "five are genuinely standalone");
 
         assertEquals(39, placed.values().stream().mapToInt(Integer::intValue).sum(),
                 "every template-less publication is placed; an unplaced one has no series and cannot "
                         + "be written, because PublicationIssue.series is NOT NULL");
 
-        // 3 shared + 6 standalone = 9 series created; the 10 double weeks create none.
+        // 3 shared + 5 standalone = 8 series created; the 11 that join an
+        // existing series create none.
         long created = placed.keySet().stream()
                 .filter(k -> k.startsWith("SHARED_SERIES")).count() + placed.get("OWN_SERIES");
-        assertEquals(9, created, "39 orphans become 9 series, not 39");
+        assertEquals(8, created, "39 orphans become 8 series, not 39");
     }
 
     /**
@@ -83,6 +86,9 @@ public class OrphanGroupingTest {
             if (place.kind() != LegacyOrphanGrouping.Destination.EXISTING_SERIES) {
                 continue;
             }
+            if (place.seriesId().equals(LegacyOrphanGrouping.FIRING_PRACTICE_TEMPLATE)) {
+                continue;
+            }
             joined++;
             assertTrue(place.seriesId().equals(LegacyOrphanGrouping.WEEKLY_NTM_TEMPLATE)
                             || place.seriesId().equals(LegacyOrphanGrouping.WEEKLY_PT_TEMPLATE),
@@ -92,6 +98,27 @@ public class OrphanGroupingTest {
                             + "here would let the two disagree");
         }
         assertEquals(10, joined);
+    }
+
+    /**
+     * Exactly one publication is the 2016 Firing Practice Areas annex.
+     *
+     * The rule matches on title, and a title match that quietly caught a second
+     * row would file something into a series nobody chose for it. One row was
+     * ruled on, so one row is what the rule may claim.
+     */
+    @Test
+    public void exactlyOnePublicationIsTheTwentySixteenFiringAnnex() {
+        List<Publication> claimed = orphans().stream()
+                .filter(o -> LegacyOrphanGrouping.FIRING_PRACTICE_TEMPLATE
+                        .equals(LegacyOrphanGrouping.placeOf(o).seriesId()))
+                .toList();
+
+        assertEquals(1, claimed.size(), "the ruling is about one publication");
+        assertEquals("f6ad2eda-2ab2-45d2-8184-c2f12c6a351f",
+                claimed.get(0).getPublicationId(),
+                "and it is the 2016 one -- named here so that a retitled row cannot silently "
+                        + "inherit the ruling");
     }
 
     /** The annexes land in "Annexes - Notices to Mariners", as ruled. */

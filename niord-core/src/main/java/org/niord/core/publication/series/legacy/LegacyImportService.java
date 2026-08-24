@@ -163,11 +163,19 @@ public class LegacyImportService extends BaseService {
         Plan plan = new Plan();
         Date frozenAt = new Date();
 
+        // ONE namespace for every seriesId, seeded with the ids the database
+        // already holds. Three routines author into it -- templates, the ruled
+        // shared series, the one-offs -- and until they shared this set each
+        // checked only itself, so a name used by two of them passed planning and
+        // failed against the unique key mid-write.
+        Set<String> authored = seriesIdsAlreadyTaken();
+
         planAlreadyImported(plan, templates, publications);
         planCategories(plan, templates, publications);
-        Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates);
-        planOrphanSeries(plan, publications, seriesByTemplate);
+        Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates, authored);
+        planOrphanSeries(plan, publications, seriesByTemplate, authored);
         planIssues(plan, publications, seriesByTemplate, frozenAt);
+        assertSeriesIdsAreUnique(plan);
 
         plan.report().setSeriesImported(plan.series().size());
         plan.report().setIssuesImported(plan.issues().size());
@@ -251,9 +259,9 @@ public class LegacyImportService extends BaseService {
         plan.report().setCategoriesCreated(plan.categoriesToCreate().size());
     }
 
-    private Map<String, PublicationSeries> planSeries(Plan plan, List<Publication> templates) {
+    private Map<String, PublicationSeries> planSeries(Plan plan, List<Publication> templates,
+                                                      Set<String> authored) {
         Map<String, PublicationSeries> byTemplate = new LinkedHashMap<>();
-        Set<String> authored = new LinkedHashSet<>();
 
         for (Publication template : templates) {
             try {
@@ -318,7 +326,8 @@ public class LegacyImportService extends BaseService {
      * planIssues has one place to look regardless of how a row got there.
      */
     private void planOrphanSeries(Plan plan, List<Publication> publications,
-                                  Map<String, PublicationSeries> seriesByTemplate) {
+                                  Map<String, PublicationSeries> seriesByTemplate,
+                                  Set<String> authored) {
         List<Publication> orphans = publications.stream()
                 .filter(p -> p.getTemplate() == null)
                 .toList();
@@ -347,17 +356,32 @@ public class LegacyImportService extends BaseService {
             }
         }
 
-        planSharedOrphanSeries(plan, shared, seriesByTemplate);
-        planStandaloneOrphanSeries(plan, ownSeries, seriesByTemplate);
+        // Shared series first: their ids are ruled, so they claim their names
+        // before the one-offs author around what is left.
+        planSharedOrphanSeries(plan, shared, seriesByTemplate, authored);
+        planStandaloneOrphanSeries(plan, ownSeries, seriesByTemplate, authored);
     }
 
     /** One series per group, configured from the group's newest member. */
     private void planSharedOrphanSeries(Plan plan, Map<String, List<Publication>> shared,
-                                        Map<String, PublicationSeries> seriesByTemplate) {
+                                        Map<String, PublicationSeries> seriesByTemplate,
+                                        Set<String> authored) {
         for (Map.Entry<String, List<Publication>> e : shared.entrySet()) {
             List<Publication> group = e.getValue();
             Publication source = LegacyOrphanGrouping.configurationSource(group);
             LegacyOrphanGrouping.Placement place = LegacyOrphanGrouping.placeOf(source);
+
+            // A ruled id is not auto-suffixed. B5-v names these three series in
+            // words -- nm-annex-ncags and the rest -- so a clash means the ruling
+            // and the estate disagree, which is a sentence for a human and not a
+            // name for the importer to invent.
+            if (!authored.add(e.getKey())) {
+                problem(plan, "SERIES_ID_COLLISION", source,
+                        "the ruled seriesId '" + e.getKey() + "' is already taken by another series. "
+                                + "B5-v names this series explicitly, so the importer will not rename "
+                                + "it: either the ruling or the colliding series has to change.");
+                continue;
+            }
 
             try {
                 PublicationSeries series =
@@ -387,11 +411,14 @@ public class LegacyImportService extends BaseService {
 
     /** The six that really are one-offs, each with its own authored id. */
     private void planStandaloneOrphanSeries(Plan plan, List<Publication> standalone,
-                                            Map<String, PublicationSeries> seriesByTemplate) {
+                                            Map<String, PublicationSeries> seriesByTemplate,
+                                            Set<String> authored) {
         if (standalone.isEmpty()) {
             return;
         }
-        Map<String, String> ids = LegacySeriesTranslation.authorOrphanSeriesIds(standalone);
+        Map<String, String> ids =
+                LegacySeriesTranslation.authorOrphanSeriesIds(standalone, authored);
+        authored.addAll(ids.values());
 
         for (Publication orphan : standalone) {
             try {
@@ -699,6 +726,56 @@ public class LegacyImportService extends BaseService {
     }
 
     // ----------------------------------------------------------------- helpers
+
+    /**
+     * The seriesIds the database already holds.
+     *
+     * The importer is not the only thing that creates series -- an admin can
+     * author one by hand, and the test environment already carries two. Planning
+     * against an empty namespace assumes the importer is alone in it, which is
+     * true exactly once and false every time after.
+     */
+    private Set<String> seriesIdsAlreadyTaken() {
+        return new LinkedHashSet<>(em.createQuery(
+                "SELECT s.seriesId FROM PublicationSeries s", String.class).getResultList());
+    }
+
+    /**
+     * Belt and braces: no two planned series share an id, and none reuses one.
+     *
+     * The authoring routines now share a namespace, so this should never fire.
+     * It stays because of HOW the collision it guards against was found: as
+     * "Duplicate entry for key PublicationSeries.UK_..." thrown by MySQL a third
+     * of the way into the write, from a dry run that had just reported problems: []
+     * over the same estate. A dry run that cannot see a class of failure is worse
+     * than no dry run, because it is believed. This check costs one pass over
+     * twenty-one rows and moves that failure back into the report.
+     */
+    private void assertSeriesIdsAreUnique(Plan plan) {
+        Set<String> taken = seriesIdsAlreadyTaken();
+        Set<String> planned = new LinkedHashSet<>();
+
+        for (PublicationSeries series : plan.series()) {
+            String id = series.getSeriesId();
+            if (!planned.add(id)) {
+                problem(plan, "SERIES_ID_COLLISION", series.getLegacyTemplateId(), id,
+                        "two planned series both claim the seriesId '" + id + "'. The unique key "
+                                + "would refuse the second one mid-write, leaving the report to say "
+                                + "the import succeeded up to the row that did not.");
+            } else if (taken.contains(id)) {
+                problem(plan, "SERIES_ID_COLLISION", series.getLegacyTemplateId(), id,
+                        "a series with seriesId '" + id + "' already exists. The importer does not "
+                                + "adopt or overwrite an existing series -- that would merge an "
+                                + "imported archive into something somebody else authored.");
+            }
+        }
+    }
+
+    /** For a problem that belongs to a planned series rather than a legacy row. */
+    private void problem(Plan plan, String code, String legacyId, String title, String detail) {
+        plan.report().getProblems().add(
+                new LegacyImportReportVo.ProblemVo(code, legacyId, title, detail));
+    }
 
     private void problem(Plan plan, String code, Publication legacy, String detail) {
         plan.report().getProblems().add(new LegacyImportReportVo.ProblemVo(

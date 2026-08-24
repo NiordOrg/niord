@@ -26,7 +26,8 @@ import java.util.List;
  *   - all 8 ice-service annexes are one series, in the same category
  *   - the double-week issues belong to the weekly series they were hacked out of
  *   - "Danish List of Lights" is one series with four issues, one still active
- *   - the remaining six are genuinely standalone
+ *   - the 2016 Firing Practice Areas annex is that series' earliest issue
+ *   - the remaining five are genuinely standalone
  *
  * The double weeks matter beyond tidiness: having to hand-assemble them was one
  * of the drivers for this rewrite. Filing them under the weekly series is what
@@ -61,6 +62,9 @@ public final class LegacyOrphanGrouping {
     public static final String WEEKLY_NTM_TEMPLATE = "a8e661ee-49b8-45ea-a176-952e99253fec";
     public static final String WEEKLY_PT_TEMPLATE = "11262933-2e62-4d16-a498-39e238467fa6";
 
+    /** The annual "Firing Practice Areas" annex, whose series runs 2017-2027. */
+    public static final String FIRING_PRACTICE_TEMPLATE = "51387a4e-8f9b-46b0-afb6-43b71c62d9bb";
+
     private LegacyOrphanGrouping() {
     }
 
@@ -93,6 +97,20 @@ public final class LegacyOrphanGrouping {
         if (matches(title, "Danish List of Lights")) {
             return new Placement(Destination.SHARED_SERIES, "danish-list-of-lights", null,
                     "one of the four Danish List of Lights editions, which are one series (B5-v)");
+        }
+
+        // The 2016 annex, from before the report template existed. Its series
+        // runs 2017-2027 one issue a year and this is the year in front of it:
+        // same English title, same dk-dma-nm-annex category, published as a LINK
+        // to a hand-made PDF because there was nothing yet to generate one.
+        //
+        // Surfaced by the id namespace rather than by reading the estate -- the
+        // template and this row both authored "firing-practice-areas", and asking
+        // why turned a name clash into a publication that had lost its series.
+        if (matches(title, "Firing Practice Areas")) {
+            return new Placement(Destination.EXISTING_SERIES, FIRING_PRACTICE_TEMPLATE, null,
+                    "the 2016 edition of the Firing Practice Areas annex, which predates the report "
+                            + "template its later issues are generated from (B5-v)");
         }
 
         return new Placement(Destination.OWN_SERIES, null, null, "genuinely standalone (B5-v)");

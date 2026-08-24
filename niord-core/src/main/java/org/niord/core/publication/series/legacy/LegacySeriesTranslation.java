@@ -132,11 +132,33 @@ public final class LegacySeriesTranslation {
      * re-running it after a regrouping must author the same ids.
      */
     public static Map<String, String> authorOrphanSeriesIds(List<Publication> orphans) {
+        return authorOrphanSeriesIds(orphans, Set.of());
+    }
+
+    /**
+     * The same, against ids that are already spoken for.
+     *
+     * The estate has ONE seriesId namespace, and it used to be authored by three
+     * routines that could not see each other: the templates, the ruled shared
+     * series, and these one-offs. A template titled "Firing Practice Areas" and a
+     * standalone publication of the same name therefore both authored
+     * "firing-practice-areas", each passing its own local uniqueness check, and
+     * the clash surfaced as a MySQL duplicate-key error PART WAY THROUGH the
+     * write -- the one place it costs the most to find out.
+     *
+     * The one-offs are the side that yields. A template becomes a live series
+     * that keeps producing issues, so the readable name belongs to it; a one-off
+     * is a single publication that will never have a successor. Yielding is also
+     * the reversible choice: a suffixed one-off can be renamed later, whereas a
+     * refusal here would block the whole estate on a name clash.
+     */
+    public static Map<String, String> authorOrphanSeriesIds(List<Publication> orphans,
+                                                            Set<String> taken) {
         Map<String, String> base = new LinkedHashMap<>();
         for (Publication p : orphans) {
             base.put(p.getPublicationId(), fit(slug(titleOf(p)), MAX_SERIES_ID));
         }
-        escalate(orphans, base, p -> {
+        escalate(orphans, base, taken, p -> {
             Integer year = yearOf(p);
             if (year == null) {
                 return fit(slug(titleOf(p)), MAX_SERIES_ID);
@@ -144,22 +166,31 @@ public final class LegacySeriesTranslation {
             String suffix = "-" + year;
             return fit(slug(titleOf(p)), MAX_SERIES_ID - suffix.length()) + suffix;
         });
-        escalate(orphans, base, p -> {
+        escalate(orphans, base, taken, p -> {
             String suffix = "-" + p.getPublicationId().substring(0, 8);
             return fit(base.get(p.getPublicationId()), MAX_SERIES_ID - suffix.length()) + suffix;
         });
         return base;
     }
 
-    /** Re-authors every member of any group that is still not unique. */
+    /**
+     * Re-authors every member of any group whose name is not free.
+     *
+     * "Not free" is two things: shared with a sibling in this group, or already
+     * claimed outside it. A group of one whose only name is taken has to escalate
+     * just as a group of three does, which is why the size test alone was not
+     * enough -- the Firing Practice Areas clash was a group of exactly one.
+     */
     private static void escalate(List<Publication> orphans, Map<String, String> names,
+                                 Set<String> taken,
                                  java.util.function.Function<Publication, String> next) {
         Map<String, List<Publication>> byName = new LinkedHashMap<>();
         for (Publication p : orphans) {
             byName.computeIfAbsent(names.get(p.getPublicationId()), k -> new ArrayList<>()).add(p);
         }
-        for (List<Publication> group : byName.values()) {
-            if (group.size() > 1) {
+        for (Map.Entry<String, List<Publication>> e : byName.entrySet()) {
+            List<Publication> group = e.getValue();
+            if (group.size() > 1 || taken.contains(e.getKey())) {
                 group.forEach(p -> names.put(p.getPublicationId(), next.apply(p)));
             }
         }

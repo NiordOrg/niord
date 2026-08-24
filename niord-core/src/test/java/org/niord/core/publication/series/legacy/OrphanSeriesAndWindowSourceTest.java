@@ -175,4 +175,120 @@ public class OrphanSeriesAndWindowSourceTest {
         ncags.forEach(id -> assertTrue(id.length() > "ncags-2023".length(),
                 "one of the group kept the clean name: " + id));
     }
+
+    // ------------------------------------------------- one seriesId namespace
+
+    /**
+     * The templates and the one-offs share a namespace, and used not to.
+     *
+     * Template "Firing Practice Areas" and the 2016 publication of the same name
+     * both authored "firing-practice-areas". Each passed its own uniqueness check,
+     * because those checks were over two different sets that never met, and the
+     * import died against the unique key a third of the way into the write with a
+     * report that had said problems: [] minutes earlier.
+     *
+     * The 2016 row is now filed under that series rather than given a one-off, so
+     * the planner no longer reaches this case with that pair. The guarantee is
+     * asserted anyway: it holds for whatever the estate turns out to contain, and
+     * a rule that only works because of today's grouping is not a rule.
+     *
+     * Asserted over the whole captured estate rather than a two-row fixture: a
+     * hand-built pair proves the mechanism, but only the real estate proves the
+     * two names actually collide, which is the part that was missed.
+     */
+    @Test
+    public void noOrphanTakesAnIdATemplateHasAlreadyClaimed() {
+        Set<String> templateIds = new java.util.LinkedHashSet<>();
+        for (Publication t : LegacyEstateFixture.templates()) {
+            LegacySeriesTranslation.authorSeriesId(t, templateIds);
+        }
+        assertTrue(templateIds.contains("firing-practice-areas"),
+                "the estate really does have a template that authors this id; if this ever fails the "
+                        + "test below has stopped proving anything");
+
+        Map<String, String> ids =
+                LegacySeriesTranslation.authorOrphanSeriesIds(orphans(), templateIds);
+
+        for (Map.Entry<String, String> e : ids.entrySet()) {
+            assertFalse(templateIds.contains(e.getValue()),
+                    "publication " + e.getKey() + " authors '" + e.getValue()
+                            + "', which a template already holds");
+        }
+    }
+
+    /** A one-off whose name is taken escalates -- and does not lose its identity doing it. */
+    @Test
+    public void aTakenNameEscalatesRatherThanBlockingTheImport() {
+        Map<String, String> free = LegacySeriesTranslation.authorOrphanSeriesIds(orphans());
+        Map<String, String> constrained = LegacySeriesTranslation.authorOrphanSeriesIds(
+                orphans(), Set.of("firing-practice-areas"));
+
+        String clashing = null;
+        for (Map.Entry<String, String> e : free.entrySet()) {
+            if ("firing-practice-areas".equals(e.getValue())) {
+                clashing = e.getKey();
+            }
+        }
+        assertTrue(clashing != null, "the estate has an orphan authoring this id");
+
+        assertFalse("firing-practice-areas".equals(constrained.get(clashing)),
+                "the orphan yields the readable name to the template");
+        assertTrue(constrained.get(clashing).startsWith("firing-practice-areas"),
+                "and keeps it as a prefix, so the row is still recognisable in the DRAFT list");
+
+        for (Map.Entry<String, String> e : free.entrySet()) {
+            if (!e.getKey().equals(clashing)) {
+                assertEquals(e.getValue(), constrained.get(e.getKey()),
+                        "escalating one name must not disturb the others");
+            }
+        }
+
+        assertEquals(constrained, LegacySeriesTranslation.authorOrphanSeriesIds(
+                        orphans().reversed(), Set.of("firing-practice-areas")),
+                "and the result cannot depend on the order the rows arrive in");
+    }
+
+    /**
+     * Every id the import plans is distinct: templates, ruled series, one-offs.
+     *
+     * The three are authored by three different routines, which is exactly why
+     * this is asserted over their union rather than inside any one of them.
+     */
+    @Test
+    public void everyPlannedIdAcrossTheWholeEstateIsDistinct() {
+        Set<String> all = templateIdsOf();
+        int templates = all.size();
+
+        for (String ruled : RULED_SERIES_IDS) {
+            assertTrue(all.add(ruled), "ruled series id '" + ruled + "' is already taken");
+        }
+
+        List<Publication> standalone = orphans().stream()
+                .filter(o -> LegacyOrphanGrouping.placeOf(o).kind()
+                        == LegacyOrphanGrouping.Destination.OWN_SERIES)
+                .toList();
+        Map<String, String> ids =
+                LegacySeriesTranslation.authorOrphanSeriesIds(standalone, all);
+
+        for (Map.Entry<String, String> e : ids.entrySet()) {
+            assertTrue(all.add(e.getValue()),
+                    "publication " + e.getKey() + " authors '" + e.getValue()
+                            + "', which is already claimed");
+        }
+
+        assertEquals(templates + RULED_SERIES_IDS.size() + standalone.size(), all.size(),
+                "one id per planned series, and no two the same");
+    }
+
+    /** The three shared series B5-v names in words. */
+    private static final List<String> RULED_SERIES_IDS =
+            List.of("nm-annex-ncags", "nm-annex-ice-service", "danish-list-of-lights");
+
+    private static Set<String> templateIdsOf() {
+        Set<String> out = new java.util.LinkedHashSet<>();
+        for (Publication t : LegacyEstateFixture.templates()) {
+            LegacySeriesTranslation.authorSeriesId(t, out);
+        }
+        return out;
+    }
 }
