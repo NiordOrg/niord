@@ -5,88 +5,29 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B6.3. The report the cutover decision is made from.
+ * B6.3. The rendered report the cutover decision is read from.
  *
  * The failure mode being tested for is not a wrong number. It is a number that
  * is technically right and reads as more than it is -- a series shown as ready
  * on the strength of weeks nobody compared, or a report that stays silent about
  * what it did not examine. Every test here is about that.
+ *
+ * The streak arithmetic these numbers come from is tested in DiagnosticStreakTest,
+ * which needs no database and therefore keeps running on an agent that has none.
  */
 @QuarkusTest
+@EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
+        disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
 public class DiagnosticReportTest {
 
     @Inject
     DiagnosticReportService diagnostics;
-
-    private static ShadowDiffRun run(boolean green, String skipReason, long at) {
-        ShadowDiffRun r = new ShadowDiffRun();
-        r.setComparedAt(new Date(at));
-        r.setSkipReason(skipReason);
-        r.setDelta(green ? Set.of() : Set.of("uid-a"), Set.of());
-        return r;
-    }
-
-    // -------------------------------------------------------------- the streak
-
-    /** Two green in a row is the precondition. */
-    @Test
-    public void twoGreenReleasesInARowMeetThePrecondition() {
-        int streak = DiagnosticReportService.consecutiveGreen(List.of(
-                run(true, null, 3000),
-                run(true, null, 2000),
-                run(false, null, 1000)));
-
-        assertEquals(2, streak);
-        assertTrue(streak >= DiagnosticReportService.REQUIRED_GREEN_RELEASES);
-    }
-
-    /**
-     * A SKIPPED release breaks the streak. This is the load-bearing rule.
-     *
-     * A skipped run is stored green, because nothing diverged -- nothing was
-     * compared. If the streak counted the flag rather than the reason, a series
-     * whose every release was hand-uploaded would reach the cutover precondition
-     * without one comparison ever having happened, and the report would say so
-     * in the same words it uses for a series that genuinely agreed twice.
-     */
-    @Test
-    public void aSkippedReleaseBreaksTheStreakEvenThoughItIsStoredGreen() {
-        ShadowDiffRun skipped = run(true, "FILE_REPLACED_BY_HAND", 2000);
-        assertTrue(skipped.isGreen(), "a skipped run really is stored green");
-
-        int streak = DiagnosticReportService.consecutiveGreen(List.of(
-                run(true, null, 3000),
-                skipped,
-                run(true, null, 1000)));
-
-        assertEquals(1, streak, "the skip stops the count at the newest release");
-    }
-
-    /** A divergence breaks it too, obviously -- asserted so the two cannot drift apart. */
-    @Test
-    public void aDivergingReleaseBreaksTheStreak() {
-        assertEquals(0, DiagnosticReportService.consecutiveGreen(List.of(
-                run(false, null, 3000),
-                run(true, null, 2000))));
-    }
-
-    /** No runs is no evidence, not a clean sheet. */
-    @Test
-    public void noRunsIsAStreakOfZero() {
-        assertEquals(0, DiagnosticReportService.consecutiveGreen(List.of()));
-    }
-
-    // -------------------------------------------------------------- the report
 
     /**
      * With nothing to report, it says so in words rather than showing a blank.
