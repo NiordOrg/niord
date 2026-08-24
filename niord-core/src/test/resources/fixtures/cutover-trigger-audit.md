@@ -1,6 +1,7 @@
 # Cutover pre-flight — mailing-list trigger audit
 
-Emitted by `CutoverPreflightService.auditTriggers()`. **Committed whether or not it finds anything**,
+Emitted by `CutoverPreflightService.auditTriggers()`, reached at
+`GET /rest/publication-series/cutover-preflight`. **Committed whether or not it finds anything**,
 because "we found no triggers" and "nobody ran the audit" are indistinguishable after the fact, and the
 failure being guarded against is silent.
 
@@ -8,7 +9,7 @@ failure being guarded against is silent.
 
 `B4.4` cured `publication=` in mailing-list triggers. **Nothing audited the triggers that name a TAG.**
 
-After `C8` no new `nm-wNN-YYYY` tag is minted. A mailing list whose `messageQuery` hand-types one — 
+After `C8` no new `nm-wNN-YYYY` tag is minted. A mailing list whose `messageQuery` hand-types one —
 `tag=nm-w27-2026`, `tag=nm-pt-w51-2017` — therefore **stops matching, silently**. Nobody is told. The
 visible failure is a mailing that does not go out, which surfaces when a recipient eventually asks why
 they stopped receiving it, by which time the cause is weeks behind.
@@ -22,26 +23,42 @@ tag=["']?nm-(pt-)?w\d{1,2}(-\d{1,2})?-\d{4}
 Deliberately loose. This is a report a person reads: a miss is a mailing list that quietly dies, a false
 positive is one line to dismiss.
 
-## This is a report, not a rewrite
+---
 
-What to do with each hit is **the user's call, made before `B7.1`**. The audit does not edit triggers —
-re-pointing a mailing list changes who receives what, which is not a migration decision.
+## Findings — test environment, 2026-08-24
 
-The options per hit are roughly: re-point it at `publication=<publicId>` (which `B4.4` made resolvable),
-re-point it at a tag that will still be minted, or accept that the list is finished and retire it.
+**Run against `niord.t-dma.dk`. Result: no hits. This is a real answer, not an empty haystack.**
 
-## Findings
+| | |
+|---|---:|
+| Mailing lists | **9** |
+| Triggers | **15** |
+| Triggers carrying a `messageQuery` | **3** |
+| Triggers naming a weekly tag | **0** |
 
-**None recorded yet.** The audit runs against the imported estate, and the import has not been run on
-an environment carrying real mailing lists — the test database holds none. Run
-`CutoverPreflightService.run()` against the test environment after the next import and paste the
-`triggerAudit` rows here, or record explicitly that it returned empty.
+The three queries that exist, in full:
 
-| Mailing list | Trigger type | Matched tag | messageQuery |
-|---|---|---|---|
-| _(not yet run against an environment with mailing lists)_ | | | |
+| Mailing list | Type | `messageQuery` |
+|---|---|---|
+| `audio-broadcast` | `SCHEDULED` | `messageSeries=dma-nw&messageSeries=dma-nw-local&status=PUBLISHED&promulgationType=audio` |
+| `navwarn-overview` | `SCHEDULED` | `messageSeries=dma-nw&status=PUBLISHED&type=COASTAL_WARNING&sortBy=ID` |
+| `navwarn-overview-GL` | `SCHEDULED` | `messageSeries=ako-nw&status=PUBLISHED&type=COASTAL_WARNING&sortBy=ID` |
 
-## Pre-flight assertions that run beside this
+**All three key on `messageSeries=`, none on `tag=`.** So none of them depends on the weekly tag naming
+convention, and none breaks at `C8`. The 12 remaining triggers carry no `messageQuery` at all.
+
+Worth noting: none uses `publication=` either, so `B4.4`'s cure is not exercised on this environment.
+
+### Still to do — run it on PRODUCTION before `B7.1`
+
+The figures above are the test environment's. Production carries its own mailing lists, and the whole
+point of this audit is the list somebody set up years ago and nobody has looked at since — exactly the
+kind that exists in production and not in test.
+
+**This audit is not discharged until it has run against production.** Re-run
+`GET /rest/publication-series/cutover-preflight`, and record the result here beside the test figures.
+
+## The other three assertions
 
 | Check | Rule | Fails when |
 |---|---|---|
@@ -51,3 +68,12 @@ an environment carrying real mailing lists — the test database holds none. Run
 
 All three are one-way after `B7.1`: once `publicAuthority` flips, a wrong window or a colliding id is
 being served to the public, and the fix is a migration rather than an edit.
+
+**On 2026-08-24 all three passed VACUOUSLY.** The response carried `importedIssues: 0` — the import has
+not been run, so there were no rows to check and `"clear": true` asserted nothing. A green pre-flight
+over an empty set is not evidence.
+
+**They become meaningful only after `POST /import-legacy` has run.** The dry run
+(`POST /import-legacy/validate`) reported `problems: []` over all 1,077 rows on the same day, so the
+import is expected to succeed — but that is a different claim from these three assertions holding on the
+rows it writes.
