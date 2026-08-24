@@ -239,7 +239,7 @@ public class IssuePublicationMappingTest {
         category.setPublish(true);
 
         PublicationSeries series = new PublicationSeries();
-        series.setSeriesId("dma-efs");
+        series.setSeriesId("weekly-ntm");
         series.setCategory(category);
         series.setMessagePublication(MessagePublication.EXTERNAL);
         series.setNominalCutoffTimeZone("UTC");

@@ -2,6 +2,7 @@ package org.niord.core.publication.series.legacy;
 
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.Publication;
+import org.niord.core.publication.series.IssueStatus;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,7 +55,7 @@ public class CutoffRecoveryTest {
     @Test
     public void agreementInsideTheWindowKeepsTheUpdatedStamp() {
         CutoffRecovery.Recovered r = CutoffRecovery.recover(
-                row(1_000_000L), new Date(1_000_000L + MINUTE), null);
+                row(1_000_000L), new Date(1_000_000L + MINUTE), null, true);
         assertEquals(CutoffRecovery.FROM_UPDATED, r.source());
         assertEquals(1_000_000L, r.cutoff().getTime());
     }
@@ -72,7 +73,7 @@ public class CutoffRecoveryTest {
         long updated = 1_000_000L;
         long tag = updated + 60 * MINUTE;
 
-        CutoffRecovery.Recovered r = CutoffRecovery.recover(row(updated), new Date(tag), null);
+        CutoffRecovery.Recovered r = CutoffRecovery.recover(row(updated), new Date(tag), null, true);
         assertEquals(CutoffRecovery.FROM_NEXT_TAG, r.source());
         assertEquals(tag, r.cutoff().getTime());
     }
@@ -82,9 +83,9 @@ public class CutoffRecoveryTest {
     public void theWindowBoundaryIsInclusive() {
         long updated = 1_000_000L;
         assertEquals(CutoffRecovery.FROM_UPDATED, CutoffRecovery.recover(
-                row(updated), new Date(updated + CutoffRecovery.AGREEMENT_WINDOW_MS), null).source());
+                row(updated), new Date(updated + CutoffRecovery.AGREEMENT_WINDOW_MS), null, true).source());
         assertEquals(CutoffRecovery.FROM_NEXT_TAG, CutoffRecovery.recover(
-                row(updated), new Date(updated + CutoffRecovery.AGREEMENT_WINDOW_MS + 1), null).source());
+                row(updated), new Date(updated + CutoffRecovery.AGREEMENT_WINDOW_MS + 1), null, true).source());
     }
 
     /** Stage 3 is reached only when neither of the first two has anything. */
@@ -92,17 +93,17 @@ public class CutoffRecoveryTest {
     public void theCoverDateIsReachedOnlyWhenNothingElseWitnessesTheRelease() {
         Date cover = new Date(2_000_000L);
         assertEquals(CutoffRecovery.FROM_COVER,
-                CutoffRecovery.recover(row(null), null, cover).source());
+                CutoffRecovery.recover(row(null), null, cover, true).source());
 
         // ... and never when an earlier stage has an answer.
         assertEquals(CutoffRecovery.FROM_UPDATED,
-                CutoffRecovery.recover(row(1_000_000L), null, cover).source());
+                CutoffRecovery.recover(row(1_000_000L), null, cover, true).source());
     }
 
     /** Stage 4 flags rather than inventing a stamp. */
     @Test
     public void nothingLeavesTheCutoffNullAndFlagsManual() {
-        CutoffRecovery.Recovered r = CutoffRecovery.recover(row(null), null, null);
+        CutoffRecovery.Recovered r = CutoffRecovery.recover(row(null), null, null, true);
         assertEquals(CutoffRecovery.MANUAL, r.source());
         assertNull(r.cutoff(), "an invented stamp is worse than an admitted gap");
     }
@@ -113,10 +114,10 @@ public class CutoffRecoveryTest {
     @Test
     public void noStageLaundersItselfIntoAStampedRelease() {
         List<CutoffRecovery.Recovered> all = List.of(
-                CutoffRecovery.recover(row(1L), new Date(1L), null),
-                CutoffRecovery.recover(row(1L), new Date(9_000_000L), null),
-                CutoffRecovery.recover(row(null), null, new Date(5L)),
-                CutoffRecovery.recover(row(null), null, null));
+                CutoffRecovery.recover(row(1L), new Date(1L), null, true),
+                CutoffRecovery.recover(row(1L), new Date(9_000_000L), null, true),
+                CutoffRecovery.recover(row(null), null, new Date(5L), true),
+                CutoffRecovery.recover(row(null), null, null, true));
 
         for (CutoffRecovery.Recovered r : all) {
             assertFalse("STAMPED".equals(r.source()),
@@ -131,8 +132,56 @@ public class CutoffRecoveryTest {
     /** Every stage records its own value; none share one. */
     @Test
     public void thefourStagesAreDistinguishable() {
-        assertEquals(4, List.of(CutoffRecovery.FROM_UPDATED, CutoffRecovery.FROM_NEXT_TAG,
-                CutoffRecovery.FROM_COVER, CutoffRecovery.MANUAL).stream().distinct().count());
+        assertEquals(5, List.of(CutoffRecovery.FROM_UPDATED, CutoffRecovery.FROM_NEXT_TAG,
+                CutoffRecovery.FROM_COVER, CutoffRecovery.MANUAL,
+                CutoffRecovery.NOT_RELEASED).stream().distinct().count());
+    }
+
+    // ------------------------------------------------- the unreleased issue
+
+    /**
+     * An issue nobody released gets NO cut-off, rather than a plausible one.
+     *
+     * Every stage below reads a timestamp that exists on an unreleased row too,
+     * and `updated` is the trap: on a never-published issue it is when the row
+     * was CREATED, and it was created by the release of the issue BEFORE it. So
+     * the cascade would hand back the predecessor's release instant, to the
+     * millisecond, and call it this issue's cut-off.
+     *
+     * Measured on the test estate before this guard existed: all four OPEN issues
+     * carried a stamp, and three of them carried one dated BEFORE their own
+     * interval opened -- the 2027 firing-areas issue by a full year.
+     */
+    @Test
+    public void anIssueThatWasNeverReleasedGetsNoCutoffAtAll() {
+        // The shape that bites: a row whose `updated` is a real, recent, entirely
+        // plausible timestamp -- it is just not this issue's release.
+        CutoffRecovery.Recovered r = CutoffRecovery.recover(row(1_786_530_618_000L), null, null, false);
+
+        assertNull(r.cutoff(),
+                "an unreleased issue has no release instant; inventing one dates it a full period "
+                        + "before its own interval and anchors gap arithmetic on it");
+        assertEquals(CutoffRecovery.NOT_RELEASED, r.source());
+        assertFalse(r.reconstructed(),
+                "nothing was reconstructed, so the row must not be flagged as reconstructed -- that "
+                        + "badge would sit on every open issue forever, warning about the one row "
+                        + "that is behaving normally");
+    }
+
+    /** And the guard runs BEFORE every stage, not after the winning one. */
+    @Test
+    public void noStageCanOutrunTheUnreleasedGuard() {
+        Date tag = new Date(9_000_000L);
+        Date cover = new Date(5_000_000L);
+
+        for (CutoffRecovery.Recovered r : List.of(
+                CutoffRecovery.recover(row(1_000_000L), tag, cover, false),
+                CutoffRecovery.recover(row(1_000_000L), null, null, false),
+                CutoffRecovery.recover(row(null), tag, null, false),
+                CutoffRecovery.recover(row(null), null, cover, false))) {
+            assertEquals(CutoffRecovery.NOT_RELEASED, r.source());
+            assertNull(r.cutoff());
+        }
     }
 
     // ------------------------------------------------- the measured estate run
@@ -161,8 +210,13 @@ public class CutoffRecoveryTest {
             chain.sort(Comparator.comparing(
                     p -> p.getPublishDateFrom() == null ? new Date(0) : p.getPublishDateFrom()));
             for (int i = 0; i < chain.size(); i++) {
+                // The same question the importer asks: OPEN is the one status that
+                // never had a release. Running the estate with this hard-coded true
+                // would measure a cascade nothing calls.
+                boolean released =
+                        LegacyIssueTranslation.statusOf(chain.get(i).getStatus()) != IssueStatus.OPEN;
                 CutoffRecovery.Recovered r = CutoffRecovery.recover(
-                        chain.get(i), CutoffRecovery.nextTagCreated(chain, i), null);
+                        chain.get(i), CutoffRecovery.nextTagCreated(chain, i), null, released);
                 assertNotNull(r.source(), "every row must record which stage decided it");
                 stages.merge(r.source(), 1, Integer::sum);
                 total++;
@@ -172,10 +226,14 @@ public class CutoffRecoveryTest {
         assertEquals(1077, total, "the cascade must reach every row of the estate");
         assertEquals(1077, stages.values().stream().mapToInt(Integer::intValue).sum());
 
-        // Measured against the captured estate on 2026-08-23. Pinned so a change
-        // in the cascade or the capture surfaces here rather than drifting.
-        assertEquals(994, stages.getOrDefault(CutoffRecovery.FROM_UPDATED, 0));
-        assertEquals(83, stages.getOrDefault(CutoffRecovery.FROM_NEXT_TAG, 0));
+        // Measured against the captured estate on 2026-08-23, re-measured 2026-08-24
+        // when the unreleased guard moved four OPEN rows off stage 1. Pinned so a
+        // change in the cascade or the capture surfaces here rather than drifting.
+        assertEquals(991, stages.getOrDefault(CutoffRecovery.FROM_UPDATED, 0));
+        assertEquals(82, stages.getOrDefault(CutoffRecovery.FROM_NEXT_TAG, 0));
+        assertEquals(4, stages.getOrDefault(CutoffRecovery.NOT_RELEASED, 0),
+                "the four OPEN issues -- one each on weekly-ntm and weekly-ntm-p-t, two on "
+                        + "firing-practice-areas -- have never been released and must carry no stamp");
         assertEquals(0, stages.getOrDefault(CutoffRecovery.FROM_COVER, 0),
                 "no cover dates are available in the capture; the 27 annuals the plan describes need "
                         + "the printed PDFs, which this fixture does not carry");

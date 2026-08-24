@@ -41,6 +41,17 @@ public final class CutoffRecovery {
     public static final String MANUAL = "MANUAL";
 
     /**
+     * Not a stage. The issue was never released, so there is no instant to find.
+     *
+     * Distinct from MANUAL, which means the release happened and the evidence is
+     * gone. Here nothing is missing: an OPEN issue is unstamped because nobody
+     * has published it, and it gets its stamp from the publish action like any
+     * other. Recording it as a recovery failure would put a "needs a human"
+     * marker on the one row that is behaving normally.
+     */
+    public static final String NOT_RELEASED = "NOT_RELEASED";
+
+    /**
      * How far apart updated and the next tag may be before the tag wins.
      *
      * Five minutes, because the two are written by the same release action when
@@ -62,8 +73,25 @@ public final class CutoffRecovery {
      * nextTagCreated is the messageTag.created of the issue that FOLLOWS this one
      * in its series, or null when there is no next issue or it carries no tag.
      * coverDate is the date printed on an annual's cover, or null.
+     *
+     * released says whether this row was ever published -- PUBLISHED or RETIRED,
+     * never OPEN. It is a REQUIRED argument rather than a defaulted one because
+     * every stage below reads a timestamp that exists on an unreleased row too,
+     * and each of them would happily return it.
      */
-    public static Recovered recover(Publication legacy, Date nextTagCreated, Date coverDate) {
+    public static Recovered recover(Publication legacy, Date nextTagCreated, Date coverDate,
+                                    boolean released) {
+        // Before any stage runs. A row nobody released has no release instant, and
+        // every source below would still produce a date for it: `updated` on a
+        // never-published issue is when its PREDECESSOR was released, because that
+        // is the action that created it. Taken as a cut-off it lands a full period
+        // BEFORE the issue's own interval even opens -- so the row sorts a week
+        // early, ties with the issue before it, and anchors gap arithmetic on a
+        // date at which it did not exist.
+        if (!released) {
+            return new Recovered(null, NOT_RELEASED, false);
+        }
+
         Date updated = legacy.getUpdated();
 
         // Stage 2 overrides stage 1 where they disagree by more than the window.

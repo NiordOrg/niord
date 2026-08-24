@@ -9,6 +9,7 @@ import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.IssueMember;
+import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesStatus;
@@ -676,8 +677,11 @@ public class LegacyImportService extends BaseService {
                     PublicationIssue issue =
                             LegacyIssueTranslation.translate(legacy, series, frozenAt);
 
+                    // RETIRED counts as released: it was published and then withdrawn,
+                    // so a release instant exists. OPEN is the one that never had one.
                     CutoffRecovery.Recovered cutoff = CutoffRecovery.recover(
-                            legacy, CutoffRecovery.nextTagCreated(chain, i), null);
+                            legacy, CutoffRecovery.nextTagCreated(chain, i), null,
+                            issue.getStatus() != IssueStatus.OPEN);
                     issue.setCutoffStampedAt(cutoff.cutoff());
                     issue.setCutoffSource(cutoff.source());
                     issue.setCutoffReconstructed(cutoff.reconstructed());

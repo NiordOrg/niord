@@ -3,6 +3,7 @@ package org.niord.core.publication.series.legacy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.niord.core.mailinglist.MailingListTrigger;
+import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicWindowSource;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
@@ -11,6 +12,7 @@ import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +85,7 @@ public class CutoverPreflightService extends BaseService {
 
         assertOneCurrentIssuePerSeries(imported, violations, counts);
         assertCadencedIssuesDeriveTheirWindow(imported, violations);
+        assertUnpublishedIssuesCarryNoStamp(imported, violations, counts);
         assertIdSpaceDoesNotCollide(violations, counts);
 
         List<TriggerHit> audit = auditTriggers();
@@ -119,6 +122,53 @@ public class CutoverPreflightService extends BaseService {
                                 + "public."));
             }
         });
+    }
+
+    /**
+     * An OPEN issue carries no cut-off stamp, and none dated before its own interval.
+     *
+     * cutoffStampedAt means "the publish action recorded this instant". An OPEN
+     * issue has not been published, so there is no such instant, and a value here
+     * is evidence of something that did not happen.
+     *
+     * It reached the estate through the recovery cascade, which read `updated` --
+     * a column every row has. On a never-published issue that is when the row was
+     * CREATED, and the thing that created it was the release of the issue BEFORE
+     * it. So all four OPEN issues took their predecessor's release instant, to
+     * the millisecond, and three of them ended up dated before their own interval
+     * had opened -- the 2027 firing-areas issue by a full year.
+     *
+     * The second assertion is the one that generalises: whatever a cut-off's
+     * provenance, an issue whose period closed before it began is not a date
+     * anybody can act on, and it silently mis-sorts the row and mis-anchors every
+     * gap measured from it.
+     */
+    private void assertUnpublishedIssuesCarryNoStamp(List<PublicationIssue> imported,
+                                                     List<Violation> violations,
+                                                     Map<String, Integer> counts) {
+        int open = 0;
+        for (PublicationIssue i : imported) {
+            if (i.getStatus() == IssueStatus.OPEN) {
+                open++;
+                if (i.getCutoffStampedAt() != null) {
+                    violations.add(new Violation("OPEN_ISSUE_IS_STAMPED", i.getPublicId(),
+                            "an OPEN issue carries cutoffStampedAt " + i.getCutoffStampedAt()
+                                    + ". Nothing published it, so no release instant exists; the "
+                                    + "value is its predecessor's, and it sorts and anchors gaps "
+                                    + "on a date at which this issue did not exist."));
+                }
+            }
+
+            Date cutoff = i.getCutoffStampedAt();
+            if (cutoff != null && i.getIntervalFrom() != null
+                    && cutoff.before(i.getIntervalFrom())) {
+                violations.add(new Violation("CUTOFF_PRECEDES_ITS_INTERVAL", i.getPublicId(),
+                        "the cut-off " + cutoff + " falls before this issue's interval opens at "
+                                + i.getIntervalFrom() + ". A period cannot close before it "
+                                + "begins, whatever the cut-off's provenance."));
+            }
+        }
+        counts.put("openIssues", open);
     }
 
     /**
