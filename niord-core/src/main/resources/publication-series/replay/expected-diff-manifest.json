@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "B6.1. The divergences the historical replay is allowed to find.",
+    "",
+    "EMPTY IS THE HONEST STARTING STATE, not an oversight. Every entry has to name",
+    "a real issue by publicId and list the exact uids that diverge, and those come",
+    "from running the replay against an environment that holds both the imported",
+    "issues and the message estate. Guessing them from the analysis would produce a",
+    "manifest that agrees with the replay by luck or, more likely, silently permits",
+    "the wrong uids on the right issue.",
+    "",
+    "Populate it from GET /rest/publication-series/replay against the test",
+    "environment, one entry per diverging issue, each naming its DivergenceClass",
+    "and a reason a person wrote. An entry with a blank reason, an unknown class,",
+    "or an empty delta is refused at load. An entry that no longer diverges fails",
+    "the build, so this cannot rot into a blanket suppression.",
+    "",
+    "Until it is populated the gate is at its strictest: ANY divergence fails.",
+    "That is the correct default -- it errs towards telling somebody."
+  ],
+  "expectedDiffs": []
+}
