@@ -148,6 +148,49 @@ public class PublicationIssueRestService {
         return required(publicId).toVo(PublicationIssueVo.class);
     }
 
+    /**
+     * I5. Every issue of one series, newest first.
+     *
+     * B1.1 named this and it was never built, which nothing noticed until the
+     * series-detail page needed it: an issue is reachable only by its own
+     * publicId, so the only way to see a series' archive was to already know
+     * every id in it.
+
+     * Newest first because that is the order the question is asked in -- what
+     * went out most recently, and is the current one still open. The full
+     * history is the tail of that answer, not the head of it.
+     *
+     * Returns the EDITOR shape. The one caller is the admin section, and the
+     * public list is served by the public adapter rather than from here.
+     */
+    @GET
+    @Path("/series/{seriesId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public List<SystemPublicationIssueVo> bySeries(@PathParam("seriesId") String seriesId) {
+        PublicationSeries series = seriesService.findBySeriesId(seriesId);
+        if (series == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
+                    "no series '" + seriesId + "'");
+        }
+
+        // Ordered in the database rather than in Java: an issue list is one of
+        // the few things here that can grow without bound, and a series with a
+        // decade of weeklies has ~500 rows.
+        //
+        // cutoffStampedAt DESC, then publicId, so the order is total -- issues
+        // sharing a cut-off (a retire-and-republish pair) would otherwise swap
+        // places between requests and the list would appear to reshuffle itself.
+        return em.createQuery(
+                        "SELECT i FROM PublicationIssue i WHERE i.series = :s "
+                                + "ORDER BY i.cutoffStampedAt DESC, i.publicId DESC",
+                        PublicationIssue.class)
+                .setParameter("s", series)
+                .getResultList().stream()
+                .map(i -> i.toVo(SystemPublicationIssueVo.class))
+                .toList();
+    }
+
     /** I4. Editor shape. */
     @GET
     @Path("/editable-issue/{publicId}")
