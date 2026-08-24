@@ -1,0 +1,289 @@
+package org.niord.core.publication.series.replay;
+
+import io.quarkus.scheduler.Scheduled;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+
+import org.niord.core.publication.Publication;
+import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.MemberResolutionService;
+import org.niord.core.publication.series.PublicationIssue;
+import org.niord.core.publication.series.PublicationIssueDesc;
+import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.criteria.CriteriaResolver;
+import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
+import org.niord.core.publication.series.resolve.Interval;
+import org.niord.core.publication.series.resolve.ResolvedCriteria;
+import org.niord.core.publication.series.resolve.TimeRelation;
+import org.slf4j.Logger;
+
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * B6.2. After each legacy release, would the new engine have produced the same
+ * member list?
+ *
+ * This is the verification loop productized. B6.1's replay answers the question
+ * once, backwards, over the imported archive; this answers it forwards, one
+ * release at a time, and that is what accumulates the evidence B6.3 reports and
+ * B7.1 waits on: TWO CONSECUTIVE GREEN WEEKS PER SERIES.
+ *
+ * <h2>Why the results are stored rather than recomputed</h2>
+ *
+ * Because re-resolving last month's week today answers a different question.
+ * {@code type} is mutable and unversioned -- twelve messages are
+ * PERMANENT_NOTICE now and were P or T when their issue went out -- so a later
+ * recomputation drifts by exactly the amount the archive has aged. The diff has
+ * to be taken while the release is fresh, and kept.
+ *
+ * <h2>What it does not do</h2>
+ *
+ * It never writes to a publication, an issue or a member list. A shadow-diff
+ * that could change what it measures is not a measurement. Its only output is
+ * its own row.
+ */
+@ApplicationScoped
+public class ShadowDiffService {
+
+    @Inject
+    Logger log;
+
+    @Inject
+    EntityManager em;
+
+    @Inject
+    MemberResolutionService resolver;
+
+    /**
+     * Hourly, at 07 past.
+     *
+     * Frequent enough that a release is diffed while it is fresh, cheap enough
+     * to be uninteresting: the query finds nothing on almost every run, because
+     * the thing it waits for happens weekly. The offset is arbitrary but not
+     * zero -- the top of the hour is where every other scheduled job in this
+     * system already is.
+     */
+    @Scheduled(cron = "07 7 */1 * * ?")
+    void scheduled() {
+        try {
+            int diffed = runOnce();
+            if (diffed > 0) {
+                log.info("shadow-diff: compared {} new legacy release(s)", diffed);
+            }
+        } catch (RuntimeException e) {
+            // A diagnostic that takes the scheduler down with it stops being a
+            // diagnostic. Logged and swallowed; the next run tries again, and
+            // the missing rows are visible as a gap in the series' evidence.
+            log.error("shadow-diff run failed; will retry on the next tick", e);
+        }
+    }
+
+    /**
+     * Diffs every legacy release that has not been diffed at its current stamp.
+     *
+     * @return how many were compared or skipped -- that is, how many rows were
+     *         written. Zero is the normal answer.
+     */
+    @Transactional
+    public int runOnce() {
+        int written = 0;
+        for (Publication release : undiffedReleases()) {
+            diff(release);
+            written++;
+        }
+        return written;
+    }
+
+    /**
+     * Releases with no ShadowDiffRun at their current updated stamp.
+     *
+     * Keyed on the stamp rather than on existence, so a retire-and-republish is
+     * picked up as the second release it is. Restricted to publications that
+     * carry a tag: without one there is nothing recorded to diff against, and
+     * the comparison would be against absence.
+     */
+    private List<Publication> undiffedReleases() {
+        return em.createQuery(
+                        "SELECT p FROM Publication p "
+                                + "WHERE p.messageTag IS NOT NULL "
+                                + "AND p.publishDateFrom IS NOT NULL "
+                                + "AND NOT EXISTS ("
+                                + "  SELECT r FROM ShadowDiffRun r "
+                                + "  WHERE r.legacyPublicationId = p.publicationId "
+                                + "  AND r.legacyUpdatedAt = p.updated) "
+                                + "ORDER BY p.updated", Publication.class)
+                .getResultList();
+    }
+
+    /** Diffs one release and records the result, whatever it is. */
+    ShadowDiffRun diff(Publication release) {
+        ShadowDiffRun run = new ShadowDiffRun();
+        run.setLegacyPublicationId(release.getPublicationId());
+        run.setLegacyUpdatedAt(release.getUpdated());
+        run.setComparedAt(new Date());
+        run.setDelta(Set.of(), Set.of());
+
+        PublicationSeries series = seriesFor(release);
+        run.setSeriesId(series == null ? null : series.getSeriesId());
+
+        String skip = skipReasonFor(release, series);
+        if (skip != null) {
+            // A skipped release is still green: nothing diverged, because
+            // nothing was comparable. The skipReason is what stops that being
+            // read as evidence -- B6.3 counts green weeks, and a week nobody
+            // could compare is not one of them.
+            run.setSkipReason(skip);
+            em.persist(run);
+            return run;
+        }
+
+        Date cutoff = release.getPublishDateFrom();
+        Date from = previousCutoff(series, cutoff);
+        run.setIntervalFrom(from);
+        run.setCutoffAt(cutoff);
+
+        Set<String> recorded = taggedMessageUids(release);
+        Set<String> resolved = resolver
+                .resolve(criteriaFor(release, series), new Interval(from, cutoff))
+                .members();
+
+        Set<String> missing = new LinkedHashSet<>(recorded);
+        missing.removeAll(resolved);
+        Set<String> extra = new LinkedHashSet<>(resolved);
+        extra.removeAll(recorded);
+        run.setDelta(missing, extra);
+
+        em.persist(run);
+        return run;
+    }
+
+    /** The imported series this release belongs to, or null. */
+    private PublicationSeries seriesFor(Publication release) {
+        String templateId = release.getTemplate() == null
+                ? release.getPublicationId()
+                : release.getTemplate().getPublicationId();
+
+        return em.createQuery(
+                        "SELECT s FROM PublicationSeries s WHERE s.legacyTemplateId = :t",
+                        PublicationSeries.class)
+                .setParameter("t", templateId)
+                .getResultStream().findFirst().orElse(null);
+    }
+
+    /**
+     * Why this release cannot be compared, or null if it can.
+     *
+     * The C6 check reaches through to the IMPORTED issue for this publication,
+     * because that is where a hand-uploaded file is recorded. A file somebody
+     * replaced by hand was never generated from a member list, so "reproducible
+     * from the member list" is not a property it has, and diffing it would
+     * manufacture a divergence out of a document nobody generated.
+     */
+    private String skipReasonFor(Publication release, PublicationSeries series) {
+        if (series == null) {
+            return "NO_IMPORTED_SERIES";
+        }
+        if (series.getContentMode() != ContentMode.GENERATED_FROM_QUERY
+                || series.getCriteria() == null) {
+            return "NO_MEMBERSHIP_SEMANTICS";
+        }
+        if (release.getPublishDateFrom() == null) {
+            return "NO_CUTOFF";
+        }
+
+        PublicationIssue imported = em.createQuery(
+                        "SELECT i FROM PublicationIssue i WHERE i.legacyPublicationId = :id",
+                        PublicationIssue.class)
+                .setParameter("id", release.getPublicationId())
+                .getResultStream().findFirst().orElse(null);
+
+        if (imported != null && imported.getDescs() != null
+                && imported.getDescs().stream().anyMatch(PublicationIssueDesc::isFileSourceSticky)) {
+            return "FILE_REPLACED_BY_HAND";
+        }
+        return null;
+    }
+
+    /**
+     * Where this release's window opens: the previous release's cut-off.
+     *
+     * Read from the imported issues AND from earlier shadow runs, taking the
+     * later of the two. The archive supplies the chain up to the import, and the
+     * shadow runs continue it afterwards -- neither alone spans the changeover,
+     * and the first release after an import would otherwise have no predecessor
+     * and resolve over an unbounded window.
+     */
+    private Date previousCutoff(PublicationSeries series, Date before) {
+        Date fromIssues = em.createQuery(
+                        "SELECT MAX(i.cutoffStampedAt) FROM PublicationIssue i "
+                                + "WHERE i.series = :s AND i.cutoffStampedAt < :before", Date.class)
+                .setParameter("s", series).setParameter("before", before)
+                .getSingleResult();
+
+        Date fromRuns = em.createQuery(
+                        "SELECT MAX(r.cutoffAt) FROM ShadowDiffRun r "
+                                + "WHERE r.seriesId = :s AND r.cutoffAt < :before", Date.class)
+                .setParameter("s", series.getSeriesId()).setParameter("before", before)
+                .getSingleResult();
+
+        if (fromIssues == null) {
+            return fromRuns;
+        }
+        if (fromRuns == null) {
+            return fromIssues;
+        }
+        return fromIssues.after(fromRuns) ? fromIssues : fromRuns;
+    }
+
+    /**
+     * The criteria to resolve with.
+     *
+     * timeRelation and aliveAtCutoff come from THIS RELEASE'S OWN legacy filter,
+     * not from the series row -- the same rule B5.4a2 established for imported
+     * issues. A series that spans both the blank/sticky era and the phase era
+     * carries one setting on the series and needs the other on 122 of its
+     * issues, and a live release is simply the newest of those.
+     */
+    private ResolvedCriteria criteriaFor(Publication release, PublicationSeries series) {
+        LegacyFilterTranslator.Translation t =
+                LegacyFilterTranslator.translate(release.getMessageTagFilter());
+
+        return CriteriaResolver.resolve(
+                series.getCriteria(),
+                t.timeRelation() != null ? t.timeRelation() : series.getTimeRelation(),
+                t.aliveAtCutoff(),
+                CriteriaResolver.NO_DOMAINS);
+    }
+
+    /** What legacy actually recorded, keyed on uid. */
+    private Set<String> taggedMessageUids(Publication release) {
+        if (release.getMessageTag() == null || release.getMessageTag().getId() == null) {
+            return Set.of();
+        }
+        return new LinkedHashSet<>(em.createQuery(
+                        "SELECT m.uid FROM MessageTag t JOIN t.messages m WHERE t.id = :id",
+                        String.class)
+                .setParameter("id", release.getMessageTag().getId())
+                .getResultList());
+    }
+
+    // ------------------------------------------------------------------ reads
+
+    /** Every run, newest first. */
+    public List<ShadowDiffRun> all() {
+        return em.createNamedQuery("ShadowDiffRun.all", ShadowDiffRun.class).getResultList();
+    }
+
+    /** One series' runs, newest first. */
+    public List<ShadowDiffRun> forSeries(String seriesId) {
+        return em.createNamedQuery("ShadowDiffRun.bySeries", ShadowDiffRun.class)
+                .setParameter("seriesId", seriesId)
+                .getResultList();
+    }
+}

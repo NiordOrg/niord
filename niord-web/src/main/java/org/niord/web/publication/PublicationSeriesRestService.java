@@ -17,6 +17,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.replay.ShadowDiffService;
+import org.niord.core.publication.series.replay.ShadowDiffRun;
 import org.niord.core.publication.series.legacy.LegacyImportReportVo;
 import org.niord.core.publication.series.legacy.CutoverPreflightService;
 import org.niord.core.publication.series.legacy.LegacyImportService;
@@ -65,6 +67,9 @@ public class PublicationSeriesRestService {
 
     @Inject
     CutoverPreflightService preflight;
+
+    @Inject
+    ShadowDiffService shadowDiff;
 
     @Inject
     PublicationCategoryService categoryService;
@@ -345,6 +350,85 @@ public class PublicationSeriesRestService {
         return report.deleted()
                 ? Response.ok(report).build()
                 : Response.status(409).entity(report).build();
+    }
+
+    /**
+     * B6.2/B6.3. The shadow-diff results, per series and per release.
+     *
+     * The artifact the cutover decision is made from. B7.1 waits on TWO
+     * CONSECUTIVE GREEN WEEKS PER SERIES, and this is what evidences them.
+     *
+     * Deltas are keyed on uid rather than short id: a short id is display text
+     * and is reused across years, so a delta keyed on it would collide between
+     * an NM from 2018 and one from 2024 and read as agreement.
+     *
+     * Read-only. A shadow-diff that could change what it measures would not be
+     * a measurement, and neither would an endpoint that could.
+     */
+    @GET
+    @Path("/shadow-diff")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Map<String, Object> shadowDiff(@QueryParam("seriesId") String seriesId) {
+        List<ShadowDiffRun> runs = seriesId == null || seriesId.isBlank()
+                ? shadowDiff.all()
+                : shadowDiff.forSeries(seriesId);
+
+        Map<String, List<Map<String, Object>>> bySeries = new LinkedHashMap<>();
+        for (ShadowDiffRun run : runs) {
+            bySeries.computeIfAbsent(
+                            run.getSeriesId() == null ? "(unmapped)" : run.getSeriesId(),
+                            k -> new ArrayList<>())
+                    .add(describe(run));
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("runs", runs.size());
+        out.put("series", bySeries);
+        out.put("readiness", readiness(bySeries));
+        return out;
+    }
+
+    private static Map<String, Object> describe(ShadowDiffRun run) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("legacyPublicationId", run.getLegacyPublicationId());
+        out.put("comparedAt", run.getComparedAt());
+        out.put("intervalFrom", run.getIntervalFrom());
+        out.put("cutoffAt", run.getCutoffAt());
+        out.put("green", run.isGreen());
+        out.put("skipReason", run.getSkipReason());
+        out.put("missing", run.missing());
+        out.put("extra", run.extra());
+        return out;
+    }
+
+    /**
+     * Per series: is it two consecutive green releases clear of cutover?
+     *
+     * A SKIPPED run breaks the streak rather than extending it. A week nobody
+     * could compare is not evidence that the week agreed, and letting it count
+     * would let a series reach the precondition without a single comparison.
+     */
+    private static Map<String, Object> readiness(
+            Map<String, List<Map<String, Object>>> bySeries) {
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        bySeries.forEach((series, runs) -> {
+            int streak = 0;
+            for (Map<String, Object> run : runs) {   // newest first
+                boolean counts = Boolean.TRUE.equals(run.get("green"))
+                        && run.get("skipReason") == null;
+                if (!counts) {
+                    break;
+                }
+                streak++;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("consecutiveGreen", streak);
+            row.put("meetsCutoverPrecondition", streak >= 2);
+            out.put(series, row);
+        });
+        return out;
     }
 
     /**
