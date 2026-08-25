@@ -97,6 +97,15 @@ public class LocalEstateReplayTest {
     private static final int REPLAY_TIMEOUT_SECONDS =
             Integer.getInteger("niord.replay.timeout", 1800);
 
+    /**
+     * Releases per series in the estate-wide sweep.
+     *
+     * Shallow on purpose: it is looking for a bound that is wrong for a whole
+     * series, not for a single bad release. Depth belongs to the per-series test.
+     */
+    private static final int SWEEP_DEPTH =
+            Integer.getInteger("niord.replay.sweepDepth", 12);
+
     public static boolean runnable() {
         return org.niord.core.DatabaseAvailable.isAvailable() && EstateSlice.available();
     }
@@ -263,6 +272,89 @@ public class LocalEstateReplayTest {
         return "  inside";
     }
 
+    /**
+     * Every series in the estate, in one pass.
+     *
+     * The per-series test proves one series deeply; this proves nothing is broken
+     * in a series nobody thought to look at. That is not hypothetical -- pointing
+     * the replay at the P&T series for the first time found every one of its
+     * releases resolving over a one-week window it never had, and 531 issues across
+     * four series were affected.
+     *
+     * Shallow on purpose: a dozen releases per series is enough to expose a bound
+     * that is wrong for the whole series, and the depth for hunting a specific
+     * fault belongs to the test above.
+     */
+    @Test
+    public void everySeriesEitherReplaysOrSaysWhyNot() {
+        QuarkusTransaction.requiringNew().timeout(REPLAY_TIMEOUT_SECONDS).run(this::sweep);
+    }
+
+    private void sweep() {
+        Set<String> shared = EstateSlice.issuesSharingAMemberSet();
+        List<String> faults = new ArrayList<>();
+
+        for (String seriesId : EstateSlice.seriesIds()) {
+            EstateSlice.Series shape = EstateSlice.series(seriesId);
+            List<EstateSlice.Issue> all = EstateSlice.issuesOf(seriesId);
+            if (all.isEmpty()) {
+                System.out.println("[SWEEP] " + pad(seriesId) + "  no issues harvested");
+                continue;
+            }
+            List<EstateSlice.Issue> slice = all.size() <= SWEEP_DEPTH
+                    ? all : all.subList(all.size() - SWEEP_DEPTH, all.size());
+
+            Seeded seeded = seed(slice, seriesId);
+            int compared = 0;
+            int missing = 0;
+            int extra = 0;
+            int red = 0;
+            int explained = 0;
+
+            for (EstateSlice.Issue issue : slice) {
+                Publication release = seeded.releases.get(issue.publicId());
+                if (release == null) {
+                    continue;
+                }
+                ShadowDiffRun run = shadowDiff.diff(release);
+                if (run.getSkipReason() != null) {
+                    continue;
+                }
+                compared++;
+                missing += run.missing().size();
+                extra += run.extra().size();
+                if (!run.isGreen()) {
+                    red++;
+                    if (shared.contains(issue.publicId())) {
+                        explained++;
+                    } else if (shape != null && !shape.inForce()) {
+                        faults.add(seriesId + "/" + issue.publicId().substring(0, 8)
+                                + " missing=" + run.missing().size()
+                                + " extra=" + run.extra().size());
+                    }
+                }
+            }
+
+            boolean inForce = shape != null && shape.inForce();
+            System.out.println("[SWEEP] " + pad(seriesId)
+                    + "  " + (inForce ? "in-force " : "tiling   ")
+                    + " compared=" + String.format("%3d", compared)
+                    + " red=" + String.format("%3d", red)
+                    + " (" + explained + " reused-tag)"
+                    + " missing=" + String.format("%5d", missing)
+                    + " extra=" + String.format("%6d", extra)
+                    + (inForce ? "   [counts not measurable locally]" : ""));
+        }
+
+        assertTrue(faults.isEmpty(),
+                "a tiling release disagreed with its own frozen membership for a reason other "
+                        + "than a reused tag: " + faults);
+    }
+
+    private static String pad(String s) {
+        return s.length() >= 38 ? s : s + " ".repeat(38 - s.length());
+    }
+
     // ------------------------------------------------------------------ seeding
 
     private record Seeded(Map<String, Publication> releases, PublicationSeries series,
@@ -279,12 +371,16 @@ public class LocalEstateReplayTest {
      * imported issues the real translation produces from them.
      */
     private Seeded seed(List<EstateSlice.Issue> slice) {
+        return seed(slice, SERIES);
+    }
+
+    private Seeded seed(List<EstateSlice.Issue> slice, String seriesId) {
         MessageSeries ms = new MessageSeries();
         ms.setSeriesId("dma-nm-" + UUID.randomUUID().toString().substring(0, 8));
         ms.setMainType(MainType.NM);
         em.persist(ms);
 
-        PublicationSeries series = importedSeries(ms.getSeriesId());
+        PublicationSeries series = importedSeries(ms.getSeriesId(), seriesId);
         Publication template = template(series);
 
         Map<String, Message> byUid = new LinkedHashMap<>();
@@ -404,7 +500,7 @@ public class LocalEstateReplayTest {
      * other node travels verbatim, so an in-force series is replayed as in-force
      * with its type filter rather than as whatever the harness found convenient.
      */
-    private PublicationSeries importedSeries(String messageSeriesId) {
+    private PublicationSeries importedSeries(String messageSeriesId, String estateSeriesId) {
         PublicationCategory c = new PublicationCategory();
         c.setCategoryId("slice-" + UUID.randomUUID().toString().substring(0, 8));
         c.setPriority(100);
@@ -416,7 +512,7 @@ public class LocalEstateReplayTest {
         s.setStatus(SeriesStatus.DRAFT);
         s.setImportSource("legacy-slice");
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
-        EstateSlice.Series shape = EstateSlice.series(SERIES);
+        EstateSlice.Series shape = EstateSlice.series(estateSeriesId);
         s.setCadence(shape != null && shape.cadence() != null
                 ? SeriesCadence.valueOf(shape.cadence()) : SeriesCadence.WEEKLY);
         s.setTimeRelation(shape != null && shape.inForce()

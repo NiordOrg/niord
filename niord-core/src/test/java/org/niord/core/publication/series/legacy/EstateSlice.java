@@ -114,6 +114,13 @@ public final class EstateSlice {
         }
     }
 
+    /** Every series the harvest carries. */
+    public static List<String> seriesIds() {
+        List<String> out = new ArrayList<>();
+        root().path("series").fieldNames().forEachRemaining(out::add);
+        return out;
+    }
+
     /** The shape of one series, or null when the harvest does not carry it. */
     public static Series series(String seriesId) {
         JsonNode n = root().path("series").path(seriesId);

@@ -282,7 +282,36 @@ public class ShadowDiffService {
         run.setIntervalFrom(from);
         run.setCutoffAt(cutoff);
 
+        // An interval that does not run forwards contains nothing, and Interval
+        // refuses to be built from one. Three issues in the estate are like this --
+        // two 2017 weeklies and a list-of-lights edition -- where the recovered
+        // close lands exactly on the open.
+        //
+        // Named rather than thrown. The sweep catches a throw and steps over the
+        // release, so the comparison is simply absent and the release stays
+        // permanently unsettled; a skip says what happened and is counted.
+        if (from != null && !from.before(cutoff)) {
+            run.setSkipReason("EMPTY_INTERVAL");
+            em.persist(run);
+            return run;
+        }
+
         Set<String> recorded = taggedMessageUids(release);
+
+        // An EMPTY tag is the same as no tag: there is nothing recorded to compare
+        // against, and the query result would be reported as entirely extra.
+        //
+        // undiffedReleases already refuses a release with no tag for exactly this
+        // reason -- "the comparison would be against absence" -- and a tag that
+        // exists but holds nothing is the same absence wearing a row. Nine of the
+        // eleven NCAGS annex editions are like this: link publications with no
+        // membership, whose interval is a three-year VISIBILITY window rather than a
+        // content period, so anything published in those years resolves into them.
+        if (recorded.isEmpty()) {
+            run.setSkipReason("EMPTY_TAG");
+            em.persist(run);
+            return run;
+        }
         Set<String> resolved = resolver
                 .resolve(criteriaFor(release, series), new Interval(from, cutoff))
                 .members();

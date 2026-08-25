@@ -254,6 +254,71 @@ public class ShadowDiffTest {
                         + "back years to a single week");
     }
 
+    /**
+     * An interval that does not run forwards is SKIPPED, not thrown.
+     *
+     * Interval refuses to be built from one, and the sweep catches the throw and
+     * steps over the release -- so the comparison is absent, the release never
+     * settles, and nothing says why. Three issues in the estate are like this.
+     */
+    @Test
+    @Transactional
+    public void anEmptyIntervalIsSkippedWithAReasonRatherThanThrowing() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(template(series), t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+
+        // The close lands exactly on the open.
+        PublicationIssue issue = importedIssue(series, week);
+        issue.setIntervalFrom(t1);
+        issue.setCutoffStampedAt(t1);
+        em.flush();
+
+        ShadowDiffRun run = shadowDiff.diff(week);
+
+        assertEquals("EMPTY_INTERVAL", run.getSkipReason(),
+                "a zero-length period contains nothing; saying so leaves a countable row "
+                        + "instead of a release that quietly never gets compared");
+    }
+
+    /**
+     * A release whose tag is EMPTY is skipped, not reported as all-extra.
+     *
+     * undiffedReleases already refuses a release with no tag -- the comparison
+     * would be against absence -- and a tag holding nothing is that same absence
+     * with a row in front of it. Nine of the eleven NCAGS annex editions are link
+     * publications with no membership whose interval is a multi-year visibility
+     * window, so everything published in those years resolved into them.
+     */
+    @Test
+    @Transactional
+    public void anEmptyTagIsSkippedRatherThanReportedAsAllExtra() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        // A message inside the window, and a tag that records none of it.
+        message(ms, new Date(t1.getTime() - HOUR));
+        Publication week = release(template(series), t1, tag());
+
+        PublicationIssue issue = importedIssue(series, week);
+        issue.setIntervalFrom(new Date(t1.getTime() - WEEK));
+        issue.setCutoffStampedAt(t1);
+        em.flush();
+
+        ShadowDiffRun run = shadowDiff.diff(week);
+
+        assertEquals("EMPTY_TAG", run.getSkipReason(),
+                "nothing was recorded, so nothing can be compared -- reporting the resolution "
+                        + "as extra would make an unrecorded publication look like a defect");
+        assertTrue(run.extra().isEmpty());
+    }
+
     // ------------------------------------------- the interval it compares over
 
     /**
