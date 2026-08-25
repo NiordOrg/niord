@@ -18,14 +18,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The categories write surface, which was missing the half that matters.
+ * The category names this resource writes, which it previously could not.
  *
- * There was no way to CREATE a publication category. Harmless while nothing
- * required one; the moment S-19 made a category mandatory to save a series, an
- * admin could be blocked by a required field whose legal values nothing in the
- * product could extend. Update existed but carried only priority and publish, so
- * a category created with a typo could never be renamed either -- and these names
- * are what the public page shows.
+ * TWO RESOURCES ANSWER /publication-categories: this one and the legacy
+ * org.niord.web.PublicationCategoryRestService, which has owned full CRUD for
+ * years. For GET, PUT and DELETE both declare the same sub-paths and this one
+ * wins -- verified against the deployed API by its response shape and ordering --
+ * so its PUT is the one that runs, and its PUT ignored the descs entirely. A
+ * category created with a typo could not be renamed through the endpoint actually
+ * being served, and those names are what the public page shows.
+ *
+ * CREATE is NOT here, deliberately. The legacy resource already declares POST on
+ * this path and nothing else does, so it wins outright and creating a category has
+ * always worked. Adding a second POST made a deterministic route ambiguous and
+ * bought nothing.
  */
 public class PublicationCategoryWriteTest {
 
@@ -35,19 +41,6 @@ public class PublicationCategoryWriteTest {
         } catch (NoSuchMethodException e) {
             return null;
         }
-    }
-
-    @Test
-    public void theCreateEndpointExistsAndIsAdminGuarded() {
-        Method create = endpoint("create", Map.class);
-        assertNotNull(create, "there is no way to create a publication category, and S-19 makes one "
-                + "mandatory before a series can be saved");
-        assertNotNull(create.getAnnotation(POST.class), "creating is a POST");
-
-        RolesAllowed roles = create.getAnnotation(RolesAllowed.class);
-        assertNotNull(roles, "an unguarded create lets anyone add a category to the public page");
-        assertTrue(Arrays.asList(roles.value()).contains("admin"),
-                "expected admin, got " + Arrays.toString(roles.value()));
     }
 
     @Test

@@ -75,48 +75,6 @@ public class PublicationCategoryRestService {
     }
 
     /**
-     * C4. Create.
-     *
-     * There was no way to make a category at all. That mattered once S-19 made one
-     * mandatory to save a series: an admin could be blocked by a required field
-     * whose set of legal values nothing in the product could extend.
-     */
-    @POST
-    @Path("/publication-category/")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
-    public Map<String, Object> create(Map<String, Object> body) {
-        Object rawId = body == null ? null : body.get("categoryId");
-        String categoryId = rawId == null ? null : rawId.toString().trim();
-        if (categoryId == null || categoryId.isEmpty()) {
-            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_INVALID",
-                    "categoryId is required; it is the stable key a series stores");
-        }
-        Long taken = em.createQuery(
-                        "SELECT COUNT(c) FROM PublicationCategory c WHERE c.categoryId = :id", Long.class)
-                .setParameter("id", categoryId).getSingleResult();
-        if (taken > 0) {
-            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_ID_TAKEN",
-                    "a publication category with id '" + categoryId + "' already exists");
-        }
-
-        PublicationCategory c = new PublicationCategory();
-        c.setCategoryId(categoryId);
-        // Sorted last by default rather than first: a new category appearing above
-        // the established ones on the public page is a surprise nobody asked for.
-        c.setPriority(body.containsKey("priority") && body.get("priority") != null
-                ? ((Number) body.get("priority")).intValue() : LOWEST_PRIORITY);
-        c.setPublish(Boolean.TRUE.equals(body.get("publish")));
-        applyDescs(c, body);
-        em.persist(c);
-        return toMap(c, null);
-    }
-
-    /** Sorted after everything that already exists. */
-    private static final int LOWEST_PRIORITY = 1000;
-
-    /**
      * The per-language names, merged in place.
      *
      * In place, not cleared and rebuilt: the desc table is unique on (lang, entity)
