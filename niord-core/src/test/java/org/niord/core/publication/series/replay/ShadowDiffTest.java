@@ -249,16 +249,16 @@ public class ShadowDiffTest {
     }
 
     /**
-     * force recompares a settled release, which nothing else will.
+     * reset unsettles a release, so the ordinary sweep recomputes it.
      *
      * The key covers the LEGACY inputs; the comparison also depends on the
-     * imported side and on the diff logic. When the logic changes, every stored
-     * comparison is stale and no query selects it again. Without this the only
-     * remedy is hand-written SQL against the run table.
+     * imported side and on the diff logic. When the logic changes every stored
+     * verdict is stale and no query reselects it, and the only other remedy is
+     * hand-written SQL against the run table.
      */
     @Test
     @Transactional
-    public void forceRecomparesAReleaseThatIsAlreadySettled() {
+    public void resetUnsettlesAReleaseSoTheSweepRecomputesIt() {
         String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
@@ -272,12 +272,14 @@ public class ShadowDiffTest {
                         .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
                 "settled, so the ordinary sweep will not look at it again");
 
-        // force selects it anyway, and replaces the stale row rather than
-        // colliding with the one-run-per-stamp constraint.
-        assertTrue(shadowDiff.allComparableReleases().stream()
-                .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())));
+        shadowDiff.reset();
 
-        shadowDiff.diffById(week.getPublicationId(), true);
+        assertTrue(shadowDiff.undiffedReleases().stream()
+                        .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
+                "after a reset the sweep must see it again -- otherwise a change to the diff "
+                        + "logic can never be applied to anything already compared");
+
+        shadowDiff.diffById(week.getPublicationId());
         assertEquals(1, runsFor(week).size(), "one run per stamp, by constraint");
         assertNull(runsFor(week).get(0).getSkipReason());
     }

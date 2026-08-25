@@ -116,26 +116,12 @@ public class ShadowDiffService {
      * @return how many rows were written
      */
     public int runOnce() {
-        return runOnce(DEFAULT_BATCH, false);
+        return runOnce(DEFAULT_BATCH);
     }
 
     public int runOnce(int max) {
-        return runOnce(max, false);
-    }
-
-    /**
-     * @param force recompare releases that already have a comparison
-     *
-     * A run is keyed on the LEGACY inputs, but the comparison depends on two more
-     * things that key cannot see: the imported side, and the diff logic itself.
-     * When either changes, every stored comparison is stale and nothing selects it
-     * again -- which is the state this flag exists for. It is deliberately
-     * explicit and never automatic: it DISCARDS the accumulated green-week
-     * evidence B7.1 counts, so it must be somebody deciding, not a side effect.
-     */
-    public int runOnce(int max, boolean force) {
         List<String> todo = QuarkusTransaction.requiringNew()
-                .call(() -> (force ? allComparableReleases() : undiffedReleases()).stream()
+                .call(() -> undiffedReleases().stream()
                         .limit(Math.max(0, max))
                         .map(Publication::getPublicationId)
                         .toList());
@@ -145,7 +131,7 @@ public class ShadowDiffService {
             try {
                 QuarkusTransaction.requiringNew()
                         .timeout(DIFF_TIMEOUT_SECONDS)
-                        .run(() -> diffById(publicationId, force));
+                        .run(() -> diffById(publicationId));
                 written++;
             } catch (RuntimeException e) {
                 log.warn("shadow-diff failed for release {}; stepping over it", publicationId, e);
@@ -154,14 +140,32 @@ public class ShadowDiffService {
         return written;
     }
 
-    /** Every release that could be compared at all, settled or not. */
-    List<Publication> allComparableReleases() {
-        return em.createQuery(
-                        "SELECT p FROM Publication p "
-                                + "WHERE p.messageTag IS NOT NULL "
-                                + "AND p.publishDateFrom IS NOT NULL "
-                                + "ORDER BY p.updated", Publication.class)
-                .getResultList();
+    /**
+     * Discard every stored comparison, so the ordinary sweep recomputes them.
+     *
+     * A run is keyed on the LEGACY inputs. The comparison depends on two more
+     * things that key cannot see -- the imported side, and the diff logic itself --
+     * so when either changes, every stored verdict is stale and nothing reselects
+     * it. This is the way out, and it is deliberately a SEPARATE operation.
+     *
+     * The first attempt was a force flag on the sweep, which was wrong twice over:
+     * it conflated discarding a verdict with selecting a release, and the
+     * selection half could not page -- every batch re-read the same first rows and
+     * the sweep never advanced. Resetting and then sweeping composes the two
+     * operations that each already work.
+     *
+     * It DISCARDS the accumulated green-week evidence B7.1 counts, which is why it
+     * is explicit, never automatic, and named for what it does.
+     *
+     * Joins the caller's transaction rather than opening its own. The only caller
+     * is the REST layer, which is already transactional, and a new transaction
+     * would block on locks the caller holds rather than doing the work.
+     *
+     * @return how many runs were discarded
+     */
+    @Transactional
+    public int reset() {
+        return em.createQuery("DELETE FROM ShadowDiffRun r").executeUpdate();
     }
 
     /** How many releases still have no comparison. Lets a caller drive the sweep to completion. */
@@ -171,23 +175,11 @@ public class ShadowDiffService {
 
     /** Re-reads the release inside its own transaction: the list was read in another. */
     void diffById(String publicationId) {
-        diffById(publicationId, false);
-    }
-
-    void diffById(String publicationId, boolean force) {
         Publication release = em.createQuery(
                         "SELECT p FROM Publication p WHERE p.publicationId = :id", Publication.class)
                 .setParameter("id", publicationId)
                 .getResultStream().findFirst().orElse(null);
         if (release != null) {
-            if (force) {
-                // The stored comparison was computed by logic that has since
-                // changed. Removed rather than kept beside the new one, because a
-                // release holds exactly one run per stamp by constraint.
-                em.createQuery("DELETE FROM ShadowDiffRun r WHERE r.legacyPublicationId = :id")
-                        .setParameter("id", publicationId)
-                        .executeUpdate();
-            }
             diff(release);
         }
     }

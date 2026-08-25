@@ -412,13 +412,31 @@ public class PublicationSeriesRestService {
     @Path("/shadow-diff/run")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
-    public Map<String, Object> runShadowDiff(@QueryParam("max") Integer max,
-                                            @QueryParam("force") boolean force) {
+    public Map<String, Object> runShadowDiff(@QueryParam("max") Integer max) {
         int written = shadowDiff.runOnce(
-                max == null ? ShadowDiffService.DEFAULT_BATCH : max, force);
+                max == null ? ShadowDiffService.DEFAULT_BATCH : max);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("written", written);
         out.put("remaining", shadowDiff.remaining());
+        return out;
+    }
+
+    /**
+     * Discards every stored comparison so the sweep recomputes them.
+     *
+     * For when the diff LOGIC changed: a run is keyed on the legacy inputs, so a
+     * stale verdict is never reselected on its own. Separate from the sweep
+     * because it is a different act -- this one throws away the green-week
+     * evidence the cutover decision rests on, and that should never be a side
+     * effect of asking for a sweep.
+     */
+    @POST
+    @Path("/shadow-diff/reset")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Map<String, Object> resetShadowDiff() {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("discarded", shadowDiff.reset());
         return out;
     }
 
