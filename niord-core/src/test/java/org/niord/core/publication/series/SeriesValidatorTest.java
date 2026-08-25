@@ -1,6 +1,7 @@
 package org.niord.core.publication.series;
 
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -49,6 +50,9 @@ public class SeriesValidatorTest {
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH);
         s.setPublicAuthority(PublicAuthority.LEGACY);
+        // S-19: the category column is NOT NULL, so a baseline without one is not a
+        // valid series -- it is one that fails at flush rather than at validation.
+        s.setCategory(new PublicationCategory());
 
         IssueCriteriaVo doc = new IssueCriteriaVo();
         MessageSeriesCriterionVo node = new MessageSeriesCriterionVo();

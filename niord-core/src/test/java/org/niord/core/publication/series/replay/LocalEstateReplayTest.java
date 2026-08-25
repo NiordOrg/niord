@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.message.Message;
@@ -110,6 +111,9 @@ public class LocalEstateReplayTest {
         return org.niord.core.DatabaseAvailable.isAvailable() && EstateSlice.available();
     }
 
+    /** Stamped on every series this harness seeds, so cleanup can find them all. */
+    private static final String SEEDED_BY = "legacy-slice";
+
     @Inject
     EntityManager em;
 
@@ -134,6 +138,83 @@ public class LocalEstateReplayTest {
      * sweep hitting 240s on the server. A test that cannot go deep is a test that
      * only ever checks the shallow case.
      */
+    /**
+     * Everything this harness seeded, removed again.
+     *
+     * NOT tidiness. The seeds share one long-lived local database with every other
+     * test, and a deep sweep writes thousands of issues and hundreds of thousands of
+     * members. Left behind they accumulate across runs, and the first thing to break
+     * is not this test but LegacyImportServiceTest, whose dry run reads the whole
+     * Publication table inside one transaction: it went from 211s and green to 351s
+     * and five ARJUNA016102 errors, which reads as a defect in the importer and is
+     * not one. A harness that degrades its neighbours is worse than no harness.
+     *
+     * Ordered by dependency, deepest first. Bulk JPQL rather than cascades: the
+     * whole point is to avoid loading hundreds of thousands of rows to delete them.
+     */
+    @AfterEach
+    @Transactional
+    public void removeWhatWasSeeded() {
+        List<Long> seriesIds = em.createQuery(
+                "SELECT s.id FROM PublicationSeries s WHERE s.importSource = :src", Long.class)
+                .setParameter("src", SEEDED_BY).getResultList();
+        if (seriesIds.isEmpty()) {
+            return;
+        }
+
+        List<Long> issueIds = em.createQuery(
+                "SELECT i.id FROM PublicationIssue i WHERE i.series.id IN :series", Long.class)
+                .setParameter("series", seriesIds).getResultList();
+
+        // Publication carries NO reference to a series -- it is the legacy entity, and
+        // the issue points at it by legacyPublicationId. So the releases have to be
+        // named before their issues are deleted, or the only path to them is gone.
+        // They matter: they are what the legacy import reads, and it reads ALL of
+        // them in one transaction.
+        List<String> releaseIds = issueIds.isEmpty() ? List.of() : em.createQuery(
+                "SELECT i.legacyPublicationId FROM PublicationIssue i WHERE i.id IN :issues "
+                        + "AND i.legacyPublicationId IS NOT NULL", String.class)
+                .setParameter("issues", issueIds).getResultList();
+
+        if (!issueIds.isEmpty()) {
+            em.createQuery("DELETE FROM IssueMember m WHERE m.issue.id IN :issues")
+                    .setParameter("issues", issueIds).executeUpdate();
+            em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.issue.id IN :issues")
+                    .setParameter("issues", issueIds).executeUpdate();
+        }
+
+        // ShadowDiffRun keys on the series' STRING seriesId, not on a relation --
+        // it outlives the rows it describes, which is the point of a shadow diff.
+        List<String> seriesKeys = em.createQuery(
+                "SELECT s.seriesId FROM PublicationSeries s WHERE s.importSource = :src", String.class)
+                .setParameter("src", SEEDED_BY).getResultList();
+        if (!seriesKeys.isEmpty()) {
+            em.createQuery("DELETE FROM ShadowDiffRun r WHERE r.seriesId IN :keys")
+                    .setParameter("keys", seriesKeys).executeUpdate();
+        }
+        em.createQuery("DELETE FROM PublicationIssue i WHERE i.series.id IN :series")
+                .setParameter("series", seriesIds).executeUpdate();
+        if (!releaseIds.isEmpty()) {
+            // The TEMPLATE each release hangs off is a Publication too, and no issue
+            // names it -- so it has to be read from the releases before they go, or it
+            // survives every cleanup and the table grows by one template per seed.
+            List<String> templateIds = em.createQuery(
+                    "SELECT DISTINCT p.template.publicationId FROM Publication p "
+                            + "WHERE p.publicationId IN :releases AND p.template IS NOT NULL",
+                    String.class)
+                    .setParameter("releases", releaseIds).getResultList();
+
+            em.createQuery("DELETE FROM Publication p WHERE p.publicationId IN :releases")
+                    .setParameter("releases", releaseIds).executeUpdate();
+            if (!templateIds.isEmpty()) {
+                em.createQuery("DELETE FROM Publication p WHERE p.publicationId IN :templates")
+                        .setParameter("templates", templateIds).executeUpdate();
+            }
+        }
+        em.createQuery("DELETE FROM PublicationSeries s WHERE s.id IN :series")
+                .setParameter("series", seriesIds).executeUpdate();
+    }
+
     @Test
     public void consecutiveRealReleasesResolveToWhatTheyFroze() {
         QuarkusTransaction.requiringNew().timeout(REPLAY_TIMEOUT_SECONDS).run(this::replay);
@@ -540,7 +621,7 @@ public class LocalEstateReplayTest {
         PublicationSeries s = new PublicationSeries();
         s.setSeriesId("slice-" + UUID.randomUUID().toString().substring(0, 8));
         s.setStatus(SeriesStatus.DRAFT);
-        s.setImportSource("legacy-slice");
+        s.setImportSource(SEEDED_BY);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         EstateSlice.Series shape = EstateSlice.series(estateSeriesId);
         s.setCadence(shape != null && shape.cadence() != null

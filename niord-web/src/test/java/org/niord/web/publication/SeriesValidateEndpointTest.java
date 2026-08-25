@@ -125,6 +125,33 @@ public class SeriesValidateEndpointTest {
                         + errors.stream().map(e -> e.get("rule")).toList());
     }
 
+    /**
+     * S-19: a series with no category is reported, not left to the flush.
+     *
+     * PublicationSeries.category is NOT NULL. Before the rule existed, creating a
+     * series without one died inside Hibernate with "not-null property references a
+     * null or transient value" -- a 500 naming a Java field, against an admin who
+     * had simply left a dropdown alone.
+     *
+     * The SECOND time this column has been found unset. The importer was given
+     * planCategoryOf after the first; the interactive create path never got the
+     * equivalent, so the same defect sat on a route nobody had walked until a
+     * settings screen walked it.
+     */
+    @Test
+    public void aSeriesWithNoCategoryIsReported() {
+        List<Map<String, String>> errors =
+                PublicationSeriesRestService.validationReport(completeSeries(), INSTALLATION_LANGUAGES);
+
+        assertTrue(errors.stream().anyMatch(e -> "S-19".equals(e.get("rule"))),
+                "a series with no category passed validation, so the NOT NULL column is still "
+                        + "discovered at flush time as a 500. Got "
+                        + errors.stream().map(e -> e.get("rule")).toList());
+        assertTrue(errors.stream().filter(e -> "S-19".equals(e.get("rule")))
+                        .allMatch(e -> "categoryId".equals(e.get("field"))),
+                "S-19 must name categoryId, so the form can render it against the dropdown");
+    }
+
     /** A minimally complete query-backed weekly series, used as the baseline to break. */
     private static SystemPublicationSeriesVo completeSeries() {
         SystemPublicationSeriesVo vo = new SystemPublicationSeriesVo();

@@ -235,6 +235,23 @@ public final class SeriesValidator {
             }
         }
 
+        // S-19. A series belongs to a category, because the COLUMN says so.
+        //
+        // PublicationSeries.category is NOT NULL. Without a rule here the constraint
+        // is discovered by Hibernate at flush time and surfaces as a 500 with a
+        // message about a transient value -- which tells an admin nothing about the
+        // empty dropdown that caused it.
+        //
+        // This is the SECOND time this column has been found unset. The importer got
+        // planCategoryOf; the interactive create path was never given the equivalent,
+        // so the same defect existed on a route nobody had walked. A rule covers
+        // every route at once, which is why it belongs here rather than in create().
+        if (s.getCategory() == null) {
+            e.add(new FieldError("S-19", "categoryId",
+                    "a series must belong to a publication category; the column is NOT NULL and a "
+                            + "missing one fails at flush time as a 500 rather than as an answer"));
+        }
+
         // C-1 to C-10, on the criteria document itself.
         for (CriteriaValidator.Violation v : CriteriaValidator.validate(s.getCriteria(), CriteriaValidator.ACCEPT_ALL)) {
             e.add(new FieldError(v.rule(), "criteria" + v.pointer(), v.message()));

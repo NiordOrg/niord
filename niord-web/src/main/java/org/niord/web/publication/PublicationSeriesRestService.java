@@ -195,6 +195,20 @@ public class PublicationSeriesRestService {
         series.updateFromVo(vo);
         resolveReferences(series, vo);
 
+        // S-19, checked here rather than left to the flush.
+        //
+        // The category column is NOT NULL, so a series without one dies inside
+        // Hibernate with "not-null property references a null or transient value" --
+        // a 500 that names a Java field and tells an admin nothing about the empty
+        // dropdown that caused it. A DRAFT is allowed to be incomplete in every
+        // other respect; this one is a database constraint rather than a rule about
+        // completeness, so it cannot wait for activation.
+        if (series.getCategory() == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "a category is required: every series belongs to one, and it decides where the "
+                            + "series appears on the public page");
+        }
+
         // Created as DRAFT whatever the client asked for. ACTIVE is what puts a
         // series in the picker, and S-17 requires a complete series for that --
         // so activation is the status transition, which validates. Letting create
