@@ -58,6 +58,27 @@ public class PublicationSeriesService extends BaseService {
         return series;
     }
 
+    /**
+     * Whether any issue of this series has ever been published.
+     *
+     * S-18 turns on it: a citation lives in whichever message field the series was
+     * configured to use, so once an issue is out, moving the channel makes every
+     * existing citation unfindable. RETIRED counts -- it was published and the
+     * citations it wrote are still in the messages.
+     */
+    public boolean hasPublishedIssue(PublicationSeries series) {
+        if (series == null || series.getId() == null) {
+            return false;
+        }
+        Long n = em.createQuery(
+                        "SELECT COUNT(i) FROM PublicationIssue i WHERE i.series = :s "
+                                + "AND i.status <> org.niord.core.publication.series.IssueStatus.OPEN",
+                        Long.class)
+                .setParameter("s", series)
+                .getSingleResult();
+        return n != null && n > 0;
+    }
+
     public PublicationSeries update(PublicationSeries series) {
         removeBlankDescs(series);
         checkMessagePublicationImmutable(series);

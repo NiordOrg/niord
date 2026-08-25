@@ -43,6 +43,12 @@ public final class PublicationErrorCatalogue {
         put("NO_SUCH_LANGUAGE", 400);
         put("RETRO_CREATE_NOT_APPLICABLE", 400);
         put("SERIES_INVALID", 400);
+
+        // 400, not 409: a state conflict may succeed once the state changes, and
+        // this one never will. seriesId is the import/export key and the citation
+        // handle, so it is immutable after create -- retrying the same rename is
+        // futile and a client that treats it as transient would loop.
+        put("SERIES_ID_IMMUTABLE", 400);
         // 400 and not 409, though it reads like a state conflict. The 409 group
         // means "the same request may succeed later"; this one never can. Once a
         // series has released an issue, the field is fixed for its lifetime, and

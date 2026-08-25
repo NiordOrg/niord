@@ -30,6 +30,7 @@ import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.SeriesValidator;
 import org.niord.core.publication.series.resolve.IssueNaming;
 import org.niord.core.publication.series.vo.PublicationSeriesVo;
@@ -208,6 +209,82 @@ public class PublicationSeriesRestService {
             }
             series.setDomain(domain);
         }
+    }
+
+    /**
+     * S9. Update a series.
+     *
+     * The settings screen has nowhere to save to without this, so every
+     * configuration an imported series needs before it can be reviewed and
+     * activated -- criteria included -- was unreachable.
+     *
+     * THREE GUARDS, and they are not the same guard.
+     *
+     * S-16: seriesId is the import/export key and the citation handle. Changing it
+     * renames the thing every stored reference points at, so the path id wins and a
+     * body disagreeing with it is refused rather than silently ignored -- a caller
+     * that thinks it renamed a series and did not is worse off than one that got an
+     * error.
+     *
+     * S-18: messagePublication cannot move once an issue has published, because a
+     * citation lives in whichever field was configured at the time. Changing the
+     * channel makes every existing citation unfindable and re-applying appends a
+     * duplicate rather than replacing.
+     *
+     * S-17: an ACTIVE series may not be edited INTO incompleteness. Activation
+     * already validates; without the same check here an admin could activate a
+     * valid series and then remove the criteria it was activated for, which is the
+     * same end state by a longer route.
+     */
+    @PUT
+    @Path("/series/{seriesId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationSeriesVo update(@PathParam("seriesId") String seriesId,
+                                           SystemPublicationSeriesVo vo) {
+        if (vo == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "a series body is required");
+        }
+        if (vo.getSeriesId() != null && !vo.getSeriesId().isBlank()
+                && !seriesId.equals(vo.getSeriesId())) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_ID_IMMUTABLE",
+                    "seriesId is the import/export key and the citation handle; it cannot be changed "
+                            + "after create. The path says '" + seriesId + "' and the body says '"
+                            + vo.getSeriesId() + "'");
+        }
+
+        PublicationSeries series = required(seriesId);
+
+        // Captured BEFORE the update, because updateFromVo overwrites the entity in
+        // place and there is nothing left to compare against afterwards.
+        MessagePublication publicationBefore = series.getMessagePublication();
+        boolean anyPublished = seriesService.hasPublishedIssue(series);
+
+        // The status is NOT taken from the body. S10 owns the transition and
+        // validates it; letting a save carry a status would route around that.
+        SeriesStatus status = series.getStatus();
+        series.updateFromVo(vo);
+        series.setSeriesId(seriesId);
+        series.setStatus(status);
+        resolveReferences(series, vo);
+
+        if (anyPublished && publicationBefore != series.getMessagePublication()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "S-18: changing the citation channel after an issue has published makes every "
+                            + "existing citation unfindable -- it lives in the other field -- and "
+                            + "re-applying appends a duplicate rather than replacing");
+        }
+
+        List<SeriesValidator.FieldError> errors =
+                SeriesValidator.validateForActivation(series, null);
+        if (status == SeriesStatus.ACTIVE && !errors.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    errors.size() + " rule(s) fail: " + errors);
+        }
+
+        return seriesService.update(series).toVo(SystemPublicationSeriesVo.class);
     }
 
     /** S10. Status transition, validated. */
