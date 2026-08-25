@@ -9,6 +9,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
 import java.util.List;
 import java.util.UUID;
@@ -72,6 +73,61 @@ public class PublicationSeriesPersistenceTest {
             d.setNameSuggestionPattern("Pattern ${week} " + lang);
         }
         return s;
+    }
+
+    // ------------------------------------------------- updating an existing series
+
+    /**
+     * A saved series can be EDITED, which is not the same as being saved once.
+     *
+     * updateFromVo clears the desc list and rebuilds it, and the desc table is
+     * unique on (lang, entity_id). Hibernate orders inserts before deletes inside a
+     * flush, so re-adding "da" while the old "da" row is still there violates that
+     * constraint -- and the flush happens wherever the next query does, which was
+     * inside a category lookup whose catch-all reported the failure as "no such
+     * publication category". The series had a perfectly good category.
+     *
+     * Every test here created a series and stopped. Nothing had edited one, so the
+     * second save -- the ordinary one, the one an admin does most -- was never run.
+     */
+    @Test
+    @Transactional
+    public void aSavedSeriesCanBeEditedAndSavedAgain() {
+        PublicationSeries saved = seriesService.create(aSeries("da", "en"));
+        em.flush();
+
+        SystemPublicationSeriesVo vo = saved.toVo(SystemPublicationSeriesVo.class);
+        vo.getDescs().forEach(d -> d.setName("Renamed in " + d.getLang()));
+
+        PublicationSeries reloaded = seriesService.findBySeriesId(saved.getSeriesId());
+        reloaded.updateFromVo(vo);
+
+        // The flush is what fails, so it has to be forced here rather than left to
+        // whatever query happens to run next and swallow it.
+        em.flush();
+
+        assertEquals(2, reloaded.getDescs().size());
+        assertTrue(reloaded.getDescs().stream().allMatch(d -> d.getName().startsWith("Renamed")),
+                "the edit did not survive: " + reloaded.getDescs().stream().map(d -> d.getName()).toList());
+    }
+
+    /** A language dropped from the payload is a language deleted. */
+    @Test
+    @Transactional
+    public void alanguageRemovedFromThePayloadIsRemovedFromTheSeries() {
+        PublicationSeries saved = seriesService.create(aSeries("da", "en"));
+        em.flush();
+
+        SystemPublicationSeriesVo vo = saved.toVo(SystemPublicationSeriesVo.class);
+        vo.getDescs().removeIf(d -> "en".equals(d.getLang()));
+        vo.getLanguages().remove("en");
+
+        PublicationSeries reloaded = seriesService.findBySeriesId(saved.getSeriesId());
+        reloaded.updateFromVo(vo);
+        em.flush();
+
+        assertEquals(List.of("da"), reloaded.getDescs().stream().map(d -> d.getLang()).toList(),
+                "a desc the client did not send is one the client deleted");
     }
 
     // ----------------------------------------------- C5, the per-language layer

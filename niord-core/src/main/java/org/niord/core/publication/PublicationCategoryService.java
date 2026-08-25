@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import java.util.List;
 
@@ -41,14 +42,23 @@ public class PublicationCategoryService extends BaseService {
      * @param categoryId the category ID
      * @return the category with the given category ID or null if not found
      */
+    /**
+     * The category with this id, or null when there is none.
+     *
+     * NoResultException ONLY. Catching Exception here turned every failure into
+     * "no such category" -- including the auto-flush that a query triggers, so a
+     * caller that had mutated an entity first got told its perfectly good category
+     * did not exist. The absence of a row is an answer; anything else is a fault,
+     * and a fault reported as an answer is the harder bug of the two.
+     */
     public PublicationCategory findByCategoryId(String categoryId) {
         try {
             return em.createNamedQuery("PublicationCategory.findByCategoryId", PublicationCategory.class)
                     .setParameter("categoryId", categoryId)
                     .getSingleResult();
-        } catch (Exception ignored) {
+        } catch (NoResultException absent) {
+            return null;
         }
-        return null;
     }
 
 

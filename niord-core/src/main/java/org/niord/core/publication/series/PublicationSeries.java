@@ -510,13 +510,32 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             reportParams.putAll(vo.getReportParams());
         }
 
-        // Replaced wholesale rather than merged. A desc row that the client did
-        // not send is a row the client deleted, and merging would make deletion
-        // impossible through this path.
-        descs.clear();
+        // MERGED IN PLACE, keeping the row that already exists for a language.
+        //
+        // The semantics are the wholesale ones -- a desc the client did not send is
+        // a desc the client deleted -- but the MECHANISM has to differ. The table is
+        // unique on (lang, entity_id) and Hibernate orders inserts before deletes
+        // within a flush, so clearing the list and re-adding "da" inserts a second
+        // "da" while the first is still awaiting deletion: "Duplicate entry da-72488".
+        //
+        // Every save after the FIRST failed on it. It went unseen because the flush
+        // lands wherever the next query runs, which was a category lookup that caught
+        // Exception and returned null -- so an admin editing a series was told their
+        // perfectly good publication category did not exist.
+        List<String> sent = new ArrayList<>();
         if (vo.getDescs() != null) {
             for (PublicationSeriesDescVo dv : vo.getDescs()) {
-                PublicationSeriesDesc d = createDesc(dv.getLang());
+                sent.add(dv.getLang());
+            }
+        }
+        descs.removeIf(d -> !sent.contains(d.getLang()));
+
+        if (vo.getDescs() != null) {
+            for (PublicationSeriesDescVo dv : vo.getDescs()) {
+                PublicationSeriesDesc d = descs.stream()
+                        .filter(x -> x.getLang().equals(dv.getLang()))
+                        .findFirst()
+                        .orElseGet(() -> createDesc(dv.getLang()));
                 d.setName(dv.getName());
                 d.setNameSuggestionPattern(dv.getNameSuggestionPattern());
                 d.setFileNamePattern(dv.getFileNamePattern());
