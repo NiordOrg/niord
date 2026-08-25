@@ -892,6 +892,15 @@ public class LegacyImportService extends BaseService {
                     && series.getNominalCutoffDay() == null) {
                 series.setNominalCutoffDay(NominalSchedule.weekdayOf(cutoffs, zone));
             }
+            boolean monthly = series.getCadence() == SeriesCadence.MONTHLY
+                    || series.getCadence() == SeriesCadence.YEARLY;
+            if (monthly && series.getNominalCutoffDayOfMonth() == null) {
+                series.setNominalCutoffDayOfMonth(NominalSchedule.dayOfMonthOf(cutoffs, zone));
+            }
+            if (series.getCadence() == SeriesCadence.YEARLY
+                    && series.getNominalCutoffMonth() == null) {
+                series.setNominalCutoffMonth(NominalSchedule.monthOf(cutoffs, zone));
+            }
             if (series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL
                     && series.getFirstIssueStartsAt() == null) {
                 series.setFirstIssueStartsAt(NominalSchedule.firstIntervalStartOf(

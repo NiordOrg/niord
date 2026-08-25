@@ -81,6 +81,39 @@ public final class NominalSchedule {
     }
 
     /**
+     * The day of the month the series most often closes on, or null when unknown.
+     *
+     * S-6 requires it of a MONTHLY or YEARLY cadence. Modal for the same reason the
+     * weekday is: a yearly series that slipped from the 2nd to the 5th once is still
+     * a series that closes on the 2nd.
+     */
+    public static Integer dayOfMonthOf(List<Date> cutoffs, ZoneId zone) {
+        return modal(cutoffs, zone, t -> t.getDayOfMonth());
+    }
+
+    /** The month a YEARLY series most often closes in, 1-12, or null. Required by S-6. */
+    public static Integer monthOf(List<Date> cutoffs, ZoneId zone) {
+        return modal(cutoffs, zone, t -> t.getMonthValue());
+    }
+
+    /** The most frequent value of some field of the cut-off, in the series' own zone. */
+    private static Integer modal(List<Date> cutoffs, ZoneId zone,
+                                 java.util.function.ToIntFunction<ZonedDateTime> field) {
+        Map<Integer, Integer> counts = new LinkedHashMap<>();
+        for (Date cutoff : cutoffs) {
+            if (cutoff == null) {
+                continue;
+            }
+            counts.merge(field.applyAsInt(ZonedDateTime.ofInstant(cutoff.toInstant(), zone)),
+                    1, Integer::sum);
+        }
+        return counts.entrySet().stream()
+                .max(Comparator.comparingInt(Map.Entry::getValue))
+                .map(Map.Entry::getKey)
+                .orElse(null);
+    }
+
+    /**
      * Where the series' first interval opens, or null when it has no issue.
      *
      * S-4 requires this of an interval-based series and of nothing else, so the

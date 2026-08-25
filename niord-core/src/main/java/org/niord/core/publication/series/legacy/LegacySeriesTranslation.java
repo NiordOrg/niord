@@ -226,14 +226,29 @@ public final class LegacySeriesTranslation {
         series.setImportSource(importSource);
         series.setStatus(SeriesStatus.DRAFT);
 
+        series.setCadence(cadence(template));
+        series.setContentMode(contentMode(template));
+
+        // S-1 and S-2: a time relation and a liveness flag belong to the
+        // query-backed shape and to NOTHING else. The legacy filter was translated
+        // unconditionally, so eight publications that carry no membership at all --
+        // contentMode NONE, a link or a file -- were imported claiming to resolve
+        // messages published in an interval. Both rules then refused them, and no
+        // amount of editing could help: the screen offers those fields only to a
+        // query-backed series, so the values nobody could see were the ones
+        // blocking the save.
+        // ALWAYS translated, even when the result is thrown away. Translating is
+        // also what detects a filter nobody has taught the importer about, and that
+        // refusal has to hold for every publication -- an unknown filter on a link
+        // publication is still an estate the importer does not understand.
         LegacyFilterTranslator.Translation t =
                 LegacyFilterTranslator.translate(template.getMessageTagFilter());
-        series.setTimeRelation(t.timeRelation());
-        series.setAliveAtCutoff(t.aliveAtCutoff());
+        if (series.getContentMode() == ContentMode.GENERATED_FROM_QUERY) {
+            series.setTimeRelation(t.timeRelation());
+            series.setAliveAtCutoff(t.aliveAtCutoff());
+        }
 
-        series.setCadence(cadence(template));
         series.setNumberingScheme(numbering(template));
-        series.setContentMode(contentMode(template));
         series.setMessagePublication(template.getMessagePublication());
         series.setLanguageSpecific(template.isLanguageSpecific());
 

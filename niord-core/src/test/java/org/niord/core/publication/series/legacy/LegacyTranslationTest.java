@@ -6,6 +6,7 @@ import org.niord.core.publication.Publication;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
+import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.SeriesStatus;
@@ -23,6 +24,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,6 +67,41 @@ public class LegacyTranslationTest {
             assertEquals(templates.get(i).getPublicationId(), s.getLegacyTemplateId(),
                     "provenance travels in legacyTemplateId");
             assertNotNull(s.getImportSource());
+        }
+    }
+
+    /**
+     * Only a query-backed series carries a time relation or a liveness flag.
+     *
+     * The legacy filter was translated unconditionally, so publications with no
+     * membership at all -- contentMode NONE, a link, an uploaded file -- were
+     * imported claiming to resolve messages published in an interval. S-1 and S-2
+     * then refused all eight of them, and nothing could be done about it from the
+     * settings screen: it offers those fields to a query-backed series only, so the
+     * values blocking the save were the ones nobody could see.
+     *
+     * Asserted over the WHOLE captured estate rather than one fixture, because the
+     * question is whether any real template produces the illegal pairing.
+     */
+    @Test
+    public void onlyaQueryBackedSeriesCarriesATimeRelation() {
+        for (PublicationSeries s : series()) {
+            boolean queryBacked = s.getContentMode() == ContentMode.GENERATED_FROM_QUERY;
+            if (queryBacked) {
+                assertNotNull(s.getTimeRelation(),
+                        s.getSeriesId() + " is query-backed and must declare its time predicate (S-1)");
+                assertNotNull(s.getAliveAtCutoff(),
+                        s.getSeriesId() + " is query-backed and must say whether it filters on "
+                                + "liveness; null makes \"does not filter\" and \"filters and "
+                                + "everything passed\" indistinguishable (S-2)");
+            } else {
+                assertNull(s.getTimeRelation(),
+                        s.getSeriesId() + " has contentMode " + s.getContentMode()
+                                + " and still carries a time relation, which S-1 refuses");
+                assertNull(s.getAliveAtCutoff(),
+                        s.getSeriesId() + " has contentMode " + s.getContentMode()
+                                + " and still carries a liveness flag, which S-2 refuses");
+            }
         }
     }
 
