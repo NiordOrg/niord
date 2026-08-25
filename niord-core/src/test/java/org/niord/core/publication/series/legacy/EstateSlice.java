@@ -99,13 +99,34 @@ public final class EstateSlice {
         return out;
     }
 
-    /** The series the harvest carries, with their imported shape. */
-    public static Map<String, String> seriesCadences() {
-        Map<String, String> out = new LinkedHashMap<>();
-        JsonNode series = root().path("series");
-        series.fieldNames().forEachRemaining(
-                id -> out.put(id, series.path(id).path("cadence").asText(null)));
-        return out;
+    /**
+     * A series as the import actually shaped it, criteria and all.
+     *
+     * Harvested rather than reconstructed. Which time relation a series has, and
+     * which criteria nodes, is the thing a replay is checking the consequences
+     * of -- rebuilding it from a guess here would test the guess.
+     */
+    public record Series(String seriesId, String cadence, String timeRelation,
+                         Boolean aliveAtCutoff, String contentMode, String criteriaJson) {
+
+        public boolean inForce() {
+            return "IN_FORCE_AT_CUTOFF".equals(timeRelation);
+        }
+    }
+
+    /** The shape of one series, or null when the harvest does not carry it. */
+    public static Series series(String seriesId) {
+        JsonNode n = root().path("series").path(seriesId);
+        if (n.isMissingNode()) {
+            return null;
+        }
+        JsonNode criteria = n.path("criteria");
+        return new Series(seriesId,
+                n.path("cadence").asText(null),
+                n.path("timeRelation").asText(null),
+                n.path("aliveAtCutoff").isBoolean() ? n.path("aliveAtCutoff").asBoolean() : null,
+                n.path("contentMode").asText(null),
+                criteria.isObject() ? criteria.toString() : null);
     }
 
     /**

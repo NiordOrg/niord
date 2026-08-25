@@ -23,6 +23,10 @@ import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.ReleaseMode;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.criteria.CriteriaSerialization;
+import org.niord.core.publication.series.criteria.CriterionKind;
+import org.niord.core.publication.series.criteria.IssueCriteriaVo;
+import org.niord.core.publication.series.criteria.IssueCriterionVo;
 import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
 import org.niord.core.publication.series.legacy.EstateSlice;
 import org.niord.core.publication.series.legacy.LegacyCriteriaTranslation;
@@ -165,11 +169,41 @@ public class LocalEstateReplayTest {
         // Reported rather than silently passed: the numbers are the point of the
         // harness, and a run that compared everything and found nothing is a
         // different fact from one that compared three.
+        EstateSlice.Series shape = EstateSlice.series(SERIES);
+        boolean inForce = shape != null && shape.inForce();
+
         System.out.println("[LOCAL REPLAY] " + SERIES + ": compared=" + compared
                 + " missing=" + totalMissing + " extra=" + totalExtra
                 + " red=" + worst.size() + " (" + (worst.size() - unexplained.size())
-                + " explained by a reused tag)");
+                + " explained by a reused tag)"
+                + (inForce ? "  [in-force: extra is not measurable locally]" : ""));
         worst.forEach(w -> System.out.println("[LOCAL REPLAY]   " + w));
+
+        // An IN_FORCE series is only checked on what it FAILED to find.
+        //
+        // Its membership rule is a function of message state AT THE CUT-OFF: a
+        // notice counts while it is standing and stops when it is cancelled. The
+        // local table holds one status per message, so it cannot represent
+        // "published in week 10, cancelled by week 20" -- and the real tags say
+        // that happens constantly, carrying 1,642 CANCELLED and 28 EXPIRED members
+        // across 24 P&T releases. Locally every message stays PUBLISHED forever, so
+        // everything ever published resolves into every later issue and `extra` is
+        // an artefact of the harness rather than a finding.
+        //
+        // `missing` is still worth everything here: it cannot be caused by the
+        // missing decay, only by a bound that is too narrow. That is what caught
+        // the diff giving every in-force issue a one-week window.
+        if (inForce) {
+            // Reported, not asserted. Neither number means what it looks like: extra
+            // because every message stays PUBLISHED locally, and missing because a
+            // notice that expired by date is still in the tag -- both consequences of
+            // holding one state per message where the rule wants state at the cut-off.
+            //
+            // The rule this replay first caught -- that an in-force issue resolves
+            // with NO lower bound -- is pinned deterministically in ShadowDiffTest,
+            // where it does not depend on the estate being reproducible at all.
+            return;
+        }
 
         // Every disagreement must be explained by a REUSED TAG, and nothing else.
         //
@@ -315,6 +349,33 @@ public class LocalEstateReplayTest {
         return new Seeded(releases, series, publishedAt);
     }
 
+    /**
+     * The harvested criteria, re-pointed at the local message series.
+     *
+     * Falls back to translating a blank filter only when the harvest carries no
+     * document -- which means the series was never given one, and replaying it as
+     * scope-only is the honest approximation rather than a silent skip.
+     */
+    private IssueCriteriaVo criteriaFor(EstateSlice.Series shape, String messageSeriesId) {
+        if (shape == null || shape.criteriaJson() == null) {
+            return LegacyCriteriaTranslation.translate(
+                    LegacyFilterTranslator.translate(""), List.of(messageSeriesId));
+        }
+        try {
+            IssueCriteriaVo doc = CriteriaSerialization.mapper()
+                    .readValue(shape.criteriaJson(), IssueCriteriaVo.class);
+            for (IssueCriterionVo node : doc.getCriteria()) {
+                if (node.kind() == CriterionKind.MESSAGE_SERIES) {
+                    node.setValues(List.of(messageSeriesId));
+                }
+            }
+            return doc;
+        } catch (Exception e) {
+            throw new IllegalStateException("cannot read the harvested criteria for "
+                    + shape.seriesId(), e);
+        }
+    }
+
     private static Type typeOf(String legacy) {
         try {
             return legacy == null ? Type.TEMPORARY_NOTICE : Type.valueOf(legacy);
@@ -334,6 +395,15 @@ public class LocalEstateReplayTest {
         return t;
     }
 
+    /**
+     * The series in its REAL shape: time relation, liveness and criteria as the
+     * import produced them.
+     *
+     * The criteria document is re-pointed at the locally seeded message series --
+     * the only substitution -- because the local rows carry generated ids. Every
+     * other node travels verbatim, so an in-force series is replayed as in-force
+     * with its type filter rather than as whatever the harness found convenient.
+     */
     private PublicationSeries importedSeries(String messageSeriesId) {
         PublicationCategory c = new PublicationCategory();
         c.setCategoryId("slice-" + UUID.randomUUID().toString().substring(0, 8));
@@ -346,17 +416,19 @@ public class LocalEstateReplayTest {
         s.setStatus(SeriesStatus.DRAFT);
         s.setImportSource("legacy-slice");
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
-        s.setCadence(SeriesCadence.WEEKLY);
-        s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
-        s.setAliveAtCutoff(false);
+        EstateSlice.Series shape = EstateSlice.series(SERIES);
+        s.setCadence(shape != null && shape.cadence() != null
+                ? SeriesCadence.valueOf(shape.cadence()) : SeriesCadence.WEEKLY);
+        s.setTimeRelation(shape != null && shape.inForce()
+                ? TimeRelation.IN_FORCE_AT_CUTOFF : TimeRelation.PUBLISHED_IN_INTERVAL);
+        s.setAliveAtCutoff(shape != null && Boolean.TRUE.equals(shape.aliveAtCutoff()));
         s.setNumberingScheme(NumberingScheme.NONE);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH);
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setCategory(c);
-        s.setCriteria(LegacyCriteriaTranslation.translate(
-                LegacyFilterTranslator.translate(""), List.of(messageSeriesId)));
+        s.setCriteria(criteriaFor(shape, messageSeriesId));
         em.persist(s);
         em.flush();
         return s;

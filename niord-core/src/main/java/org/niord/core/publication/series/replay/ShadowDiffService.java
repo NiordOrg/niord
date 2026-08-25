@@ -267,7 +267,16 @@ public class ShadowDiffService {
         Date cutoff = imported != null && imported.effectiveCutoff() != null
                 ? imported.effectiveCutoff()
                 : release.getPublishDateFrom();
-        Date from = imported != null && imported.getIntervalFrom() != null
+        // The issue's lower bound VERBATIM, including when it is null.
+        //
+        // A null bound is an answer, not a gap: Interval says so itself -- "null
+        // when there is no lower bound: the first issue of a series, and every
+        // IN_FORCE_AT_CUTOFF issue, which never has one". Falling back to the
+        // previous stamp gave every in-force issue a one-week window, so a P&T
+        // release that legitimately carries everything still standing resolved to
+        // the twenty messages published that week and reported the other hundred and
+        // thirty as missing. Measured locally: 23 of 24 P&T releases red, ~130 each.
+        Date from = imported != null
                 ? imported.getIntervalFrom()
                 : previousCutoff(series, cutoff);
         run.setIntervalFrom(from);

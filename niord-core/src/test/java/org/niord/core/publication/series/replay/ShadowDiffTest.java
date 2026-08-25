@@ -204,6 +204,56 @@ public class ShadowDiffTest {
         assertNotNull(run.getSkipReason(), "and the reason is what keeps that honest");
     }
 
+    /**
+     * An IN_FORCE issue is compared with NO lower bound.
+     *
+     * Interval says it outright: previousCutoff is "null when there is no lower
+     * bound: the first issue of a series, and every IN_FORCE_AT_CUTOFF issue,
+     * which never has one". The diff used to fall back to the previous stamp
+     * whenever the bound was null, which handed every in-force release a
+     * one-week window -- so a P&T issue carrying everything still standing
+     * resolved to the twenty messages published that week and called the other
+     * hundred and thirty missing.
+     */
+    @Test
+    @Transactional
+    public void anInForceIssueIsComparedWithNoLowerBound() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+        series.setTimeRelation(TimeRelation.IN_FORCE_AT_CUTOFF);
+        series.setAliveAtCutoff(true);
+        em.flush();
+
+        Publication template = template(series);
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+
+        // A PREDECESSOR with a stamped cut-off. Without one there is nothing for the
+        // old fallback to find, and the test passes whether the bug is present or
+        // not -- which is what it did on the first attempt.
+        Publication earlier = release(template, new Date(t1.getTime() - WEEK),
+                tag(message(ms, new Date(t1.getTime() - 2 * WEEK))));
+        PublicationIssue earlierIssue = importedIssue(series, earlier);
+        earlierIssue.setCutoffStampedAt(new Date(t1.getTime() - WEEK));
+        em.flush();
+
+        Publication week = release(template, t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+
+        // An in-force issue carries no lower bound, by construction.
+        PublicationIssue issue = importedIssue(series, week);
+        issue.setIntervalFrom(null);
+        issue.setCutoffStampedAt(t1);
+        em.flush();
+
+        ShadowDiffRun run = shadowDiff.diff(week);
+
+        assertNull(run.getIntervalFrom(),
+                "a null lower bound is the ANSWER for an in-force issue, not a gap to fill "
+                        + "from the previous release -- filling it bounds a series that reaches "
+                        + "back years to a single week");
+    }
+
     // ------------------------------------------- the interval it compares over
 
     /**
