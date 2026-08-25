@@ -2,6 +2,8 @@ package org.niord.core.publication.series;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
@@ -19,6 +21,7 @@ import org.niord.core.user.User;
  * table alone. EntityIdentityTest enforces it.
  */
 @Entity
+@Table(indexes = @Index(name = "issue_override_uid_k", columnList = "messageUid"))
 public class IssueOverride extends VersionedEntity<Integer> {
 
     @ManyToOne(optional = false)
