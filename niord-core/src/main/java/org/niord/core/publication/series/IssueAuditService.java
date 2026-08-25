@@ -41,6 +41,11 @@ public class IssueAuditService extends BaseService {
             "REACTIVATED",
             "SUPERSEDED_BY",
             "DELETED",
+            // Specific, never a generic UPDATE: a Historik panel cannot render
+            // "something changed", and each of these carries the before and after
+            // that makes the line answer the question it was opened for.
+            "INTERVAL_CHANGED",
+            "NAME_CHANGED",
             "OVERRIDE_INCLUDED",
             "OVERRIDE_EXCLUDED",
             "OVERRIDE_REMOVED",
@@ -132,6 +137,21 @@ public class IssueAuditService extends BaseService {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("messageUid", messageUid);
         return write(issue, action, ActorKind.USER, actor, reason, detail);
+    }
+
+    /**
+     * An edit, with the before and after it changed.
+     *
+     * The detail is the entry. A Historik line reading "the interval changed"
+     * answers nothing an admin came to the panel for -- they are there because
+     * the members are not what they expected, and the question is what the
+     * interval changed FROM. That is also why there is no generic UPDATE action:
+     * a panel cannot render "something changed".
+     */
+    public IssueAuditEntry edited(PublicationIssue issue, User actor, String action,
+                                  Map<String, Object> detail) {
+        return write(issue, action, actor == null ? ActorKind.SYSTEM : ActorKind.USER, actor, null,
+                detail == null ? Map.of() : detail);
     }
 
     /** A series-level event. DM-Q2: the audit is generalised, so this has no issue. */

@@ -16,6 +16,13 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.WebApplicationException;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.niord.core.user.UserService;
+import org.niord.core.batch.AbstractBatchableRestService;
+import org.niord.core.user.Roles;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.series.replay.DiagnosticReportService;
@@ -75,10 +82,13 @@ import java.util.Set;
 @RequestScoped
 @Transactional
 @SuppressWarnings("unused")
-public class PublicationSeriesRestService {
+public class PublicationSeriesRestService extends AbstractBatchableRestService {
 
     @Inject
     PublicationSeriesService seriesService;
+
+    @Inject
+    UserService userService;
 
     @Inject
     NiordApp app;
@@ -832,6 +842,61 @@ public class PublicationSeriesRestService {
         out.put("violations", result.violations());
         out.put("triggerAudit", result.triggerAudit());
         return out;
+    }
+
+    /**
+     * Exports every series as the JSON the importer reads back.
+     *
+     * The same shape as /search-details, and that is the point: one format, so a
+     * round trip cannot lose a field only one side knows about.
+     *
+     * @PermitAll with the role checked in code, not @RolesAllowed. A browser
+     * opening an export in a new tab sends no bearer token, so the download flow
+     * authenticates with a one-time `?ticket=` instead -- and a declarative role
+     * annotation refuses the request before the ticket is ever read. Every other
+     * admin export in the system is shaped this way for the same reason.
+     */
+    @GET
+    @Path("/export")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @PermitAll // admin role enforced programmatically, so the ticket flow works
+    @NoCache
+    public List<SystemPublicationSeriesVo> exportSeries() {
+        if (!userService.isCallerInRole("admin")) {
+            throw new WebApplicationException(403);
+        }
+        List<SystemPublicationSeriesVo> out = new ArrayList<>();
+        for (PublicationSeries s : seriesService.findAll()) {
+            out.add(s.toVo(SystemPublicationSeriesVo.class));
+        }
+        return out;
+    }
+
+    /**
+     * Imports series from an uploaded JSON file, as a background batch job.
+     *
+     * The file format is whatever /search-details emits, unchanged. There is no
+     * export endpoint for the same reason: the admin list IS the export, so there
+     * are not two formats that can drift apart, and a round trip cannot lose a
+     * field only one side knows about.
+     *
+     * Upsert by seriesId, and never ACTIVE -- an imported series arrives DRAFT
+     * and an existing one keeps the status it had. Activation validates against
+     * S-1..S-20, and a file that could set it would route around every one of
+     * them, which is precisely what a file written against another installation's
+     * categories, domains and reports would do.
+     *
+     * The same batch-job shape as every other admin import in the system, so it
+     * appears in the Batch Jobs screen and its log says which rows were dropped.
+     */
+    @POST
+    @Path("/upload-series")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed(Roles.SYSADMIN)
+    public String importSeries(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "publication-series-import");
     }
 
     private PublicationSeries required(String seriesId) {

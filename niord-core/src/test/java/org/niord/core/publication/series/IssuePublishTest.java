@@ -543,11 +543,11 @@ public class IssuePublishTest {
         // The count is a tripwire, not a rule: every action needs a translation
         // key, and one added without one renders in the Historik panel as its own
         // raw key. Bumping this number is the moment to add it.
-        assertEquals(22, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
+        assertEquals(24, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
         assertTrue(IssueAuditService.ACTIONS.containsAll(
-                        List.of("LINK_SET", "LINK_CLEARED")),
-                "a link is the published artefact of an external publication, so changing one is "
-                        + "as much a change to what the public sees as replacing a file");
+                        List.of("LINK_SET", "LINK_CLEARED", "INTERVAL_CHANGED", "NAME_CHANGED")),
+                "the vocabulary is specific by design: a Historik panel cannot render "
+                        + "'something changed', so every mutation an admin can make has its own value");
     }
 
     /** Double publish returns the already-published signal, carrying the winner's stamp. */

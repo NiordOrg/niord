@@ -36,6 +36,7 @@ import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssuePublishService;
+import org.niord.core.publication.series.IssueEditService;
 import org.niord.core.publication.series.IssueFileService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
@@ -93,6 +94,9 @@ public class PublicationIssueRestService {
 
     @Inject
     IssueFileService fileService;
+
+    @Inject
+    IssueEditService editService;
 
     @Inject
     IssueCurationService curation;
@@ -495,6 +499,59 @@ public class PublicationIssueRestService {
     @RolesAllowed("admin")
     public void delete(@PathParam("publicId") String publicId) {
         lifecycle.deleteIssue(required(publicId), null);
+    }
+
+    /**
+     * I8. Edit an OPEN issue: its names, its interval, its report parameters.
+     *
+     * The one thing an admin could not do. An issue's name is minted at create
+     * from the series' pattern over a PROVISIONAL interval start -- the lifecycle
+     * service says so in as many words, "a suggested name, not final; an admin
+     * may override it before then" -- and there was no way to. Likewise the
+     * interval: a recovered period is created from a bound somebody worked out,
+     * and correcting it meant deleting the issue and creating it again.
+     *
+     * The document fields are deliberately not accepted here. A file and a link
+     * have their own endpoints, which archive, guard file-name collisions and
+     * audit; two write paths to one field is how they come to disagree.
+     */
+    @PUT
+    @Path("/issue/{publicId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationIssueVo update(@PathParam("publicId") String publicId,
+                                           UpdateIssueRequest request) {
+        PublicationIssue issue = required(publicId);
+        editService.update(issue, editOf(request), userService.currentUser());
+        em.flush();
+        return required(publicId).toVo(SystemPublicationIssueVo.class);
+    }
+
+    /**
+     * What an edit may change, and nothing more.
+     *
+     * Every field is optional and absent means "leave it alone", so a caller
+     * renaming an issue does not have to send the interval back correctly. A form
+     * that round-trips a field in order to change a different one will eventually
+     * round-trip a stale value.
+     */
+    public record UpdateIssueRequest(Map<String, String> names,
+                                     Long intervalFrom,
+                                     Long intervalTo,
+                                     Map<String, Object> reportParams) {
+    }
+
+    /** The wire shape as the service's own. Epoch millis in, Date out. */
+    static IssueEditService.IssueEdit editOf(UpdateIssueRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return new IssueEditService.IssueEdit(
+                request.names(),
+                request.intervalFrom() == null ? null : new Date(request.intervalFrom()),
+                request.intervalTo() == null ? null : new Date(request.intervalTo()),
+                request.reportParams());
     }
 
     // ------------------------------------------------------------------ document

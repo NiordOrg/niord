@@ -1,0 +1,12 @@
+<job id="publication-series-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <listeners>
+        <listener ref="batchJobListener"/>
+    </listeners>
+    <step id="importPublicationSeriesStep">
+        <chunk item-count="10">
+            <reader ref="batchPublicationSeriesImportReader" />
+            <processor ref="batchPublicationSeriesImportProcessor"/>
+            <writer ref="batchPublicationSeriesImportWriter" />
+        </chunk>
+    </step>
+</job>
