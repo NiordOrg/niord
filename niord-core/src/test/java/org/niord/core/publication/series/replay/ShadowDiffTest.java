@@ -204,6 +204,50 @@ public class ShadowDiffTest {
         assertNotNull(run.getSkipReason(), "and the reason is what keeps that honest");
     }
 
+    // ------------------------------------------- the interval it compares over
+
+    /**
+     * The comparison uses the ISSUE's interval, not the nominal release time.
+     *
+     * The release action runs a little after the bound it closes -- twenty to
+     * thirty minutes in this archive -- and it sweeps up everything published up
+     * to the moment it runs. Bounding the resolution at the NOMINAL time therefore
+     * drops exactly those messages, and they are in the tag, so every one of them
+     * was reported as a missing member.
+     *
+     * Measured before the fix: every still-PUBLISHED member the diff called missing
+     * had been published 20-35 minutes after the nominal bound.
+     */
+    @Test
+    @Transactional
+    public void theComparisonUsesTheIssuesOwnCutoffRatherThanTheNominalReleaseTime() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date nominal = new Date(System.currentTimeMillis() - WEEK);
+        Date actuallyReleased = new Date(nominal.getTime() + 30 * 60_000L);
+
+        // Published AFTER the nominal bound but BEFORE the release ran: in the tag,
+        // and invisible to a resolution bounded at the nominal time.
+        Message late = message(ms, new Date(nominal.getTime() + 10 * 60_000L));
+        Publication week = release(template(series), nominal, tag(late));
+
+        PublicationIssue issue = importedIssue(series, week);
+        issue.setIntervalFrom(new Date(nominal.getTime() - WEEK));
+        issue.setCutoffStampedAt(actuallyReleased);
+        em.flush();
+
+        ShadowDiffRun run = shadowDiff.diff(week);
+
+        assertEquals(actuallyReleased, run.getCutoffAt(),
+                "the comparison must bound at the moment membership was frozen, not at the "
+                        + "nominal release time the archive never actually used");
+        assertTrue(run.missing().isEmpty(),
+                "a message published between the nominal bound and the release is IN the tag; "
+                        + "bounding at the nominal time reports it missing forever");
+    }
+
     // ------------------------------------------------ a skip is not an answer
 
     /**
@@ -469,6 +513,18 @@ public class ShadowDiffTest {
     }
 
     /** An imported issue whose file somebody replaced by hand. */
+    /** An imported issue for a release, with no sticky file. */
+    private PublicationIssue importedIssue(PublicationSeries series, Publication release) {
+        PublicationIssue i = new PublicationIssue();
+        i.setSeries(series);
+        i.setPublicId(UUID.randomUUID().toString());
+        i.setLegacyPublicationId(release.getPublicationId());
+        i.setRepoPath("shadow/" + UUID.randomUUID().toString().substring(0, 8));
+        em.persist(i);
+        em.flush();
+        return i;
+    }
+
     private PublicationIssue importedIssueWithStickyFile(PublicationSeries series,
                                                          Publication release) {
         PublicationIssue i = new PublicationIssue();

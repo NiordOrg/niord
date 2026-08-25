@@ -223,8 +223,25 @@ public class ShadowDiffService {
             return run;
         }
 
-        Date cutoff = release.getPublishDateFrom();
-        Date from = previousCutoff(series, cutoff);
+        // The interval the ISSUE claims, not one re-derived here.
+        //
+        // This used to bound the resolution with publishDateFrom -- the NOMINAL
+        // release time -- and that is not when membership was frozen. The release
+        // action runs a little after the nominal bound, typically twenty to thirty
+        // minutes, and it sweeps up everything published up to the moment it runs.
+        // Measured: every still-PUBLISHED member the diff reported missing had been
+        // published 20-35 minutes AFTER the nominal bound, and was in the tag.
+        //
+        // Re-deriving the interval also made this a second source of truth for it.
+        // The issue now carries a correct one, so the honest comparison is what the
+        // issue says it covers against what the tag recorded.
+        PublicationIssue imported = importedIssue(release);
+        Date cutoff = imported != null && imported.effectiveCutoff() != null
+                ? imported.effectiveCutoff()
+                : release.getPublishDateFrom();
+        Date from = imported != null && imported.getIntervalFrom() != null
+                ? imported.getIntervalFrom()
+                : previousCutoff(series, cutoff);
         run.setIntervalFrom(from);
         run.setCutoffAt(cutoff);
 
@@ -277,11 +294,7 @@ public class ShadowDiffService {
             return "NO_CUTOFF";
         }
 
-        PublicationIssue imported = em.createQuery(
-                        "SELECT i FROM PublicationIssue i WHERE i.legacyPublicationId = :id",
-                        PublicationIssue.class)
-                .setParameter("id", release.getPublicationId())
-                .getResultStream().findFirst().orElse(null);
+        PublicationIssue imported = importedIssue(release);
 
         if (imported != null && imported.getDescs() != null
                 && imported.getDescs().stream().anyMatch(PublicationIssueDesc::isFileSourceSticky)) {
@@ -298,6 +311,22 @@ public class ShadowDiffService {
      * shadow runs continue it afterwards -- neither alone spans the changeover,
      * and the first release after an import would otherwise have no predecessor
      * and resolve over an unbounded window.
+     */
+    /** The issue this legacy release was imported as, or null. */
+    private PublicationIssue importedIssue(Publication release) {
+        return em.createQuery(
+                        "SELECT i FROM PublicationIssue i WHERE i.legacyPublicationId = :id",
+                        PublicationIssue.class)
+                .setParameter("id", release.getPublicationId())
+                .getResultStream().findFirst().orElse(null);
+    }
+
+    /**
+     * The fallback lower bound, for a release with no imported issue to ask.
+     *
+     * Kept because the issue is the better answer only when there IS one; this is
+     * what the diff used for every release before the issues carried a correct
+     * interval of their own.
      */
     private Date previousCutoff(PublicationSeries series, Date before) {
         Date fromIssues = em.createQuery(
