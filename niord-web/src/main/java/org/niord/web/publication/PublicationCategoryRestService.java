@@ -17,6 +17,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.PublicationCategoryDesc;
 import org.niord.core.publication.series.IssueLifecycleService;
 
 import java.util.ArrayList;
@@ -73,6 +74,84 @@ public class PublicationCategoryRestService {
         return toMap(required(categoryId), lang);
     }
 
+    /**
+     * C4. Create.
+     *
+     * There was no way to make a category at all. That mattered once S-19 made one
+     * mandatory to save a series: an admin could be blocked by a required field
+     * whose set of legal values nothing in the product could extend.
+     */
+    @POST
+    @Path("/publication-category/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Map<String, Object> create(Map<String, Object> body) {
+        Object rawId = body == null ? null : body.get("categoryId");
+        String categoryId = rawId == null ? null : rawId.toString().trim();
+        if (categoryId == null || categoryId.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_INVALID",
+                    "categoryId is required; it is the stable key a series stores");
+        }
+        Long taken = em.createQuery(
+                        "SELECT COUNT(c) FROM PublicationCategory c WHERE c.categoryId = :id", Long.class)
+                .setParameter("id", categoryId).getSingleResult();
+        if (taken > 0) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_ID_TAKEN",
+                    "a publication category with id '" + categoryId + "' already exists");
+        }
+
+        PublicationCategory c = new PublicationCategory();
+        c.setCategoryId(categoryId);
+        // Sorted last by default rather than first: a new category appearing above
+        // the established ones on the public page is a surprise nobody asked for.
+        c.setPriority(body.containsKey("priority") && body.get("priority") != null
+                ? ((Number) body.get("priority")).intValue() : LOWEST_PRIORITY);
+        c.setPublish(Boolean.TRUE.equals(body.get("publish")));
+        applyDescs(c, body);
+        em.persist(c);
+        return toMap(c, null);
+    }
+
+    /** Sorted after everything that already exists. */
+    private static final int LOWEST_PRIORITY = 1000;
+
+    /**
+     * The per-language names, merged in place.
+     *
+     * In place, not cleared and rebuilt: the desc table is unique on (lang, entity)
+     * and Hibernate orders inserts before deletes within a flush, so rebuilding a
+     * row for a language that already has one collides with itself. The series
+     * model was found failing exactly that way on every edit after the first.
+     */
+    @SuppressWarnings("unchecked")
+    static void applyDescs(PublicationCategory c, Map<String, Object> body) {
+        Object raw = body.get("descs");
+        if (!(raw instanceof List<?> incoming)) {
+            return;
+        }
+        List<String> sent = new ArrayList<>();
+        for (Object o : incoming) {
+            if (o instanceof Map<?, ?> m && m.get("lang") != null) {
+                sent.add(m.get("lang").toString());
+            }
+        }
+        c.getDescs().removeIf(d -> !sent.contains(d.getLang()));
+
+        for (Object o : incoming) {
+            if (!(o instanceof Map<?, ?> m) || m.get("lang") == null) {
+                continue;
+            }
+            String lang = m.get("lang").toString();
+            PublicationCategoryDesc d = c.getDescs().stream()
+                    .filter(x -> lang.equals(x.getLang()))
+                    .findFirst()
+                    .orElseGet(() -> c.createDesc(lang));
+            d.setName(m.get("name") == null ? null : m.get("name").toString());
+            d.setDescription(m.get("description") == null ? null : m.get("description").toString());
+        }
+    }
+
     /** C5. Update. */
     @PUT
     @Path("/publication-category/{categoryId}")
@@ -88,6 +167,9 @@ public class PublicationCategoryRestService {
         if (body.containsKey("publish")) {
             c.setPublish(Boolean.TRUE.equals(body.get("publish")));
         }
+        // The NAMES, which this could not previously change -- so a category could be
+        // created with a typo and never corrected, and the public page carries these.
+        applyDescs(c, body);
         return toMap(em.merge(c), null);
     }
 
