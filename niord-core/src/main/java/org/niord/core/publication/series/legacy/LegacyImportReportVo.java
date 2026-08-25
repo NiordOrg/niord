@@ -73,6 +73,17 @@ public class LegacyImportReportVo implements IJsonSerializable {
     private int categoriesSeen;
     private int categoriesCreated;
     private int seriesImported;
+
+    /** Query-backed series that got a translated criteria document. */
+    private int seriesCriteriaWritten;
+
+    /**
+     * Query-backed series left WITHOUT one, because the archive showed no message
+     * series to scope them by. They will refuse to activate until somebody
+     * authors the criteria, which is the honest outcome -- an unscoped document
+     * would resolve over every message in the system.
+     */
+    private int seriesWithoutCriteria;
     private int issuesImported;
     private Map<String, Integer> issuesByStatus = new LinkedHashMap<>();
     private Map<String, Integer> issuesByCutoffSource = new LinkedHashMap<>();
@@ -149,4 +160,21 @@ public class LegacyImportReportVo implements IJsonSerializable {
     public void setProblems(List<ProblemVo> problems) {
         this.problems = problems == null ? new ArrayList<>() : problems;
     }
+
+    public int getSeriesCriteriaWritten() {
+        return seriesCriteriaWritten;
+    }
+
+    public void setSeriesCriteriaWritten(int seriesCriteriaWritten) {
+        this.seriesCriteriaWritten = seriesCriteriaWritten;
+    }
+
+    public int getSeriesWithoutCriteria() {
+        return seriesWithoutCriteria;
+    }
+
+    public void setSeriesWithoutCriteria(int seriesWithoutCriteria) {
+        this.seriesWithoutCriteria = seriesWithoutCriteria;
+    }
+
 }

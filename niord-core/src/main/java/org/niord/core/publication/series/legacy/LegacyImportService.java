@@ -8,7 +8,10 @@ import org.niord.core.message.MessageSeriesService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
+import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.IssueMember;
+import org.niord.core.publication.series.criteria.IssueCriteriaVo;
+import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
@@ -357,6 +360,11 @@ public class LegacyImportService extends BaseService {
         Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates, authored);
         planOrphanSeries(plan, publications, seriesByTemplate, authored);
         planIssues(plan, publications, seriesByTemplate, frozenAt);
+
+        // After the series exist and before the report is built: the document is
+        // scoped by what the archive actually drew from, which is a fact about
+        // the tagged messages rather than about any one series row.
+        planSeriesCriteria(plan, templates, publications, seriesByTemplate);
         assertSeriesIdsAreUnique(plan);
 
         plan.report().setSeriesImported(plan.series().size());
@@ -629,6 +637,103 @@ public class LegacyImportService extends BaseService {
                 problem(plan, "ORPHAN_SERIES_UNTRANSLATABLE", orphan, e.getMessage());
             }
         }
+    }
+
+    /**
+     * B5.3. Give every query-backed series a criteria document.
+     *
+     * Without one the series cannot be activated (S-1), so the shadow diff skips
+     * all of its releases and no green week can ever be recorded. The document is
+     * a PROPOSAL: the series lands DRAFT so an admin reviews it, and the shadow
+     * diff is what checks it against the frozen members release by release.
+     *
+     * A series with no evidence gets NO document rather than an unscoped one. An
+     * unscoped document resolves over every message in the system, and an issue
+     * that silently contains everything is worse than a series that refuses to
+     * activate until somebody looks at it.
+     */
+    private void planSeriesCriteria(Plan plan, List<Publication> templates,
+                                    List<Publication> publications,
+                                    Map<String, PublicationSeries> seriesByTemplate) {
+
+        Map<String, Set<String>> scopeByTemplate = messageSeriesByTemplate(publications);
+        Map<String, Publication> templateById = new LinkedHashMap<>();
+        for (Publication t : concat(templates, publications)) {
+            templateById.putIfAbsent(t.getPublicationId(), t);
+        }
+
+        int written = 0;
+        int unscoped = 0;
+        for (Map.Entry<String, PublicationSeries> e : seriesByTemplate.entrySet()) {
+            PublicationSeries series = e.getValue();
+            if (series.getContentMode() != ContentMode.GENERATED_FROM_QUERY) {
+                // Only a query-backed series has criteria at all (S-1 refuses one
+                // on anything else).
+                continue;
+            }
+
+            Publication template = templateById.get(e.getKey());
+            if (template == null) {
+                continue;
+            }
+
+            IssueCriteriaVo doc;
+            try {
+                doc = LegacyCriteriaTranslation.translate(
+                        LegacyFilterTranslator.translate(template.getMessageTagFilter()),
+                        scopeByTemplate.getOrDefault(e.getKey(), Set.of()));
+            } catch (RuntimeException ex) {
+                problem(plan, "SERIES_CRITERIA_UNTRANSLATABLE", template, ex.getMessage());
+                continue;
+            }
+
+            if (doc == null) {
+                // Named rather than silent: the series will refuse to activate, and
+                // an admin reading the report should learn it here rather than from
+                // a validation error weeks later.
+                unscoped++;
+                log.info("no criteria for series {}: the archive shows no message series to "
+                        + "scope it by, so it will not activate until one is authored",
+                        series.getSeriesId());
+                continue;
+            }
+            series.setCriteria(doc);
+            written++;
+        }
+
+        plan.report().setSeriesCriteriaWritten(written);
+        plan.report().setSeriesWithoutCriteria(unscoped);
+    }
+
+    /**
+     * The message series each template's archive actually drew from.
+     *
+     * ONE query over the whole estate. Read off the tagged messages because the
+     * scope is nowhere else: the legacy filter does not state it, the imported
+     * series carries no domain, and legacy scoped implicitly by which recorder
+     * wrote the tag. What the tag contained is the only surviving evidence.
+     *
+     * Keyed on the TEMPLATE where there is one and on the publication itself
+     * where there is not, matching how seriesByTemplate is keyed.
+     */
+    private Map<String, Set<String>> messageSeriesByTemplate(List<Publication> publications) {
+        Map<String, Set<String>> out = new LinkedHashMap<>();
+        if (publications.isEmpty()) {
+            return out;
+        }
+
+        em.createQuery(
+                        "SELECT p.publicationId, t.publicationId, m.messageSeries.seriesId "
+                                + "FROM Publication p LEFT JOIN p.template t "
+                                + "JOIN p.messageTag tag JOIN tag.messages m "
+                                + "WHERE m.messageSeries IS NOT NULL",
+                        Object[].class)
+                .getResultStream()
+                .forEach(r -> {
+                    String key = r[1] != null ? (String) r[1] : (String) r[0];
+                    out.computeIfAbsent(key, k -> new LinkedHashSet<>()).add((String) r[2]);
+                });
+        return out;
     }
 
     private void planIssues(Plan plan, List<Publication> publications,
