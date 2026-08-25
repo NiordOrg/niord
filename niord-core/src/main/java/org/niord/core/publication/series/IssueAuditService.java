@@ -46,6 +46,11 @@ public class IssueAuditService extends BaseService {
             "OVERRIDE_REMOVED",
             "FILE_UPLOADED",
             "FILE_CLEARED",
+            // A link is the published artefact for an external publication, exactly
+            // as a file is for a hosted one, so changing one is as much a change to
+            // what the public sees as replacing the other.
+            "LINK_SET",
+            "LINK_CLEARED",
             "PREVIEW_GENERATED",
             "WINDOW_ADJUSTED",
             "IMPORTED",

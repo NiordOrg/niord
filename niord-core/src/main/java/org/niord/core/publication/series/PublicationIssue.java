@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import org.niord.core.publication.series.vo.PublicationIssueVo;
 import org.niord.core.publication.series.vo.PublicationIssueDescVo;
+import org.niord.core.publication.series.vo.SystemPublicationIssueDescVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -524,13 +525,24 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         vo.setYear(year);
         vo.setEdition(edition);
 
+        // The editor shape carries the document-management fields; the public one
+        // does not. A public reader has no use for where a file came from, and the
+        // fields only make sense next to the buttons that change them.
+        boolean editorShape = vo instanceof SystemPublicationIssueVo;
         for (PublicationIssueDesc d : getDescs()) {
-            PublicationIssueDescVo dv = new PublicationIssueDescVo();
+            PublicationIssueDescVo dv = editorShape
+                    ? new SystemPublicationIssueDescVo()
+                    : new PublicationIssueDescVo();
             dv.setLang(d.getLang());
             dv.setName(d.getName());
             dv.setFileName(d.getFileName());
             dv.setLink(d.getLink());
             dv.setMessageReferenceFormat(d.getMessageReferenceFormat());
+            if (dv instanceof SystemPublicationIssueDescVo sysDesc) {
+                sysDesc.setHref(IssuePublicationMapping.linkOf(d));
+                sysDesc.setFileSource(d.getFileSource() == null ? null : d.getFileSource().name());
+                sysDesc.setFileSourceSticky(d.isFileSourceSticky());
+            }
             vo.getDescs().add(dv);
         }
 

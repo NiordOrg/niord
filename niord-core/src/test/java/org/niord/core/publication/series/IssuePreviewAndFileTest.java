@@ -256,6 +256,82 @@ public class IssuePreviewAndFileTest {
         assertEquals("ISSUE_NOT_OPEN", e.code());
     }
 
+    /**
+     * A link is the document of an external publication, and it round-trips.
+     *
+     * Nothing could set one before this, so every EXTERNAL_LINK issue resolved to
+     * nothing -- the link-shaped equivalent of an upload path that did not exist.
+     */
+    @Test
+    @Transactional
+    public void alinkIsStoredAndClearedPerLanguage() {
+        PublicationIssue issue = anIssue();
+
+        files.setLink(issue, "da", "https://example.test/skydeomraader.pdf", user());
+        em.flush();
+        assertEquals("https://example.test/skydeomraader.pdf", issue.getDescs().get(0).getLink());
+
+        files.setLink(issue, "da", null, user());
+        em.flush();
+        assertNull(issue.getDescs().get(0).getLink(),
+                "clearing left the old address in place, so the issue still points at it");
+    }
+
+    /**
+     * A blank link is nothing, not an empty address.
+     *
+     * A desc holding "" reports itself as a LINK publication -- IssuePublicationMapping
+     * types an issue by whether any desc has a link -- and the result is a
+     * publication that claims to be external and resolves nowhere.
+     */
+    @Test
+    @Transactional
+    public void ablankLinkIsStoredAsNoLink() {
+        PublicationIssue issue = anIssue();
+
+        files.setLink(issue, "da", "   ", user());
+        em.flush();
+
+        assertNull(issue.getDescs().get(0).getLink());
+    }
+
+    /** Surrounding whitespace is not part of an address. */
+    @Test
+    @Transactional
+    public void alinkIsTrimmed() {
+        PublicationIssue issue = anIssue();
+
+        files.setLink(issue, "da", "  https://example.test/a.pdf  ", user());
+        em.flush();
+
+        assertEquals("https://example.test/a.pdf", issue.getDescs().get(0).getLink());
+    }
+
+    /**
+     * A published issue's link is editable, unlike its file being clearable.
+     *
+     * The asymmetry is deliberate. A wrong address on the public site has to be
+     * correctable without retiring the issue, because retiring changes what the
+     * record says happened -- and unlike clearing a file, replacing a link leaves
+     * a working address rather than a dead one.
+     */
+    @Test
+    @Transactional
+    public void apublishedIssueMayHaveItsLinkCorrected() {
+        PublicationIssue issue = anIssue();
+        files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
+        files.setLink(published, "da", "https://example.test/corrected.pdf", user());
+        em.flush();
+
+        assertEquals("https://example.test/corrected.pdf", published.getDescs().get(0).getLink());
+    }
+
     /** A language the series is not configured for has no desc row to write to. */
     @Test
     @Transactional

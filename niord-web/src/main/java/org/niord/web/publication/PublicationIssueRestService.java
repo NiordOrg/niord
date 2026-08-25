@@ -16,12 +16,16 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+
+import java.io.InputStream;
 import org.niord.core.publication.series.IssueAuditEntry;
 import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueCurationService;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.IssueListService;
 import org.niord.core.user.Roles;
+import org.niord.core.util.WebUtils;
 import org.niord.core.user.UserService;
 import org.niord.core.publication.series.MessageIssueLookup;
 import org.niord.core.publication.series.PublicationIssueDesc;
@@ -32,6 +36,7 @@ import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssuePublishService;
+import org.niord.core.publication.series.IssueFileService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueService;
@@ -85,6 +90,9 @@ public class PublicationIssueRestService {
 
     @Inject
     MessageIssueLookup messageIssues;
+
+    @Inject
+    IssueFileService fileService;
 
     @Inject
     IssueCurationService curation;
@@ -223,7 +231,7 @@ public class PublicationIssueRestService {
      * publication state is a footnote.
      */
     @GET
-    @Path("/for-message/{messageUid}")
+    @Path("/by-message/{messageUid}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.USER)
     public List<MessageIssueRefVo> forMessage(@PathParam("messageUid") String messageUid) {
@@ -487,6 +495,115 @@ public class PublicationIssueRestService {
     @RolesAllowed("admin")
     public void delete(@PathParam("publicId") String publicId) {
         lifecycle.deleteIssue(required(publicId), null);
+    }
+
+    // ------------------------------------------------------------------ document
+
+    /**
+     * Uploads the document for one language.
+     *
+     * IssueFileService has carried the whole rule -- archive-before-replace, the
+     * distinct-file-name guard, the sticky flag that stops the next publish
+     * regenerating over a correction -- since C6, and none of it was reachable:
+     * there was no endpoint. An UPLOADED_FILE issue therefore had no way to
+     * receive a file, which is the entire content mode.
+     *
+     * Legal on a PUBLISHED issue as well as an OPEN one, because that is the
+     * post-publish correction path the service documents. This adds no rules of
+     * its own; an endpoint that re-implements them is a second set of them.
+     */
+    @POST
+    @Path("/issue/{publicId}/file/{lang}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationIssueVo uploadFile(@PathParam("publicId") String publicId,
+                                               @PathParam("lang") String lang,
+                                               MultipartFormDataInput input) throws Exception {
+        PublicationIssue issue = required(publicId);
+
+        Map<String, InputStream> files = WebUtils.getMultipartInputFiles(input);
+        if (files.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("NO_FILE",
+                    "the upload carried no file");
+        }
+        // One file per language, so a request carrying several is ambiguous rather
+        // than generous: silently taking whichever the map iterated first would
+        // publish a document nobody chose.
+        if (files.size() > 1) {
+            throw new IssueLifecycleService.TransitionRefusedException("TOO_MANY_FILES",
+                    "one language holds one document; " + files.size() + " files were uploaded");
+        }
+
+        Map.Entry<String, InputStream> file = files.entrySet().iterator().next();
+        String fileName = safeFileName(file.getKey());
+        byte[] bytes;
+        try (InputStream in = file.getValue()) {
+            bytes = in.readAllBytes();
+        }
+
+        fileService.upload(issue, lang, fileName, bytes, userService.currentUser());
+        em.flush();
+        return required(publicId).toVo(SystemPublicationIssueVo.class);
+    }
+
+    /**
+     * The uploaded file's name, with any path stripped.
+     *
+     * A browser is not the only thing that posts here, and a name carrying `..`
+     * or an absolute path would be resolved against the issue's repository folder
+     * and write outside it. The name is data from the request, so it is treated
+     * as data.
+     */
+    static String safeFileName(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            throw new IssueLifecycleService.TransitionRefusedException("NO_FILE_NAME",
+                    "the uploaded file carried no name");
+        }
+        String bare = fileName.replace('\\', '/');
+        int slash = bare.lastIndexOf('/');
+        if (slash >= 0) {
+            bare = bare.substring(slash + 1);
+        }
+        bare = bare.trim();
+        if (bare.isEmpty() || ".".equals(bare) || "..".equals(bare)) {
+            throw new IssueLifecycleService.TransitionRefusedException("BAD_FILE_NAME",
+                    "'" + fileName + "' does not name a file");
+        }
+        return bare;
+    }
+
+    /** Clears one language's uploaded file, returning it to generated content. */
+    @DELETE
+    @Path("/issue/{publicId}/file/{lang}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationIssueVo clearFile(@PathParam("publicId") String publicId,
+                                              @PathParam("lang") String lang) {
+        fileService.clear(required(publicId), lang, userService.currentUser());
+        em.flush();
+        return required(publicId).toVo(SystemPublicationIssueVo.class);
+    }
+
+    /**
+     * Sets or clears one language's external link.
+     *
+     * An EXTERNAL_LINK issue's link IS its document. Nothing could set it, so
+     * every such issue resolved to nothing -- the link-shaped equivalent of an
+     * upload endpoint that did not exist. A blank body clears it.
+     */
+    @PUT
+    @Path("/issue/{publicId}/link/{lang}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationIssueVo setLink(@PathParam("publicId") String publicId,
+                                            @PathParam("lang") String lang,
+                                            Map<String, String> body) {
+        fileService.setLink(required(publicId), lang,
+                body == null ? null : body.get("link"), userService.currentUser());
+        em.flush();
+        return required(publicId).toVo(SystemPublicationIssueVo.class);
     }
 
     // ------------------------------------------------------------------ curation

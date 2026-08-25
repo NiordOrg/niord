@@ -106,6 +106,35 @@ public class IssueFileService extends BaseService {
         return em.merge(desc);
     }
 
+    /**
+     * Points a language at an external document, or stops pointing at one.
+     *
+     * The other half of C6. A hosted publication carries a file; an external one
+     * carries a link, and an EXTERNAL_LINK issue with no link is a publication
+     * that resolves to nothing -- which was the state every such issue was stuck
+     * in, because nothing could set it.
+     *
+     * Editable on a PUBLISHED issue, for the same reason an upload is: a wrong
+     * address on the public site has to be correctable without retiring the issue,
+     * since retiring changes what the record says happened. Clearing is allowed
+     * there too, unlike clearing a file -- a file that is cleared leaves a dead
+     * repository link where a cited document was, while a link that is cleared
+     * leaves nothing at all, which is the honest state for a publication whose
+     * external host took the document down.
+     *
+     * Blank is normalised to null. An empty string is not an address, and a desc
+     * holding one reports itself as a LINK publication that resolves nowhere.
+     */
+    @Transactional
+    public PublicationIssueDesc setLink(PublicationIssue issue, String lang, String link, User actor) {
+        PublicationIssueDesc desc = descFor(issue, lang);
+        String cleaned = link == null || link.isBlank() ? null : link.trim();
+
+        desc.setLink(cleaned);
+        audit.override(issue, actor, cleaned == null ? "LINK_CLEARED" : "LINK_SET", lang, cleaned);
+        return em.merge(desc);
+    }
+
     private String archiveExisting(PublicationIssue issue, PublicationIssueDesc desc) {
         Path existing = paths.repoRoot().resolve(desc.getFilePath());
         if (!Files.exists(existing)) {

@@ -539,7 +539,15 @@ public class IssuePublishTest {
         assertThrows(IssueAuditService.UnknownAuditActionException.class,
                 () -> auditService.created(i, null, "PUBLISHED_MAYBE"),
                 "an action outside the vocabulary was accepted; the Historik panel would show it as unknown");
-        assertEquals(20, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
+
+        // The count is a tripwire, not a rule: every action needs a translation
+        // key, and one added without one renders in the Historik panel as its own
+        // raw key. Bumping this number is the moment to add it.
+        assertEquals(22, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
+        assertTrue(IssueAuditService.ACTIONS.containsAll(
+                        List.of("LINK_SET", "LINK_CLEARED")),
+                "a link is the published artefact of an external publication, so changing one is "
+                        + "as much a change to what the public sees as replacing a file");
     }
 
     /** Double publish returns the already-published signal, carrying the winner's stamp. */
