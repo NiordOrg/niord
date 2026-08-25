@@ -68,14 +68,15 @@ public final class LegacyIssueTranslation {
      * them through publish() would stamp them with today and fabricate an audit
      * trail that never happened.
      *
-     * previousInChain is the publication released immediately before this one in
-     * the same chain, or null at the head. Required rather than optional: it is
-     * the only thing that says when this issue's content period OPENED, and the
-     * alternative -- the value legacy happens to have on this row -- is the public
-     * window, which is a different period. See applyContentInterval.
+     * previousCutoff is when the PREVIOUS issue in this chain actually closed --
+     * its effective cut-off, not its nominal release time -- or null at the head.
+     * Required rather than optional: it is the only thing that says when this
+     * issue's content period OPENED, and the alternative, the value legacy happens
+     * to have on this row, is the public window, which is a different period.
+     * See applyContentInterval.
      */
     public static PublicationIssue translate(Publication legacy, PublicationSeries series, Date frozenAt,
-                                             Publication previousInChain) {
+                                             Date previousCutoff) {
         PublicationIssue issue = new PublicationIssue();
 
         issue.setPublicId(legacy.getPublicationId());
@@ -91,7 +92,7 @@ public final class LegacyIssueTranslation {
         issue.setPublicFrom(legacy.getPublishDateFrom());
         issue.setPublicTo(legacy.getPublishDateTo());
 
-        applyContentInterval(issue, legacy, series, previousInChain);
+        applyContentInterval(issue, legacy, series, previousCutoff);
 
         // B5.4c / R8. DERIVED for anything with a cadence, MANUAL only for a
         // genuinely open-ended one-off.
@@ -145,7 +146,7 @@ public final class LegacyIssueTranslation {
      * imported interval needs to see that.
      */
     private static void applyContentInterval(PublicationIssue issue, Publication legacy,
-                                             PublicationSeries series, Publication previousInChain) {
+                                             PublicationSeries series, Date previousCutoff) {
         Date released = legacy.getPublishDateFrom();
 
         // IN_FORCE_AT_CUTOFF has NO lower bound, and that is a fact rather than a
@@ -172,12 +173,18 @@ public final class LegacyIssueTranslation {
             return;
         }
 
-        // The tiling case. The period runs from the PREVIOUS release to this one,
-        // which is what "issues tile" means -- one closes where the next opens.
-        // Taken from the chain rather than by subtracting a nominal period, so a
-        // week somebody skipped produces one long interval instead of a wrong
-        // short one plus a phantom gap.
-        Date opened = previousInChain == null ? null : previousInChain.getPublishDateFrom();
+        // The tiling case. The period runs from where the PREVIOUS issue actually
+        // closed to this release, which is what "issues tile" means -- one closes
+        // where the next opens. Taken from the chain rather than by subtracting a
+        // nominal period, so a week somebody skipped produces one long interval
+        // instead of a wrong short one plus a phantom gap.
+        //
+        // The previous issue's EFFECTIVE cut-off, not its nominal release time.
+        // The release action runs some minutes after the bound it closes and
+        // sweeps up everything to that moment, so opening at the nominal time
+        // double-counts that window: those messages are in the previous issue AND
+        // in this interval. Measured as ~3 spurious members per weekly release.
+        Date opened = previousCutoff;
         issue.setIntervalFrom(opened);
         issue.setIntervalFromSource(opened == null ? null : IntervalBoundSource.RECOVERED);
         issue.setIntervalTo(released);

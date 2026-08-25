@@ -746,6 +746,11 @@ public class LegacyImportService extends BaseService {
         Map<String, Integer> byCutoffSource = new LinkedHashMap<>();
 
         for (List<Publication> chain : chains.values()) {
+            // Carried forward rather than looked up: at iteration i the previous
+            // issue has already been translated AND had its cut-off recovered, so
+            // its effective close is known and is what this period opens at.
+            Date previousCutoff = null;
+
             for (int i = 0; i < chain.size(); i++) {
                 Publication legacy = chain.get(i);
                 try {
@@ -779,10 +784,10 @@ public class LegacyImportService extends BaseService {
                         continue;
                     }
 
-                    // The previous release in this chain is what says when this
-                    // issue's content period opened; the chain is already ordered.
+                    // Where the previous issue actually closed is when this one's
+                    // content period opened; the chain is already ordered.
                     PublicationIssue issue = LegacyIssueTranslation.translate(
-                            legacy, series, frozenAt, i > 0 ? chain.get(i - 1) : null);
+                            legacy, series, frozenAt, previousCutoff);
 
                     // RETIRED counts as released: it was published and then withdrawn,
                     // so a release instant exists. OPEN is the one that never had one.
@@ -806,6 +811,13 @@ public class LegacyImportService extends BaseService {
 
                     plan.issues().put(legacy.getPublicationId(), issue);
                     plan.members().put(legacy.getPublicationId(), members);
+
+                    // Only advance on a real close. A row that produced none must
+                    // not reset the chain to null and orphan the next interval --
+                    // the last known close is still the better answer.
+                    if (issue.effectiveCutoff() != null) {
+                        previousCutoff = issue.effectiveCutoff();
+                    }
 
                     byStatus.merge(issue.getStatus().name(), 1, Integer::sum);
                     byCutoffSource.merge(cutoff.source(), 1, Integer::sum);

@@ -72,13 +72,13 @@ public class ContentIntervalTest {
     @Test
     public void aTilingIssueCoversThePeriodThatClosedWhenItWasPublished() {
         PublicationSeries weekly = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.WEEKLY);
-        Publication previous = release(at(2026, 8, 12), at(2026, 8, 19));
         Publication current = release(at(2026, 8, 19), at(2026, 8, 26));
 
-        PublicationIssue issue = LegacyIssueTranslation.translate(current, weekly, FROZEN, previous);
+        PublicationIssue issue = LegacyIssueTranslation.translate(
+                current, weekly, FROZEN, at(2026, 8, 12));
 
         assertEquals(at(2026, 8, 12), issue.getIntervalFrom(),
-                "the period opened at the PREVIOUS release");
+                "the period opened where the previous issue closed");
         assertEquals(at(2026, 8, 19), issue.getIntervalTo(),
                 "and closed at this one -- issues tile, so one closes where the next opens");
 
@@ -97,10 +97,10 @@ public class ContentIntervalTest {
     @Test
     public void aSkippedReleaseProducesOneLongIntervalRatherThanAPhantomOne() {
         PublicationSeries weekly = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.WEEKLY);
-        Publication previous = release(at(2026, 8, 5), at(2026, 8, 12));
         Publication current = release(at(2026, 8, 19), at(2026, 8, 26));
 
-        PublicationIssue issue = LegacyIssueTranslation.translate(current, weekly, FROZEN, previous);
+        PublicationIssue issue = LegacyIssueTranslation.translate(
+                current, weekly, FROZEN, at(2026, 8, 5));
 
         assertEquals(at(2026, 8, 5), issue.getIntervalFrom(),
                 "two weeks of content, because two weeks of content is what it carries");
@@ -126,6 +126,32 @@ public class ContentIntervalTest {
         assertEquals(at(2017, 1, 6), issue.getIntervalTo());
     }
 
+    /**
+     * The period opens where the previous issue CLOSED, not at its nominal time.
+     *
+     * The release action runs some minutes after the bound it closes and sweeps up
+     * everything published to that moment. Opening the next period at the nominal
+     * time therefore double-counts that window: those messages are in the previous
+     * issue AND inside this interval. Measured on the archive as roughly three
+     * spurious members per weekly release -- the shadow diff reported them as
+     * "extra", and the count rose the moment the upper bound was corrected without
+     * the lower one.
+     */
+    @Test
+    public void theLagBetweenNominalAndActualCloseIsNotCountedTwice() {
+        PublicationSeries weekly = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.WEEKLY);
+
+        // The previous issue nominally closed at 10:00 and actually closed at 10:30.
+        Date previousActualClose = new Date(at(2026, 8, 12).getTime() + 30 * 60_000L);
+
+        PublicationIssue issue = LegacyIssueTranslation.translate(
+                release(at(2026, 8, 19), at(2026, 8, 26)), weekly, FROZEN, previousActualClose);
+
+        assertEquals(previousActualClose, issue.getIntervalFrom(),
+                "opening at the nominal 10:00 would re-include everything the previous "
+                        + "release swept up between 10:00 and 10:30");
+    }
+
     // --------------------------------------------------------- the in-force case
 
     /**
@@ -141,8 +167,7 @@ public class ContentIntervalTest {
         PublicationSeries inForce = series(TimeRelation.IN_FORCE_AT_CUTOFF, SeriesCadence.YEARLY);
 
         PublicationIssue issue = LegacyIssueTranslation.translate(
-                release(at(2027, 1, 1), at(2027, 12, 31)), inForce, FROZEN,
-                release(at(2026, 1, 1), at(2026, 12, 31)));
+                release(at(2027, 1, 1), at(2027, 12, 31)), inForce, FROZEN, at(2026, 1, 1));
 
         assertNull(issue.getIntervalFrom(),
                 "an in-force issue reaches back as far as its content does, which is not a period");
@@ -178,8 +203,7 @@ public class ContentIntervalTest {
         PublicationSeries weekly = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.WEEKLY);
 
         PublicationIssue issue = LegacyIssueTranslation.translate(
-                release(at(2026, 8, 19), at(2026, 8, 26)), weekly, FROZEN,
-                release(at(2026, 8, 12), at(2026, 8, 19)));
+                release(at(2026, 8, 19), at(2026, 8, 26)), weekly, FROZEN, at(2026, 8, 12));
 
         assertSame(IntervalBoundSource.RECOVERED, issue.getIntervalFromSource());
         assertEquals(IntervalBoundSource.RECOVERED.name(), issue.getIntervalToSource());
@@ -197,10 +221,10 @@ public class ContentIntervalTest {
         PublicationSeries weekly = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.WEEKLY);
 
         for (int week = 1; week <= 6; week++) {
-            Publication previous = release(at(2026, 3, week), at(2026, 3, week + 1));
             Publication current = release(at(2026, 3, week + 1), at(2026, 3, week + 2));
 
-            PublicationIssue issue = LegacyIssueTranslation.translate(current, weekly, FROZEN, previous);
+            PublicationIssue issue = LegacyIssueTranslation.translate(
+                    current, weekly, FROZEN, at(2026, 3, week));
 
             assertEquals(issue.getIntervalTo(), issue.getPublicFrom(),
                     "the content closes exactly when the edition goes public");
