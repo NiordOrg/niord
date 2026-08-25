@@ -84,7 +84,8 @@ class GeometryS124Converter {
             // Map based on the type of the populated geometry
             if (pty instanceof PointProperty) {
                 return Optional.of(pty).map(PointProperty.class::cast).map(PointProperty::getPoint).map(PointType::getPos)
-                        .map(pos -> new Coordinate(pos.getValue()[0], pos.getValue()[1])).map(geometryFactory::createPoint).map(Geometry.class::cast)
+                        // GML uses lat,lon order, but JTS Coordinate uses lon,lat
+                        .map(pos -> new Coordinate(pos.getValue()[1], pos.getValue()[0])).map(geometryFactory::createPoint).map(Geometry.class::cast)
                         .orElse(geometryFactory.createEmpty(0));
             } else if (pty instanceof CurveProperty) {
                 return geometryFactory.createGeometryCollection(Optional.of(pty).map(CurveProperty.class::cast).map(CurveProperty::getCurve)
