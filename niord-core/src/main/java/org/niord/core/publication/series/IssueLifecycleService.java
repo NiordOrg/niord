@@ -154,7 +154,7 @@ public class IssueLifecycleService extends BaseService {
      * a name reading "untitled" is what ends up on a published document when
      * nobody noticed it was never set.
      */
-    private String suggestName(PublicationSeries series, String lang, Date basis) {
+    static String suggestName(PublicationSeries series, String lang, Date basis) {
         PublicationSeriesDesc seriesDesc = series.getDescs().stream()
                 .filter(d -> lang.equals(d.getLang()))
                 .findFirst().orElse(null);

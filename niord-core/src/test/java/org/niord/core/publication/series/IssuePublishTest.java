@@ -411,6 +411,45 @@ public class IssuePublishTest {
         em.refresh(after);
         assertEquals(handChosen, after.getPublicTo(), "a hand-chosen window end was overwritten");
     }
+    /**
+     * The successor arrives NAMED, with a desc row per configured language.
+     *
+     * It was created with none at all. The create path documents why that is not
+     * allowed -- "a nameless issue is unfindable in every list that shows it", and
+     * a language with no row has nowhere to put its file name, surfacing later as
+     * "no such language" at upload. The auto-created issue is the one an admin
+     * finds waiting every week, so it was the one issue that had neither.
+     *
+     * The existing successor test asserted the interval and stopped, which is why
+     * this went unseen: nobody had looked at what the successor was CALLED.
+     */
+    @Test
+    @Transactional
+    public void theSuccessorIsNamedInEveryConfiguredLanguage() {
+        Date stamp = new Date(1_700_000_000_000L);
+        PublicationSeries all = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(all, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
+        em.flush();
+
+        var result = publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+        assertNotNull(result.successorId());
+
+        em.flush();
+        em.clear();
+        PublicationIssue successor = em.find(PublicationIssue.class, result.successorId());
+
+        assertEquals(all.getLanguages().size(), successor.getDescs().size(),
+                "the successor carries " + successor.getDescs().size() + " desc row(s) for a series "
+                        + "declaring " + all.getLanguages().size() + " language(s)");
+        for (PublicationIssueDesc d : successor.getDescs()) {
+            assertNotNull(d.getName(), "no name for " + d.getLang());
+            assertFalse(d.getName().isBlank(),
+                    "a blank name for " + d.getLang() + "; the issue is unfindable in every list");
+        }
+    }
+
     /** Step 14. The successor is created only when all four clauses hold. */
     @Test
     @Transactional

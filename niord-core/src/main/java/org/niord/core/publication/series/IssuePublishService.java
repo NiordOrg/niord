@@ -516,6 +516,22 @@ public class IssuePublishService extends BaseService {
         // what removes the drift the nominal calculation accumulated.
         next.setIntervalFrom(stamp);
         next.setIntervalFromSource(IntervalBoundSource.STAMPED);
+
+        // One named desc row per configured language, exactly as a hand-created
+        // issue gets. This chain built none at all, so the issue an admin finds
+        // waiting for them every week was the one issue with no name -- blank in
+        // every list that shows it -- and with no per-language row for its file
+        // name either, which is the failure the create path documents as surfacing
+        // at upload time as "no such language".
+        //
+        // Suggested from the stamp, which is this issue's interval start, matching
+        // what the create path derives from. Provisional either way: the admin may
+        // override it before this issue publishes.
+        for (String lang : series.getLanguages()) {
+            next.createDesc(lang).setName(
+                    IssueLifecycleService.suggestName(series, lang, stamp));
+        }
+
         em.persist(next);
         return next;
     }
