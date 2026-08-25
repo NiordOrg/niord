@@ -69,6 +69,47 @@ public class SeriesUpdateContractTest {
     }
 
     /**
+     * S6 hands back a DRAFT with a desc row per configured language.
+     *
+     * The status matters: ACTIVE is what puts a series in the picker and S-17
+     * requires a complete one, so a create form must not be able to ask for it.
+     * The desc rows matter because C5 makes a payload narrowed to one language
+     * uneditable -- a form with no row for a language cannot fill it in.
+     */
+    @Test
+    public void theNewSeriesTemplateIsADraftAndIsAdminOnly() {
+        Method template = endpoint("newSeriesTemplate");
+        assertNotNull(template, "S6 GET /new-series-template is missing; a create form would have "
+                + "to guess the defaults, and a guess that drifts from the server produces a "
+                + "series that validates in the browser and is refused on save");
+        assertEquals("/new-series-template", template.getAnnotation(Path.class).value());
+        assertNotNull(template.getAnnotation(RolesAllowed.class));
+    }
+
+    /**
+     * S13 is a POST that persists nothing.
+     *
+     * POST because the document travels in the body -- a criteria document does not
+     * fit in a query string, and putting it there would cap what can be previewed
+     * at whatever the proxy allows. It writes nothing, which is what makes it safe
+     * to call while somebody is still typing.
+     */
+    @Test
+    public void theResolvePreviewProbeExistsAndIsAdminOnly() {
+        Method probe = null;
+        for (Method m : PublicationSeriesRestService.class.getMethods()) {
+            if ("resolvePreview".equals(m.getName())) {
+                probe = m;
+            }
+        }
+        assertNotNull(probe, "S13 POST /resolve-preview is missing; the criteria editor has no way "
+                + "to show what a document would select short of saving it onto a series");
+        assertEquals("/resolve-preview", probe.getAnnotation(Path.class).value());
+        assertNotNull(probe.getAnnotation(jakarta.ws.rs.POST.class));
+        assertNotNull(probe.getAnnotation(RolesAllowed.class));
+    }
+
+    /**
      * The write surface is complete: create, update, status, delete.
      *
      * Listed together because the gap that shipped was not a broken endpoint but

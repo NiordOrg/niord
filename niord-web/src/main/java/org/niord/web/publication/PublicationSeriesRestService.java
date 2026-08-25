@@ -29,7 +29,21 @@ import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesService;
+import org.niord.core.NiordApp;
+import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.MemberResolutionService;
+import org.niord.core.publication.series.NextIssueCreation;
+import org.niord.core.publication.series.NumberingScheme;
+import org.niord.core.publication.series.PublicAuthority;
+import org.niord.core.publication.series.ReleaseMode;
+import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.criteria.CriteriaResolver;
+import org.niord.core.publication.series.criteria.IssueCriteriaVo;
+import org.niord.core.publication.series.resolve.Interval;
+import org.niord.core.publication.series.resolve.ResolvedCriteria;
+import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.core.publication.series.vo.PublicationSeriesDescVo;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.SeriesValidator;
 import org.niord.core.publication.series.resolve.IssueNaming;
@@ -38,6 +52,7 @@ import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,6 +78,12 @@ public class PublicationSeriesRestService {
 
     @Inject
     PublicationSeriesService seriesService;
+
+    @Inject
+    NiordApp app;
+
+    @Inject
+    MemberResolutionService memberResolver;
 
     @Inject
     LegacyImportService importService;
@@ -210,6 +231,124 @@ public class PublicationSeriesRestService {
             series.setDomain(domain);
         }
     }
+
+    /**
+     * S6. An unsaved series, filled in as far as the server can.
+     *
+     * Not a convenience. A create form built client-side has to guess the
+     * defaults, and a guess that drifts from the server's produces a series that
+     * validates in the browser and is refused on save -- or worse, one that saves
+     * with a shape nobody chose. The defaults live here because the rules that
+     * check them live here.
+     *
+     * DRAFT, always. ACTIVE is what puts a series in the picker and S-17 requires a
+     * complete one, so activation is a transition that validates rather than a
+     * field a create form can set.
+     */
+    @GET
+    @Path("/new-series-template")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationSeriesVo newSeriesTemplate() {
+        SystemPublicationSeriesVo vo = new SystemPublicationSeriesVo();
+        vo.setStatus(SeriesStatus.DRAFT.name());
+        vo.setContentMode(ContentMode.GENERATED_FROM_QUERY.name());
+        vo.setCadence(SeriesCadence.NONE.name());
+        vo.setNumberingScheme(NumberingScheme.NONE.name());
+        vo.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL.name());
+        vo.setAliveAtCutoff(Boolean.FALSE);
+        vo.setReleaseMode(ReleaseMode.MANUAL_GATE.name());
+        vo.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH.name());
+        vo.setMessagePublication(MessagePublication.NONE.name());
+
+        // LEGACY until cutover flips it, matching every imported series. A new
+        // series claiming NEW would assert that the public site already serves it.
+        vo.setPublicAuthority(PublicAuthority.LEGACY.name());
+
+        // One desc row per configured language, so the form has a row to type into
+        // for each -- C5: a payload narrowed to one language is uneditable.
+        for (String lang : app.getLanguages()) {
+            PublicationSeriesDescVo desc = new PublicationSeriesDescVo();
+            desc.setLang(lang);
+            vo.getDescs().add(desc);
+        }
+        return vo;
+    }
+
+    /**
+     * S13. What a criteria document WOULD select, without saving it.
+     *
+     * The editing surface for criteria is unusable without it. A criteria document
+     * decides what goes into a publication, and the only way to know whether the
+     * one being typed is right is to run it -- against real messages, over a real
+     * interval. The alternative is saving a guess onto a series and finding out
+     * when an issue publishes.
+     *
+     * PERSISTS NOTHING. It resolves and returns; no issue, no member rows, no
+     * override. That is what makes it safe to call on every keystroke-ish edit.
+     *
+     * Capped at 50 by the contract. The number is not a page -- it is a sample. A
+     * probe that returned nine hundred rows would be answering a question nobody
+     * asked, and `total` carries the real answer.
+     */
+    @POST
+    @Path("/resolve-preview")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Map<String, Object> resolvePreview(ResolvePreviewRequest request) {
+        if (request == null || request.criteria() == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
+                    "a criteria document is required to preview what it would select");
+        }
+        if (request.cutoff() == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
+                    "a cut-off is required: a criteria document selects over an interval, and "
+                            + "\"everything ever\" is not the question the editor is asking");
+        }
+
+        TimeRelation relation = request.timeRelation() == null
+                ? TimeRelation.PUBLISHED_IN_INTERVAL
+                : TimeRelation.valueOf(request.timeRelation());
+
+        // An in-force probe has no lower bound, exactly as a real in-force issue has
+        // none -- passing one would preview a narrower set than the series produces.
+        Date from = relation == TimeRelation.IN_FORCE_AT_CUTOFF || request.intervalFrom() == null
+                ? null : new Date(request.intervalFrom());
+        Date cutoff = new Date(request.cutoff());
+
+        MemberResolutionService.Resolution resolution;
+        try {
+            ResolvedCriteria resolved = CriteriaResolver.resolve(request.criteria(), relation,
+                    Boolean.TRUE.equals(request.aliveAtCutoff()), CriteriaResolver.NO_DOMAINS);
+            resolution = memberResolver.resolve(resolved, new Interval(from, cutoff));
+        } catch (IllegalArgumentException e) {
+            // A malformed document or an impossible interval is the caller's, and
+            // saying which beats a 500 the editor cannot act on.
+            throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
+                    e.getMessage());
+        }
+
+        List<String> sample = resolution.members().stream().limit(PROBE_SAMPLE).toList();
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("source", "PROBE");
+        out.put("total", resolution.members().size());
+        out.put("candidates", resolution.candidateCount());
+        out.put("sample", sample);
+        out.put("truncated", resolution.members().size() > sample.size());
+        out.put("warnings", resolution.warnings());
+        out.put("misses", resolution.misses());
+        return out;
+    }
+
+    /** What a probe needs: an unsaved document and the interval to run it over. */
+    public record ResolvePreviewRequest(IssueCriteriaVo criteria, Long intervalFrom, Long cutoff,
+                                        String timeRelation, Boolean aliveAtCutoff) {
+    }
+
+    /** The contract's probe cap: a sample, not a page. */
+    private static final int PROBE_SAMPLE = 50;
 
     /**
      * S9. Update a series.
