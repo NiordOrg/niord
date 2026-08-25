@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -318,7 +319,15 @@ public class ShadowDiffTest {
         series.setLegacyTemplateId(orphanTemplate.getPublicationId());
         em.flush();
 
-        shadowDiff.runOnce();
+        // The query is what the defect lived in, so it is asserted directly.
+        // runOnce() now opens a transaction per release -- correct in production,
+        // invisible to a fixture this test has not committed.
+        assertTrue(shadowDiff.undiffedReleases().stream()
+                        .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
+                "a release whose only run is a SKIP must be offered for diffing again; that is "
+                        + "the clause whose absence held the only slot forever");
+
+        shadowDiff.diffById(week.getPublicationId());
         List<ShadowDiffRun> afterImport = runsFor(week);
         assertEquals(1, afterImport.size(), "one row per release-stamp, by constraint");
         assertNull(afterImport.get(0).getSkipReason(),
@@ -327,12 +336,10 @@ public class ShadowDiffTest {
 
         // And a settled release is left alone: the comparison is the evidence B6.3
         // counts, so re-running must not disturb it.
-        Date settledAt = afterImport.get(0).getComparedAt();
-        shadowDiff.runOnce();
-        List<ShadowDiffRun> afterRerun = runsFor(week);
-        assertEquals(1, afterRerun.size());
-        assertEquals(settledAt, afterRerun.get(0).getComparedAt(),
-                "a compared release is settled and must not be re-compared");
+        assertFalse(shadowDiff.undiffedReleases().stream()
+                        .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
+                "a COMPARISON settles the release: the evidence B6.3 counts must not be "
+                        + "discarded and recomputed on every sweep");
     }
 
     private List<ShadowDiffRun> runsFor(Publication release) {

@@ -2,6 +2,8 @@ package org.niord.core.publication.series.replay;
 
 import io.quarkus.scheduler.Scheduled;
 
+import io.quarkus.narayana.jta.QuarkusTransaction;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -85,19 +87,73 @@ public class ShadowDiffService {
     }
 
     /**
-     * Diffs every legacy release that has not been diffed at its current stamp.
+     * How many releases one invocation will compare.
      *
-     * @return how many were compared or skipped -- that is, how many rows were
-     *         written. Zero is the normal answer.
+     * Bounded because the sweep is no longer cheap. It used to be: before the
+     * skip fix every release resolved instantly to "nothing imported", and the
+     * whole estate finished in seconds. Now each one runs a real member
+     * resolution against the message table, and 1,033 of those do not fit in one
+     * transaction -- the first attempt died on the 240s platform timeout with
+     * every comparison rolled back.
      */
-    @Transactional
+    public static final int DEFAULT_BATCH = 250;
+
+    /** Seconds one release's comparison may take. Generous; a single resolution is milliseconds. */
+    static final int DIFF_TIMEOUT_SECONDS = 120;
+
+    /**
+     * Diffs releases that have no comparison at their current stamp.
+     *
+     * ONE TRANSACTION PER RELEASE, and deliberately not one around the sweep.
+     * This is a diagnostic: each comparison is independent, and partial progress
+     * is worth keeping. Wrapping the sweep would mean losing 1,032 good
+     * comparisons because the 1,033rd was slow -- which is what happened, and is
+     * exactly backwards for something whose job is to accumulate evidence.
+     *
+     * A release that throws is logged and stepped over for the same reason. One
+     * unresolvable operand must not stop the estate from being measured.
+     *
+     * @return how many rows were written
+     */
     public int runOnce() {
+        return runOnce(DEFAULT_BATCH);
+    }
+
+    public int runOnce(int max) {
+        List<String> todo = QuarkusTransaction.requiringNew()
+                .call(() -> undiffedReleases().stream()
+                        .limit(Math.max(0, max))
+                        .map(Publication::getPublicationId)
+                        .toList());
+
         int written = 0;
-        for (Publication release : undiffedReleases()) {
-            diff(release);
-            written++;
+        for (String publicationId : todo) {
+            try {
+                QuarkusTransaction.requiringNew()
+                        .timeout(DIFF_TIMEOUT_SECONDS)
+                        .run(() -> diffById(publicationId));
+                written++;
+            } catch (RuntimeException e) {
+                log.warn("shadow-diff failed for release {}; stepping over it", publicationId, e);
+            }
         }
         return written;
+    }
+
+    /** How many releases still have no comparison. Lets a caller drive the sweep to completion. */
+    public int remaining() {
+        return QuarkusTransaction.requiringNew().call(() -> undiffedReleases().size());
+    }
+
+    /** Re-reads the release inside its own transaction: the list was read in another. */
+    void diffById(String publicationId) {
+        Publication release = em.createQuery(
+                        "SELECT p FROM Publication p WHERE p.publicationId = :id", Publication.class)
+                .setParameter("id", publicationId)
+                .getResultStream().findFirst().orElse(null);
+        if (release != null) {
+            diff(release);
+        }
     }
 
     /**
@@ -121,7 +177,7 @@ public class ShadowDiffService {
      * them from ever being compared. The cutover precondition counts green weeks,
      * so it could never have accumulated one.
      */
-    private List<Publication> undiffedReleases() {
+    List<Publication> undiffedReleases() {
         return em.createQuery(
                         "SELECT p FROM Publication p "
                                 + "WHERE p.messageTag IS NOT NULL "

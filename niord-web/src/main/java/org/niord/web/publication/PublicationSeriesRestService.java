@@ -401,15 +401,23 @@ public class PublicationSeriesRestService {
      *
      * Idempotent: it compares only what has no comparison at its current stamp.
      * Running it twice writes nothing the second time.
+     *
+     * BOUNDED per call, and it reports what is left. A full sweep of the estate
+     * is ~1,000 real member resolutions and does not fit in one request, so the
+     * honest interface is a batch plus a remaining count the caller loops on --
+     * rather than one request that appears to work and times out at 240 seconds
+     * with everything rolled back.
      */
     @POST
     @Path("/shadow-diff/run")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
-    public Map<String, Object> runShadowDiff() {
-        int written = shadowDiff.runOnce();
+    public Map<String, Object> runShadowDiff(@QueryParam("max") Integer max) {
+        int written = shadowDiff.runOnce(
+                max == null ? ShadowDiffService.DEFAULT_BATCH : max);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("written", written);
+        out.put("remaining", shadowDiff.remaining());
         return out;
     }
 
