@@ -412,9 +412,10 @@ public class PublicationSeriesRestService {
     @Path("/shadow-diff/run")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
-    public Map<String, Object> runShadowDiff(@QueryParam("max") Integer max) {
+    public Map<String, Object> runShadowDiff(@QueryParam("max") Integer max,
+                                            @QueryParam("force") boolean force) {
         int written = shadowDiff.runOnce(
-                max == null ? ShadowDiffService.DEFAULT_BATCH : max);
+                max == null ? ShadowDiffService.DEFAULT_BATCH : max, force);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("written", written);
         out.put("remaining", shadowDiff.remaining());

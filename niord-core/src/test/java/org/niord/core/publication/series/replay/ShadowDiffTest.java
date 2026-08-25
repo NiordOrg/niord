@@ -248,6 +248,40 @@ public class ShadowDiffTest {
                         + "bounding at the nominal time reports it missing forever");
     }
 
+    /**
+     * force recompares a settled release, which nothing else will.
+     *
+     * The key covers the LEGACY inputs; the comparison also depends on the
+     * imported side and on the diff logic. When the logic changes, every stored
+     * comparison is stale and no query selects it again. Without this the only
+     * remedy is hand-written SQL against the run table.
+     */
+    @Test
+    @Transactional
+    public void forceRecomparesAReleaseThatIsAlreadySettled() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(template(series), t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+
+        assertNull(shadowDiff.diff(week).getSkipReason());
+        assertFalse(shadowDiff.undiffedReleases().stream()
+                        .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
+                "settled, so the ordinary sweep will not look at it again");
+
+        // force selects it anyway, and replaces the stale row rather than
+        // colliding with the one-run-per-stamp constraint.
+        assertTrue(shadowDiff.allComparableReleases().stream()
+                .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())));
+
+        shadowDiff.diffById(week.getPublicationId(), true);
+        assertEquals(1, runsFor(week).size(), "one run per stamp, by constraint");
+        assertNull(runsFor(week).get(0).getSkipReason());
+    }
+
     // ------------------------------------------------ a skip is not an answer
 
     /**

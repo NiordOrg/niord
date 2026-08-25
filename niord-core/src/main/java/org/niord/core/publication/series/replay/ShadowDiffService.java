@@ -116,12 +116,26 @@ public class ShadowDiffService {
      * @return how many rows were written
      */
     public int runOnce() {
-        return runOnce(DEFAULT_BATCH);
+        return runOnce(DEFAULT_BATCH, false);
     }
 
     public int runOnce(int max) {
+        return runOnce(max, false);
+    }
+
+    /**
+     * @param force recompare releases that already have a comparison
+     *
+     * A run is keyed on the LEGACY inputs, but the comparison depends on two more
+     * things that key cannot see: the imported side, and the diff logic itself.
+     * When either changes, every stored comparison is stale and nothing selects it
+     * again -- which is the state this flag exists for. It is deliberately
+     * explicit and never automatic: it DISCARDS the accumulated green-week
+     * evidence B7.1 counts, so it must be somebody deciding, not a side effect.
+     */
+    public int runOnce(int max, boolean force) {
         List<String> todo = QuarkusTransaction.requiringNew()
-                .call(() -> undiffedReleases().stream()
+                .call(() -> (force ? allComparableReleases() : undiffedReleases()).stream()
                         .limit(Math.max(0, max))
                         .map(Publication::getPublicationId)
                         .toList());
@@ -131,13 +145,23 @@ public class ShadowDiffService {
             try {
                 QuarkusTransaction.requiringNew()
                         .timeout(DIFF_TIMEOUT_SECONDS)
-                        .run(() -> diffById(publicationId));
+                        .run(() -> diffById(publicationId, force));
                 written++;
             } catch (RuntimeException e) {
                 log.warn("shadow-diff failed for release {}; stepping over it", publicationId, e);
             }
         }
         return written;
+    }
+
+    /** Every release that could be compared at all, settled or not. */
+    List<Publication> allComparableReleases() {
+        return em.createQuery(
+                        "SELECT p FROM Publication p "
+                                + "WHERE p.messageTag IS NOT NULL "
+                                + "AND p.publishDateFrom IS NOT NULL "
+                                + "ORDER BY p.updated", Publication.class)
+                .getResultList();
     }
 
     /** How many releases still have no comparison. Lets a caller drive the sweep to completion. */
@@ -147,11 +171,23 @@ public class ShadowDiffService {
 
     /** Re-reads the release inside its own transaction: the list was read in another. */
     void diffById(String publicationId) {
+        diffById(publicationId, false);
+    }
+
+    void diffById(String publicationId, boolean force) {
         Publication release = em.createQuery(
                         "SELECT p FROM Publication p WHERE p.publicationId = :id", Publication.class)
                 .setParameter("id", publicationId)
                 .getResultStream().findFirst().orElse(null);
         if (release != null) {
+            if (force) {
+                // The stored comparison was computed by logic that has since
+                // changed. Removed rather than kept beside the new one, because a
+                // release holds exactly one run per stamp by constraint.
+                em.createQuery("DELETE FROM ShadowDiffRun r WHERE r.legacyPublicationId = :id")
+                        .setParameter("id", publicationId)
+                        .executeUpdate();
+            }
             diff(release);
         }
     }
