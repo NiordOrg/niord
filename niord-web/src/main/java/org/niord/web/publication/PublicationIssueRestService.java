@@ -21,7 +21,12 @@ import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueCurationService;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.IssueListService;
+import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
+import org.niord.core.publication.series.MessageIssueLookup;
+import org.niord.core.publication.series.PublicationIssueDesc;
+import org.niord.core.publication.series.PublicationSeriesDesc;
+import org.niord.core.publication.series.vo.MessageIssueRefVo;
 import org.niord.core.publication.series.IntervalBoundSource;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.PublicationSeries;
@@ -77,6 +82,9 @@ public class PublicationIssueRestService {
 
     @Inject
     IssueLifecycleService lifecycle;
+
+    @Inject
+    MessageIssueLookup messageIssues;
 
     @Inject
     IssueCurationService curation;
@@ -193,6 +201,135 @@ public class PublicationIssueRestService {
     @RolesAllowed("admin")
     public SystemPublicationIssueVo getEditable(@PathParam("publicId") String publicId) {
         return required(publicId).toVo(SystemPublicationIssueVo.class);
+    }
+
+    /**
+     * Every issue one message is in, for the message editor.
+     *
+     * The inverse of the member list, and the direction an editor actually asks
+     * in. "Which issues contain this message" had no answer short of opening
+     * every issue in the admin area and reading its members -- a question asked
+     * constantly, answerable only by somebody with admin rights, about a message
+     * sitting open on the screen.
+     *
+     * Roles.USER rather than admin. This is a read about a message, shown next to
+     * the message, and everyone who may view a message may see where it was
+     * published. The VO is scoped to match: no naming patterns, no reference
+     * formats, nothing from the series editing surface.
+     *
+     * Never throws for an unknown uid. A message that is in no issue and a
+     * message that does not exist both mean "nothing to show here", and a 404
+     * would turn a quiet panel into an error banner on a screen where the
+     * publication state is a footnote.
+     */
+    @GET
+    @Path("/for-message/{messageUid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(Roles.USER)
+    public List<MessageIssueRefVo> forMessage(@PathParam("messageUid") String messageUid) {
+        return group(messageIssues.forMessage(messageUid, new Date()));
+    }
+
+    /**
+     * The lookup's per-issue rows, collapsed to one row per series per basis.
+     *
+     * The lookup answers per issue because that is the honest primitive -- a
+     * membership is in an issue, not in a series. The screen needs the other
+     * shape: an IN_FORCE_AT_CUTOFF series re-lists every message still in force
+     * in every edition, so a notice in force for two years is a member of a
+     * hundred-odd weekly issues of one series. All hundred say the same thing,
+     * and rendered as a hundred rows they bury the single EfS row an editor came
+     * to find.
+     *
+     * The MOST RECENT issue survives as the group's representative, because "has
+     * this gone out" is a question about the latest edition. Order is preserved
+     * from the lookup, which already puts the frozen facts before the live
+     * predictions.
+     */
+    static List<MessageIssueRefVo> group(List<MessageIssueLookup.MessageIssue> rows) {
+        Map<String, MessageIssueRefVo> byGroup = new LinkedHashMap<>();
+
+        for (MessageIssueLookup.MessageIssue row : rows) {
+            MessageIssueRefVo vo = refOf(row);
+            // An issue whose series did not load groups under its own id rather
+            // than merging with every other seriesless issue into one wrong row.
+            String key = (vo.getSeriesId() == null ? "issue:" + vo.getIssuePublicId() : vo.getSeriesId())
+                    + "/" + vo.getMembership();
+
+            MessageIssueRefVo kept = byGroup.get(key);
+            if (kept == null) {
+                byGroup.put(key, vo);
+            } else if (isNewer(vo, kept)) {
+                vo.setIssueCount(kept.getIssueCount() + 1);
+                byGroup.put(key, vo);
+            } else {
+                kept.setIssueCount(kept.getIssueCount() + 1);
+            }
+        }
+        return new ArrayList<>(byGroup.values());
+    }
+
+    /**
+     * Which of two issues in a group is the later one.
+     *
+     * By interval start, because that is the field every issue has -- an open one
+     * has never been published and a recovered one may carry no publish stamp, so
+     * ordering on publishedAt would rank exactly the rows that matter as oldest.
+     * A missing interval loses to any real date rather than winning by accident.
+     */
+    private static boolean isNewer(MessageIssueRefVo candidate, MessageIssueRefVo incumbent) {
+        Date a = candidate.getIntervalFrom();
+        Date b = incumbent.getIntervalFrom();
+        if (a == null) {
+            return false;
+        }
+        return b == null || a.after(b);
+    }
+
+    /**
+     * One lookup row as the wire shape.
+     *
+     * Static and entity-in, VO-out so it can be pinned by a plain unit test: the
+     * FROZEN/LIVE distinction is the whole point of the payload, and it is one
+     * assignment away from being dropped.
+     */
+    static MessageIssueRefVo refOf(MessageIssueLookup.MessageIssue row) {
+        PublicationIssue issue = row.issue();
+        MessageIssueRefVo vo = new MessageIssueRefVo();
+        // One issue is one issue: a row that never reaches group() still reports a
+        // truthful count rather than zero.
+        vo.setIssueCount(1);
+        vo.setIssuePublicId(issue.getPublicId());
+        vo.setStatus(issue.getStatus());
+        vo.setMembership(row.membership() == MessageIssueLookup.Membership.FROZEN
+                ? MessageIssueRefVo.Membership.FROZEN
+                : MessageIssueRefVo.Membership.LIVE);
+        vo.setIntervalFrom(issue.getIntervalFrom());
+        vo.setIntervalTo(issue.getIntervalTo());
+        vo.setPublishedAt(issue.getPublishedAt());
+
+        for (PublicationIssueDesc d : issue.getDescs()) {
+            if (d.getLang() == null) {
+                continue;
+            }
+            if (d.getName() != null) {
+                vo.getNames().put(d.getLang(), d.getName());
+            }
+            if (d.getLink() != null) {
+                vo.getLinks().put(d.getLang(), d.getLink());
+            }
+        }
+
+        PublicationSeries series = issue.getSeries();
+        if (series != null) {
+            vo.setSeriesId(series.getSeriesId());
+            for (PublicationSeriesDesc d : series.getDescs()) {
+                if (d.getLang() != null && d.getName() != null) {
+                    vo.getSeriesNames().put(d.getLang(), d.getName());
+                }
+            }
+        }
+        return vo;
     }
 
     /**
