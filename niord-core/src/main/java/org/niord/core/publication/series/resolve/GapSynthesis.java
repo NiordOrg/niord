@@ -92,9 +92,27 @@ public final class GapSynthesis {
                                        long periodMillis,
                                        ZoneId zone,
                                        Map<String, Patterns> patterns,
+                                       Date firstIssueStartsAt,
                                        Date now) {
         List<Row> out = new ArrayList<>();
-        if (gate == null || !gate.enabled() || periodMillis <= 0 || issues == null || issues.isEmpty()) {
+        if (gate == null || !gate.enabled() || periodMillis <= 0 || issues == null) {
+            return out;
+        }
+
+        // A series that has been ACTIVATED and has produced nothing yet.
+        //
+        // Everything below anchors on an issue that already exists, so with none
+        // the whole synthesis returned nothing -- no missing weeks, and not even
+        // the period currently open. The retro-create affordance lives on a MISSING
+        // row, so a newly activated series offered no way to make its FIRST issue
+        // and an admin had nowhere to start.
+        //
+        // firstIssueStartsAt is exactly the anchor needed and the series already
+        // carries it: S-4 requires it of every interval-based series, for this.
+        if (issues.isEmpty()) {
+            if (firstIssueStartsAt != null && now != null) {
+                forward(out, seriesId, firstIssueStartsAt, null, periodMillis, zone, patterns, now);
+            }
             return out;
         }
 
@@ -124,26 +142,38 @@ public final class GapSynthesis {
         Issue newest = issues.get(issues.size() - 1);
         if (newest.effectiveCutoff() != null && now != null
                 && newest.effectiveCutoff().getTime() <= now.getTime()) {
-            Date from = newest.effectiveCutoff();
-            Issue preceding = newest;
-            // Bounded by the dormancy gate rather than by a literal: a series nobody
-            // has published to for DORMANCY_PERIODS is already gated off above, so
-            // this cannot run away.
-            while (true) {
-                Date to = GapDetection.nextCutoff(from, periodMillis);
-                boolean passed = to.getTime() <= now.getTime();
-                out.add(row(passed ? RowKind.MISSING : RowKind.UPCOMING, seriesId, from, to,
-                        preceding, null, zone, patterns));
-                if (!passed) {
-                    break;
-                }
-                from = to;
-                preceding = null;
-            }
+            forward(out, seriesId, newest.effectiveCutoff(), newest, periodMillis, zone,
+                    patterns, now);
         }
 
         out.sort((a, b) -> Long.compare(a.sortKey(), b.sortKey()));
         return out;
+    }
+
+    /**
+     * Periods from an anchor forward: MISSING for each cut-off already passed, then
+     * one UPCOMING for the period being worked toward.
+     *
+     * Shared by the two anchors -- the newest issue's cut-off, and the series'
+     * declared first-interval start when there is no issue at all. Bounded by the
+     * dormancy gate rather than by a literal: a series nobody has published to for
+     * DORMANCY_PERIODS is gated off before this runs, so it cannot run away.
+     */
+    private static void forward(List<Row> out, String seriesId, Date anchor, Issue preceding,
+                                long periodMillis, ZoneId zone,
+                                Map<String, Patterns> patterns, Date now) {
+        Date from = anchor;
+        while (true) {
+            Date to = GapDetection.nextCutoff(from, periodMillis);
+            boolean passed = to.getTime() <= now.getTime();
+            out.add(row(passed ? RowKind.MISSING : RowKind.UPCOMING, seriesId, from, to,
+                    preceding, null, zone, patterns));
+            if (!passed) {
+                return;
+            }
+            from = to;
+            preceding = null;
+        }
     }
 
     private static Row row(RowKind kind, String seriesId, Date from, Date to,

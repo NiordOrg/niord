@@ -66,7 +66,7 @@ public class GapSynthesisTest {
 
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(gate, "dk-firing-areas",
                 List.of(issue("a", wed(2)), issue("b", wed(54))),
-                365L * 24 * 3600_000L, CPH, PATTERNS, wed(60));
+                365L * 24 * 3600_000L, CPH, PATTERNS, null, wed(60));
 
         assertTrue(rows.isEmpty(), "a pseudo-row was synthesized for a series whose issues overlap by design");
     }
@@ -87,7 +87,61 @@ public class GapSynthesisTest {
         assertFalse(draft.reason().isBlank(), "the gate must carry the reason a caller reports instead of a count");
         assertTrue(GapSynthesis.synthesize(draft, "weekly-ntm",
                 List.of(issue("a", wed(2)), issue("b", wed(5))),
-                WEEK, CPH, PATTERNS, wed(6)).isEmpty());
+                WEEK, CPH, PATTERNS, null, wed(6)).isEmpty());
+    }
+
+    // ------------------------------------------------- a series with no issues
+
+    /**
+     * A newly ACTIVATED series offers somewhere to start.
+     *
+     * Everything else here anchors on an issue that already exists, so a series
+     * with none produced no rows at all -- not the weeks it had missed, and not
+     * even the period currently open. The retro-create affordance lives on a
+     * MISSING row, so the screen showed "no issues yet" and offered no way to make
+     * one: an admin could create a series, activate it, and then be stuck.
+     *
+     * Found by rehearsing a full week through the UI, which is the first time
+     * anybody had activated a series and looked at it.
+     */
+    @Test
+    public void aSeriesWithNoIssuesSynthesizesFromItsDeclaredStart() {
+        // Declared to start at week 10; it is now week 13, so weeks 10, 11 and 12
+        // have closed and week 13 is the one being worked toward.
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(), WEEK, CPH, PATTERNS, wed(10), wed(13));
+
+        assertFalse(rows.isEmpty(),
+                "an activated series with no issues produced no rows, so there is nothing to "
+                        + "retro-create from and no way to make its first issue");
+        assertEquals(4, rows.size(), "expected three closed periods and one open, got " + rows);
+        assertEquals(3, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count());
+        assertEquals(1, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.UPCOMING).count(),
+                "there is only ever one period being worked toward");
+    }
+
+    /** The first period opens exactly where the series says it does, not a week later. */
+    @Test
+    public void theFirstSynthesizedPeriodStartsAtTheDeclaredStart() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(), WEEK, CPH, PATTERNS, wed(10), wed(13));
+
+        assertEquals(wed(10), rows.get(0).intervalFrom(),
+                "the first interval must open where firstIssueStartsAt says; opening it a "
+                        + "period later silently drops the series' first week");
+    }
+
+    /**
+     * No declared start, no rows -- rather than a guess.
+     *
+     * S-4 requires firstIssueStartsAt of every interval-based series, so a null one
+     * means the series is not in a state to be producing issues. Inventing an anchor
+     * would offer retro-creates for periods nobody declared.
+     */
+    @Test
+    public void aSeriesWithNoIssuesAndNoDeclaredStartSynthesizesNothing() {
+        assertTrue(GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(), WEEK, CPH, PATTERNS, null, wed(13)).isEmpty());
     }
 
     // ---------------------------------------------------------------- the rows
@@ -97,7 +151,7 @@ public class GapSynthesisTest {
     public void aMissingWeekBecomesOneRowPerMissingPeriod() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("before", wed(10)), issue("after", wed(13))),
-                WEEK, CPH, PATTERNS, wed(13));
+                WEEK, CPH, PATTERNS, null, wed(13));
 
         List<GapSynthesis.Row> missing = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).toList();
@@ -120,7 +174,7 @@ public class GapSynthesisTest {
     public void theSuggestedNameComesFromTheIntervalEndNotItsStart() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("before", wed(20)), issue("after", wed(22))),
-                WEEK, CPH, PATTERNS, wed(22));
+                WEEK, CPH, PATTERNS, null, wed(22));
 
         GapSynthesis.Row gap = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).findFirst().orElseThrow();
@@ -145,7 +199,7 @@ public class GapSynthesisTest {
     public void thePeriodBeingWorkedTowardIsTheOnlyUpcomingRow() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("newest", wed(30))),
-                WEEK, CPH, PATTERNS, new Date(wed(31).getTime() - 3600_000L));
+                WEEK, CPH, PATTERNS, null, new Date(wed(31).getTime() - 3600_000L));
 
         List<GapSynthesis.Row> upcoming = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.UPCOMING).toList();
@@ -166,7 +220,7 @@ public class GapSynthesisTest {
     public void periodsAfterTheNewestIssueAreMissingUntilTheOneStillOpen() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("newest", wed(40))),
-                WEEK, CPH, PATTERNS, new Date(wed(42).getTime() + 3600_000L));
+                WEEK, CPH, PATTERNS, null, new Date(wed(42).getTime() + 3600_000L));
 
         assertEquals(2, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
                 "weeks 41 and 42 came and went with nothing published");
@@ -180,7 +234,7 @@ public class GapSynthesisTest {
     public void aBoundWithNoStampedNeighbourIsMarkedNominal() {
         GapSynthesis.Row upcoming = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("newest", wed(50))),
-                WEEK, CPH, PATTERNS, new Date(wed(51).getTime() - 1000L)).get(0);
+                WEEK, CPH, PATTERNS, null, new Date(wed(51).getTime() - 1000L)).get(0);
 
         assertSame(IntervalBoundSource.STAMPED, upcoming.intervalFromSource(),
                 "it chains from a real stamped cut-off");

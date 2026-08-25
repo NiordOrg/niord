@@ -79,7 +79,8 @@ public class IssueListService {
                 series.getStatus() == SeriesStatus.ACTIVE, dormant, periodMillis);
 
         List<GapSynthesis.Row> pseudo = GapSynthesis.synthesize(gate, series.getSeriesId(),
-                ascending(issues), periodMillis, zone, patternsOf(series), now);
+                ascending(issues), periodMillis, zone, patternsOf(series),
+                series.getFirstIssueStartsAt(), now);
 
         List<SystemPublicationIssueVo> rows = new ArrayList<>();
         for (PublicationIssue issue : issues) {
