@@ -49,6 +49,7 @@ public final class PublicationErrorCatalogue {
         // handle, so it is immutable after create -- retrying the same rename is
         // futile and a client that treats it as transient would loop.
         put("SERIES_ID_IMMUTABLE", 400);
+        put("CATEGORY_INVALID", 400);
         // 400 and not 409, though it reads like a state conflict. The 409 group
         // means "the same request may succeed later"; this one never can. Once a
         // series has released an issue, the field is fixed for its lifetime, and
@@ -81,6 +82,7 @@ public final class PublicationErrorCatalogue {
         put("WARNING_NOT_ACKNOWLEDGED", 409);
         put("SERIES_ID_TAKEN", 409);
         put("CATEGORY_IN_USE", 409);
+        put("CATEGORY_ID_TAKEN", 409);
 
         // 500 -- the server could not do what it was asked, and the caller did
         // nothing wrong. ARCHIVE_FAILED is here deliberately: it aborts a publish,
