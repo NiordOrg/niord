@@ -265,6 +265,17 @@ public class PublicationSeriesRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
     public SystemPublicationSeriesVo newSeriesTemplate() {
+        return newSeriesTemplate(app.getLanguages());
+    }
+
+    /**
+     * The template, without the container.
+     *
+     * Package-private and static for the same reason validationReport is: what the
+     * template CONTAINS is worth asserting, and it had two fields disagreeing with
+     * each other that no CDI-free test could reach.
+     */
+    static SystemPublicationSeriesVo newSeriesTemplate(String[] languages) {
         SystemPublicationSeriesVo vo = new SystemPublicationSeriesVo();
         vo.setStatus(SeriesStatus.DRAFT.name());
         vo.setContentMode(ContentMode.GENERATED_FROM_QUERY.name());
@@ -273,7 +284,11 @@ public class PublicationSeriesRestService {
         vo.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL.name());
         vo.setAliveAtCutoff(Boolean.FALSE);
         vo.setReleaseMode(ReleaseMode.MANUAL_GATE.name());
-        vo.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH.name());
+        // MANUAL, to agree with cadence NONE. S-8 says a one-off has no next issue
+        // to create automatically, so the pair the template shipped broke a rule
+        // against itself -- the create form corrected it silently on save, which is
+        // the worst place for a template to be wrong.
+        vo.setNextIssueCreation(NextIssueCreation.MANUAL.name());
         vo.setMessagePublication(MessagePublication.NONE.name());
 
         // LEGACY until cutover flips it, matching every imported series. A new
@@ -282,10 +297,17 @@ public class PublicationSeriesRestService {
 
         // One desc row per configured language, so the form has a row to type into
         // for each -- C5: a payload narrowed to one language is uneditable.
-        for (String lang : app.getLanguages()) {
+        //
+        // DECLARED as well as written. S-12 refuses a desc row for a language the
+        // series does not list, so a template that emitted the rows and left
+        // languages empty failed its own validation twice over and told the admin
+        // that "da" was not a configured language on a screen that had just offered
+        // it to them.
+        for (String lang : languages == null ? new String[0] : languages) {
             PublicationSeriesDescVo desc = new PublicationSeriesDescVo();
             desc.setLang(lang);
             vo.getDescs().add(desc);
+            vo.getLanguages().add(lang);
         }
         return vo;
     }

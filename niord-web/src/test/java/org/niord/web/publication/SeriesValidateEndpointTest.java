@@ -152,6 +152,46 @@ public class SeriesValidateEndpointTest {
                 "S-19 must name categoryId, so the form can render it against the dropdown");
     }
 
+    /**
+     * The create template contradicts no rule it chose both halves of.
+     *
+     * A DRAFT is allowed to be incomplete, so the template legitimately fails the
+     * rules whose fields the ADMIN supplies: criteria, a first interval, names, a
+     * category. What it must never do is fail a rule where IT picked both sides.
+     *
+     * It did, twice. It emitted a desc row per configured language and left
+     * `languages` empty, so S-12 reported "a desc row for da, which is not a
+     * configured language" -- about a language the same screen had just offered.
+     * And it paired cadence NONE with AUTO_ON_PUBLISH, which S-8 refuses. The form
+     * corrected both silently on save, which is the worst place for a template to
+     * be wrong: it works until somebody uses the endpoint without that form.
+     *
+     * Asserted as a SET DIFFERENCE rather than a list of expected errors, so a new
+     * self-contradiction fails here even though nobody thought to look for it.
+     */
+    @Test
+    public void theCreateTemplateOnlyFailsRulesTheAdminMustFillIn() {
+        SystemPublicationSeriesVo template =
+                PublicationSeriesRestService.newSeriesTemplate(new String[]{"da", "en"});
+
+        // Fields a create form exists to collect. Everything else is the template's.
+        Set<String> adminSupplies = Set.of("criteria", "firstIssueStartsAt", "categoryId");
+
+        List<String> selfContradictions =
+                PublicationSeriesRestService.validationReport(template, INSTALLATION_LANGUAGES)
+                        .stream()
+                        .filter(e -> !adminSupplies.contains(e.get("field")))
+                        .filter(e -> !e.get("field").startsWith("descs."))
+                        .map(e -> e.get("rule") + " (" + e.get("field") + "): " + e.get("message"))
+                        .toList();
+
+        assertTrue(selfContradictions.isEmpty(),
+                "the template disagrees with itself on " + selfContradictions.size()
+                        + " rule(s), none of which an admin can fix by filling the form in:"
+                        + System.lineSeparator()
+                        + String.join(System.lineSeparator(), selfContradictions));
+    }
+
     /** A minimally complete query-backed weekly series, used as the baseline to break. */
     private static SystemPublicationSeriesVo completeSeries() {
         SystemPublicationSeriesVo vo = new SystemPublicationSeriesVo();
