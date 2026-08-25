@@ -210,10 +210,18 @@ public class ShadowDiffTest {
      * Interval says it outright: previousCutoff is "null when there is no lower
      * bound: the first issue of a series, and every IN_FORCE_AT_CUTOFF issue,
      * which never has one". The diff used to fall back to the previous stamp
-     * whenever the bound was null, which handed every in-force release a
-     * one-week window -- so a P&T issue carrying everything still standing
-     * resolved to the twenty messages published that week and called the other
-     * hundred and thirty missing.
+     * whenever the bound was null, inventing a one-week window for an issue that
+     * has none by definition.
+     *
+     * The assertion is on what the RUN RECORDS, and that is not a hedge -- it is
+     * the whole of what the fallback got wrong here. MemberResolutionService reads
+     * a lower bound only under PUBLISHED_IN_INTERVAL, so an in-force resolution
+     * never saw the fabricated value and membership was unaffected. Asserting on
+     * members would therefore pass with the fallback restored.
+     *
+     * It matters beyond reporting in one case: criteriaFor classifies by the
+     * RELEASE's filter, so a blank filter on an in-force series resolves as
+     * PUBLISHED_IN_INTERVAL, reads the bound, and gets a week instead of years.
      */
     @Test
     @Transactional

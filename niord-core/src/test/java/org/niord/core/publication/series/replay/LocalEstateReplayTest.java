@@ -375,6 +375,7 @@ public class LocalEstateReplayTest {
     }
 
     private Seeded seed(List<EstateSlice.Issue> slice, String seriesId) {
+        EstateSlice.Series shape = EstateSlice.series(seriesId);
         MessageSeries ms = new MessageSeries();
         ms.setSeriesId("dma-nm-" + UUID.randomUUID().toString().substring(0, 8));
         ms.setMainType(MainType.NM);
@@ -421,7 +422,13 @@ public class LocalEstateReplayTest {
             release.setStatus(PublicationStatus.ACTIVE);
             release.setPublishDateFrom(issue.publicFrom());
             release.setPublishDateTo(issue.publicTo());
-            release.setMessageTagFilter(null);
+            // The release's OWN filter, because that is what the diff classifies
+            // it by -- a series outlives its filter, so ShadowDiffService reads the
+            // publication rather than the series. Seeding null here forced every
+            // release into the blank/tiling regime and made an in-force series
+            // replay as a weekly one, which produced a defect that existed only in
+            // this harness.
+            release.setMessageTagFilter(legacyFilterFor(shape));
             // Reconstructed from the recovered stamp; stage 1 of the cascade IS
             // this column, and it decided 975 of the estate's 1,077 rows.
             release.setUpdated(issue.cutoffStampedAt());
@@ -470,6 +477,29 @@ public class LocalEstateReplayTest {
             throw new IllegalStateException("cannot read the harvested criteria for "
                     + shape.seriesId(), e);
         }
+    }
+
+    /**
+     * The legacy filter string a series' shape implies.
+     *
+     * The inverse of LegacyFilterTranslator, over the four strings that exist.
+     * Reconstructed rather than harvested because the filter is not on any VO --
+     * and the mapping is total, so nothing is being guessed at.
+     */
+    private static String legacyFilterFor(EstateSlice.Series shape) {
+        if (shape == null) {
+            return null;
+        }
+        boolean alive = Boolean.TRUE.equals(shape.aliveAtCutoff());
+        if (shape.inForce()) {
+            return shape.criteriaJson() != null && shape.criteriaJson().contains("messageType")
+                    ? "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) "
+                            + "&& msg.status == Status.PUBLISHED"
+                    : "msg.status == Status.PUBLISHED";
+        }
+        return alive
+                ? "data.phase == 'msg-status-change' && msg.status == Status.PUBLISHED"
+                : null;
     }
 
     private static Type typeOf(String legacy) {

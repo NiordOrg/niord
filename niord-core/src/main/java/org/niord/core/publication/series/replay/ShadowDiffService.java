@@ -272,10 +272,18 @@ public class ShadowDiffService {
         // A null bound is an answer, not a gap: Interval says so itself -- "null
         // when there is no lower bound: the first issue of a series, and every
         // IN_FORCE_AT_CUTOFF issue, which never has one". Falling back to the
-        // previous stamp gave every in-force issue a one-week window, so a P&T
-        // release that legitimately carries everything still standing resolved to
-        // the twenty messages published that week and reported the other hundred and
-        // thirty as missing. Measured locally: 23 of 24 P&T releases red, ~130 each.
+        // previous stamp invents a one-week window for an issue that has no lower
+        // bound by definition.
+        //
+        // Mostly this only corrects what the run RECORDS. Membership is resolved by
+        // MemberResolutionService, which applies a lower bound only under
+        // PUBLISHED_IN_INTERVAL -- an in-force resolution never reads it, so the
+        // fabricated bound was usually harmless as well as wrong.
+        //
+        // It stops being harmless when a release on an in-force series carries a
+        // blank filter: criteriaFor classifies by the RELEASE, so that one resolves
+        // as PUBLISHED_IN_INTERVAL, reads the bound, and a fabricated week silently
+        // replaces "everything still standing".
         Date from = imported != null
                 ? imported.getIntervalFrom()
                 : previousCutoff(series, cutoff);
