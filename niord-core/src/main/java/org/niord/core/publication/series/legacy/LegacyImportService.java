@@ -274,6 +274,22 @@ public class LegacyImportService extends BaseService {
         // about to go, and a bulk delete does not cascade the way a remove() does.
         List<Integer> seriesIds = imported.stream().map(PublicationSeries::getId).toList();
 
+        // Detach everything before the bulk deletes.
+        //
+        // A bulk delete goes straight to the database and leaves the persistence
+        // context holding entities for rows that no longer exist. Any one of them
+        // that Hibernate still thinks is dirty produces an UPDATE at commit against
+        // a deleted row, which fails as an optimistic-lock error naming a series the
+        // undo had just read. That is exactly what happened once criteria became
+        // non-null: the document had no value equality, so every series carrying one
+        // looked dirty on every flush.
+        //
+        // The equality is fixed at the source. This stays because the hazard belongs
+        // to the pattern rather than to that one bug -- bulk-deleting rows the
+        // context is holding is unsafe whatever made them dirty.
+        em.flush();
+        em.clear();
+
         // Descs before their parents, for the same reason: a desc row owns the
         // foreign key, and a bulk delete does not cascade the way remove() does.
         int issueDescs = em.createQuery(

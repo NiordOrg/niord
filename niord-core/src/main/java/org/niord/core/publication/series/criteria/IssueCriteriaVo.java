@@ -51,4 +51,31 @@ public class IssueCriteriaVo implements IJsonSerializable {
     public void setCriteria(List<IssueCriterionVo> criteria) {
         this.criteria = criteria == null ? new ArrayList<>() : criteria;
     }
+
+    /**
+     * VALUE equality; see IssueCriterionVo.equals for why it is load-bearing.
+     *
+     * Hibernate dirty-checks this converted attribute by comparing the loaded
+     * snapshot against the current value, and the converter returns a fresh object
+     * each time. Identity comparison makes every series carrying criteria dirty on
+     * every flush.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof IssueCriteriaVo other)) {
+            return false;
+        }
+        return java.util.Objects.equals(schemaVersion, other.schemaVersion)
+                && match == other.match
+                && java.util.Objects.equals(criteria, other.criteria);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(schemaVersion, match, criteria);
+    }
+
 }

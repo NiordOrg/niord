@@ -6,6 +6,7 @@ import org.niord.core.publication.series.criteria.CriterionKind;
 import org.niord.core.publication.series.criteria.CriterionOperator;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.IssueCriterionVo;
+import org.niord.core.publication.series.criteria.JpaCriteriaAttributeConverter;
 import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -179,6 +181,60 @@ public class LegacyCriteriaTranslationTest {
                             + " -- a document that cannot pass leaves the series exactly where a "
                             + "null one did, having merely looked like progress");
         }
+    }
+
+    /**
+     * A document survives the JPA converter round trip AS AN EQUAL VALUE.
+     *
+     * Not tidiness. The criteria column is a converted attribute: Hibernate decides
+     * whether the row is dirty by comparing the loaded snapshot against the current
+     * value, and the converter deserializes a fresh object every time. Without value
+     * equality the two are different instances of an identical document, so every
+     * flush writes a spurious UPDATE and bumps the version -- and a bulk delete
+     * followed by that flush fails outright.
+     *
+     * That is how it surfaced: the undo could not delete a series it had just read,
+     * with an optimistic-lock error naming it. It would also have shown up as
+     * intermittent lock conflicts between two people editing different series.
+     */
+    @Test
+    public void adocumentSurvivesTheConverterRoundTripAsAnEqualValue() {
+        JpaCriteriaAttributeConverter converter = new JpaCriteriaAttributeConverter();
+
+        for (String filter : List.of(
+                "",
+                "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) "
+                        + "&& msg.status == Status.PUBLISHED")) {
+
+            IssueCriteriaVo original = LegacyCriteriaTranslation.translate(
+                    LegacyFilterTranslator.translate(filter), DMA_NM);
+
+            IssueCriteriaVo reloaded = converter.convertToEntityAttribute(
+                    converter.convertToDatabaseColumn(original));
+
+            assertNotSame(original, reloaded, "the fixture is pointless if it is the same object");
+            assertEquals(original, reloaded,
+                    "a reloaded document must equal the one stored, or every flush marks the "
+                            + "series dirty and rewrites a row nothing changed");
+            assertEquals(original.hashCode(), reloaded.hashCode());
+        }
+    }
+
+    /** And two genuinely different documents stay different. */
+    @Test
+    public void documentsThatDifferAreNotEqual() {
+        IssueCriteriaVo efs = LegacyCriteriaTranslation.translate(
+                LegacyFilterTranslator.translate(""), DMA_NM);
+        IssueCriteriaVo pt = LegacyCriteriaTranslation.translate(
+                LegacyFilterTranslator.translate(
+                        "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) "
+                                + "&& msg.status == Status.PUBLISHED"),
+                DMA_NM);
+        IssueCriteriaVo otherScope = LegacyCriteriaTranslation.translate(
+                LegacyFilterTranslator.translate(""), Set.of("dma-fa"));
+
+        org.junit.jupiter.api.Assertions.assertNotEquals(efs, pt, "a type node is a difference");
+        org.junit.jupiter.api.Assertions.assertNotEquals(efs, otherScope, "so is the scope");
     }
 
     /** And the estate's four filters are the only ones translated; a fifth still refuses. */

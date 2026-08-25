@@ -54,4 +54,31 @@ public abstract class IssueCriterionVo implements IJsonSerializable {
     public void setValues(List<String> values) {
         this.values = values == null ? new ArrayList<>() : values;
     }
+
+    /**
+     * VALUE equality, and it is load-bearing rather than tidiness.
+     *
+     * The criteria document is a converted attribute: Hibernate compares the
+     * loaded snapshot against the current value to decide whether the row is
+     * dirty, and the converter deserializes a FRESH object every time. Without
+     * this the two are different instances of an equal document, every flush
+     * writes a spurious UPDATE and bumps the version, and a bulk delete followed
+     * by that flush fails outright -- which is how it surfaced, as an undo that
+     * could not delete a series it had just read.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof IssueCriterionVo other) || kind() != other.kind()) {
+            return false;
+        }
+        return operator == other.operator && values.equals(other.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(kind(), operator, values);
+    }
 }
