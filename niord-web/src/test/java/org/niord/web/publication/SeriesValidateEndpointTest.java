@@ -153,6 +153,33 @@ public class SeriesValidateEndpointTest {
     }
 
     /**
+     * A series that NAMES a category does not trip S-19.
+     *
+     * The category is an entity on the series and an id on the wire, and
+     * updateFromVo does not bridge them -- resolveReferences does, and validation
+     * runs without a persistence context. So the rule read the unresolved entity,
+     * fired on every series that had a perfectly good category, and made "Check
+     * rules" impossible to satisfy: activation is gated on a clean report, so it
+     * could never be offered at all.
+     *
+     * Caught by rehearsing a full week through the UI rather than by any test here,
+     * which is the argument for rehearsing.
+     */
+    @Test
+    public void aSeriesThatNamesACategoryPassesSNineteen() {
+        SystemPublicationSeriesVo vo = completeSeries();
+        vo.setCategoryId("dk-dma-internal-publications");
+
+        List<Map<String, String>> errors =
+                PublicationSeriesRestService.validationReport(vo, INSTALLATION_LANGUAGES);
+
+        assertTrue(errors.stream().noneMatch(e -> "S-19".equals(e.get("rule"))),
+                "a series naming a category still failed S-19, so every report carries a false "
+                        + "positive and no series can ever be activated. Got "
+                        + errors.stream().map(e -> e.get("rule")).toList());
+    }
+
+    /**
      * The create template contradicts no rule it chose both halves of.
      *
      * A DRAFT is allowed to be incomplete, so the template legitimately fails the

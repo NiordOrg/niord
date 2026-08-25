@@ -550,6 +550,19 @@ public class PublicationSeriesRestService {
         }
         PublicationSeries candidate = new PublicationSeries();
         candidate.updateFromVo(vo);
+
+        // The category is an ENTITY on the series and an ID on the wire, and
+        // updateFromVo does not bridge the two -- resolveReferences does, and it
+        // needs a persistence context this has no business holding.
+        //
+        // So a named category stands in as a placeholder. S-19 asks whether one was
+        // NAMED; whether it EXISTS is create and update's question, and they answer
+        // it by refusing an id that resolves to nothing. Without this the rule fired
+        // on every series that had a perfectly good category, "Check rules" could
+        // never come back clean, and activation could never be offered at all.
+        if (vo.getCategoryId() != null && !vo.getCategoryId().isBlank()) {
+            candidate.setCategory(new PublicationCategory());
+        }
         for (SeriesValidator.FieldError e
                 : SeriesValidator.validateForActivation(candidate, installationLanguages)) {
             Map<String, String> row = new LinkedHashMap<>();
