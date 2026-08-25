@@ -15,6 +15,8 @@ import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.SeriesCadence;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.vo.PublicationMainType;
@@ -22,6 +24,7 @@ import org.niord.core.report.FmReportService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -844,9 +847,57 @@ public class LegacyImportService extends BaseService {
         }
 
         closeSupersededIssues(plan, publications);
+        applyNominalSchedules(plan);
 
         plan.report().setIssuesByStatus(byStatus);
         plan.report().setIssuesByCutoffSource(byCutoffSource);
+    }
+
+    /**
+     * Gives every imported series the nominal schedule S-5 and S-7 require.
+     *
+     * The legacy model had no schedule to copy, so a translated series arrived
+     * without one -- and a series with a cadence and no weekday or time cannot be
+     * activated. Every imported weekly series was therefore correct in all other
+     * respects and refused, on two fields nobody had the data to fill in by hand.
+     *
+     * The data was in the archive: a series that released weekly for years has
+     * stated its schedule several hundred times, and the recovered cut-offs are
+     * that record. Derived AFTER the issues are built, because that is when the
+     * record exists.
+     *
+     * Only what each shape is allowed to carry. S-5 gives a weekday to a WEEKLY
+     * cadence and to nothing else; S-4 gives a first interval to a tiling series
+     * and to nothing else, so an in-force series is left without one on purpose.
+     * Nothing is overwritten -- a value already set is a decision.
+     */
+    private void applyNominalSchedules(Plan plan) {
+        for (PublicationSeries series : plan.series()) {
+            List<PublicationIssue> issues = plan.issues().values().stream()
+                    .filter(i -> i.getSeries() == series)
+                    .toList();
+            if (issues.isEmpty()) {
+                continue;
+            }
+
+            ZoneId zone = series.cutoffZone();
+            List<Date> cutoffs = issues.stream().map(PublicationIssue::effectiveCutoff).toList();
+
+            boolean hasCadence = series.getCadence() != null
+                    && series.getCadence() != SeriesCadence.NONE;
+            if (hasCadence && series.getNominalCutoffTime() == null) {
+                series.setNominalCutoffTime(NominalSchedule.timeOfDayOf(cutoffs, zone));
+            }
+            if (series.getCadence() == SeriesCadence.WEEKLY
+                    && series.getNominalCutoffDay() == null) {
+                series.setNominalCutoffDay(NominalSchedule.weekdayOf(cutoffs, zone));
+            }
+            if (series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL
+                    && series.getFirstIssueStartsAt() == null) {
+                series.setFirstIssueStartsAt(NominalSchedule.firstIntervalStartOf(
+                        issues.stream().map(PublicationIssue::getIntervalFrom).toList()));
+            }
+        }
     }
 
     /**

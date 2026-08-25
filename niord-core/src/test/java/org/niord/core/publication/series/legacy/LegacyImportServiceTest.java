@@ -13,6 +13,7 @@ import org.niord.core.publication.PublicationDesc;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.model.publication.PublicationType;
@@ -332,6 +333,19 @@ public class LegacyImportServiceTest {
             assertEquals("import-probe", written.getCategory().getCategoryId(),
                     "the series must carry its category -- the column is NOT NULL and the category "
                             + "decides which section of the public page it lands in");
+
+            // The nominal schedule S-5 and S-7 require, read off the issues just
+            // imported. Without it every imported series with a cadence is correct in
+            // every other respect and cannot be activated, on two fields the legacy
+            // model had nothing to copy from and nobody could fill in by hand.
+            if (written.getCadence() != null && written.getCadence() != SeriesCadence.NONE) {
+                assertNotNull(written.getNominalCutoffTime(),
+                        "a series with a cadence and no nominal time fails S-7 and cannot activate");
+            }
+            if (written.getCadence() == SeriesCadence.WEEKLY) {
+                assertNotNull(written.getNominalCutoffDay(),
+                        "a weekly series with no weekday fails S-5 and cannot activate");
+            }
 
             PublicationIssue issue = em.createQuery(
                             "SELECT i FROM PublicationIssue i WHERE i.publicId = :id",
