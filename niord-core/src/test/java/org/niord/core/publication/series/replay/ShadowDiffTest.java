@@ -6,6 +6,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.message.Message;
@@ -68,6 +69,90 @@ public class ShadowDiffTest {
 
     private static final long HOUR = 3_600_000L;
     private static final long WEEK = 7 * 24 * HOUR;
+
+    /**
+     * What this test seeded, so it can take it away again.
+     *
+     * NOT "legacy-publications". That value means the legacy importer created the
+     * row, and nothing here is an import -- but more to the point, it is what the
+     * importer's own undo is scoped by, so a fixture wearing it is a fixture the
+     * importer would consider its own.
+     */
+    private static final String SEEDED_BY = "shadow-diff-fixture";
+
+    /**
+     * Removes the fixtures, because leaving them behind breaks a DIFFERENT test.
+     *
+     * The series here carry imported issues with no publicTo, which is exactly the
+     * shape CutoverPreflightTest asserts the estate does not have -- and the
+     * pre-flight reads the whole schema rather than a fixture, because on a real
+     * deployment the whole schema IS the estate. So every run of this class left
+     * one series behind that made the pre-flight report the archive as forked.
+     *
+     * It failed with a different series id each run, which is what a leftover
+     * fixture looks like and what a real defect does not. Measured before fixing:
+     * one violating series, a fixture; zero real imported series. The estate was
+     * clean the whole time.
+     */
+    @AfterEach
+    @Transactional
+    public void removeWhatWasSeeded() {
+        List<Integer> seriesIds = em.createQuery(
+                        "SELECT s.id FROM PublicationSeries s WHERE s.importSource = :src", Integer.class)
+                .setParameter("src", SEEDED_BY).getResultList();
+        if (seriesIds.isEmpty()) {
+            return;
+        }
+
+        List<Integer> issueIds = em.createQuery(
+                        "SELECT i.id FROM PublicationIssue i WHERE i.series.id IN :series", Integer.class)
+                .setParameter("series", seriesIds).getResultList();
+
+        if (!issueIds.isEmpty()) {
+            em.createQuery("DELETE FROM IssueMember m WHERE m.issue.id IN :issues")
+                    .setParameter("issues", issueIds).executeUpdate();
+            em.createQuery("DELETE FROM IssueOverride o WHERE o.issue.id IN :issues")
+                    .setParameter("issues", issueIds).executeUpdate();
+            em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.issue.id IN :issues")
+                    .setParameter("issues", issueIds).executeUpdate();
+        }
+
+        // ShadowDiffRun keys on the series' STRING seriesId rather than on a
+        // relation -- it outlives the rows it describes, which is the point of a
+        // shadow diff -- so it has to be named before the series goes.
+        List<String> seriesKeys = em.createQuery(
+                        "SELECT s.seriesId FROM PublicationSeries s WHERE s.importSource = :src",
+                        String.class)
+                .setParameter("src", SEEDED_BY).getResultList();
+        if (!seriesKeys.isEmpty()) {
+            em.createQuery("DELETE FROM ShadowDiffRun r WHERE r.seriesId IN :keys")
+                    .setParameter("keys", seriesKeys).executeUpdate();
+        }
+
+        // The desc rows go before their owners. Both are child tables with a real
+        // FK, and Hibernate does not cascade a bulk DELETE -- so deleting the
+        // parent first fails the constraint rather than taking the children with
+        // it.
+        if (!issueIds.isEmpty()) {
+            em.createQuery("DELETE FROM PublicationIssueDesc d WHERE d.entity.id IN :issues")
+                    .setParameter("issues", issueIds).executeUpdate();
+        }
+        em.createQuery("DELETE FROM PublicationIssue i WHERE i.series.id IN :series")
+                .setParameter("series", seriesIds).executeUpdate();
+        em.createQuery("DELETE FROM PublicationSeriesDesc d WHERE d.entity.id IN :series")
+                .setParameter("series", seriesIds).executeUpdate();
+
+        // The languages collection table has a real FK too, and no entity of its
+        // own to delete through -- @ElementCollection means native SQL is the only
+        // way to reach it. Missed on the first attempt: the series delete failed
+        // on it after every other child was already gone.
+        em.createNativeQuery(
+                        "DELETE FROM PublicationSeries_languages WHERE PublicationSeries_id IN (:series)")
+                .setParameter("series", seriesIds).executeUpdate();
+
+        em.createQuery("DELETE FROM PublicationSeries s WHERE s.id IN :series")
+                .setParameter("series", seriesIds).executeUpdate();
+    }
 
     /**
      * Two consecutive weeks, both green.
@@ -644,7 +729,7 @@ public class ShadowDiffTest {
         PublicationSeries s = new PublicationSeries();
         s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
         s.setStatus(SeriesStatus.DRAFT);
-        s.setImportSource("legacy-publications");
+        s.setImportSource(SEEDED_BY);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setCadence(SeriesCadence.WEEKLY);
         s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
