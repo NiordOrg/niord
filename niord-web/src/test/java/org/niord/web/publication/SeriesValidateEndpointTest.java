@@ -202,7 +202,10 @@ public class SeriesValidateEndpointTest {
                 PublicationSeriesRestService.newSeriesTemplate(new String[]{"da", "en"});
 
         // Fields a create form exists to collect. Everything else is the template's.
-        Set<String> adminSupplies = Set.of("criteria", "firstIssueStartsAt", "categoryId");
+        // domainId joins these: the template cannot know which domain a new series
+        // belongs to, and the domain is what carries its timezone (S-20).
+        Set<String> adminSupplies =
+                Set.of("criteria", "firstIssueStartsAt", "categoryId", "domainId");
 
         List<String> selfContradictions =
                 PublicationSeriesRestService.validationReport(template, INSTALLATION_LANGUAGES)

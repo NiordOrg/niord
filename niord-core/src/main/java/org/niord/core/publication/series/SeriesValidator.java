@@ -252,6 +252,20 @@ public final class SeriesValidator {
                             + "missing one fails at flush time as a 500 rather than as an answer"));
         }
 
+        // S-20. A series belongs to a domain, because that is where its TIMEZONE
+        // comes from -- and a cut-off schedule with no zone is a schedule in
+        // whatever zone the reader happens to be in.
+        //
+        // Not a style rule. The domains differ in practice: Atlantic/Faeroe for the
+        // Faroe domain, UTC for Greenland, Europe/Copenhagen for the rest. A series
+        // resolving in the wrong one names its issues for the wrong ISO week at the
+        // year boundary and closes them an hour early or late all year.
+        if (s.getDomain() == null) {
+            e.add(new FieldError("S-20", "domainId",
+                    "a series must belong to a domain; the domain carries the timezone its "
+                            + "cut-offs are read in, and there is no other source for one"));
+        }
+
         // C-1 to C-10, on the criteria document itself.
         for (CriteriaValidator.Violation v : CriteriaValidator.validate(s.getCriteria(), CriteriaValidator.ACCEPT_ALL)) {
             e.add(new FieldError(v.rule(), "criteria" + v.pointer(), v.message()));

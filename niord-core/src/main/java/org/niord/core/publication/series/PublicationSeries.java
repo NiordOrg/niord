@@ -473,7 +473,6 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         nominalCutoffDayOfMonth = vo.getNominalCutoffDayOfMonth();
         nominalCutoffMonth = vo.getNominalCutoffMonth();
         nominalCutoffTime = vo.getNominalCutoffTime();
-        nominalCutoffTimeZone = vo.getNominalCutoffTimeZone();
         numberingScheme = enumOf(NumberingScheme.class, vo.getNumberingScheme(), "numberingScheme");
         timeRelation = enumOf(TimeRelation.class, vo.getTimeRelation(), "timeRelation");
         aliveAtCutoff = vo.getAliveAtCutoff();
@@ -615,7 +614,6 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             sys.setNominalCutoffDayOfMonth(nominalCutoffDayOfMonth);
             sys.setNominalCutoffMonth(nominalCutoffMonth);
             sys.setNominalCutoffTime(nominalCutoffTime);
-            sys.setNominalCutoffTimeZone(nominalCutoffTimeZone);
             sys.setNumberingScheme(numberingScheme == null ? null : numberingScheme.name());
             sys.setTimeRelation(timeRelation == null ? null : timeRelation.name());
             sys.setAliveAtCutoff(aliveAtCutoff);
@@ -652,15 +650,22 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
      * rather than throwing: a misconfigured zone shifts a cut-off by hours, while
      * throwing here would take out the screens that merely wanted to name a week.
      */
+    /**
+     * The zone this series' cut-offs are read and written in.
+     *
+     * THE DOMAIN AND NOTHING ELSE. Timezone is a domain setting and the domains
+     * really do differ -- Atlantic/Faeroe, UTC for Greenland, Europe/Copenhagen for
+     * the rest -- so a series that answered from anywhere else would schedule its
+     * cut-off in a zone nobody configured. A per-series timezone column would be a
+     * second source that can disagree with the domain, which is why this no longer
+     * consults one.
+     *
+     * The UTC branch is a last resort for a series with no domain, which S-20
+     * refuses. It is reachable only by a series that is already invalid, and it is
+     * here so that resolving one cannot throw rather than as a policy about zones.
+     */
     public ZoneId cutoffZone() {
-        if (nominalCutoffTimeZone == null || nominalCutoffTimeZone.isBlank()) {
-            return ZoneId.of("UTC");
-        }
-        try {
-            return ZoneId.of(nominalCutoffTimeZone);
-        } catch (RuntimeException e) {
-            return ZoneId.of("UTC");
-        }
+        return domain == null ? ZoneId.of("UTC") : domain.timeZone().toZoneId();
     }
 
 }

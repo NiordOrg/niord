@@ -38,8 +38,6 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     private String nominalCutoffTime;
 
-    private String nominalCutoffTimeZone;
-
     private String numberingScheme;
 
     private String timeRelation;
@@ -149,13 +147,6 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
         this.nominalCutoffTime = nominalCutoffTime;
     }
 
-    public String getNominalCutoffTimeZone() {
-        return nominalCutoffTimeZone;
-    }
-
-    public void setNominalCutoffTimeZone(String nominalCutoffTimeZone) {
-        this.nominalCutoffTimeZone = nominalCutoffTimeZone;
-    }
 
     public String getNumberingScheme() {
         return numberingScheme;

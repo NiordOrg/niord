@@ -46,6 +46,16 @@ public class SeriesVoRoundTripTest {
      */
     private static final Set<String> RESOLVED_BY_ID = Set.of("category", "domain");
 
+    /**
+     * Fields deliberately off the wire entirely.
+     *
+     * nominalCutoffTimeZone is vestigial. The timezone is a DOMAIN setting and the
+     * domains genuinely differ, so a per-series column is a second source that can
+     * disagree with the one that counts. cutoffZone() reads the domain and nothing
+     * else; the column stays only because dropping it is a migration.
+     */
+    private static final Set<String> NOT_ON_THE_WIRE = Set.of("nominalCutoffTimeZone");
+
     @Test
     public void everySettableFieldSurvivesTheVoRoundTrip() throws Exception {
         PublicationSeries source = new PublicationSeries();
@@ -111,7 +121,8 @@ public class SeriesVoRoundTripTest {
         List<Field> fields = new ArrayList<>();
         for (Field f : PublicationSeries.class.getDeclaredFields()) {
             if (Modifier.isStatic(f.getModifiers()) || f.isSynthetic()
-                    || RESOLVED_BY_ID.contains(f.getName())) {
+                    || RESOLVED_BY_ID.contains(f.getName())
+                    || NOT_ON_THE_WIRE.contains(f.getName())) {
                 continue;
             }
             f.setAccessible(true);

@@ -229,6 +229,14 @@ public final class LegacySeriesTranslation {
         series.setCadence(cadence(template));
         series.setContentMode(contentMode(template));
 
+        // The domain, which is the ONLY source of a timezone. Ten of the twelve
+        // templates carry one and it was being dropped, so every imported series had
+        // no domain and therefore no zone -- and a cut-off schedule with no zone is
+        // a schedule in whatever zone the reader happens to be in. The domains
+        // genuinely differ: Atlantic/Faeroe, UTC for Greenland, Europe/Copenhagen
+        // for the rest.
+        series.setDomain(template.getDomain());
+
         // S-1 and S-2: a time relation and a liveness flag belong to the
         // query-backed shape and to NOTHING else. The legacy filter was translated
         // unconditionally, so eight publications that carry no membership at all --

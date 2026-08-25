@@ -1,6 +1,7 @@
 package org.niord.core.publication.series;
 
 import org.junit.jupiter.api.Test;
+import org.niord.core.domain.Domain;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
@@ -53,6 +54,9 @@ public class SeriesValidatorTest {
         // S-19: the category column is NOT NULL, so a baseline without one is not a
         // valid series -- it is one that fails at flush rather than at validation.
         s.setCategory(new PublicationCategory());
+        // S-20: the domain carries the timezone the cut-offs are read in, so a
+        // baseline without one is a series whose schedule has no zone.
+        s.setDomain(new Domain());
 
         IssueCriteriaVo doc = new IssueCriteriaVo();
         MessageSeriesCriterionVo node = new MessageSeriesCriterionVo();
