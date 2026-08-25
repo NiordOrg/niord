@@ -551,17 +551,25 @@ public class PublicationSeriesRestService {
         PublicationSeries candidate = new PublicationSeries();
         candidate.updateFromVo(vo);
 
-        // The category is an ENTITY on the series and an ID on the wire, and
-        // updateFromVo does not bridge the two -- resolveReferences does, and it
-        // needs a persistence context this has no business holding.
+        // Category and domain are ENTITIES on the series and IDS on the wire, and
+        // updateFromVo does not bridge them -- resolveReferences does, and it needs a
+        // persistence context this has no business holding.
         //
-        // So a named category stands in as a placeholder. S-19 asks whether one was
-        // NAMED; whether it EXISTS is create and update's question, and they answer
-        // it by refusing an id that resolves to nothing. Without this the rule fired
-        // on every series that had a perfectly good category, "Check rules" could
-        // never come back clean, and activation could never be offered at all.
+        // So a named reference stands in as a placeholder. S-19 and S-20 ask whether
+        // one was NAMED; whether it EXISTS is create and update's question, and they
+        // answer it by refusing an id that resolves to nothing. Without this the rules
+        // fire on every series that has a perfectly good category or domain, "Check
+        // rules" can never come back clean, and activation can never be offered.
+        //
+        // BOTH, deliberately. This was fixed for the category alone when S-19 landed,
+        // and S-20 then arrived and reproduced the identical bug on the domain --
+        // because the first fix patched the instance instead of the shape. Any future
+        // rule reading an id-backed reference belongs in this block.
         if (vo.getCategoryId() != null && !vo.getCategoryId().isBlank()) {
             candidate.setCategory(new PublicationCategory());
+        }
+        if (vo.getDomainId() != null && !vo.getDomainId().isBlank()) {
+            candidate.setDomain(new Domain());
         }
         for (SeriesValidator.FieldError e
                 : SeriesValidator.validateForActivation(candidate, installationLanguages)) {

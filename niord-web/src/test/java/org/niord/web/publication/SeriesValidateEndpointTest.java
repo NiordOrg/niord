@@ -153,6 +153,40 @@ public class SeriesValidateEndpointTest {
     }
 
     /**
+     * NAMING an id-backed reference is enough to satisfy the rule that requires it.
+     *
+     * Category and domain are entities on the series and ids on the wire, and
+     * updateFromVo bridges neither -- resolveReferences does, and validation runs
+     * without a persistence context. So a rule reading the unresolved entity fires
+     * on every series that has a perfectly good one, and since activation is gated
+     * on a clean report, nothing can ever be activated.
+     *
+     * ONE TEST OVER BOTH, on purpose. This happened twice: fixed for the category
+     * when S-19 landed, then reproduced exactly on the domain when S-20 arrived,
+     * because the first fix and its test both named the instance instead of the
+     * shape. A third id-backed rule should fail here rather than in production.
+     */
+    @Test
+    public void namingAnIdBackedReferenceSatisfiesTheRuleThatRequiresIt() {
+        SystemPublicationSeriesVo vo = completeSeries();
+        vo.setCategoryId("dk-dma-internal-publications");
+        vo.setDomainId("niord-nm");
+
+        List<Map<String, String>> errors =
+                PublicationSeriesRestService.validationReport(vo, INSTALLATION_LANGUAGES);
+
+        List<String> onNamedReferences = errors.stream()
+                .filter(e -> "categoryId".equals(e.get("field")) || "domainId".equals(e.get("field")))
+                .map(e -> e.get("rule") + " (" + e.get("field") + ")")
+                .toList();
+
+        assertTrue(onNamedReferences.isEmpty(),
+                "a series naming both references still failed " + onNamedReferences
+                        + ", so every report carries a false positive and no series can be "
+                        + "activated at all");
+    }
+
+    /**
      * A series that NAMES a category does not trip S-19.
      *
      * The category is an entity on the series and an id on the wire, and
