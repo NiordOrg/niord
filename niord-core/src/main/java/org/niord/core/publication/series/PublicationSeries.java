@@ -470,6 +470,8 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         contentMode = enumOf(ContentMode.class, vo.getContentMode(), "contentMode");
         cadence = enumOf(SeriesCadence.class, vo.getCadence(), "cadence");
         nominalCutoffDay = enumOf(CutoffDay.class, vo.getNominalCutoffDay(), "nominalCutoffDay");
+        nominalCutoffDayOfMonth = vo.getNominalCutoffDayOfMonth();
+        nominalCutoffMonth = vo.getNominalCutoffMonth();
         nominalCutoffTime = vo.getNominalCutoffTime();
         nominalCutoffTimeZone = vo.getNominalCutoffTimeZone();
         numberingScheme = enumOf(NumberingScheme.class, vo.getNumberingScheme(), "numberingScheme");
@@ -489,6 +491,11 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         nextIssueCreation = enumOf(NextIssueCreation.class, vo.getNextIssueCreation(),
                 "nextIssueCreation");
         publicAuthority = enumOf(PublicAuthority.class, vo.getPublicAuthority(), "publicAuthority");
+        // Absent means "unchanged": an older client that does not send it must not
+        // silently flip a series to one file for every language.
+        if (vo.getLanguageSpecific() != null) {
+            languageSpecific = vo.getLanguageSpecific();
+        }
         legacyTemplateId = vo.getLegacyTemplateId();
         importSource = vo.getImportSource();
 
@@ -586,6 +593,8 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             sys.setContentMode(contentMode == null ? null : contentMode.name());
             sys.setCadence(cadence == null ? null : cadence.name());
             sys.setNominalCutoffDay(nominalCutoffDay == null ? null : nominalCutoffDay.name());
+            sys.setNominalCutoffDayOfMonth(nominalCutoffDayOfMonth);
+            sys.setNominalCutoffMonth(nominalCutoffMonth);
             sys.setNominalCutoffTime(nominalCutoffTime);
             sys.setNominalCutoffTimeZone(nominalCutoffTimeZone);
             sys.setNumberingScheme(numberingScheme == null ? null : numberingScheme.name());
@@ -605,6 +614,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             sys.setReleaseMode(releaseMode == null ? null : releaseMode.name());
             sys.setNextIssueCreation(nextIssueCreation == null ? null : nextIssueCreation.name());
             sys.setPublicAuthority(publicAuthority == null ? null : publicAuthority.name());
+            sys.setLanguageSpecific(languageSpecific);
             sys.setLegacyTemplateId(legacyTemplateId);
             sys.setImportSource(importSource);
             if (reportParams != null) {

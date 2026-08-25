@@ -25,6 +25,17 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     private String nominalCutoffDay;
 
+    /**
+     * Day of the month a MONTHLY or YEARLY series cuts off, 1-31.
+     *
+     * S-6 requires it for those two cadences, so without it on the VO a monthly
+     * or yearly series can never be given one and can never activate.
+     */
+    private Integer nominalCutoffDayOfMonth;
+
+    /** Month a YEARLY series cuts off in, 1-12. Required by S-6 for YEARLY. */
+    private Integer nominalCutoffMonth;
+
     private String nominalCutoffTime;
 
     private String nominalCutoffTimeZone;
@@ -72,6 +83,14 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
     private Map<String, Object> reportParams = new LinkedHashMap<>();
 
     /** DERIVED, never stored. */
+    /**
+     * Whether issues carry a separate file per language.
+     *
+     * Read by IssuePublicationMapping, so it changes what an issue produces --
+     * which is why it belongs on the VO rather than staying importer-only.
+     */
+    private Boolean languageSpecific;
+
     private boolean dormant;
 
     public String getStatus() {
@@ -104,6 +123,22 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setNominalCutoffDay(String nominalCutoffDay) {
         this.nominalCutoffDay = nominalCutoffDay;
+    }
+
+    public Integer getNominalCutoffDayOfMonth() {
+        return nominalCutoffDayOfMonth;
+    }
+
+    public void setNominalCutoffDayOfMonth(Integer nominalCutoffDayOfMonth) {
+        this.nominalCutoffDayOfMonth = nominalCutoffDayOfMonth;
+    }
+
+    public Integer getNominalCutoffMonth() {
+        return nominalCutoffMonth;
+    }
+
+    public void setNominalCutoffMonth(Integer nominalCutoffMonth) {
+        this.nominalCutoffMonth = nominalCutoffMonth;
     }
 
     public String getNominalCutoffTime() {
@@ -280,6 +315,14 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setReportParams(Map<String, Object> reportParams) {
         this.reportParams = reportParams;
+    }
+
+    public Boolean getLanguageSpecific() {
+        return languageSpecific;
+    }
+
+    public void setLanguageSpecific(Boolean languageSpecific) {
+        this.languageSpecific = languageSpecific;
     }
 
     public boolean isDormant() {
