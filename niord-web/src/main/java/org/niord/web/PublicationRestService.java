@@ -61,6 +61,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import org.niord.core.publication.series.IssuePublicationMapping;
+import org.niord.core.publication.series.PublicationIssue;
+import org.niord.core.publication.series.PublicationSearchAdapter;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -90,6 +94,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
     @Inject
     PublicationResolver publicationResolver;
+
+    @Inject
+    PublicationSearchAdapter publicationSearchAdapter;
 
     @Inject
     UserService userService;
@@ -136,8 +143,10 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
-        return publicationService.searchPublications(params)
-                .map(p -> p.toVo(PublicationVo.class, dataFilter));
+        return unionWithIssues(params,
+                publicationService.searchPublications(params)
+                        .map(p -> p.toVo(PublicationVo.class, dataFilter)),
+                issue -> IssuePublicationMapping.toPublicationVo(issue, lang));
     }
 
 
@@ -175,8 +184,79 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
-        return publicationService.searchPublications(params)
-                .map(p -> p.toVo(SystemPublicationVo.class, dataFilter));
+        return unionWithIssues(params,
+                publicationService.searchPublications(params)
+                        .map(p -> p.toVo(SystemPublicationVo.class, dataFilter)),
+                issue -> IssuePublicationMapping.toSystemPublicationVo(issue, lang));
+    }
+
+    /**
+     * The legacy half and the issue half, merged, ISSUES FIRST.
+     *
+     * Issues first because PublicationResolver resolves them first: an imported
+     * issue borrows its legacy row's id, so the two halves collide by design and
+     * whichever the picker offers has to be the one a citation will resolve to.
+     * Offering the legacy row and resolving to the issue would show one title and
+     * cite another.
+     *
+     * Without this an issue with no legacy twin -- every issue created after
+     * cutover -- is resolvable by id and findable by nobody, which makes the
+     * current week the one publication an editor cannot cite.
+     *
+     * MERGED BEFORE TRUNCATION, so the two halves cannot each truncate
+     * independently and leave the merge working on two wrong lists. The picker
+     * does not page (it is a title-filtered type-ahead), so the total is capped at
+     * the requested size after merging rather than paged through.
+     *
+     * SystemPublicationVo extends PublicationVo, so one instanceof covers both
+     * shapes this is called with.
+     */
+    private <V> PagedSearchResultVo<V> unionWithIssues(
+            PublicationSearchParams params,
+            PagedSearchResultVo<V> legacy,
+            java.util.function.Function<PublicationIssue, V> asVo) {
+
+        List<PublicationIssue> issues = publicationSearchAdapter.search(params);
+        if (issues.isEmpty()) {
+            return legacy;
+        }
+        List<V> issueVos = new ArrayList<>();
+        List<String> issueIds = new ArrayList<>();
+        for (PublicationIssue issue : issues) {
+            issueIds.add(issue.getPublicId());
+            issueVos.add(asVo.apply(issue));
+        }
+        return merge(issueVos, issueIds, legacy, params.getMaxSize());
+    }
+
+    /**
+     * The merge itself, without the container.
+     *
+     * Package-private and static so the three rules that matter can be asserted
+     * directly: issues first, a colliding legacy row dropped, and the cap applied
+     * only AFTER merging. niord-web has no CDI test harness, and the alternative
+     * is testing this through two endpoints and a database.
+     */
+    static <V> PagedSearchResultVo<V> merge(List<V> issueVos, List<String> issueIds,
+                                            PagedSearchResultVo<V> legacy, int maxSize) {
+        Set<String> taken = new LinkedHashSet<>(issueIds);
+        List<V> merged = new ArrayList<>(issueVos);
+        for (V row : legacy.getData()) {
+            String id = row instanceof PublicationVo p ? p.getPublicationId() : null;
+            if (!taken.contains(id)) {
+                merged.add(row);
+            }
+        }
+
+        List<V> capped = maxSize > 0 && merged.size() > maxSize
+                ? new ArrayList<>(merged.subList(0, maxSize))
+                : merged;
+
+        PagedSearchResultVo<V> out = new PagedSearchResultVo<>();
+        out.setData(capped);
+        out.setTotal((long) merged.size());
+        out.setSize(capped.size());
+        return out;
     }
 
 
