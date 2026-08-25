@@ -52,6 +52,7 @@ import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -474,19 +475,47 @@ public class PublicationSeriesRestService {
         return new ArrayList<>(IssueNaming.TOKENS);
     }
 
-    /** S15. Validate without saving, so the form can show its errors. */
+    /**
+     * S15. Validate without saving, so the form can show its errors.
+     *
+     * THE BODY IS THE SUBJECT. This used to load the STORED series by id and
+     * validate that, which answers a question nobody asked: the form already has
+     * the saved state and is asking about the edit in front of it. Worse, a series
+     * that did not exist yet returned an EMPTY list -- "no problems" for a create
+     * form whose series could not be created at all.
+     *
+     * Validated on a transient entity, never persisted and never attached. The
+     * validator reads no entity references (category and domain are resolved from
+     * ids elsewhere and it looks at neither), so nothing here needs a database.
+     */
     @POST
     @Path("/validate")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
     public List<Map<String, String>> validate(SystemPublicationSeriesVo vo) {
-        PublicationSeries series = seriesService.findBySeriesId(vo.getSeriesId());
+        String[] languages = app.getLanguages();
+        return validationReport(vo,
+                languages == null ? Set.of() : new LinkedHashSet<>(List.of(languages)));
+    }
+
+    /**
+     * The endpoint's body, without the container.
+     *
+     * Package-private and static so the wiring itself is testable -- the bug this
+     * replaced was not in the validator but in what got handed to it, and a test of
+     * SeriesValidator would have stayed green throughout.
+     */
+    static List<Map<String, String>> validationReport(SystemPublicationSeriesVo vo,
+                                                      Set<String> installationLanguages) {
         List<Map<String, String>> out = new ArrayList<>();
-        if (series == null) {
+        if (vo == null) {
             return out;
         }
-        for (SeriesValidator.FieldError e : SeriesValidator.validate(series, null)) {
+        PublicationSeries candidate = new PublicationSeries();
+        candidate.updateFromVo(vo);
+        for (SeriesValidator.FieldError e
+                : SeriesValidator.validateForActivation(candidate, installationLanguages)) {
             Map<String, String> row = new LinkedHashMap<>();
             row.put("rule", e.rule());
             row.put("field", e.field());

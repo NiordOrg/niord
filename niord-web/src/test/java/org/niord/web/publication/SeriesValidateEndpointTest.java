@@ -1,0 +1,142 @@
+package org.niord.web.publication;
+
+import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.SeriesCadence;
+import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.vo.PublicationSeriesDescVo;
+import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * S15 validates THE BODY, not the stored row.
+ *
+ * The endpoint used to look the series up by id and validate whatever was saved,
+ * which answers a question the form never asks -- it already has the saved state
+ * and wants to know about the edit in front of it. The failure mode that matters
+ * is the create form: a series with no stored row returned an EMPTY list, so a
+ * screen that could not produce a saveable series was told it had no problems.
+ *
+ * Nothing caught it because every test of these rules called SeriesValidator
+ * directly. The validator was right the whole time; the wiring handed it the wrong
+ * subject. So these tests go through the endpoint's own code path -- the extracted
+ * static is that path, not a paraphrase of it.
+ */
+public class SeriesValidateEndpointTest {
+
+    private static final Set<String> INSTALLATION_LANGUAGES = Set.of("da", "en");
+
+    /** The regression: an unsaved series is validated on its merits, not waved through. */
+    @Test
+    public void aSeriesThatWasNeverSavedIsStillValidated() {
+        SystemPublicationSeriesVo vo = new SystemPublicationSeriesVo();
+        vo.setSeriesId("brand-new-series-that-does-not-exist");
+        vo.setStatus(SeriesStatus.ACTIVE.name());
+        vo.setContentMode(ContentMode.GENERATED_FROM_QUERY.name());
+        vo.setCadence(SeriesCadence.WEEKLY.name());
+        // No criteria, no timeRelation, no languages, no descs, no schedule: this
+        // series breaks most of S-1 to S-12 and cannot be created.
+
+        List<Map<String, String>> errors =
+                PublicationSeriesRestService.validationReport(vo, INSTALLATION_LANGUAGES);
+
+        assertFalse(errors.isEmpty(),
+                "an unsaved series reported zero problems. A create form would show 'no problems' "
+                        + "for a series the server will refuse, and the admin finds out on save");
+        assertTrue(errors.stream().anyMatch(e -> "S-1".equals(e.get("rule"))),
+                "expected S-1 (a query-backed series must carry criteria), got "
+                        + errors.stream().map(e -> e.get("rule")).toList());
+    }
+
+    /**
+     * The edit in the form is what gets judged, even when a valid row is stored.
+     *
+     * This is the other half: validating the stored series would report nothing
+     * here, because what is broken exists only in the body.
+     */
+    @Test
+    public void theBodyIsTheSubjectRatherThanWhateverIsStored() {
+        SystemPublicationSeriesVo vo = completeSeries();
+        vo.setCriteria(null); // the edit that breaks it
+
+        List<Map<String, String>> errors =
+                PublicationSeriesRestService.validationReport(vo, INSTALLATION_LANGUAGES);
+
+        assertTrue(errors.stream().anyMatch(e -> "criteria".equals(e.get("field"))),
+                "removing the criteria in the form reported nothing against the criteria field, so "
+                        + "the stored series was validated instead of the edit. Got "
+                        + errors.stream().map(e -> e.get("field")).toList());
+    }
+
+    /** Every row names the rule and the field, so the form can render it in place. */
+    @Test
+    public void everyErrorNamesItsRuleAndItsField() {
+        SystemPublicationSeriesVo vo = new SystemPublicationSeriesVo();
+        vo.setSeriesId("incomplete");
+        vo.setContentMode(ContentMode.GENERATED_FROM_QUERY.name());
+
+        List<Map<String, String>> errors =
+                PublicationSeriesRestService.validationReport(vo, INSTALLATION_LANGUAGES);
+        assertFalse(errors.isEmpty());
+
+        for (Map<String, String> e : errors) {
+            assertTrue(e.get("rule") != null && !e.get("rule").isBlank(), "a row with no rule: " + e);
+            assertTrue(e.get("field") != null && !e.get("field").isBlank(),
+                    "a row with no field cannot be shown against the input that caused it: " + e);
+            assertTrue(e.get("message") != null && !e.get("message").isBlank(),
+                    "a row with no message: " + e);
+        }
+    }
+
+    /** A null body is a caller error, not a 500. */
+    @Test
+    public void aMissingBodyReportsNothingRatherThanThrowing() {
+        assertTrue(PublicationSeriesRestService.validationReport(null, INSTALLATION_LANGUAGES).isEmpty());
+    }
+
+    /**
+     * A language the installation does not run is reported.
+     *
+     * The old call passed null for the installation languages, which switched this
+     * check off entirely -- so the one rule that needs context from outside the
+     * series was the one rule that never ran.
+     */
+    @Test
+    public void aLanguageTheInstallationDoesNotRunIsReported() {
+        SystemPublicationSeriesVo vo = completeSeries();
+        vo.getLanguages().add("de");
+        PublicationSeriesDescVo german = new PublicationSeriesDescVo();
+        german.setLang("de");
+        german.setName("Deutsche Ausgabe");
+        vo.getDescs().add(german);
+
+        List<Map<String, String>> errors =
+                PublicationSeriesRestService.validationReport(vo, INSTALLATION_LANGUAGES);
+
+        assertTrue(errors.stream().anyMatch(e -> "S-11".equals(e.get("rule"))),
+                "a series declaring a language the installation does not run passed S-11, which means "
+                        + "the installation languages were not passed through. Got "
+                        + errors.stream().map(e -> e.get("rule")).toList());
+    }
+
+    /** A minimally complete query-backed weekly series, used as the baseline to break. */
+    private static SystemPublicationSeriesVo completeSeries() {
+        SystemPublicationSeriesVo vo = new SystemPublicationSeriesVo();
+        vo.setSeriesId("weekly-thing");
+        vo.setStatus(SeriesStatus.DRAFT.name());
+        vo.setContentMode(ContentMode.GENERATED_FROM_QUERY.name());
+        vo.setCadence(SeriesCadence.WEEKLY.name());
+        vo.getLanguages().add("da");
+        PublicationSeriesDescVo desc = new PublicationSeriesDescVo();
+        desc.setLang("da");
+        desc.setName("Ugentlig");
+        vo.getDescs().add(desc);
+        return vo;
+    }
+}
