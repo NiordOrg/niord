@@ -622,6 +622,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * happen, and a 422 with a body they have to dig out of an error handler is a
      * worse way to tell them.
      */
+    // NOT_SUPPORTED: this operation opens its OWN transaction with a budget sized
+    // for the whole estate. The class-level @Transactional otherwise wrapped it in
+    // a second, ambient transaction on the DEFAULT timeout -- which the reaper
+    // aborted long before the work finished, so a completed import returned 500
+    // with "the transaction is not active" while its rows sat committed in the
+    // database. An operator reading that would re-run a cutover that had worked.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @POST
     @Path("/import-legacy/validate")
     @Produces(MediaType.APPLICATION_JSON)
@@ -639,6 +646,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * worse than none: the rows that landed look correct and nothing marks them as
      * partial.
      */
+    // NOT_SUPPORTED: this operation opens its OWN transaction with a budget sized
+    // for the whole estate. The class-level @Transactional otherwise wrapped it in
+    // a second, ambient transaction on the DEFAULT timeout -- which the reaper
+    // aborted long before the work finished, so a completed import returned 500
+    // with "the transaction is not active" while its rows sat committed in the
+    // database. An operator reading that would re-run a cutover that had worked.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @POST
     @Path("/import-legacy")
     @Produces(MediaType.APPLICATION_JSON)
@@ -666,6 +680,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * those rows ARE the public list and undoing would withdraw published
      * editions from under their readers.
      */
+    // NOT_SUPPORTED: this operation opens its OWN transaction with a budget sized
+    // for the whole estate. The class-level @Transactional otherwise wrapped it in
+    // a second, ambient transaction on the DEFAULT timeout -- which the reaper
+    // aborted long before the work finished, so a completed import returned 500
+    // with "the transaction is not active" while its rows sat committed in the
+    // database. An operator reading that would re-run a cutover that had worked.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @DELETE
     @Path("/import-legacy")
     @Produces(MediaType.APPLICATION_JSON)

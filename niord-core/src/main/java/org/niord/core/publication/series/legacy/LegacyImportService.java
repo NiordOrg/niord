@@ -119,8 +119,23 @@ public class LegacyImportService extends BaseService {
         }
     }
 
-    /** S18. Reads, translates, reports. Writes nothing, ever. */
+    /**
+     * S18. Reads, translates, reports. Writes nothing, ever.
+     *
+     * ITS OWN TRANSACTION, for the same reason run() has one: planning reads the
+     * whole legacy estate and takes as long as it takes. Inheriting the caller's
+     * transaction meant inheriting the caller's BUDGET -- and the default is far
+     * short of what a full estate needs, so the reaper aborted the transaction
+     * mid-read and the commit afterwards failed with "the transaction is not
+     * active". Read-only work should not be able to fail that way.
+     */
     public LegacyImportReportVo dryRun() {
+        return QuarkusTransaction.requiringNew()
+                .timeout(IMPORT_TIMEOUT_SECONDS)
+                .call(this::dryRunInTransaction);
+    }
+
+    private LegacyImportReportVo dryRunInTransaction() {
         Plan plan = plan();
         plan.report().setDryRun(true);
         plan.report().setWouldSucceed(plan.isClean());
@@ -381,6 +396,10 @@ public class LegacyImportService extends BaseService {
         planCategories(plan, templates, publications);
         Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates, authored);
         planOrphanSeries(plan, publications, seriesByTemplate, authored);
+        // After BOTH passes, because a ruling can name a series either pass
+        // produced -- and for a long time this ran inside planSeries, so the two
+        // orphan-grouped annex series it names never received one.
+        applyDomainRulings(plan);
         // After the orphan pass, because a redirect destination may be a series
         // only that pass produces -- and before planIssues, which files by this map.
         resolveTemplateRedirects(plan, templates, seriesByTemplate);
@@ -511,7 +530,26 @@ public class LegacyImportService extends BaseService {
      * Only fills a gap; a template that names its own domain keeps it. A ruling
      * that silently overrode real data would be a second source of truth.
      */
-    private void applyDomainRuling(Plan plan, PublicationSeries series, Publication template) {
+    /**
+     * Every series the plan produced, template-derived or orphan-grouped.
+     *
+     * A SINGLE PASS OVER THE FINISHED SET, deliberately. This used to run inside
+     * planSeries, which only ever sees series a TEMPLATE produced -- so the two
+     * rulings naming orphan-grouped series (nm-annex-ncags, nm-annex-ice-service)
+     * could not apply, and both came out domainless on every import.
+     *
+     * It was invisible because the deployed estate had those domains set BY HAND
+     * on 2026-08-26, and the ruling was written down at the same time as the thing
+     * that would reproduce them. Only an import from nothing could show that it
+     * did not -- which is what the reseed rehearsal is for.
+     */
+    private void applyDomainRulings(Plan plan) {
+        for (PublicationSeries series : plan.series()) {
+            applyDomainRuling(series);
+        }
+    }
+
+    private void applyDomainRuling(PublicationSeries series) {
         if (series.getDomain() != null) {
             return;
         }
@@ -564,7 +602,6 @@ public class LegacyImportService extends BaseService {
                 String seriesId = LegacySeriesTranslation.authorSeriesId(template, authored);
                 PublicationSeries series =
                         LegacySeriesTranslation.translate(template, seriesId, importSource());
-                applyDomainRuling(plan, series, template);
                 LegacySeriesTranslation.assertReportSettingsAreComplete(
                         series, template.getPublicationId());
                 assertReferencesResolve(plan, template, series);

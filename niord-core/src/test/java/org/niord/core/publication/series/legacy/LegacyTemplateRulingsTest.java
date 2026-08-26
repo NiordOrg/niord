@@ -2,8 +2,11 @@ package org.niord.core.publication.series.legacy;
 
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.domain.Domain;
 import org.niord.core.publication.series.PublicationSeries;
 
 import java.util.List;
@@ -36,6 +39,9 @@ public class LegacyTemplateRulingsTest {
 
     @Inject
     LegacyImportService importService;
+
+    @Inject
+    EntityManager em;
 
     private LegacyImportService.Plan plan() {
         return importService.planFrom(
@@ -206,6 +212,50 @@ public class LegacyTemplateRulingsTest {
                 "weekly-ntm's own template names niord-nm, and that is what must survive");
         assertFalse(LegacyTemplateRulings.domains().containsKey("weekly-ntm"),
                 "weekly-ntm should not need a ruling at all -- its template answers the question");
+    }
+
+    /**
+     * A ruling naming an ORPHAN-GROUPED series is applied too.
+     *
+     * THE ONE THE RESEED REHEARSAL CAUGHT. The domain ruling used to run inside
+     * planSeries, which only ever sees series a TEMPLATE produced. Both annex
+     * rulings name series the ORPHAN pass produces, so neither could ever apply,
+     * and both came out domainless on every import.
+     *
+     * It hid for two reasons at once. The deployed estate had those domains set
+     * BY HAND on the same day the ruling was written down, so the estate looked
+     * right; and the only test asserting a ruled domain used accumulated-yearly-
+     * ntm, which is template-derived and therefore took the working path.
+     *
+     * The annex domain is created here rather than assumed: this test database
+     * ships with niord-nm and little else, which is exactly why the original test
+     * chose niord-nm and why the gap survived.
+     */
+    @Test
+    @Transactional
+    public void aruledDomainReachesAnOrphanGroupedSeriesToo() {
+        if (em.createQuery("SELECT COUNT(d) FROM Domain d WHERE d.domainId = :id", Long.class)
+                .setParameter("id", "niord-annex").getSingleResult() == 0) {
+            Domain annex = new Domain();
+            annex.setDomainId("niord-annex");
+            annex.setName("NM Annex");
+            annex.setTimeZone("Europe/Copenhagen");
+            em.persist(annex);
+            em.flush();
+        }
+
+        PublicationSeries ncags = plan().series().stream()
+                .filter(s -> "nm-annex-ncags".equals(s.getSeriesId()))
+                .findFirst().orElse(null);
+
+        assertNotNull(ncags, "nm-annex-ncags is not in the plan at all");
+        // NOT asserted on legacyTemplateId: an orphan-grouped series carries the
+        // representative PUBLICATION's id there, so the field cannot tell the two
+        // paths apart. What matters is only that the ruling reached this series.
+        assertNotNull(ncags.getDomain(),
+                "the ruling did not reach an orphan-grouped series, so it can never apply to "
+                        + "either annex series and both import domainless");
+        assertEquals("niord-annex", ncags.getDomain().getDomainId());
     }
 
     /**
