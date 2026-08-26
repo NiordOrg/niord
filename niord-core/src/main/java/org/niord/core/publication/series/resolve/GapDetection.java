@@ -68,14 +68,21 @@ public final class GapDetection {
      * @param dormant whether it is dormant, derived
      */
     public static Gate gate(TimeRelation relation, String cadence, boolean active, boolean dormant) {
+        // CADENCE FIRST, and the order is the whole point. S-1 leaves a
+        // cadence-less series with no time relation at all, so asking about the
+        // relation first answered every cadence-less series with
+        // RELATION_NOT_TILING -- telling an admin that "issues of an
+        // IN_FORCE_AT_CUTOFF series overlap" about a publication that has no
+        // relation and no schedule. NO_CADENCE described exactly that series and
+        // could never be reached by one.
+        if (cadence == null || "NONE".equals(cadence)) {
+            return new Gate(false, Reason.NO_CADENCE,
+                    "this publication has no cadence, so there is no period it can be missing");
+        }
         if (relation != TimeRelation.PUBLISHED_IN_INTERVAL) {
             return new Gate(false, Reason.RELATION_NOT_TILING,
                     "issues of an IN_FORCE_AT_CUTOFF series overlap rather than tile, so a missing period "
                             + "is a category error rather than a gap");
-        }
-        if (cadence == null || "NONE".equals(cadence)) {
-            return new Gate(false, Reason.NO_CADENCE,
-                    "a one-off has no cadence to be missing a period of");
         }
         if (!active) {
             return new Gate(false, Reason.SERIES_NOT_ACTIVE,

@@ -100,12 +100,27 @@ public class PublishChecklistService extends BaseService {
         // query-backed issue could ever be published. It applies to uploaded and
         // link-backed content, where the bytes are a precondition rather than an
         // output.
+        // BOTH precondition modes, which is what the paragraph above always said
+        // and the code did not do. An EXTERNAL_LINK issue carries a link instead
+        // of bytes, and it was checked for neither -- so it could be published
+        // with nothing at all behind it, putting a live publication on the public
+        // site that points nowhere.
         boolean filesRequired = series.getContentMode() == ContentMode.UPLOADED_FILE;
-        boolean filesPresent = !filesRequired || issue.getDescs().stream()
-                .allMatch(d -> d.getFilePath() != null && !d.getFilePath().isBlank());
-        rows.add(row("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK, filesPresent,
+        boolean linkRequired = series.getContentMode() == ContentMode.EXTERNAL_LINK;
+        boolean contentPresent;
+        if (filesRequired) {
+            contentPresent = issue.getDescs().stream()
+                    .allMatch(d -> d.getFilePath() != null && !d.getFilePath().isBlank());
+        } else if (linkRequired) {
+            contentPresent = issue.getDescs().stream()
+                    .allMatch(d -> d.getLink() != null && !d.getLink().isBlank());
+        } else {
+            contentPresent = true;
+        }
+        rows.add(row("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK, contentPresent,
                 filesRequired ? "uploaded content must already have bytes"
-                        : "not applicable: publish generates the file"));
+                        : linkRequired ? "link-backed content must already have a link"
+                                : "not applicable: publish generates the file"));
 
         // 5
         rows.add(row("REPORT_CONFIGURED", Severity.BLOCK,

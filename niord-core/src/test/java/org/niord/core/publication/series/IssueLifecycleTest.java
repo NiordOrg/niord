@@ -387,6 +387,58 @@ public class IssueLifecycleTest {
                         + "issue could ever be published");
     }
 
+    /**
+     * A link-backed issue is blocked until it HAS a link.
+     *
+     * The check was written for "content that must already exist" and its own
+     * comment says it covers uploaded and link-backed alike -- but it tested
+     * UPLOADED_FILE only, so an EXTERNAL_LINK issue could be published with
+     * nothing behind it. The visible result is a live publication on the public
+     * site whose link goes nowhere, which nothing downstream can detect.
+     */
+    @Test
+    @Transactional
+    public void alinkBackedIssueIsBlockedUntilItHasALink() {
+        PublicationSeries linked = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        linked.setContentMode(ContentMode.EXTERNAL_LINK);
+        em.merge(linked);
+        PublicationIssue i = lifecycle.create(linked, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        PublishChecklistService.CheckRow row =
+                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows().stream()
+                        .filter(r -> r.code().equals("FILE_PRESENT_PER_LANGUAGE"))
+                        .findFirst().orElseThrow();
+
+        assertFalse(row.passed(),
+                "an external-link issue with no link passed the content check, so it can be "
+                        + "published pointing at nothing");
+    }
+
+    /** And passes once the link is there. */
+    @Test
+    @Transactional
+    public void alinkBackedIssuePassesOnceTheLinkIsSet() {
+        PublicationSeries linked = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        linked.setContentMode(ContentMode.EXTERNAL_LINK);
+        em.merge(linked);
+        PublicationIssue i = lifecycle.create(linked, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        // The lifecycle already made the per-language desc; setting the link on a
+        // fresh one would leave the real desc linkless and the name NOT NULL.
+        i.getDescs().forEach(d -> d.setLink("https://example.invalid/publication.pdf"));
+        em.flush();
+
+        PublishChecklistService.CheckRow row =
+                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows().stream()
+                        .filter(r -> r.code().equals("FILE_PRESENT_PER_LANGUAGE"))
+                        .findFirst().orElseThrow();
+
+        assertTrue(row.passed(),
+                "a link-backed issue with a link in every language was still blocked");
+    }
+
     /** The one acknowledgeable row is the one an exclusions panel cannot show. */
     @Test
     @Transactional

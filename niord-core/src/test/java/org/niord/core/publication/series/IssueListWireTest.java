@@ -269,11 +269,19 @@ public class IssueListWireTest {
         assertEquals(1, json.get("data").size());
     }
 
-    /** A one-off has no cadence, so it has no period to be missing one of. */
+    /**
+     * A cadence-less publication has no period to be missing one of.
+     *
+     * WITH NO TIME RELATION, which is the shape S-1 actually produces and the
+     * reason this assertion used to pass while the running system got it wrong.
+     * Passing PUBLISHED_IN_INTERVAL here built a series that cannot exist, and
+     * that impossible input was the only one that reached NO_CADENCE: every real
+     * cadence-less series has a null relation, so the gate answered it with
+     * RELATION_NOT_TILING and an explanation about overlapping issues.
+     */
     @Test
     public void aOneOffIsGatedOffBecauseThereIsNoPeriodToMiss() throws Exception {
-        PublicationSeries oneOff = series(SeriesStatus.ACTIVE, SeriesCadence.NONE,
-                TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationSeries oneOff = series(SeriesStatus.ACTIVE, SeriesCadence.NONE, null);
 
         JsonNode json = wire(IssueListService.build(oneOff,
                 newestFirst(published(oneOff, "only", wed(10))), wed(30)));

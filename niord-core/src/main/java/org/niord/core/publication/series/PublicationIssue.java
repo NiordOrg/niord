@@ -570,7 +570,14 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             sys.setPublishedBy(publishedBy == null ? null : publishedBy.getUsername());
             sys.setRetiredAt(retiredAt);
             sys.setRetiredReason(retiredReason);
-            sys.setMemberCount(memberCount);
+            // TRI-STATE ON THE WIRE, while the column stays INTEGER NOT NULL.
+            // A NO_MEMBERSHIP publication has no membership semantics at all --
+            // it is a PDF or a link, and nothing was ever resolved for it. Emitting
+            // its column value of 0 says "resolved, and empty", which is precisely
+            // the confusion membershipProvenance exists to prevent, reintroduced one
+            // field along. Invariant I-11 compares the COLUMN and is unaffected.
+            sys.setMemberCount(membershipProvenance == MembershipProvenance.NO_MEMBERSHIP
+                    ? null : memberCount);
             sys.setMembershipProvenance(membershipProvenance == null ? null : membershipProvenance.name());
             sys.setSnapshotIntervalFrom(snapshotIntervalFrom);
             sys.setSnapshotTimeRelation(snapshotTimeRelation);

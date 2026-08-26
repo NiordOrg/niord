@@ -62,11 +62,35 @@ public class GapDetectionTest {
         assertEquals(at(start + WEEK), gaps.get(0).from());
     }
 
+    /**
+     * A cadence-less publication has no period to be missing one of.
+     *
+     * NULL RELATION, because that is the shape S-1 produces and the reason this
+     * assertion used to pass while the running system got it wrong: every real
+     * cadence-less series has no time relation, so the gate reached the relation
+     * branch first and explained a one-off as an overlapping IN_FORCE series.
+     * Passing PUBLISHED_IN_INTERVAL built the one series that cannot exist.
+     *
+     * Asserted on the CODE rather than the prose. The reason text covers every
+     * cadence-less publication, including the unscheduled series that are not
+     * one-offs at all, so it no longer names one and should not have to.
+     */
     @Test
-    public void aOneOffHasNoPeriodToBeMissing() {
-        GapDetection.Gate gate = GapDetection.gate(TimeRelation.PUBLISHED_IN_INTERVAL, "NONE", true, false);
+    public void acadencelessSeriesHasNoPeriodToBeMissing() {
+        GapDetection.Gate gate = GapDetection.gate(null, "NONE", true, false);
+
         assertFalse(gate.enabled());
-        assertTrue(gate.reason().contains("one-off"));
+        assertEquals(GapDetection.Reason.NO_CADENCE, gate.code(),
+                "a cadence-less series was explained as something else: " + gate.reason());
+    }
+
+    /** A cadenced IN_FORCE series still gets the overlap explanation. */
+    @Test
+    public void acadencedInForceSeriesStillReportsTheOverlap() {
+        GapDetection.Gate gate = GapDetection.gate(TimeRelation.IN_FORCE_AT_CUTOFF, "WEEKLY", true, false);
+
+        assertFalse(gate.enabled());
+        assertEquals(GapDetection.Reason.RELATION_NOT_TILING, gate.code());
     }
 
     @Test
