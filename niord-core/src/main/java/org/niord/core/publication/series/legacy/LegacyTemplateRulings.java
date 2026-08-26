@@ -29,9 +29,21 @@ import java.util.Map;
  * A DESTINATION, because a legacy template is not always a series. Some are one
  * edition that needed to differ, cloned out of a real series because legacy had
  * no way to vary a single issue -- the `dont-use-` templates are named for it.
- * Imported as series they fragment the archive they were cloned from: the week
- * they hold is a GAP in the series it belongs to, which is exactly what gap
- * detection reports on weekly-ntm.
+ * Imported as series they put an edition of one publication under a heading of
+ * its own, so the archive it belongs to does not contain it.
+ *
+ * IT IS A HISTORY FIX, NOT A GAP FIX, and an earlier version of this comment had
+ * it wrong. The six `dont-use-` clones do NOT fill any of the nine periods gap
+ * detection reports on weekly-ntm: measured, the gap count is nine with the
+ * clones and nine without. The apparent match was a name coincidence -- a MISSING
+ * pseudo-row is NAMED from the ISO week of its interval end, and
+ * "EfS uge 2 - 2025" names both a gap and a clone whose window is a week later.
+ *
+ * What the clones actually are is the OTHER half of a withdrawal. Each one's
+ * member set is identical to an issue already in the destination, which legacy
+ * retired when it swapped in the replacement -- 27 of 27 uids for
+ * "EfS uge 2 - 2025", 228 of 228 for "Aktive P&T uge 2 - 2025". Filing them in
+ * reunites the two halves; it does not recover a missing week.
  */
 public final class LegacyTemplateRulings {
 

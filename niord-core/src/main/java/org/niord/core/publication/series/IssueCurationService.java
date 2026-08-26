@@ -108,6 +108,15 @@ public class IssueCurationService extends BaseService {
         for (IssueOverride old : existing) {
             em.remove(old);
         }
+        // FLUSHED before the replacement is persisted, and this is load-bearing.
+        // Hibernate orders its action queue inserts-before-deletes, so without it
+        // the new row reaches the database while the old one is still there --
+        // which is a silent no-op until UNIQUE (issue_id, messageUid) exists, and
+        // a constraint violation the moment it does. The invariant was specified
+        // in DATA-MODEL §8.3 and asserted here all along ("two overrides for one
+        // message were kept" is the failure message); only the ordering that makes
+        // it survivable at the database level was missing.
+        em.flush();
 
         IssueOverride override = new IssueOverride();
         override.setIssue(issue);

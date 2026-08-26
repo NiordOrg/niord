@@ -379,6 +379,9 @@ public class LegacyImportService extends BaseService {
         planCategories(plan, templates, publications);
         Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates, authored);
         planOrphanSeries(plan, publications, seriesByTemplate, authored);
+        // After the orphan pass, because a redirect destination may be a series
+        // only that pass produces -- and before planIssues, which files by this map.
+        resolveTemplateRedirects(plan, templates, seriesByTemplate);
         planIssues(plan, publications, seriesByTemplate, frozenAt);
 
         // After the series exist and before the report is built: the document is
@@ -545,7 +548,6 @@ public class LegacyImportService extends BaseService {
     private Map<String, PublicationSeries> planSeries(Plan plan, List<Publication> templates,
                                                       Set<String> authored) {
         Map<String, PublicationSeries> byTemplate = new LinkedHashMap<>();
-        Map<String, PublicationSeries> bySeriesId = new LinkedHashMap<>();
         List<Publication> redirected = new ArrayList<>();
 
         for (Publication template : templates) {
@@ -565,7 +567,6 @@ public class LegacyImportService extends BaseService {
 
                 plan.series().add(series);
                 byTemplate.put(template.getPublicationId(), series);
-                bySeriesId.put(seriesId, series);
             } catch (LegacySeriesTranslation.ImportRefusedException e) {
                 problem(plan, e.getCode(), template, e.getMessage());
             } catch (RuntimeException e) {
@@ -573,14 +574,43 @@ public class LegacyImportService extends BaseService {
             }
         }
 
-        for (Publication template : redirected) {
+        return byTemplate;
+    }
+
+    /**
+     * Files each redirected template's editions under the series that owns them.
+     *
+     * RUN AFTER planOrphanSeries, NOT INSIDE planSeries, and the difference is the
+     * whole reason this is its own step. A destination is not necessarily produced
+     * by the template pass: nm-annex-ncags is authored by the ORPHAN pass, from the
+     * eleven template-less NCAGS annexes. Resolving inside planSeries could only
+     * see template-derived series, so the ruling reported RULED_DESTINATION_MISSING
+     * -- and because the import is all-or-nothing, that one problem refused the
+     * entire import of 1,077 issues.
+     *
+     * It was invisible to every test here, because they all inspect plan.series(),
+     * which is read at the END, after the orphan pass has added the destination.
+     * theplanIsCleanOverTheCapturedEstate is the assertion that catches it, and it
+     * is the one that was missing.
+     */
+    private void resolveTemplateRedirects(Plan plan, List<Publication> templates,
+                                          Map<String, PublicationSeries> byTemplate) {
+        Map<String, PublicationSeries> bySeriesId = new LinkedHashMap<>();
+        for (PublicationSeries s : plan.series()) {
+            bySeriesId.put(s.getSeriesId(), s);
+        }
+
+        for (Publication template : templates) {
             String destinationId = LegacyTemplateRulings.destinationFor(template.getPublicationId());
+            if (destinationId == null) {
+                continue;
+            }
             PublicationSeries destination = bySeriesId.get(destinationId);
             if (destination == null) {
-                // The ruling names a series this import did not produce. Reported
-                // rather than silently dropped: dropping it would lose the
-                // template's editions entirely, which is a worse outcome than the
-                // extra series the ruling was trying to remove.
+                // The ruling names a series this import did not produce at all.
+                // Reported rather than silently dropped: dropping it would lose the
+                // template's editions entirely, which is worse than the extra
+                // series the ruling was trying to remove.
                 problem(plan, "RULED_DESTINATION_MISSING", template,
                         "the ruling files this template's editions under series '" + destinationId
                                 + "', which this import did not create");
@@ -588,7 +618,6 @@ public class LegacyImportService extends BaseService {
             }
             byTemplate.put(template.getPublicationId(), destination);
         }
-        return byTemplate;
     }
 
     /**

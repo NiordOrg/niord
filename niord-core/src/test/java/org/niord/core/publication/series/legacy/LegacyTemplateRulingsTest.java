@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.series.PublicationSeries;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,6 +39,36 @@ public class LegacyTemplateRulingsTest {
     private LegacyImportService.Plan plan() {
         return importService.planFrom(
                 LegacyEstateFixture.templates(), LegacyEstateFixture.publications());
+    }
+
+    /**
+     * THE ASSERTION THAT WAS MISSING. A ruling must not refuse the import.
+     *
+     * Every other test here inspects plan.series(), which is read at the END --
+     * after planOrphanSeries has run. A redirect resolved DURING planSeries could
+     * only see template-derived series, and nm-annex-ncags is authored by the
+     * ORPHAN pass, so the ruling reported RULED_DESTINATION_MISSING. The import is
+     * all-or-nothing, so that one problem refused all 1,077 issues -- and not one
+     * assertion here could see it, because they all read the finished plan.
+     *
+     * Scoped to RULED_* rather than asserting the plan is wholly clean, because a
+     * clean plan also depends on the DATABASE: this one has neither the FM reports
+     * nor the annex domains the deployed installation has, so it reports fourteen
+     * REPORT_NOT_FOUND / DOMAIN_NOT_FOUND that say nothing about the rulings. Those
+     * are environmental and honestly reported. A ruling refusing the import is not.
+     */
+    @Test
+    public void norulingRefusesTheImport() {
+        LegacyImportService.Plan plan = plan();
+
+        List<String> ruled = plan.report().getProblems().stream()
+                .filter(p -> p.getCode() != null && p.getCode().startsWith("RULED_"))
+                .map(p -> p.getCode() + " on " + p.getPublicationId())
+                .toList();
+
+        assertTrue(ruled.isEmpty(),
+                "a ruling reported a problem, and the import is all-or-nothing -- so this refuses "
+                        + "every issue in the estate: " + ruled);
     }
 
     // ------------------------------------------------------------- destinations
