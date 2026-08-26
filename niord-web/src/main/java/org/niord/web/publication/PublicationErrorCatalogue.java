@@ -64,6 +64,31 @@ public final class PublicationErrorCatalogue {
         // retrying it unchanged cannot help until somebody adds the format.
         put("CITATION_FORMAT_MISSING", 400);
 
+        // The issue edit (I8). Both are 400: the request describes something that
+        // cannot be right whatever the issue's state, so the same request never
+        // succeeds later.
+        //
+        // An interval that ends before it starts selects nothing, and the issue
+        // would publish EMPTY rather than fail -- which is why it is refused at
+        // the edge rather than left to produce a document with no contents.
+        put("INTERVAL_INVERTED", 400);
+        // The name column is NOT NULL precisely because a nameless issue is
+        // unfindable in every list that shows it, and "" clears it as well as null.
+        put("NAME_BLANK", 400);
+
+        // The upload (I24). All 400 -- the multipart body itself is wrong, and
+        // re-posting the same body cannot help.
+        put("NO_FILE", 400);
+        // One language holds one document, so several files is ambiguous rather
+        // than generous: taking whichever the map iterated first would publish a
+        // document nobody chose.
+        put("TOO_MANY_FILES", 400);
+        put("NO_FILE_NAME", 400);
+        // A name that is only a path. Stripping it leaves nothing to write to, and
+        // inventing one would put a document on the public site under a name
+        // nobody chose.
+        put("BAD_FILE_NAME", 400);
+
         // 404 -- nothing of that identity exists.
         put("SERIES_NOT_FOUND", 404);
         put("ISSUE_NOT_FOUND", 404);

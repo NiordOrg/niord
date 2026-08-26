@@ -16,11 +16,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.WebApplicationException;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.niord.core.user.UserService;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.user.Roles;
 import org.niord.core.publication.series.IssueLifecycleService;
@@ -86,9 +84,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
 
     @Inject
     PublicationSeriesService seriesService;
-
-    @Inject
-    UserService userService;
 
     @Inject
     NiordApp app;
@@ -850,22 +845,28 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * The same shape as /search-details, and that is the point: one format, so a
      * round trip cannot lose a field only one side knows about.
      *
-     * @PermitAll with the role checked in code, not @RolesAllowed. A browser
-     * opening an export in a new tab sends no bearer token, so the download flow
-     * authenticates with a one-time `?ticket=` instead -- and a declarative role
-     * annotation refuses the request before the ticket is ever read. Every other
-     * admin export in the system is shaped this way for the same reason.
+     * @RolesAllowed, NOT the @PermitAll-plus-programmatic-check the older admin
+     * exports use. That pattern exists because a ticketed download opens in a new
+     * tab carrying no bearer token, and a ticket does not produce a security
+     * identity -- UserService.isCallerInRole reads it from a thread-local -- so a
+     * declarative annotation refuses the request before the ticket is ever
+     * consulted.
+     *
+     * This export does not need it. It carries the criteria documents and the
+     * cutover switch, so the client fetches it with its own credentials and saves
+     * the response, and no ticket is involved. Going the other way would put a
+     * @PermitAll endpoint returning a SYSTEM shape into the API -- exactly what
+     * PublicationApiContractTest exists to prevent, and the in-code guard is
+     * invisible to it, so deleting that one line later would leave nothing at all
+     * flagging an anonymous system-shape endpoint.
      */
     @GET
     @Path("/export")
     @Produces("application/json;charset=UTF-8")
     @GZIP
-    @PermitAll // admin role enforced programmatically, so the ticket flow works
+    @RolesAllowed("admin")
     @NoCache
     public List<SystemPublicationSeriesVo> exportSeries() {
-        if (!userService.isCallerInRole("admin")) {
-            throw new WebApplicationException(403);
-        }
         List<SystemPublicationSeriesVo> out = new ArrayList<>();
         for (PublicationSeries s : seriesService.findAll()) {
             out.add(s.toVo(SystemPublicationSeriesVo.class));
