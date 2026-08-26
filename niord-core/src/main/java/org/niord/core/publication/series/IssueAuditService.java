@@ -46,6 +46,7 @@ public class IssueAuditService extends BaseService {
             // that makes the line answer the question it was opened for.
             "INTERVAL_CHANGED",
             "NAME_CHANGED",
+            "CRITERIA_OVERRIDDEN",
             "OVERRIDE_INCLUDED",
             "OVERRIDE_EXCLUDED",
             "OVERRIDE_REMOVED",

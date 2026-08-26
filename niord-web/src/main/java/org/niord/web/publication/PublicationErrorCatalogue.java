@@ -75,6 +75,10 @@ public final class PublicationErrorCatalogue {
         // The name column is NOT NULL precisely because a nameless issue is
         // unfindable in every list that shows it, and "" clears it as well as null.
         put("NAME_BLANK", 400);
+        // An override on a series that does not select by criteria would decide
+        // nothing. 400: the request is wrong about what the series is, and
+        // resending it cannot become right while the content mode stands.
+        put("CRITERIA_NOT_APPLICABLE", 400);
 
         // The upload (I24). All 400 -- the multipart body itself is wrong, and
         // re-posting the same body cannot help.

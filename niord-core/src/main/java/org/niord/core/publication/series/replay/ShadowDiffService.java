@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.EffectiveCriteria;
 import org.niord.core.publication.series.MemberResolutionService;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
@@ -373,6 +374,29 @@ public class ShadowDiffService {
         if (imported != null && imported.getDescs() != null
                 && imported.getDescs().stream().anyMatch(PublicationIssueDesc::isFileSourceSticky)) {
             return "FILE_REPLACED_BY_HAND";
+        }
+
+        // An issue somebody tailored is not comparable either, for the same
+        // reason and with the same shape as the line above: a criteriaOverride is
+        // a deliberate deviation from what the series selects, so it deviates
+        // from what LEGACY selected by construction. Diffing it would manufacture
+        // a divergence out of an intentional act -- and because the cutover gate
+        // is "two consecutive green weeks per series", one curated week would
+        // otherwise hold a series back from cutover with nothing wrong with it.
+        //
+        // Skipped rather than diffed against the override. Resolving the
+        // effective document would answer "does the new engine reproduce a
+        // decision legacy never made", which is not a question about the engine.
+        //
+        // hasOwnCriteria, NOT isOverridden. An imported issue's criteriaSnapshot
+        // differs from its series' criteria as a matter of course -- the importer
+        // records what each release actually selected, and a series spanning two
+        // legacy filter eras carries one setting while its issues need the other.
+        // Nobody tailored those. Keying on the comparison rather than on the
+        // stored override skipped the ENTIRE imported estate, and the replay test
+        // caught it by reporting that nothing had been compared at all.
+        if (EffectiveCriteria.hasOwnCriteria(imported)) {
+            return "CRITERIA_OVERRIDDEN";
         }
         return null;
     }

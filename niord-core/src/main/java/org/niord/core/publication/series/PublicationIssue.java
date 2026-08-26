@@ -577,6 +577,13 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             sys.setSupersedesPublicId(supersedes == null ? null : supersedes.getPublicId());
             sys.setLegacyPublicationId(legacyPublicationId);
             sys.setRepoPath(repoPath);
+            sys.setCriteriaOverride(criteriaOverride);
+            // Derived rather than "is the override set": a published issue answers
+            // from the snapshot it went out with, and an override equal to the
+            // series' criteria is no deviation. Both are comparisons the client
+            // should not be asked to make.
+            sys.setCriteriaOverridden(EffectiveCriteria.isOverridden(this));
+            sys.setSeriesCriteria(series == null ? null : series.getCriteria());
         }
         return vo;
     }

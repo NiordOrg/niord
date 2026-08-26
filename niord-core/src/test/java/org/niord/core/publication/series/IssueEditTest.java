@@ -17,7 +17,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -271,6 +274,132 @@ public class IssueEditTest {
         assertEquals(from, issue.getIntervalFrom());
         assertEquals(to, issue.getIntervalTo());
         assertTrue(actions(issue).stream().noneMatch("INTERVAL_CHANGED"::equals));
+    }
+
+    // --------------------------------------------------------- criteria override
+
+    private static org.niord.core.publication.series.criteria.IssueCriteriaVo criteria(String... ids) {
+        var node = new org.niord.core.publication.series.criteria.MessageSeriesCriterionVo();
+        node.setValues(new java.util.ArrayList<>(List.of(ids)));
+        var doc = new org.niord.core.publication.series.criteria.IssueCriteriaVo();
+        doc.setCriteria(new java.util.ArrayList<
+                org.niord.core.publication.series.criteria.IssueCriterionVo>(List.of(node)));
+        return doc;
+    }
+
+    /**
+     * An issue can be tailored to select something its series does not.
+     *
+     * The escape hatch legacy had no concept of: an edition that must differ used
+     * to require cloning the whole template into a throwaway `dont-use-` series.
+     */
+    @Test
+    @Transactional
+    public void anissueCanBeGivenItsOwnCriteria() {
+        PublicationIssue issue = anIssue();
+        issue.getSeries().setCriteria(criteria("dma-nm"));
+        em.flush();
+
+        editService.update(issue, new IssueEditService.IssueEdit(
+                null, null, null, null, criteria("dma-nm", "dma-fa"), false), user());
+        em.flush();
+
+        assertNotNull(issue.getCriteriaOverride());
+        assertTrue(EffectiveCriteria.isOverridden(issue));
+        assertTrue(actions(issue).contains("CRITERIA_OVERRIDDEN"));
+    }
+
+    /** And handed back to the series again. */
+    @Test
+    @Transactional
+    public void anoverrideCanBeCleared() {
+        PublicationIssue issue = anIssue();
+        issue.getSeries().setCriteria(criteria("dma-nm"));
+        issue.setCriteriaOverride(criteria("dma-fa"));
+        em.flush();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(null, null, null, null, null, true), user());
+        em.flush();
+
+        assertNull(issue.getCriteriaOverride());
+        assertFalse(EffectiveCriteria.isOverridden(issue));
+    }
+
+    /**
+     * An override equal to the series' criteria is stored as no override.
+     *
+     * It is not a deviation. Recording it as one would label the issue "tilpasset
+     * for denne udgave" while it selects exactly what the series does -- and would
+     * make the shadow diff skip a week that had nothing wrong with it.
+     */
+    @Test
+    @Transactional
+    public void anoverrideIdenticalToTheSeriesIsNotStored() {
+        PublicationIssue issue = anIssue();
+        issue.getSeries().setCriteria(criteria("dma-nm"));
+        em.flush();
+
+        editService.update(issue, new IssueEditService.IssueEdit(
+                null, null, null, null, criteria("dma-nm"), false), user());
+        em.flush();
+
+        assertNull(issue.getCriteriaOverride());
+        assertFalse(EffectiveCriteria.isOverridden(issue));
+    }
+
+    /**
+     * An unresolvable override is refused, not stored.
+     *
+     * A blank operand narrows to nothing, so the issue would publish EMPTY rather
+     * than fail -- the one failure mode that looks like success. Refused here,
+     * where somebody is watching, rather than at 02:00 under AUTO_RELEASE.
+     */
+    @Test
+    @Transactional
+    public void anunresolvableOverrideIsRefused() {
+        PublicationIssue issue = anIssue();
+        issue.getSeries().setCriteria(criteria("dma-nm"));
+        em.flush();
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> editService.update(issue, new IssueEditService.IssueEdit(
+                                null, null, null, null, criteria(""), false), user()));
+        assertEquals("CRITERIA_INVALID", e.code());
+        assertNull(issue.getCriteriaOverride());
+    }
+
+    /** A series that does not select by criteria cannot be overridden into one that does. */
+    @Test
+    @Transactional
+    public void anoverrideOnANonQuerySeriesIsRefused() {
+        PublicationIssue issue = anIssue();
+        issue.getSeries().setContentMode(ContentMode.NONE);
+        em.flush();
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> editService.update(issue, new IssueEditService.IssueEdit(
+                                null, null, null, null, criteria("dma-nm"), false), user()));
+        assertEquals("CRITERIA_NOT_APPLICABLE", e.code());
+    }
+
+    /** Saying nothing about the criteria leaves an existing override alone. */
+    @Test
+    @Transactional
+    public void anabsentCriteriaFieldLeavesTheOverrideAlone() {
+        PublicationIssue issue = anIssue();
+        issue.getSeries().setCriteria(criteria("dma-nm"));
+        issue.setCriteriaOverride(criteria("dma-fa"));
+        em.flush();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "Nyt navn"), null, null, null), user());
+        em.flush();
+
+        assertNotNull(issue.getCriteriaOverride());
+        assertTrue(actions(issue).stream().noneMatch("CRITERIA_OVERRIDDEN"::equals));
     }
 
     // ------------------------------------------------------------------- status

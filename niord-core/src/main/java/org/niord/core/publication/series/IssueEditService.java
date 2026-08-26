@@ -4,13 +4,17 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import org.niord.core.publication.series.criteria.CriteriaValidator;
+import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.resolve.IssueNaming;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Editing an open issue: its names, its interval, its report parameters.
@@ -55,11 +59,25 @@ public class IssueEditService extends BaseService {
      * The document fields are deliberately NOT here. A file and a link have their
      * own endpoints, which archive, guard file-name collisions and audit -- and
      * two write paths to one field is how they end up disagreeing.
+     *
+     * `criteriaOverride` IS here, and needs its own null convention because null
+     * is a meaningful value for it: absent means "leave it alone" like every
+     * other field, and `clearCriteriaOverride` is how a caller says "go back to
+     * inheriting the series". Without the second flag there would be no way to
+     * express the second thing at all.
      */
     public record IssueEdit(Map<String, String> names,
                             Date intervalFrom,
                             Date intervalTo,
-                            Map<String, Object> reportParams) {
+                            Map<String, Object> reportParams,
+                            IssueCriteriaVo criteriaOverride,
+                            boolean clearCriteriaOverride) {
+
+        /** The four-field form, for callers with no criteria to say anything about. */
+        public IssueEdit(Map<String, String> names, Date intervalFrom, Date intervalTo,
+                         Map<String, Object> reportParams) {
+            this(names, intervalFrom, intervalTo, reportParams, null, false);
+        }
     }
 
     @Transactional
@@ -78,11 +96,75 @@ public class IssueEditService extends BaseService {
         // by the re-derivation it was meant to replace.
         applyInterval(issue, edit, actor);
         applyNames(issue, edit, actor);
+        applyCriteriaOverride(issue, edit, actor);
 
         if (edit.reportParams() != null) {
             issue.setReportParams(new LinkedHashMap<>(edit.reportParams()));
         }
         return em.merge(issue);
+    }
+
+    /**
+     * Tailors what this one issue selects, or gives it back to the series.
+     *
+     * The escape hatch legacy had no concept of: an edition that must differ --
+     * a two-week issue over the week 52/1 turnover, a supplement that carries
+     * one extra message series -- used to require cloning the whole template
+     * into a throwaway `dont-use-` series and publishing one edition from it.
+     * Six of those are in the imported estate, and they fragment the archive they
+     * were cloned from.
+     *
+     * VALIDATED, not merely stored. An unresolvable document would resolve to
+     * nothing at publish and the issue would go out EMPTY -- the one failure mode
+     * that looks like success -- so it is refused here, where somebody is
+     * watching, rather than at 02:00 under AUTO_RELEASE.
+     *
+     * A document equal to the series' is stored as no override at all. It is not
+     * a deviation, and recording it as one would label the issue "tilpasset for
+     * denne udgave" while it selects exactly what the series does -- and would
+     * make the shadow diff skip a week that had nothing wrong with it.
+     */
+    private void applyCriteriaOverride(PublicationIssue issue, IssueEdit edit, User actor) {
+        if (!edit.clearCriteriaOverride() && edit.criteriaOverride() == null) {
+            return;
+        }
+
+        PublicationSeries series = issue.getSeries();
+        IssueCriteriaVo wanted = edit.clearCriteriaOverride() ? null : edit.criteriaOverride();
+
+        if (wanted != null && series != null && wanted.equals(series.getCriteria())) {
+            wanted = null;
+        }
+        if (Objects.equals(wanted, issue.getCriteriaOverride())) {
+            return;
+        }
+
+        if (wanted != null) {
+            if (series == null || series.getContentMode() != ContentMode.GENERATED_FROM_QUERY) {
+                throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_NOT_APPLICABLE",
+                        "only a query-backed series selects by criteria, so an override on this "
+                                + "issue would decide nothing");
+            }
+            // The same validator the series form runs, and ACCEPT_ALL for the same
+            // reason SeriesValidator uses it: operand EXISTENCE is C-4's job and
+            // needs a persistence context this pure check does not have. A document
+            // accepted here and refused on the series would be a second definition
+            // of a valid document.
+            List<CriteriaValidator.Violation> violations =
+                    CriteriaValidator.validate(wanted, CriteriaValidator.ACCEPT_ALL);
+            if (!violations.isEmpty()) {
+                throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
+                        "the override would not resolve, and an issue that cannot resolve publishes "
+                                + "EMPTY rather than failing: " + violations);
+            }
+        }
+
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("from", issue.getCriteriaOverride());
+        detail.put("to", wanted);
+
+        issue.setCriteriaOverride(wanted);
+        audit.edited(issue, actor, "CRITERIA_OVERRIDDEN", detail);
     }
 
     // ------------------------------------------------------------------ interval

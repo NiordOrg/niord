@@ -241,6 +241,50 @@ public class IssuePublishTest {
         }
     }
 
+    /**
+     * A publish resolves and freezes by the issue's OWN criteria where it has any.
+     *
+     * The whole point of criteriaOverride. Resolving the series' document while
+     * freezing the override -- or the reverse -- would produce a published issue
+     * whose recorded criteria do not explain its own member list, and there is no
+     * later way to tell which of the two actually ran.
+     *
+     * The snapshot is the EFFECTIVE document, not the series': the series' criteria
+     * stay editable and the override is not frozen anywhere else, so this is the
+     * only truthful answer a published issue can later give about what it selected.
+     */
+    @Test
+    @Transactional
+    public void apublishResolvesAndFreezesTheIssuesOwnCriteria() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+
+        IssueCriteriaVo override = new IssueCriteriaVo();
+        MessageSeriesCriterionVo node = new MessageSeriesCriterionVo();
+        node.setValues(new ArrayList<>(List.of("dma-nm", "dma-fa")));
+        override.getCriteria().add(node);
+        i.setCriteriaOverride(override);
+        em.flush();
+
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+        em.flush();
+        em.clear();
+
+        PublicationIssue after = em.find(PublicationIssue.class, i.getId());
+
+        assertEquals(override, after.getCriteriaSnapshot(),
+                "the snapshot recorded the SERIES' criteria while the resolve used the override; "
+                        + "the published issue's recorded criteria would not explain its members");
+        assertEquals("dma-fa,dma-nm",
+                java.util.Arrays.stream(after.getSnapshotSeriesIds().split(","))
+                        .sorted().collect(java.util.stream.Collectors.joining(",")),
+                "snapshotSeriesIds came from the series, not from the document that ran");
+        assertTrue(EffectiveCriteria.isOverridden(after),
+                "a published issue that went out with its own criteria must report itself as tailored");
+    }
+
     /** Step 8. An exclude the query never returned freezes appliedAtPublish = false. */
     @BindsRule({"O-5"})
     @Test
@@ -543,9 +587,10 @@ public class IssuePublishTest {
         // The count is a tripwire, not a rule: every action needs a translation
         // key, and one added without one renders in the Historik panel as its own
         // raw key. Bumping this number is the moment to add it.
-        assertEquals(24, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
+        assertEquals(25, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
         assertTrue(IssueAuditService.ACTIONS.containsAll(
-                        List.of("LINK_SET", "LINK_CLEARED", "INTERVAL_CHANGED", "NAME_CHANGED")),
+                        List.of("LINK_SET", "LINK_CLEARED", "INTERVAL_CHANGED", "NAME_CHANGED",
+                                "CRITERIA_OVERRIDDEN")),
                 "the vocabulary is specific by design: a Historik panel cannot render "
                         + "'something changed', so every mutation an admin can make has its own value");
     }

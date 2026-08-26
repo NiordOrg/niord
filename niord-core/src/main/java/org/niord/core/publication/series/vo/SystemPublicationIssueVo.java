@@ -1,5 +1,7 @@
 package org.niord.core.publication.series.vo;
 
+import org.niord.core.publication.series.criteria.IssueCriteriaVo;
+
 import java.util.Date;
 import java.util.List;
 
@@ -79,6 +81,36 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     /** The issues either side of a gap. Null at the head or the tail of the run. */
     private String precedingPublicId;
+
+    /**
+     * What THIS issue selects, when that is not what its series selects.
+     *
+     * Absent means it inherits. The raw document rather than a rendered summary,
+     * because the only screen that reads it is the admin issue detail, which
+     * already resolves criteria labels for the series form and can reuse that.
+     */
+    private IssueCriteriaVo criteriaOverride;
+
+    /**
+     * Whether the issue is selecting something other than its series says.
+     *
+     * Derived, and NOT the same as criteriaOverride being present. A published
+     * issue answers from the snapshot it went out with -- the override may since
+     * have been edited or removed -- and an override equal to the series' own
+     * criteria is no deviation at all. Both are comparisons a client should not
+     * be asked to make.
+     */
+    private boolean criteriaOverridden;
+
+    /**
+     * What the SERIES selects, so the issue screen can compare without a second fetch.
+     *
+     * Read-only, and projected rather than looked up: an override is only
+     * meaningful against the document it deviates from, and fetching the series
+     * separately would give the screen a second source that can disagree with the
+     * criteriaOverridden flag computed here.
+     */
+    private IssueCriteriaVo seriesCriteria;
 
     private String followingPublicId;
 
@@ -280,6 +312,30 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     public void setPrecedingPublicId(String precedingPublicId) {
         this.precedingPublicId = precedingPublicId;
+    }
+
+    public IssueCriteriaVo getCriteriaOverride() {
+        return criteriaOverride;
+    }
+
+    public void setCriteriaOverride(IssueCriteriaVo criteriaOverride) {
+        this.criteriaOverride = criteriaOverride;
+    }
+
+    public IssueCriteriaVo getSeriesCriteria() {
+        return seriesCriteria;
+    }
+
+    public void setSeriesCriteria(IssueCriteriaVo seriesCriteria) {
+        this.seriesCriteria = seriesCriteria;
+    }
+
+    public boolean isCriteriaOverridden() {
+        return criteriaOverridden;
+    }
+
+    public void setCriteriaOverridden(boolean criteriaOverridden) {
+        this.criteriaOverridden = criteriaOverridden;
     }
 
     public String getFollowingPublicId() {

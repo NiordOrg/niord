@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
+import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.resolve.Interval;
 import org.niord.core.publication.series.resolve.IssueOrdering;
 import org.niord.core.publication.series.resolve.MembershipReason;
@@ -159,9 +160,18 @@ public class IssuePublishService extends BaseService {
         // A null criteria document means NO QUERY, which is a different thing
         // from an empty one, and resolving it would either raise or match the
         // entire corpus. Branching here is what keeps those two nulls apart.
+        // The EFFECTIVE document, not the series' -- an issue carrying a
+        // criteriaOverride selects by that, and asking the series here would let a
+        // publish resolve one document and freeze another.
+        IssueCriteriaVo effective = EffectiveCriteria.documentOf(issue);
         boolean hasMembership = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
-                && series.getCriteria() != null
+                && effective != null
                 && series.getTimeRelation() != null;
+        // Resolved ONCE, and held. Both the member query and the snapshot header
+        // read it, and re-deriving it per use would make them depend on this
+        // method not having changed the issue in between -- which it does, a few
+        // lines below, when it sets the status a published issue answers from.
+        ResolvedCriteria resolved = hasMembership ? EffectiveCriteria.resolvedFor(issue) : null;
 
         Interval window = new Interval(issue.getIntervalFrom(), stamp);
 
@@ -182,7 +192,7 @@ public class IssuePublishService extends BaseService {
         curated.removeAll(excludes(issue));
 
         MemberResolutionService.Resolution resolution = hasMembership
-                ? resolver.resolve(criteriaOf(series), window, includes(issue), excludes(issue))
+                ? resolver.resolve(resolved, window, includes(issue), excludes(issue))
                 : MemberResolutionService.Resolution.curated(curated);
 
         // --- 4. OVERRIDES: already applied by the resolver ----------------
@@ -212,8 +222,12 @@ public class IssuePublishService extends BaseService {
         issue.setSnapshotSortBy(sort.sortBy().name());
         issue.setSnapshotSortOrder(sort.direction().name());
         issue.setSnapshotSeriesIds(hasMembership
-                ? String.join(",", criteriaOf(series).messageSeriesIds()) : null);
-        issue.setCriteriaSnapshot(series.getCriteria());
+                ? String.join(",", resolved.messageSeriesIds()) : null);
+        // The EFFECTIVE document at freeze, which is what a published issue is later
+        // asked about. The series' criteria stay editable and the override is not
+        // frozen anywhere else, so recording the series' copy here would leave a
+        // published issue with no truthful answer to "what did you select".
+        issue.setCriteriaSnapshot(effective);
         issue.setMemberCount(members.size());
         // NO_MEMBERSHIP is not the same as "the query returned nothing", and a
         // reader who cannot tell them apart will assume the second.

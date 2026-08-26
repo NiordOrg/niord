@@ -164,6 +164,11 @@ public class ReplayHarness {
                 ? issue.getSnapshotAliveAtCutoff()
                 : Boolean.TRUE.equals(series.getAliveAtCutoff());
 
+        // The SERIES' document, deliberately -- not EffectiveCriteria. A replay
+        // reproduces what the legacy engine produced, and a criteriaOverride is a
+        // decision somebody made afterwards, in this system. Applying it here
+        // would diff the legacy output against a document legacy never had, and
+        // report the difference as a defect in the replay.
         return CriteriaResolver.resolve(series.getCriteria(), relation, aliveAtCutoff,
                 CriteriaResolver.NO_DOMAINS);
     }

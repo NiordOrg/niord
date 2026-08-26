@@ -138,15 +138,19 @@ public class PublishChecklistService extends BaseService {
                 allowFuture ? "future cut-offs explicitly allowed" : "cut-off is " + proposedCutoff));
 
         // 10 to 15 need the resolver.
+        // The EFFECTIVE document -- criteriaOverride where the issue carries one.
+        // The rail's whole claim is "this is what would go out if you pressed
+        // publish", so resolving the series' document while publish resolves the
+        // override would make the rail describe a different issue than the one it
+        // is offering to release.
         MemberResolutionService.Resolution resolution = null;
-        if (queryBacked && series.getCriteria() != null && series.getTimeRelation() != null) {
+        if (queryBacked && series.getTimeRelation() != null) {
             try {
-                ResolvedCriteria criteria =
-                        org.niord.core.publication.series.criteria.CriteriaResolver.resolve(
-                                series.getCriteria(), series.getTimeRelation(),
-                                Boolean.TRUE.equals(series.getAliveAtCutoff()),
-                                org.niord.core.publication.series.criteria.CriteriaResolver.NO_DOMAINS);
-                resolution = resolver.resolve(criteria, new Interval(issue.getIntervalFrom(), proposedCutoff));
+                ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue);
+                if (criteria != null) {
+                    resolution = resolver.resolve(criteria,
+                            new Interval(issue.getIntervalFrom(), proposedCutoff));
+                }
             } catch (RuntimeException e) {
                 resolution = null;
             }

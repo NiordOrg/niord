@@ -206,17 +206,15 @@ public class MessageIssueLookup extends BaseService {
         PublicationSeries series = issue.getSeries();
         if (facts == null || series == null
                 || series.getContentMode() != ContentMode.GENERATED_FROM_QUERY
-                || series.getCriteria() == null || series.getTimeRelation() == null
+                || series.getTimeRelation() == null
                 || issue.getIntervalFrom() == null) {
             return false;
         }
         try {
-            ResolvedCriteria criteria = CriteriaResolver.resolve(
-                    series.getCriteria(),
-                    series.getTimeRelation(),
-                    Boolean.TRUE.equals(series.getAliveAtCutoff()),
-                    CriteriaResolver.NO_DOMAINS);
-            return MembershipPredicate
+            // The EFFECTIVE document, so this panel and the publish screen cannot
+            // disagree about an issue that carries a criteriaOverride.
+            ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue);
+            return criteria != null && MembershipPredicate
                     .decide(facts, criteria, new Interval(issue.getIntervalFrom(), now))
                     .member();
         } catch (RuntimeException e) {

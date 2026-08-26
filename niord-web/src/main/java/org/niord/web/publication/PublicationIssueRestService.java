@@ -37,6 +37,7 @@ import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueEditService;
+import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.IssueFileService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
@@ -539,10 +540,19 @@ public class PublicationIssueRestService {
     public record UpdateIssueRequest(Map<String, String> names,
                                      Long intervalFrom,
                                      Long intervalTo,
-                                     Map<String, Object> reportParams) {
+                                     Map<String, Object> reportParams,
+                                     IssueCriteriaVo criteriaOverride,
+                                     Boolean clearCriteriaOverride) {
     }
 
-    /** The wire shape as the service's own. Epoch millis in, Date out. */
+    /**
+     * The wire shape as the service's own. Epoch millis in, Date out.
+     *
+     * `clearCriteriaOverride` exists because null is a meaningful value for the
+     * override and absent is a different one: absent means "leave it alone", as
+     * for every other field, and the flag is the only way to say "go back to
+     * inheriting the series".
+     */
     static IssueEditService.IssueEdit editOf(UpdateIssueRequest request) {
         if (request == null) {
             return null;
@@ -551,7 +561,9 @@ public class PublicationIssueRestService {
                 request.names(),
                 request.intervalFrom() == null ? null : new Date(request.intervalFrom()),
                 request.intervalTo() == null ? null : new Date(request.intervalTo()),
-                request.reportParams());
+                request.reportParams(),
+                request.criteriaOverride(),
+                Boolean.TRUE.equals(request.clearCriteriaOverride()));
     }
 
     // ------------------------------------------------------------------ document
