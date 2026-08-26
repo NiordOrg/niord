@@ -84,6 +84,19 @@ public class LegacyImportReportVo implements IJsonSerializable {
      * would resolve over every message in the system.
      */
     private int seriesWithoutCriteria;
+
+    /**
+     * Series that will land with no domain, and so no timezone.
+     *
+     * A count rather than a problem: the consequence is that the series stays
+     * DRAFT and S-20 refuses to activate it with a message that says why, which
+     * is proportionate. Refusing 1,077 issues over one absent domain is not.
+     *
+     * Zero is the finding. A silent log is indistinguishable from nothing having
+     * been checked, and this is the number that says how many publications are
+     * not yet activatable.
+     */
+    private int seriesWithoutDomain;
     private int issuesImported;
     private Map<String, Integer> issuesByStatus = new LinkedHashMap<>();
     private Map<String, Integer> issuesByCutoffSource = new LinkedHashMap<>();
@@ -151,6 +164,14 @@ public class LegacyImportReportVo implements IJsonSerializable {
 
     public void setIssuesByCutoffSource(Map<String, Integer> issuesByCutoffSource) {
         this.issuesByCutoffSource = issuesByCutoffSource == null ? new LinkedHashMap<>() : issuesByCutoffSource;
+    }
+
+    public int getSeriesWithoutDomain() {
+        return seriesWithoutDomain;
+    }
+
+    public void setSeriesWithoutDomain(int seriesWithoutDomain) {
+        this.seriesWithoutDomain = seriesWithoutDomain;
     }
 
     public List<ProblemVo> getProblems() {

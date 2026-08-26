@@ -3,6 +3,7 @@ package org.niord.core.publication.series.legacy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import io.quarkus.narayana.jta.QuarkusTransaction;
+import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.publication.Publication;
@@ -388,6 +389,12 @@ public class LegacyImportService extends BaseService {
 
         plan.report().setSeriesImported(plan.series().size());
         plan.report().setIssuesImported(plan.issues().size());
+        // How many publications this import leaves unactivatable, counted rather
+        // than assumed. A series with no domain has no timezone, so S-20 will
+        // refuse it -- and the number belongs in the report an admin reads after
+        // the run, not only in a log nobody opens.
+        plan.report().setSeriesWithoutDomain(
+                (int) plan.series().stream().filter(s -> s.getDomain() == null).count());
         return plan;
     }
 
@@ -478,15 +485,79 @@ public class LegacyImportService extends BaseService {
         plan.report().setCategoriesCreated(plan.categoriesToCreate().size());
     }
 
+    /**
+     * Supplies the domain the template does not carry.
+     *
+     * Two of the twelve templates name no domain, and so did every publication
+     * imported from them -- thirteen series with no domain, and therefore no
+     * timezone, because the domain is the only source of one. A series with none
+     * falls back to hardcoded UTC, which is precisely what "never use a timezone
+     * that is not from the domain settings" rules out.
+     *
+     * It cannot be inferred from legacy, where a null domain means "applies
+     * everywhere" -- that is a visibility answer to a timezone question. So it is
+     * a ruling, recorded in LegacyTemplateRulings, and applied HERE rather than in
+     * the pure translation because resolving a domainId to a Domain needs a
+     * persistence context.
+     *
+     * Only fills a gap; a template that names its own domain keeps it. A ruling
+     * that silently overrode real data would be a second source of truth.
+     */
+    private void applyDomainRuling(Plan plan, PublicationSeries series, Publication template) {
+        if (series.getDomain() != null) {
+            return;
+        }
+        String domainId = LegacyTemplateRulings.domainFor(series.getSeriesId());
+        if (domainId == null) {
+            return;
+        }
+        Domain domain = domainService.findByDomainId(domainId);
+        if (domain == null) {
+            // NOT a problem, which would refuse the whole import. The ruling names
+            // a domain this installation does not have -- a stale ruling, or an
+            // installation that genuinely lacks it -- and the consequence is
+            // exactly today's state: the series lands with no domain, stays DRAFT,
+            // and S-20 refuses to activate it with a message that says why. That
+            // is proportionate. Failing 1,077 issues over one absent domain is not.
+            //
+            // It is still counted, in seriesWithoutDomain, because a silent log is
+            // indistinguishable from nothing having been checked.
+            log.warn("import ruling files series '{}' under domain '{}', which does not exist here",
+                    series.getSeriesId(), domainId);
+            return;
+        }
+        series.setDomain(domain);
+    }
+
+    /**
+     * One series per template -- except where a template is not a series.
+     *
+     * TWO PASSES, and the order is forced. A redirected template's editions are
+     * filed under a series some OTHER template produces, so every real series has
+     * to exist before any redirect can be resolved. A single pass would work only
+     * while the destination happened to come first in the list.
+     *
+     * A redirected template produces NO series of its own. Its id still lands in
+     * the returned map, pointing at the destination -- that map is what planIssues
+     * files by, so the editions follow without it knowing anything about the
+     * ruling.
+     */
     private Map<String, PublicationSeries> planSeries(Plan plan, List<Publication> templates,
                                                       Set<String> authored) {
         Map<String, PublicationSeries> byTemplate = new LinkedHashMap<>();
+        Map<String, PublicationSeries> bySeriesId = new LinkedHashMap<>();
+        List<Publication> redirected = new ArrayList<>();
 
         for (Publication template : templates) {
+            if (LegacyTemplateRulings.destinationFor(template.getPublicationId()) != null) {
+                redirected.add(template);
+                continue;
+            }
             try {
                 String seriesId = LegacySeriesTranslation.authorSeriesId(template, authored);
                 PublicationSeries series =
                         LegacySeriesTranslation.translate(template, seriesId, importSource());
+                applyDomainRuling(plan, series, template);
                 LegacySeriesTranslation.assertReportSettingsAreComplete(
                         series, template.getPublicationId());
                 assertReferencesResolve(plan, template, series);
@@ -494,11 +565,28 @@ public class LegacyImportService extends BaseService {
 
                 plan.series().add(series);
                 byTemplate.put(template.getPublicationId(), series);
+                bySeriesId.put(seriesId, series);
             } catch (LegacySeriesTranslation.ImportRefusedException e) {
                 problem(plan, e.getCode(), template, e.getMessage());
             } catch (RuntimeException e) {
                 problem(plan, "SERIES_UNTRANSLATABLE", template, e.getMessage());
             }
+        }
+
+        for (Publication template : redirected) {
+            String destinationId = LegacyTemplateRulings.destinationFor(template.getPublicationId());
+            PublicationSeries destination = bySeriesId.get(destinationId);
+            if (destination == null) {
+                // The ruling names a series this import did not produce. Reported
+                // rather than silently dropped: dropping it would lose the
+                // template's editions entirely, which is a worse outcome than the
+                // extra series the ruling was trying to remove.
+                problem(plan, "RULED_DESTINATION_MISSING", template,
+                        "the ruling files this template's editions under series '" + destinationId
+                                + "', which this import did not create");
+                continue;
+            }
+            byTemplate.put(template.getPublicationId(), destination);
         }
         return byTemplate;
     }
