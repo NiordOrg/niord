@@ -3,6 +3,7 @@ package org.niord.web.publication;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -101,6 +102,9 @@ public class OneOffRestService {
     @Inject
     IssuePublishService publishService;
 
+    @Inject
+    EntityManager em;
+
     // ------------------------------------------------------------- wire shapes
 
     /** One language's value: a link, or a file name. */
@@ -196,9 +200,27 @@ public class OneOffRestService {
 
         if (request.active) {
             activate(saved);
+            flushBeforePublish();
             publishIfComplete(saved, issue);
         }
         return toVo(saved);
+    }
+
+    /**
+     * FLUSHED before publishing, and this is load-bearing.
+     *
+     * IssuePublishService re-reads the issue with LockModeType.PESSIMISTIC_WRITE.
+     * Taking a row lock on an issue this same transaction has only just persisted,
+     * while its descs still hold unflushed changes, fails with "Row was updated or
+     * deleted by another transaction" -- naming a conflict with a transaction that
+     * does not exist. Writing the rows first gives the lock something consistent
+     * to read.
+     *
+     * The sibling of the flush in IssueCurationService: both are places where
+     * Hibernate has to be told to catch up before somebody else reads the row.
+     */
+    private void flushBeforePublish() {
+        em.flush();
     }
 
     /**
@@ -251,6 +273,7 @@ public class OneOffRestService {
 
         if (request.active && saved.getStatus() != SeriesStatus.ACTIVE) {
             activate(saved);
+            flushBeforePublish();
             publishIfComplete(saved, issue);
         }
         return toVo(saved);
