@@ -10,6 +10,9 @@ import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.service.BaseService;
 
 import java.util.ArrayList;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,6 +66,31 @@ public class PublishChecklistService extends BaseService {
     @Inject
     MemberResolutionService resolver;
 
+    private static final DateTimeFormatter CHECKLIST_STAMP =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    /**
+     * A cut-off rendered in the zone it is actually read in, and named.
+     *
+     * These strings are shown to an admin. Concatenating the Date put
+     * java.util.Date.toString() on the screen -- "Wed Aug 26 15:44:25 UTC 2026",
+     * in the SERVER JVM zone -- and java.sql.Timestamp.toString() for the stamped
+     * ones, "2026-07-29 10:16:08.0". Both are unreadable, and the first states a
+     * timezone that is not the one the cut-off means: a Copenhagen cut-off shown
+     * as UTC is two hours wrong to the person deciding whether to publish.
+     *
+     * The zone comes from the series' DOMAIN and from nowhere else, and it is
+     * named in the output so the reader is never left guessing which one it is.
+     */
+    private static String at(Date instant, PublicationSeries series) {
+        if (instant == null) {
+            return "not set";
+        }
+        ZoneId zone = series == null ? ZoneId.of("UTC") : series.cutoffZone();
+        return ZonedDateTime.ofInstant(instant.toInstant(), zone).format(CHECKLIST_STAMP)
+                + " (" + zone.getId() + ")";
+    }
+
     @Transactional
     public Checklist compute(PublicationIssue issue, Date proposedCutoff, boolean allowFuture,
                              boolean previewStale) {
@@ -91,7 +119,8 @@ public class PublishChecklistService extends BaseService {
                 || (issue.getIntervalFrom() != null && predecessor.getCutoffStampedAt() != null
                 && issue.getIntervalFrom().equals(predecessor.getCutoffStampedAt()));
         rows.add(row("INTERVAL_CHAINED", Severity.WARN, chained,
-                predecessor == null ? "no predecessor" : "predecessor stamped " + predecessor.getCutoffStampedAt()));
+                predecessor == null ? "no predecessor"
+                        : "predecessor stamped " + at(predecessor.getCutoffStampedAt(), series)));
 
         // 4. ONLY where bytes must already exist.
         //
@@ -140,17 +169,20 @@ public class PublishChecklistService extends BaseService {
         rows.add(row("CUTOFF_AFTER_PREVIOUS", Severity.BLOCK,
                 predecessor == null || predecessor.getCutoffStampedAt() == null
                         || proposedCutoff.after(predecessor.getCutoffStampedAt()),
-                predecessor == null ? "no predecessor" : "must be after " + predecessor.getCutoffStampedAt()));
+                predecessor == null ? "no predecessor"
+                        : "must be after " + at(predecessor.getCutoffStampedAt(), series)));
 
         rows.add(row("CUTOFF_BEFORE_SUCCESSOR", Severity.BLOCK,
                 successor == null || successor.getCutoffStampedAt() == null
                         || proposedCutoff.before(successor.getCutoffStampedAt()),
-                successor == null ? "no successor" : "must be before " + successor.getCutoffStampedAt()));
+                successor == null ? "no successor"
+                        : "must be before " + at(successor.getCutoffStampedAt(), series)));
 
         // 9
         rows.add(row("CUTOFF_NOT_FUTURE", Severity.BLOCK,
                 allowFuture || !proposedCutoff.after(new Date()),
-                allowFuture ? "future cut-offs explicitly allowed" : "cut-off is " + proposedCutoff));
+                allowFuture ? "future cut-offs explicitly allowed"
+                        : "cut-off is " + at(proposedCutoff, series)));
 
         // 10 to 15 need the resolver.
         // The EFFECTIVE document -- criteriaOverride where the issue carries one.

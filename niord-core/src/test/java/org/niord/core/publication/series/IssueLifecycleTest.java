@@ -439,6 +439,58 @@ public class IssueLifecycleTest {
                 "a link-backed issue with a link in every language was still blocked");
     }
 
+    /**
+     * No checklist row puts a raw Java date on the screen.
+     *
+     * These details are read by an admin deciding whether to publish. Concatenating
+     * a Date rendered java.util.Date.toString() -- "Wed Aug 26 15:44:25 UTC 2026",
+     * in the SERVER JVM zone -- and java.sql.Timestamp.toString() for the stamped
+     * ones, "2026-07-29 10:16:08.0". The second is merely unreadable; the first
+     * states a timezone that is not the one the cut-off means, and a Copenhagen
+     * cut-off shown as UTC is two hours wrong to the person acting on it.
+     *
+     * Asserted as a pattern rather than against one row, because the leak was in
+     * four rows and the next one added would have leaked too.
+     */
+    @Test
+    @Transactional
+    public void nochecklistRowRendersARawJavaDate() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        List<String> leaked = checklist.compute(i, new Date(1_700_000_000_000L), false, false)
+                .rows().stream()
+                .map(PublishChecklistService.CheckRow::detail)
+                .filter(d -> d != null)
+                // java.util.Date.toString(), and java.sql.Timestamp.toString().
+                .filter(d -> d.matches(".*[A-Z][a-z]{2} [A-Z][a-z]{2} \\d{2} .*")
+                        || d.matches(".*\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d.*"))
+                .toList();
+
+        assertTrue(leaked.isEmpty(),
+                "these rows put an unformatted Java date in front of an admin: " + leaked);
+    }
+
+    /** And the cut-off row names the zone it is stating, so nobody has to guess. */
+    @Test
+    @Transactional
+    public void thecutoffRowNamesItsTimezone() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        String detail = checklist.compute(i, new Date(1_700_000_000_000L), false, false)
+                .rows().stream()
+                .filter(r -> r.code().equals("CUTOFF_NOT_FUTURE"))
+                .findFirst().orElseThrow().detail();
+
+        assertTrue(detail.contains("("),
+                "the cut-off is stated without saying which zone it is in: " + detail);
+    }
+
     /** The one acknowledgeable row is the one an exclusions panel cannot show. */
     @Test
     @Transactional
