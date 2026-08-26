@@ -14,6 +14,7 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageTag;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.NextIssueCreation;
@@ -490,6 +491,105 @@ public class ShadowDiffTest {
         shadowDiff.diffById(week.getPublicationId());
         assertEquals(1, runsFor(week).size(), "one run per stamp, by constraint");
         assertNull(runsFor(week).get(0).getSkipReason());
+    }
+
+    // ------------------------------------------------ a release still recording
+
+    /**
+     * A RECORDING release is not comparable: its tag is still being written to.
+     *
+     * The status means exactly that -- "published messages will be added to the
+     * publication message tag" -- so diffing one diffs a moving target. Observed
+     * on the deployed estate: legacy removed a withdrawn message from an open P&T
+     * week three days after that week's cut-off, and the diff reported the new
+     * engine as wrong for having frozen what was true AT the cut-off.
+     *
+     * It matters because the cutover gate counts consecutive green weeks from the
+     * NEWEST release, and the newest release is always the recording one. One
+     * mid-window edit would otherwise hold a series back indefinitely.
+     */
+    @Test
+    @Transactional
+    public void areleaseStillRecordingIsNotSelected() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(template(series), t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+        week.setStatus(PublicationStatus.RECORDING);
+        em.merge(week);
+        em.flush();
+
+        assertFalse(shadowDiff.undiffedReleases().stream()
+                        .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
+                "a release whose tag is still being written to was offered to the sweep");
+    }
+
+    /**
+     * And a verdict already taken while it was recording is DISCARDED.
+     *
+     * Excluding it from selection is not enough on its own, because the verdict is
+     * sticky. A run is keyed on (publicationId, p.updated), and mutating a tag
+     * does not touch the publication's own updated stamp -- the real P&T release
+     * that failed carries updated = 12 Aug against a 19 Aug cut-off. So a release
+     * compared once while recording is never reselected, and a false red outlives
+     * the condition that caused it: the series never shows a green streak again.
+     */
+    @Test
+    @Transactional
+    public void averdictTakenWhileRecordingIsDiscarded() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(template(series), t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+
+        // Compared while it was still closed-looking, then found to be recording.
+        assertNull(shadowDiff.diff(week).getSkipReason());
+        assertEquals(1, runsFor(week).size());
+
+        week.setStatus(PublicationStatus.RECORDING);
+        em.merge(week);
+        em.flush();
+
+        assertEquals(1, shadowDiff.discardRecordingComparisons(),
+                "the stale verdict was not discarded");
+        em.flush();
+        assertEquals(0, runsFor(week).size(),
+                "a comparison taken against a moving target is not evidence, and keeping it "
+                        + "would outlive the condition that made it wrong");
+    }
+
+    /** Once the window closes, the sweep picks it up again. */
+    @Test
+    @Transactional
+    public void aclosedReleaseBecomesComparableAgain() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(template(series), t1,
+                tag(message(ms, new Date(t1.getTime() - HOUR))));
+        week.setStatus(PublicationStatus.RECORDING);
+        em.merge(week);
+        em.flush();
+
+        assertFalse(shadowDiff.undiffedReleases().stream()
+                .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())));
+
+        week.setStatus(PublicationStatus.ACTIVE);
+        em.merge(week);
+        em.flush();
+
+        assertTrue(shadowDiff.undiffedReleases().stream()
+                        .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
+                "a closed release must become comparable, or excluding it while open would "
+                        + "mean never comparing it at all");
     }
 
     // ------------------------------------------------ a skip is not an answer

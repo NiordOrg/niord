@@ -121,6 +121,15 @@ public class ShadowDiffService {
     }
 
     public int runOnce(int max) {
+        // First, drop verdicts taken while a release was still recording. They
+        // are sticky -- the run key cannot see a tag mutation -- so without this
+        // a week that went red for a mid-window edit stays red after the window
+        // closes, and the series never shows a green streak again.
+        int discarded = QuarkusTransaction.requiringNew().call(this::discardRecordingComparisons);
+        if (discarded > 0) {
+            log.info("shadow-diff: discarded {} comparison(s) of releases still recording", discarded);
+        }
+
         List<String> todo = QuarkusTransaction.requiringNew()
                 .call(() -> undiffedReleases().stream()
                         .limit(Math.max(0, max))
@@ -211,6 +220,7 @@ public class ShadowDiffService {
                         "SELECT p FROM Publication p "
                                 + "WHERE p.messageTag IS NOT NULL "
                                 + "AND p.publishDateFrom IS NOT NULL "
+                                + "AND p.status <> org.niord.core.publication.vo.PublicationStatus.RECORDING "
                                 + "AND NOT EXISTS ("
                                 + "  SELECT r FROM ShadowDiffRun r "
                                 + "  WHERE r.legacyPublicationId = p.publicationId "
@@ -218,6 +228,37 @@ public class ShadowDiffService {
                                 + "  AND r.skipReason IS NULL) "
                                 + "ORDER BY p.updated", Publication.class)
                 .getResultList();
+    }
+
+    /**
+     * Discards comparisons of releases that are STILL RECORDING.
+     *
+     * A RECORDING release has a mutable tag -- the status means, in the enum's own
+     * words, that published messages are still being added to it -- so comparing
+     * one diffs a moving target. Legacy removed a withdrawn message from an open
+     * P&T week three days after that week's cut-off, and the diff reported the new
+     * engine as wrong for having frozen what was true AT the cut-off.
+     *
+     * Excluding them from selection is not enough on its own, because the verdict
+     * is STICKY. A run is keyed on (publicationId, p.updated), and mutating a tag
+     * does not touch the publication's own updated stamp -- the P&T release that
+     * failed carries updated = 12 Aug against a 19 Aug cut-off. So a release
+     * compared once while recording is never reselected, and its false verdict
+     * outlives the condition that caused it.
+     *
+     * Deleting the row is what lets the sweep pick the release up again once it
+     * closes, and it is safe: it removes evidence that was never valid, and only
+     * for releases whose window is still open.
+     *
+     * @return how many stale verdicts were discarded
+     */
+    @Transactional
+    public int discardRecordingComparisons() {
+        return em.createQuery(
+                        "DELETE FROM ShadowDiffRun r WHERE r.legacyPublicationId IN ("
+                                + "  SELECT p.publicationId FROM Publication p"
+                                + "  WHERE p.status = org.niord.core.publication.vo.PublicationStatus.RECORDING)")
+                .executeUpdate();
     }
 
     /** Diffs one release and records the result, whatever it is. */
