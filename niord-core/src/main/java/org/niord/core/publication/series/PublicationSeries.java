@@ -66,6 +66,18 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     @Column(nullable = false)
     private SeriesCadence cadence = SeriesCadence.NONE;
 
+    /**
+     * What kind of publication this is. Separate from cadence, which only says
+     * how often -- see {@link SeriesKind}, and note that cadence = NONE covers
+     * both an irregular series and something published once.
+     *
+     * Defaults to SCHEDULED because that is what the create form produces; the
+     * import decides the kind for everything it writes.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SeriesKind kind = SeriesKind.SCHEDULED;
+
     @Enumerated(EnumType.STRING)
     private CutoffDay nominalCutoffDay;
 
@@ -195,6 +207,19 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
     public void setCadence(SeriesCadence cadence) {
         this.cadence = cadence;
+    }
+
+    public SeriesKind getKind() {
+        return kind;
+    }
+
+    public void setKind(SeriesKind kind) {
+        this.kind = kind;
+    }
+
+    /** A one-off holds exactly one issue; everything else may hold many. */
+    public boolean isOneOff() {
+        return kind == SeriesKind.ONE_OFF;
     }
 
     public CutoffDay getNominalCutoffDay() {
@@ -469,6 +494,14 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         status = enumOf(SeriesStatus.class, vo.getStatus(), "status");
         contentMode = enumOf(ContentMode.class, vo.getContentMode(), "contentMode");
         cadence = enumOf(SeriesCadence.class, vo.getCadence(), "cadence");
+        // A VO that omits the kind KEEPS the one already set, rather than
+        // nulling a NOT NULL column. Every series PUT written before this field
+        // existed omits it, and the kind is not something those forms edit --
+        // so silence means "unchanged", not "clear it".
+        SeriesKind sentKind = enumOf(SeriesKind.class, vo.getKind(), "kind");
+        if (sentKind != null) {
+            kind = sentKind;
+        }
         nominalCutoffDay = enumOf(CutoffDay.class, vo.getNominalCutoffDay(), "nominalCutoffDay");
         nominalCutoffDayOfMonth = vo.getNominalCutoffDayOfMonth();
         nominalCutoffMonth = vo.getNominalCutoffMonth();
@@ -610,6 +643,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             sys.setStatus(status == null ? null : status.name());
             sys.setContentMode(contentMode == null ? null : contentMode.name());
             sys.setCadence(cadence == null ? null : cadence.name());
+            sys.setKind(kind == null ? null : kind.name());
             sys.setNominalCutoffDay(nominalCutoffDay == null ? null : nominalCutoffDay.name());
             sys.setNominalCutoffDayOfMonth(nominalCutoffDayOfMonth);
             sys.setNominalCutoffMonth(nominalCutoffMonth);

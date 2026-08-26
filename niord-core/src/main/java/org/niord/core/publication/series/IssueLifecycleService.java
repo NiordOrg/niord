@@ -116,6 +116,29 @@ public class IssueLifecycleService extends BaseService {
     }
 
     private PublicationIssue newIssue(PublicationSeries series, Date intervalFrom, IntervalBoundSource source) {
+        // A one-off holds exactly one issue, and refusing the second is what
+        // makes its kind a fact rather than a description of the current row
+        // count. A publication that turns out to keep appearing is an
+        // UNSCHEDULED series -- and saying so should be a decision somebody
+        // makes, not a side effect of an upload.
+        //
+        // Every path that reaches here is a person asking: the automatic
+        // successor in IssuePublishService requires a cadence, and a one-off
+        // has none, so it can never arrive at this check.
+        if (series != null && series.isOneOff()) {
+            Long existing = em.createQuery(
+                            "SELECT COUNT(i) FROM PublicationIssue i WHERE i.series = :s", Long.class)
+                    .setParameter("s", series)
+                    .getSingleResult();
+            if (existing > 0) {
+                throw new TransitionRefusedException("SERIES_IS_ONE_OFF",
+                        "'" + series.getSeriesId() + "' is a one-off and already has its issue. "
+                                + "If this publication is going to keep appearing, change its kind "
+                                + "to UNSCHEDULED first -- that is a decision about the publication "
+                                + "rather than about this upload.");
+            }
+        }
+
         PublicationIssue issue = new PublicationIssue();
         issue.setSeries(series);
         // Minted at create, immutable for life: it is what message HTML cites.

@@ -23,6 +23,12 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     private String cadence;
 
+    /**
+     * SCHEDULED, UNSCHEDULED or ONE_OFF. Omitted by a client that does not edit
+     * it, and an omission leaves the stored kind alone.
+     */
+    private String kind;
+
     private String nominalCutoffDay;
 
     /**
@@ -113,6 +119,14 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setCadence(String cadence) {
         this.cadence = cadence;
+    }
+
+    public String getKind() {
+        return kind;
+    }
+
+    public void setKind(String kind) {
+        this.kind = kind;
     }
 
     public String getNominalCutoffDay() {

@@ -17,6 +17,7 @@ import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesCadence;
+import org.niord.core.publication.series.SeriesKind;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.PublicAuthority;
@@ -29,6 +30,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -383,6 +385,9 @@ public class LegacyImportService extends BaseService {
         // only that pass produces -- and before planIssues, which files by this map.
         resolveTemplateRedirects(plan, templates, seriesByTemplate);
         planIssues(plan, publications, seriesByTemplate, frozenAt);
+        // After planIssues, because the kind of a cadence-less series is decided
+        // by how many issues it turned out to have.
+        applySeriesKinds(plan);
 
         // After the series exist and before the report is built: the document is
         // scoped by what the archive actually drew from, which is a fact about
@@ -988,6 +993,47 @@ public class LegacyImportService extends BaseService {
      * and to nothing else, so an in-force series is left without one on purpose.
      * Nothing is overwritten -- a value already set is a decision.
      */
+    /**
+     * What KIND each series is, decided once from the estate being imported.
+     *
+     * THE ISSUE COUNT IS USED HERE AND NOWHERE ELSE. "cadence = NONE and at
+     * most one issue" is a rule about an archive that is already written, not a
+     * rule the running system applies -- so it is spent here, on data whose
+     * shape is known, and the answer is stored. Recomputing it later would make
+     * a publication change kind underneath whoever added the second issue.
+     *
+     * The distinction it draws is real and was previously invisible: eleven
+     * NCAGS editions, eight ice-service notices and four editions of Dansk
+     * Fyrliste have no cadence and are unmistakably series, while five other
+     * publications have no cadence because they were published once and stopped.
+     */
+    private void applySeriesKinds(Plan plan) {
+        Map<PublicationSeries, Integer> issueCounts = new IdentityHashMap<>();
+        for (PublicationIssue issue : plan.issues().values()) {
+            if (issue.getSeries() != null) {
+                issueCounts.merge(issue.getSeries(), 1, Integer::sum);
+            }
+        }
+
+        int oneOffs = 0;
+        int unscheduled = 0;
+        for (PublicationSeries series : plan.series()) {
+            if (series.getCadence() != null && series.getCadence() != SeriesCadence.NONE) {
+                series.setKind(SeriesKind.SCHEDULED);
+                continue;
+            }
+            if (issueCounts.getOrDefault(series, 0) > 1) {
+                series.setKind(SeriesKind.UNSCHEDULED);
+                unscheduled++;
+            } else {
+                series.setKind(SeriesKind.ONE_OFF);
+                oneOffs++;
+            }
+        }
+        log.info("series kinds: {} one-off, {} unscheduled, {} scheduled",
+                oneOffs, unscheduled, plan.series().size() - oneOffs - unscheduled);
+    }
+
     private void applyNominalSchedules(Plan plan) {
         for (PublicationSeries series : plan.series()) {
             List<PublicationIssue> issues = plan.issues().values().stream()

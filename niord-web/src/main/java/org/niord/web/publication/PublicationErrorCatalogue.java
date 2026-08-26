@@ -106,6 +106,16 @@ public final class PublicationErrorCatalogue {
         put("ISSUE_NOT_OPEN", 409);
         put("ISSUE_NOT_DELETABLE", 409);
         put("SERIES_HAS_ISSUES", 409);
+        // 409: the series is a one-off and already holds its one issue. A state
+        // conflict that CAN clear -- reclassifying the series as UNSCHEDULED makes
+        // the same request succeed -- so it is 409 rather than 400.
+        put("SERIES_IS_ONE_OFF", 409);
+        // 400, not 409: the one-off form was pointed at a scheduled or unscheduled
+        // series. No change of state makes that request correct -- the form has no
+        // fields for the cadence, criteria and numbering such a series carries, so
+        // saving through it would silently drop them. The caller wants the series
+        // editor instead.
+        put("SERIES_NOT_ONE_OFF", 400);
         put("PREDECESSOR_NOT_PUBLISHED", 409);
         put("WARNING_NOT_ACKNOWLEDGED", 409);
         put("SERIES_ID_TAKEN", 409);
