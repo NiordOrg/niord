@@ -376,16 +376,43 @@ public class ShadowDiffService {
         return run;
     }
 
-    /** The imported series this release belongs to, or null. */
+    /**
+     * The imported series this release belongs to, or null.
+     *
+     * THE ISSUE IS ASKED FIRST, because it is the only authoritative answer:
+     * wherever this publication was actually filed, its imported issue points at
+     * it. The template lookup below is a heuristic that holds only when a legacy
+     * template became a series one-for-one, and two whole classes of publication
+     * break that assumption.
+     *
+     * ORPHANS have no template at all. The old code substituted the publication
+     * id for the missing template id and then looked for a series carrying it as
+     * legacyTemplateId -- which no series does, because an orphan-grouped series
+     * is authored by the grouping pass and carries no template. Thirteen of them
+     * were reported NO_IMPORTED_SERIES on every run: not comparable, and
+     * therefore never counted as a green week, for a reason that was never true.
+     *
+     * REDIRECTED TEMPLATES break it the other way. The six "DONT USE" clones and
+     * NCAGS 2021 are rulings that a template is NOT a series, so nothing carries
+     * their template id and their editions live under the series they were cloned
+     * out of. Asking by template id would have started reporting them missing the
+     * moment those rulings landed.
+     */
     private PublicationSeries seriesFor(Publication release) {
-        String templateId = release.getTemplate() == null
-                ? release.getPublicationId()
-                : release.getTemplate().getPublicationId();
+        PublicationIssue issue = importedIssue(release);
+        if (issue != null && issue.getSeries() != null) {
+            return issue.getSeries();
+        }
 
+        // No imported issue: fall back to the template, which still answers for a
+        // release the import has not written yet.
+        if (release.getTemplate() == null) {
+            return null;
+        }
         return em.createQuery(
                         "SELECT s FROM PublicationSeries s WHERE s.legacyTemplateId = :t",
                         PublicationSeries.class)
-                .setParameter("t", templateId)
+                .setParameter("t", release.getTemplate().getPublicationId())
                 .getResultStream().findFirst().orElse(null);
     }
 

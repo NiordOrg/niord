@@ -646,6 +646,43 @@ public class ShadowDiffTest {
     }
 
     /**
+     * A release with NO TEMPLATE resolves through its imported issue.
+     *
+     * Thirteen orphan publications were reported NO_IMPORTED_SERIES on every run,
+     * for a reason that was never true. seriesFor asked only "which series carries
+     * this template id", and substituted the PUBLICATION id when there was no
+     * template -- but an orphan-grouped series is authored by the grouping pass and
+     * carries no template id at all, so the lookup could not match by construction.
+     *
+     * Not cosmetic: a release that cannot be compared is never a green week, and
+     * the cutover precondition counts green weeks.
+     *
+     * The same lookup now also covers a REDIRECTED template -- the six "DONT USE"
+     * clones and NCAGS 2021 are rulings that a template is not a series, so nothing
+     * carries their template id either.
+     */
+    @Test
+    @Transactional
+    public void anorphanReleaseResolvesThroughItsImportedIssue() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        // NO TEMPLATE. This is what an orphan publication actually looks like.
+        Publication week = release(null, t1, tag(message(ms, new Date(t1.getTime() - HOUR))));
+        importedIssue(series, week);
+
+        ShadowDiffRun run = shadowDiff.diff(week);
+
+        assertNull(run.getSkipReason(),
+                "an orphan release whose issue is imported under a series was reported "
+                        + "unimportable; it can never count as a green week");
+        assertEquals(series.getSeriesId(), run.getSeriesId(),
+                "the run names no series, so the report cannot say where it belongs");
+    }
+
+    /**
      * Re-diffing something that still cannot be compared does not accumulate rows.
      *
      * Without this the fix above trades one bug for a slower one: a release nothing
