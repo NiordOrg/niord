@@ -87,6 +87,7 @@ public class CutoverPreflightService extends BaseService {
         assertCadencedIssuesDeriveTheirWindow(imported, violations);
         assertUnpublishedIssuesCarryNoStamp(imported, violations, counts);
         assertIdSpaceDoesNotCollide(violations, counts);
+        assertMembershipIsUnique(violations, counts);
 
         List<TriggerHit> audit = auditTriggers();
         counts.put("triggersNamingAWeeklyTag", audit.size());
@@ -94,6 +95,52 @@ public class CutoverPreflightService extends BaseService {
         log.info("cutover pre-flight: {} violation(s), {} trigger(s) naming a weekly tag",
                 violations.size(), audit.size());
         return new Preflight(violations, audit, counts);
+    }
+
+    /**
+     * One message is in one issue once, and one override names it once.
+     *
+     * DATA-MODEL §8.3 specifies both as UNIQUE constraints and neither exists in
+     * the schema. Adding a unique constraint to a populated table is a claim about
+     * the DATA, not the schema: one duplicate and the ALTER fails and takes the
+     * deploy with it. So the claim is measured here first, over the whole estate,
+     * on the checklist an admin already runs before cutover.
+     *
+     * Counted rather than only flagged, because zero is the finding. "No
+     * duplicates" is what licenses the constraint; a count of zero says the
+     * question was asked, where a missing violation could equally mean nobody
+     * looked.
+     *
+     * A duplicate is a real defect independently of the constraint: two rows for
+     * one message in one issue print it twice in the report, and the member count
+     * an editor reads disagrees with what comes out.
+     */
+    private void assertMembershipIsUnique(List<Violation> violations, Map<String, Integer> counts) {
+        List<Object[]> memberDupes = em.createQuery(
+                        "SELECT m.issue.id, m.messageUid, COUNT(m) FROM IssueMember m "
+                                + "GROUP BY m.issue.id, m.messageUid HAVING COUNT(m) > 1",
+                        Object[].class)
+                .getResultList();
+        counts.put("duplicateMemberships", memberDupes.size());
+
+        for (Object[] row : memberDupes) {
+            violations.add(new Violation("X2_DUPLICATE_MEMBERSHIP", String.valueOf(row[0]),
+                    "message " + row[1] + " is a member of this issue " + row[2] + " times. It "
+                            + "prints twice, and the member count disagrees with the document."));
+        }
+
+        List<Object[]> overrideDupes = em.createQuery(
+                        "SELECT o.issue.id, o.messageUid, COUNT(o) FROM IssueOverride o "
+                                + "GROUP BY o.issue.id, o.messageUid HAVING COUNT(o) > 1",
+                        Object[].class)
+                .getResultList();
+        counts.put("duplicateOverrides", overrideDupes.size());
+
+        for (Object[] row : overrideDupes) {
+            violations.add(new Violation("X2_DUPLICATE_OVERRIDE", String.valueOf(row[0]),
+                    "message " + row[1] + " carries " + row[2] + " overrides on this issue. Which "
+                            + "one applies is whichever the query returned first."));
+        }
     }
 
     /**

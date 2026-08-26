@@ -50,7 +50,7 @@ public class CutoverPreflightTest {
         assertNotNull(result.counts());
 
         for (String key : List.of("importedIssues", "seriesWithACurrentIssue", "idCollisions",
-                "triggersNamingAWeeklyTag")) {
+                "triggersNamingAWeeklyTag", "duplicateMemberships", "duplicateOverrides")) {
             assertTrue(result.counts().containsKey(key),
                     "the pre-flight must report " + key + "; a check that runs and says nothing is "
                             + "indistinguishable from one that did not run");

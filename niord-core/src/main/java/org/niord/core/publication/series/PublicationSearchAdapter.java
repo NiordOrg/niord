@@ -54,14 +54,31 @@ public class PublicationSearchAdapter extends BaseService {
             return List.of();
         }
 
+        // LEFT JOIN on the domain, and it has to be explicit. A path expression
+        // like s.domain.domainId generates an INNER join, which eliminates every
+        // series whose domain is null BEFORE the where-clause is evaluated -- so
+        // writing "(s.domain IS NULL OR s.domain.domainId = :domain)" reads
+        // correctly and still returns nothing for the null case. Naming the join
+        // is the only way to make the null branch reachable.
         StringBuilder jpql = new StringBuilder(
-                "SELECT i FROM PublicationIssue i JOIN i.series s WHERE 1 = 1");
+                "SELECT i FROM PublicationIssue i JOIN i.series s LEFT JOIN s.domain d WHERE 1 = 1");
 
         if (params.getMessagePublication() != null) {
             jpql.append(" AND s.messagePublication = :messagePublication");
         }
         if (params.getDomain() != null && !params.getDomain().isBlank()) {
-            jpql.append(" AND s.domain.domainId = :domain");
+            // A series with NO domain matches every domain, which is what legacy
+            // means by a null one: Publication.findRecordingPublications reads
+            // "p.domain is null or :series member of p.domain.messageSeries".
+            //
+            // Written as an explicit null branch because the bare comparison is an
+            // inner one -- s.domain.domainId = :domain silently drops a series
+            // whose domain is null, so it is not merely unmatched but unfindable.
+            // Thirteen of the twenty-three series in the estate have no domain,
+            // because the legacy templates they were imported from have none
+            // either, so this was most of the catalogue disappearing from every
+            // domain-scoped search.
+            jpql.append(" AND (d IS NULL OR d.domainId = :domain)");
         }
         if (params.getCategory() != null && !params.getCategory().isBlank()) {
             jpql.append(" AND s.category.categoryId = :category");
