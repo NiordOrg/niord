@@ -7,6 +7,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.series.PublicationSeries;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -122,6 +123,44 @@ public class LegacyTemplateRulingsTest {
             assertTrue(plan.series().stream().anyMatch(s -> destination.equals(s.getSeriesId())),
                     "no series '" + destination + "' is produced, so the editions ruled into it "
                             + "would be reported missing on every import");
+        }
+    }
+
+    /**
+     * The six "DONT USE" templates produce no series, and their editions land in
+     * the weekly series they were cloned out of.
+     *
+     * Legacy had no way to vary one issue, so a week that had to differ -- a
+     * double week over a year turnover, a re-issue -- was made by cloning the
+     * whole template, publishing once, and abandoning it. Imported as series they
+     * put six single-edition headings beside the archive those editions belong to.
+     */
+    @Test
+    public void thedontUseTemplatesProduceNoSeriesOfTheirOwn() {
+        LegacyImportService.Plan plan = plan();
+
+        List<String> survivors = plan.series().stream()
+                .map(PublicationSeries::getSeriesId)
+                .filter(id -> id != null && id.startsWith("dont-use"))
+                .toList();
+
+        assertTrue(survivors.isEmpty(),
+                "a DONT USE template still became a series: " + survivors);
+    }
+
+    /** And their editions are not lost on the way -- they are filed, not dropped. */
+    @Test
+    public void thedontUseEditionsLandInTheWeeklySeries() {
+        LegacyImportService.Plan plan = plan();
+
+        for (Map.Entry<String, String> ruling : LegacyTemplateRulings.destinations().entrySet()) {
+            long filed = plan.issues().values().stream()
+                    .filter(i -> i.getSeries() != null
+                            && ruling.getValue().equals(i.getSeries().getSeriesId()))
+                    .count();
+            assertTrue(filed > 0,
+                    "nothing at all is filed under " + ruling.getValue() + ", so the editions "
+                            + "ruled into it went nowhere");
         }
     }
 
