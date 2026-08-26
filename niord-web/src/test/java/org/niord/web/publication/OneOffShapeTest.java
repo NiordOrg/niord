@@ -6,6 +6,8 @@ import org.niord.core.publication.series.CutoffDay;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.PublicationIssue;
+import org.niord.core.publication.series.PublicationIssueDesc;
 import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
@@ -20,6 +22,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * What a one-off may and may not carry.
@@ -171,5 +174,76 @@ public class OneOffShapeTest {
                 "NONE is a live legacy content type: journal-number, list-of-wrecks and "
                         + "aids-to-navigation all carry it, and coercing it would rewrite them");
         assertNull(s.getCriteria());
+    }
+
+    // ------------------------------------------------------- S-2, both ways
+
+    /**
+     * aliveAtCutoff must be ABSENT on a publication with no query, not false.
+     *
+     * It is a filter applied to a query. "false" on a publication that runs no
+     * query claims a filter that ran and passed everything, which is exactly the
+     * distinction S-2 exists to keep -- and the save was refused for it, on a
+     * field the one-off form never showed.
+     */
+    @Test
+    public void anonQueryBackedOneOffCarriesNoLivenessFilter() {
+        PublicationSeries s = seriesWithEverything();
+        s.setContentMode(ContentMode.EXTERNAL_LINK);
+        s.setAliveAtCutoff(Boolean.FALSE);
+
+        OneOffRestService.forceOneOffShape(s);
+
+        assertNull(s.getAliveAtCutoff(),
+                "S-2 refuses a liveness filter on a series with no query, so a one-off that "
+                        + "carries one cannot be activated at all");
+    }
+
+    /** And a query-backed one MUST state it, or it fails activation for a field nobody was asked about. */
+    @Test
+    public void aqueryBackedOneOffAlwaysStatesItsLivenessFilter() {
+        PublicationSeries s = seriesWithEverything();
+        s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setAliveAtCutoff(null);
+
+        OneOffRestService.forceOneOffShape(s);
+
+        assertEquals(Boolean.FALSE, s.getAliveAtCutoff(),
+                "S-2 requires a query-backed series to say whether it filters on liveness");
+    }
+
+    // --------------------------------------------------------- the desc reuse
+
+    /**
+     * A language that already has a desc gets THAT desc, not a second one.
+     *
+     * The issue lifecycle writes one desc per language at create. Attaching a link
+     * by calling createDesc again inserts a duplicate, violates
+     * UNIQUE (entity_id, lang), and fails the whole save with a database error
+     * naming a column -- which says nothing about the link somebody just typed.
+     * Measured against the deployed API before the fix: HTTP 500, "Duplicate entry
+     * 'da-3411907'".
+     */
+    @Test
+    public void alanguageThatAlreadyHasADescIsReused() {
+        PublicationIssue issue = new PublicationIssue();
+        PublicationIssueDesc existing = issue.createDesc("da");
+        existing.setName("Already here");
+
+        PublicationIssueDesc found = OneOffRestService.descFor(issue, "da");
+
+        assertSame(existing, found, "a second desc for the same language cannot be stored");
+        assertEquals(1, issue.getDescs().size(), "the issue grew a duplicate desc row");
+    }
+
+    /** A language with no desc yet gets one. */
+    @Test
+    public void alanguageWithNoDescGetsOne() {
+        PublicationIssue issue = new PublicationIssue();
+
+        PublicationIssueDesc created = OneOffRestService.descFor(issue, "en");
+
+        assertEquals("en", created.getLang());
+        assertEquals(1, issue.getDescs().size());
     }
 }

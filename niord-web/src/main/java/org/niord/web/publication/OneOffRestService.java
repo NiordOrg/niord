@@ -294,11 +294,21 @@ public class OneOffRestService {
             series.setReleaseMode(ReleaseMode.MANUAL_GATE);
         }
 
-        // S-1. Only a query-backed series carries a time relation and a criteria
-        // document; on any other content mode both must be absent.
+        // S-1 and S-2. Only a query-backed series carries a time relation, a
+        // criteria document and a liveness filter; on any other content mode all
+        // three must be ABSENT rather than merely false. aliveAtCutoff in
+        // particular is a filter applied to a query, so "false" on a publication
+        // with no query claims a filter that ran and passed everything -- which is
+        // exactly the distinction S-2 exists to keep.
         if (series.getContentMode() != ContentMode.GENERATED_FROM_QUERY) {
             series.setTimeRelation(null);
             series.setCriteria(null);
+            series.setAliveAtCutoff(null);
+        } else if (series.getAliveAtCutoff() == null) {
+            // S-2 the other way: a query-backed series must SAY. The form sends a
+            // boolean, but a body that omits it would otherwise fail activation
+            // for a field the admin was never asked about.
+            series.setAliveAtCutoff(Boolean.FALSE);
         }
 
         // Names are suggested per issue from a pattern, across a series. One issue
@@ -365,12 +375,33 @@ public class OneOffRestService {
             if (link == null || link.lang == null) {
                 continue;
             }
-            PublicationIssueDesc desc = issue.createDesc(link.lang);
+            // FOUND, not created. createDesc always makes a new row, and the issue
+            // lifecycle has already written one per language -- so creating a
+            // second violates UNIQUE (entity_id, lang) and fails the whole save
+            // with a database error naming a column, which tells an admin nothing
+            // about the link they just typed.
+            PublicationIssueDesc desc = descFor(issue, link.lang);
             if (desc.getName() == null || desc.getName().isBlank()) {
                 desc.setName(seriesNameFor(request, link.lang));
             }
             desc.setLink(link.value == null || link.value.isBlank() ? null : link.value.trim());
         }
+    }
+
+    /**
+     * The issue's desc for a language, created only if it genuinely has none.
+     *
+     * Package-private so the reuse can be asserted: creating a second desc for a
+     * language violates UNIQUE (entity_id, lang), and the failure surfaces as a
+     * 500 naming a database column rather than anything about the save.
+     */
+    static PublicationIssueDesc descFor(PublicationIssue issue, String lang) {
+        for (PublicationIssueDesc existing : issue.getDescs()) {
+            if (lang.equals(existing.getLang())) {
+                return existing;
+            }
+        }
+        return issue.createDesc(lang);
     }
 
     private void activate(PublicationSeries series) {
