@@ -35,6 +35,7 @@ import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.SeriesValidator;
+import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 import org.niord.core.publication.vo.MessagePublication;
 
 import java.text.Normalizer;
@@ -47,26 +48,34 @@ import java.util.Set;
 /**
  * One-off publications: the surface for something published once.
  *
- * SEPARATE FROM THE SERIES SCREEN ON PURPOSE. A one-off is stored as a series
- * holding a single issue -- that is what keeps PublicationIssue.series NOT NULL
- * and gives the publication somewhere to keep its category and reference format
- * -- but almost nothing on the series form applies to it. Cadence, cut-offs,
- * criteria, numbering, automation and the report are all inert for a document
- * somebody uploads once, and offering them asks an admin to answer thirty
- * questions in order to publish one PDF.
+ * TWO DECISIONS THAT ARE NOT THE SAME DECISION, and conflating them is what this
+ * endpoint exists to undo.
  *
- * The storage decision and the screen decision are deliberately different
- * answers, and this endpoint is where they are kept apart. What it exposes is
- * the four things such a publication actually has: a name, a type, whether it
- * is live, and the file or link behind it.
+ * The STORAGE decision is that a one-off is a series holding a single issue.
+ * That stays: it keeps PublicationIssue.series NOT NULL and gives the
+ * publication somewhere to keep its category, its report and its reference
+ * format.
  *
- * ONE CALL WHERE ONE CALL IS POSSIBLE. Building a one-off out of the general
- * endpoints is create-series, activate, create-issue, publish -- four round
- * trips in an order that cannot be got wrong without the last one refusing for
- * a reason that names none of the earlier three. Link-backed and empty
- * publications finish here in a single request. An uploaded one still needs its
- * bytes, so it comes back with publishable = false and the caller uploads and
- * publishes.
+ * The SCREEN decision is a different question, and it was never separately made.
+ * A one-off has no cadence, no cut-off schedule, no numbering across issues and
+ * no automatic successor -- so offering those asks an admin to answer questions
+ * that have no answer. But it has EVERYTHING ELSE a series has, including a
+ * query-backed content mode with its criteria and its report. An earlier version
+ * of this endpoint offered only UPLOADED_FILE and EXTERNAL_LINK, which is
+ * narrower than the data: three of the five one-offs in the estate are
+ * contentMode NONE, and nothing prevents a one-off being generated from a query.
+ *
+ * So the wire shape carries the WHOLE series VO and this endpoint ENFORCES the
+ * one-off constraints rather than re-declaring the fields a one-off may have.
+ * A parallel value object would be a second place to add every future series
+ * field, and the field that got forgotten would be missing only here.
+ *
+ * ONE CALL WHERE ONE CALL IS POSSIBLE. Through the general endpoints, creating a
+ * one-off is create-series, activate, create-issue, publish -- four round trips
+ * in an order that cannot be got wrong without the last one refusing for a
+ * reason naming none of the earlier three. Link-backed, query-backed and empty
+ * publications finish here in a single request; an uploaded one comes back with
+ * publishable = false and the caller attaches the bytes.
  */
 @Path("/one-off-publications")
 @RequestScoped
@@ -94,7 +103,7 @@ public class OneOffRestService {
 
     // ------------------------------------------------------------- wire shapes
 
-    /** One language's value: a name, a link, a file name. */
+    /** One language's value: a link, or a file name. */
     public static class LangText {
         public String lang;
         public String value;
@@ -109,25 +118,26 @@ public class OneOffRestService {
     }
 
     /**
-     * A one-off, flattened.
+     * A one-off: the whole series, plus the parts of its single issue that
+     * whoever maintains the publication actually deals with.
      *
-     * The series and its single issue are one thing to whoever maintains it, so
-     * they are one row here. `active` folds the three states that actually
-     * decide visibility -- series ACTIVE, issue PUBLISHED, and an open public
-     * window -- into the single dot the list shows, because any one of them
-     * being off is invisible from the other two.
+     * `series` is the ordinary series value object, so a one-off has every option
+     * a series has. The constraints that make it a one-off are applied on the way
+     * in, not expressed by leaving fields out.
+     *
+     * `active` folds the three states that really decide visibility -- series
+     * ACTIVE, issue PUBLISHED, and an open public window -- into the single dot
+     * the list shows, because any one of them being off is invisible from the
+     * other two.
      */
     public static class OneOffVo {
-        public String seriesId;
-        public String contentMode;
-        public String categoryId;
-        /** Null means GLOBAL: visible from every domain, as in the legacy data. */
-        public String domainId;
+        public SystemPublicationSeriesVo series;
         public boolean active;
         public String issuePublicId;
         public String issueStatus;
-        public List<LangText> names = new ArrayList<>();
+        /** Per language, for an EXTERNAL_LINK publication. */
         public List<LangText> links = new ArrayList<>();
+        /** Per language, read-only: what was uploaded, if anything. */
         public List<LangText> fileNames = new ArrayList<>();
         /** False while the publication still needs its bytes before it can go live. */
         public boolean publishable;
@@ -152,9 +162,9 @@ public class OneOffRestService {
     /**
      * Create, and take it as far towards live as its content allows.
      *
-     * Activation is validated exactly as the status transition would validate
-     * it, rather than skipped: a one-off that reaches the list unactivatable is
-     * a publication an admin cannot publish and cannot see the reason for.
+     * Activation is validated exactly as the status transition would validate it
+     * rather than skipped: a one-off that reaches the list unactivatable is a
+     * publication an admin cannot publish and cannot see the reason for.
      */
     @POST
     @Path("/")
@@ -162,35 +172,25 @@ public class OneOffRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
     public OneOffVo create(OneOffVo request) {
-        if (request == null || request.names == null || request.names.isEmpty()) {
-            throw new IssueLifecycleService.TransitionRefusedException("NAME_BLANK",
-                    "a one-off publication needs a name in at least one language");
-        }
+        SystemPublicationSeriesVo vo = seriesOf(request);
 
         PublicationSeries series = new PublicationSeries();
-        series.setSeriesId(uniqueSeriesId(request));
-        series.setKind(SeriesKind.ONE_OFF);
-        series.setCadence(SeriesCadence.NONE);
-        series.setContentMode(contentModeOf(request));
+        series.updateFromVo(vo);
+        series.setSeriesId(uniqueSeriesId(vo));
         series.setStatus(SeriesStatus.DRAFT);
+        if (series.getPublicAuthority() == null) {
+            // LEGACY until cutover flips it, matching every other series. Claiming
+            // NEW would assert that the public site already serves this.
+            series.setPublicAuthority(PublicAuthority.LEGACY);
+        }
+        if (series.getMessagePublication() == null) {
+            series.setMessagePublication(MessagePublication.NONE);
+        }
+        resolveReferences(series, vo);
+        forceOneOffShape(series);
+        requireCategory(series);
 
-        // S-1: a series that is not query-backed carries no time relation and no
-        // criteria document. A one-off is never query-backed, so both stay null.
-        series.setTimeRelation(null);
-        series.setCriteria(null);
-
-        series.setNumberingScheme(NumberingScheme.NONE);
-        series.setNextIssueCreation(NextIssueCreation.MANUAL);
-        series.setReleaseMode(ReleaseMode.MANUAL_GATE);
-        series.setMessagePublication(MessagePublication.NONE);
-        series.setAliveAtCutoff(false);
-        // LEGACY until cutover flips it, matching every other series. Claiming NEW
-        // would assert that the public site already serves this publication.
-        series.setPublicAuthority(PublicAuthority.LEGACY);
-
-        applyNamesAndReferences(series, request);
         PublicationSeries saved = seriesService.create(series);
-
         PublicationIssue issue = lifecycle.create(saved, new Date(), IntervalBoundSource.MANUAL, null);
         applyLinks(issue, request);
 
@@ -205,7 +205,7 @@ public class OneOffRestService {
      * Update, including clearing the domain.
      *
      * A blank domainId CLEARS it, because null is a value here rather than an
-     * omission: it means "visible from every domain", which is what six of these
+     * omission: it means "visible from every domain", which is what four of these
      * publications are in the legacy data and what the message editor's
      * publication picker relies on.
      */
@@ -216,13 +216,31 @@ public class OneOffRestService {
     @RolesAllowed("admin")
     public OneOffVo update(@PathParam("seriesId") String seriesId, OneOffVo request) {
         PublicationSeries series = required(seriesId);
-        if (request == null) {
-            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                    "a body is required");
+        SystemPublicationSeriesVo vo = seriesOf(request);
+
+        // S-16, REFUSED rather than silently corrected, matching the series
+        // endpoint. The id is the import/export key and the citation handle, so a
+        // body naming a different one is a client that thinks it is renaming
+        // something -- and quietly saving under the old id would leave it believing
+        // the rename worked.
+        if (vo.getSeriesId() != null && !vo.getSeriesId().isBlank()
+                && !seriesId.equals(vo.getSeriesId())) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_ID_IMMUTABLE",
+                    "seriesId cannot be changed after create. The path says " + seriesId
+                            + " and the body says " + vo.getSeriesId());
         }
 
-        series.setContentMode(contentModeOf(request));
-        applyNamesAndReferences(series, request);
+        // The status is NOT taken from the body: activation is a transition that
+        // validates, and letting a save carry a status would route around it.
+        SeriesStatus status = series.getStatus();
+        series.updateFromVo(vo);
+        // S-16: the id is the import/export key and the citation handle.
+        series.setSeriesId(seriesId);
+        series.setStatus(status);
+        resolveReferences(series, vo);
+        forceOneOffShape(series);
+        requireCategory(series);
+
         PublicationSeries saved = seriesService.update(series);
 
         PublicationIssue issue = onlyIssue(saved);
@@ -240,6 +258,56 @@ public class OneOffRestService {
 
     // ------------------------------------------------------------------ pieces
 
+    private static SystemPublicationSeriesVo seriesOf(OneOffVo request) {
+        if (request == null || request.series == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "a one-off carries a series body; it is a series holding a single issue");
+        }
+        return request.series;
+    }
+
+    /**
+     * The constraints that make a one-off a one-off, applied rather than declared.
+     *
+     * Everything nulled here is a question about a SEQUENCE of issues -- when the
+     * next one cuts off, what it will be numbered, whether it appears by itself.
+     * A publication that comes out once has no answer to any of them, and S-5,
+     * S-6 and S-7 refuse the cut-off fields on a cadence-less series anyway.
+     *
+     * What is deliberately NOT touched: the content mode and everything that
+     * hangs off it. A one-off may be generated from a query, and then it needs
+     * its criteria, its time relation and its report exactly as a series does.
+     */
+    // Package-private so the shape it enforces can be asserted directly: what a
+    // one-off may and may not carry is the whole contract of this endpoint.
+    static void forceOneOffShape(PublicationSeries series) {
+        series.setKind(SeriesKind.ONE_OFF);
+        series.setCadence(SeriesCadence.NONE);
+        series.setNominalCutoffDay(null);
+        series.setNominalCutoffDayOfMonth(null);
+        series.setNominalCutoffMonth(null);
+        series.setNominalCutoffTime(null);
+        series.setNumberingScheme(NumberingScheme.NONE);
+        series.setNextIssueCreation(NextIssueCreation.MANUAL);
+        series.setFirstIssueStartsAt(null);
+        if (series.getReleaseMode() == null) {
+            series.setReleaseMode(ReleaseMode.MANUAL_GATE);
+        }
+
+        // S-1. Only a query-backed series carries a time relation and a criteria
+        // document; on any other content mode both must be absent.
+        if (series.getContentMode() != ContentMode.GENERATED_FROM_QUERY) {
+            series.setTimeRelation(null);
+            series.setCriteria(null);
+        }
+
+        // Names are suggested per issue from a pattern, across a series. One issue
+        // has nothing to derive and nothing to derive it from.
+        for (PublicationSeriesDesc desc : series.getDescs()) {
+            desc.setNameSuggestionPattern(null);
+        }
+    }
+
     private PublicationSeries required(String seriesId) {
         PublicationSeries series = seriesService.findBySeriesId(seriesId);
         if (series == null) {
@@ -248,62 +316,44 @@ public class OneOffRestService {
         }
         if (series.getKind() != SeriesKind.ONE_OFF) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_ONE_OFF",
-                    seriesId + " is a " + series.getKind() + " series, not a one-off. Editing it "
-                            + "through this form would silently drop the cadence, criteria and "
-                            + "numbering the form has no fields for.");
+                    seriesId + " is a " + series.getKind() + " series, not a one-off. Saving it "
+                            + "through this form would force cadence NONE and drop its numbering "
+                            + "and its schedule.");
         }
         return series;
     }
 
-    private ContentMode contentModeOf(OneOffVo request) {
-        String mode = request.contentMode == null ? "" : request.contentMode.trim();
-        if (ContentMode.EXTERNAL_LINK.name().equals(mode)) {
-            return ContentMode.EXTERNAL_LINK;
-        }
-        if (ContentMode.NONE.name().equals(mode)) {
-            return ContentMode.NONE;
-        }
-        if (ContentMode.UPLOADED_FILE.name().equals(mode) || mode.isEmpty()) {
-            return ContentMode.UPLOADED_FILE;
-        }
-        // GENERATED_FROM_QUERY is deliberately unreachable here: it is the one
-        // mode that needs the criteria, time relation and report this form has no
-        // fields for, so accepting it would build a series that resolves nothing.
-        throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                "a one-off is UPLOADED_FILE, EXTERNAL_LINK or NONE, and " + mode + " is none of them");
-    }
-
-    private void applyNamesAndReferences(PublicationSeries series, OneOffVo request) {
-        if (request.categoryId != null && !request.categoryId.isBlank()) {
-            PublicationCategory category = categoryService.findByCategoryId(request.categoryId);
-            if (category == null) {
-                throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_NOT_FOUND",
-                        "no publication category " + request.categoryId);
-            }
-            series.setCategory(category);
-        }
+    private static void requireCategory(PublicationSeries series) {
+        // S-19, checked here rather than left to the flush: the column is NOT NULL,
+        // so without this it dies inside Hibernate naming a Java field, which tells
+        // an admin nothing about the empty dropdown that caused it.
         if (series.getCategory() == null) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
                     "a category is required: it decides where the publication appears publicly");
         }
+    }
 
-        if (request.domainId != null && !request.domainId.isBlank()) {
-            Domain domain = domainService.findByDomainId(request.domainId);
+    private void resolveReferences(PublicationSeries series, SystemPublicationSeriesVo vo) {
+        if (vo.getCategoryId() != null && !vo.getCategoryId().isBlank()) {
+            PublicationCategory category = categoryService.findByCategoryId(vo.getCategoryId());
+            if (category == null) {
+                throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_NOT_FOUND",
+                        "no publication category " + vo.getCategoryId());
+            }
+            series.setCategory(category);
+        }
+
+        // Absent CLEARS it. Null is a value here: it means visible from every
+        // domain, and without a way to say it there is no way back to global.
+        if (vo.getDomainId() != null && !vo.getDomainId().isBlank()) {
+            Domain domain = domainService.findByDomainId(vo.getDomainId());
             if (domain == null) {
                 throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                        "no domain " + request.domainId);
+                        "no domain " + vo.getDomainId());
             }
             series.setDomain(domain);
         } else {
             series.setDomain(null);
-        }
-
-        for (LangText name : request.names) {
-            if (name == null || name.lang == null || name.value == null || name.value.isBlank()) {
-                continue;
-            }
-            series.getLanguages().add(name.lang);
-            series.createDesc(name.lang).setName(name.value.trim());
         }
     }
 
@@ -317,7 +367,7 @@ public class OneOffRestService {
             }
             PublicationIssueDesc desc = issue.createDesc(link.lang);
             if (desc.getName() == null || desc.getName().isBlank()) {
-                desc.setName(nameFor(request, link.lang));
+                desc.setName(seriesNameFor(request, link.lang));
             }
             desc.setLink(link.value == null || link.value.isBlank() ? null : link.value.trim());
         }
@@ -336,18 +386,18 @@ public class OneOffRestService {
     /**
      * Publish when there is something to publish.
      *
-     * regenerate = false, because a one-off is never query-backed: there is no
-     * report to run and nothing to regenerate. An uploaded publication with no
-     * bytes yet is simply left OPEN -- the checklist would refuse it, and
-     * refusing here would turn "you still need to attach the file" into an error
-     * on save.
+     * regenerate is true only for a query-backed publication, which is the one
+     * kind with a report to run. An uploaded publication with no bytes yet is
+     * left OPEN: the checklist would refuse it, and refusing here would turn
+     * "you still need to attach the file" into an error on save.
      */
     private void publishIfComplete(PublicationSeries series, PublicationIssue issue) {
         if (issue == null || !isPublishable(series, issue)) {
             return;
         }
+        boolean queryBacked = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY;
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, null));
+                new IssuePublishService.PublishRequest(queryBacked, Set.of(), null, null));
     }
 
     private boolean isPublishable(PublicationSeries series, PublicationIssue issue) {
@@ -362,6 +412,8 @@ public class OneOffRestService {
             return !issue.getDescs().isEmpty() && issue.getDescs().stream()
                     .allMatch(d -> d.getLink() != null && !d.getLink().isBlank());
         }
+        // GENERATED_FROM_QUERY publishes by running its report; NONE has nothing
+        // to attach at all.
         return true;
     }
 
@@ -370,13 +422,14 @@ public class OneOffRestService {
         return issues.isEmpty() ? null : issues.get(0);
     }
 
-    private static String nameFor(OneOffVo request, String lang) {
-        if (request.names == null) {
+    private static String seriesNameFor(OneOffVo request, String lang) {
+        if (request.series == null || request.series.getDescs() == null) {
             return null;
         }
-        return request.names.stream()
-                .filter(n -> n != null && lang.equals(n.lang) && n.value != null && !n.value.isBlank())
-                .map(n -> n.value.trim())
+        return request.series.getDescs().stream()
+                .filter(d -> d != null && lang.equals(d.getLang())
+                        && d.getName() != null && !d.getName().isBlank())
+                .map(d -> d.getName().trim())
                 .findFirst()
                 .orElse(null);
     }
@@ -385,20 +438,23 @@ public class OneOffRestService {
      * A seriesId derived from the name, because nobody should have to invent one.
      *
      * S-16 makes it immutable after create and it is the import/export key, so it
-     * matters -- but it is a slug, not a decision, and asking an admin uploading
+     * matters -- but it is a slug, not a decision, and asking an admin publishing
      * one PDF to mint a permanent identifier is asking the wrong person the wrong
-     * question. A supplied id still wins, and a supplied id that collides is
-     * refused rather than quietly renumbered.
+     * question. A supplied id wins, and a supplied id that collides is refused
+     * rather than quietly renumbered.
      */
-    private String uniqueSeriesId(OneOffVo request) {
-        boolean supplied = request.seriesId != null && !request.seriesId.isBlank();
-        String proposed = supplied
-                ? request.seriesId.trim()
-                : slug(request.names.stream()
-                        .filter(n -> n != null && n.value != null && !n.value.isBlank())
-                        .map(n -> n.value)
-                        .findFirst().orElse("publication"));
+    private String uniqueSeriesId(SystemPublicationSeriesVo vo) {
+        boolean supplied = vo.getSeriesId() != null && !vo.getSeriesId().isBlank();
+        String firstName = vo.getDescs() == null ? null : vo.getDescs().stream()
+                .filter(d -> d != null && d.getName() != null && !d.getName().isBlank())
+                .map(d -> d.getName())
+                .findFirst().orElse(null);
+        if (!supplied && firstName == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("NAME_BLANK",
+                    "a one-off publication needs a name in at least one language");
+        }
 
+        String proposed = supplied ? vo.getSeriesId().trim() : slug(firstName);
         if (seriesService.findBySeriesId(proposed) == null) {
             return proposed;
         }
@@ -419,9 +475,9 @@ public class OneOffRestService {
     /**
      * Danish letters fold to ASCII rather than vanishing.
      *
-     * NFD strips the diacritic off aa and oe, but slashed o has none to strip and
-     * ae is a ligature, so both would be dropped by a bare non-ASCII filter --
-     * turning "Sofartsstyrelsen" into something with a hole in it.
+     * NFD strips the diacritic off the ring above a, but slashed o has none to
+     * strip and ae is a ligature, so a bare non-ASCII filter would drop both and
+     * leave a hole in the middle of the identifier.
      */
     private static String slug(String text) {
         String folded = text
@@ -431,7 +487,8 @@ public class OneOffRestService {
         String ascii = Normalizer.normalize(folded, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(Locale.ROOT);
-        String cleaned = ascii.replaceAll("[^a-z0-9]+", "-").replaceAll("^-+", "").replaceAll("-+$", "");
+        String cleaned = ascii.replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+", "").replaceAll("-+$", "");
         return truncate(cleaned.isEmpty() ? "publication" : cleaned, 64);
     }
 
@@ -441,14 +498,7 @@ public class OneOffRestService {
 
     private OneOffVo toVo(PublicationSeries series) {
         OneOffVo vo = new OneOffVo();
-        vo.seriesId = series.getSeriesId();
-        vo.contentMode = series.getContentMode() == null ? null : series.getContentMode().name();
-        vo.categoryId = series.getCategory() == null ? null : series.getCategory().getCategoryId();
-        vo.domainId = series.getDomain() == null ? null : series.getDomain().getDomainId();
-
-        for (PublicationSeriesDesc d : series.getDescs()) {
-            vo.names.add(new LangText(d.getLang(), d.getName()));
-        }
+        vo.series = series.toVo(SystemPublicationSeriesVo.class);
 
         PublicationIssue issue = onlyIssue(series);
         if (issue != null) {
