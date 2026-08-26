@@ -316,4 +316,63 @@ public class SeriesValidatorTest {
                         .allMatch(e -> e.field().startsWith("criteria")),
                 "a criteria failure must point into the criteria document");
     }
+    // ------------------------------------------------------------------- S-20
+
+    /** A cadence-less series, which has no nominal cut-off fields at all. */
+    private PublicationSeries cadenceless() {
+        PublicationSeries s = valid();
+        s.setCadence(SeriesCadence.NONE);
+        s.setKind(SeriesKind.ONE_OFF);
+        s.setContentMode(ContentMode.UPLOADED_FILE);
+        s.setNumberingScheme(NumberingScheme.NONE);
+        s.setNominalCutoffDay(null);
+        s.setNominalCutoffTime(null);
+        s.setNextIssueCreation(NextIssueCreation.MANUAL);
+        s.setCriteria(null);
+        return s;
+    }
+
+    private void assertDoesNotFire(String rule, PublicationSeries s) {
+        List<SeriesValidator.FieldError> hits = SeriesValidator.validate(s, LANGS).stream()
+                .filter(e -> e.rule().equals(rule)).toList();
+        assertTrue(hits.isEmpty(), rule + " fired when it should not have: " + hits);
+    }
+
+    /**
+     * A series with a cadence still needs a domain: its cut-offs have to be read
+     * in some zone, and the domain is the only place one comes from.
+     */
+    @Test
+    public void acadencedSeriesStillNeedsADomain() {
+        PublicationSeries s = valid();
+        s.setDomain(null);
+
+        assertFires("S-20", s);
+    }
+
+    /**
+     * A cadence-less one does NOT, and this is the case the old rule got wrong.
+     *
+     * S-5, S-6 and S-7 refuse every nominalCutoff* field on a cadence-less
+     * series, so it has no cut-off to read in any zone and the timezone argument
+     * does not reach it. What requiring a domain DID do was narrow visibility:
+     * the publication picker matches "domain IS NULL OR domain = the current",
+     * so four publications that every domain cites had to be filed under one.
+     */
+    @Test
+    public void acadencelessSeriesMayHaveNoDomain() {
+        PublicationSeries s = cadenceless();
+        s.setDomain(null);
+
+        assertDoesNotFire("S-20", s);
+    }
+
+    /** And it may still HAVE one -- null is permitted, not mandated. */
+    @Test
+    public void acadencelessSeriesMayAlsoCarryADomain() {
+        PublicationSeries s = cadenceless();
+        s.setDomain(new Domain());
+
+        assertDoesNotFire("S-20", s);
+    }
 }

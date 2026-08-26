@@ -260,10 +260,21 @@ public final class SeriesValidator {
         // Faroe domain, UTC for Greenland, Europe/Copenhagen for the rest. A series
         // resolving in the wrong one names its issues for the wrong ISO week at the
         // year boundary and closes them an hour early or late all year.
-        if (s.getDomain() == null) {
+        // Required only where there ARE cut-offs to read. A cadence-less series
+        // has none -- S-5, S-6 and S-7 refuse every nominalCutoff* field on one --
+        // so there is no cut-off to read in any zone, and the timezone rationale
+        // does not reach it.
+        //
+        // NULL MEANS GLOBAL, and that is load-bearing rather than a loophole: it
+        // is what makes the citation-only publications reachable from every
+        // domain. The publication picker matches "domain IS NULL OR domain = the
+        // current one", so assigning a domain NARROWS where a publication can be
+        // seen. Requiring one here hid four publications that every domain needs.
+        if (s.getDomain() == null && s.getCadence() != SeriesCadence.NONE) {
             e.add(new FieldError("S-20", "domainId",
-                    "a series must belong to a domain; the domain carries the timezone its "
-                            + "cut-offs are read in, and there is no other source for one"));
+                    "a series with a cadence must belong to a domain; the domain carries the "
+                            + "timezone its cut-offs are read in, and there is no other source "
+                            + "for one"));
         }
 
         // C-1 to C-10, on the criteria document itself.
