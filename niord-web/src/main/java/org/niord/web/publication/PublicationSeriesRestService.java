@@ -242,6 +242,18 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
             }
             series.setCategory(category);
         }
+        // FULL REPRESENTATION on the domain: an absent domainId CLEARS it rather
+        // than meaning "leave whatever is there".
+        //
+        // Null is a meaningful VALUE here, not the absence of one -- it means
+        // "global, visible from every domain", which is what the publication
+        // picker implements as "domain IS NULL OR domain = the current one". So
+        // there has to be a way to say it, and a PUT carrying the whole series is
+        // where it gets said. Treating null as "unchanged" left no way at all to
+        // put a publication back to global once it had been given a domain.
+        //
+        // The category is deliberately NOT symmetric: that column is NOT NULL and
+        // has no "none" to express.
         if (vo.getDomainId() != null && !vo.getDomainId().isBlank()) {
             Domain domain = domainService.findByDomainId(vo.getDomainId());
             if (domain == null) {
@@ -249,6 +261,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                         "no domain '" + vo.getDomainId() + "'");
             }
             series.setDomain(domain);
+        } else {
+            series.setDomain(null);
         }
     }
 
