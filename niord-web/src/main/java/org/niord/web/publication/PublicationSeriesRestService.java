@@ -21,7 +21,9 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.user.Roles;
+import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.user.UserService;
 import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.series.replay.DiagnosticReportService;
 import org.niord.core.publication.series.replay.ShadowDiffRun;
@@ -112,6 +114,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Inject
     IssueLifecycleService lifecycle;
 
+    @Inject
+    IssueAuditService audit;
+
+    @Inject
+    UserService userService;
+
     // ------------------------------------------------------------------ reads
 
     /** S1. The public list. */
@@ -135,7 +143,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     public List<SystemPublicationSeriesVo> searchDetails(@QueryParam("status") String status) {
         List<PublicationSeries> found = status == null
                 ? seriesService.findAll()
-                : seriesService.findByStatus(SeriesStatus.valueOf(status));
+                : seriesService.findByStatus(seriesStatusOf(status));
 
         List<SystemPublicationSeriesVo> out = new ArrayList<>();
         for (PublicationSeries s : found) {
@@ -457,12 +465,17 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         MessagePublication publicationBefore = series.getMessagePublication();
         boolean anyPublished = seriesService.hasPublishedIssue(series);
 
-        // The status is NOT taken from the body. S10 owns the transition and
-        // validates it; letting a save carry a status would route around that.
+        // Neither the status nor the public authority is taken from the body.
+        // Each has its own endpoint that validates the transition and audits it,
+        // and a save carrying either would route around both -- an admin renaming
+        // a series would be able to flip what the public reads, and nothing in
+        // the trail would say a cutover had happened.
         SeriesStatus status = series.getStatus();
+        PublicAuthority authority = series.getPublicAuthority();
         series.updateFromVo(vo);
         series.setSeriesId(seriesId);
         series.setStatus(status);
+        series.setPublicAuthority(authority);
         resolveReferences(series, vo);
 
         if (anyPublished && publicationBefore != series.getMessagePublication()) {
@@ -476,21 +489,56 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                 SeriesValidator.validateForActivation(series, null);
         if (status == SeriesStatus.ACTIVE && !errors.isEmpty()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                    errors.size() + " rule(s) fail: " + errors);
+                    errors.size() + " rule(s) fail: " + errors, errors);
         }
 
         return seriesService.update(series).toVo(SystemPublicationSeriesVo.class);
     }
 
-    /** S10. Status transition, validated. */
+    /**
+     * S10. Status transition, validated and audited.
+     *
+     * DRAFT is where a series is assembled, and it is reachable only before the
+     * series has ever been active. Going back to it afterwards would put a
+     * publication that has issues, citations and readers into the state whose
+     * whole meaning is "not finished yet", and every rule that guards an ACTIVE
+     * series -- the domain its cut-offs are read in, the report it renders --
+     * would stop applying to something the public is still reading.
+     *
+     * Leaving ACTIVE, or returning to it, asks for a reason. Both change what
+     * editors can cite and what the site lists, and "who turned this off, and
+     * why" is the question asked months later when somebody notices.
+     */
     @PUT
     @Path("/series/{seriesId}/status")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
-    public SystemPublicationSeriesVo setStatus(@PathParam("seriesId") String seriesId, String status) {
+    public SystemPublicationSeriesVo setStatus(@PathParam("seriesId") String seriesId,
+                                               @QueryParam("reason") String reason,
+                                               String status) {
         PublicationSeries series = required(seriesId);
-        SeriesStatus target = SeriesStatus.valueOf(status.replace("\"", "").trim());
+        SeriesStatus from = series.getStatus();
+        SeriesStatus target = seriesStatusOf(status.replace("\"", "").trim());
+
+        if (from == target) {
+            return series.toVo(SystemPublicationSeriesVo.class);
+        }
+        if (target == SeriesStatus.DRAFT) {
+            throw new IssueLifecycleService.TransitionRefusedException("INVALID_STATUS_TRANSITION",
+                    "'" + seriesId + "' is " + from + " and cannot go back to DRAFT: a series that has "
+                            + "been active has issues and citations behind it, and DRAFT means the "
+                            + "opposite. Retire it instead -- that is the state for a publication that "
+                            + "has stopped.");
+        }
+        boolean needsReason = from == SeriesStatus.ACTIVE || target == SeriesStatus.ACTIVE;
+        String trimmed = reason == null ? "" : reason.trim();
+        if (needsReason && (trimmed.length() < MIN_REASON || trimmed.length() > MAX_REASON)) {
+            throw new IssueLifecycleService.TransitionRefusedException("REASON_REQUIRED",
+                    "moving '" + seriesId + "' from " + from + " to " + target + " changes what editors "
+                            + "may cite and what the site lists; it must say why, in between "
+                            + MIN_REASON + " and " + MAX_REASON + " characters");
+        }
 
         series.setStatus(target);
 
@@ -500,9 +548,140 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                 SeriesValidator.validateForActivation(series, null);
         if (target == SeriesStatus.ACTIVE && !errors.isEmpty()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                    errors.size() + " rule(s) fail: " + errors);
+                    errors.size() + " rule(s) fail: " + errors, errors);
         }
-        return seriesService.update(series).toVo(SystemPublicationSeriesVo.class);
+
+        PublicationSeries saved = seriesService.update(series);
+        audit.series(saved, userService.currentUser(),
+                target == SeriesStatus.ACTIVE ? "SERIES_ACTIVATED" : "SERIES_RETIRED",
+                trimmed.isEmpty() ? null : trimmed);
+        return saved.toVo(SystemPublicationSeriesVo.class);
+    }
+
+    /** A reason somebody can read, on the transitions that change what the public sees. */
+    static final int MIN_REASON = 3;
+    static final int MAX_REASON = 512;
+
+    /**
+     * A series status by either vocabulary.
+     *
+     * The shipped frontend and the legacy one speak different words for the same
+     * three states, and an unknown one is a client error rather than a server
+     * failure -- SeriesStatus.valueOf raised IllegalArgumentException, which
+     * reaches the caller as a 500 that says nothing.
+     */
+    static SeriesStatus seriesStatusOf(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IssueLifecycleService.TransitionRefusedException("INVALID_STATUS",
+                    "a status is required");
+        }
+        return switch (token.trim().toUpperCase()) {
+            case "DRAFT", "RECORDING" -> SeriesStatus.DRAFT;
+            case "ACTIVE" -> SeriesStatus.ACTIVE;
+            case "RETIRED", "INACTIVE" -> SeriesStatus.RETIRED;
+            default -> throw new IssueLifecycleService.TransitionRefusedException("INVALID_STATUS",
+                    "'" + token + "' is not a publication series status; the states are DRAFT, ACTIVE "
+                            + "and RETIRED");
+        };
+    }
+
+    /**
+     * B7.1. Which model serves this series to the public.
+     *
+     * The single irreversible-feeling step of the cutover, and the reason it is
+     * its own endpoint rather than a field on a save: flipping authority changes
+     * what every anonymous reader sees, and it must not be reachable by an admin
+     * editing a name. Both directions are audited, and flipping BACK is a
+     * first-class action -- a rollback nobody has rehearsed is not a rollback.
+     *
+     * The precondition is the shadow diff's own answer: two consecutive green
+     * comparisons by release order, or a series that cannot be compared at all
+     * and is exempt by rule. `force` exists because a precondition that cannot be
+     * overridden gets worked around in the database instead, where nothing is
+     * recorded -- so it is allowed, it demands a reason, and the audit entry says
+     * it was forced.
+     */
+    @PUT
+    @Path("/series/{seriesId}/public-authority")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationSeriesVo setPublicAuthority(@PathParam("seriesId") String seriesId,
+                                                        Map<String, Object> body) {
+        return flip(required(seriesId), body).toVo(SystemPublicationSeriesVo.class);
+    }
+
+    /**
+     * The whole estate at once, all or nothing.
+     *
+     * The window flips every series together, so the request that does it is one
+     * transaction: a partial flip leaves editors working in two systems for the
+     * series that did not make it, and discovering which those are means reading
+     * the database. One refusal refuses the lot.
+     */
+    @PUT
+    @Path("/public-authority")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public List<SystemPublicationSeriesVo> setPublicAuthorityForAll(Map<String, Object> body) {
+        List<PublicationSeries> targets = new ArrayList<>();
+        Object named = body == null ? null : body.get("seriesIds");
+        if (named instanceof List<?> ids && !ids.isEmpty()) {
+            for (Object id : ids) {
+                targets.add(required(String.valueOf(id)));
+            }
+        } else {
+            targets.addAll(seriesService.findByStatus(SeriesStatus.ACTIVE));
+        }
+
+        List<SystemPublicationSeriesVo> out = new ArrayList<>();
+        for (PublicationSeries series : targets) {
+            out.add(flip(series, body).toVo(SystemPublicationSeriesVo.class));
+        }
+        return out;
+    }
+
+    private PublicationSeries flip(PublicationSeries series, Map<String, Object> body) {
+        PublicAuthority target = PublicAuthority.valueOf(
+                String.valueOf(body == null ? "" : body.getOrDefault("authority", "")).trim().toUpperCase());
+        boolean force = body != null && Boolean.TRUE.equals(body.get("force"));
+        String reason = body == null ? "" : String.valueOf(body.getOrDefault("reason", "")).trim();
+
+        if (reason.length() < MIN_REASON || reason.length() > MAX_REASON) {
+            throw new IssueLifecycleService.TransitionRefusedException("REASON_REQUIRED",
+                    "changing which model serves '" + series.getSeriesId() + "' to the public must say "
+                            + "why, in between " + MIN_REASON + " and " + MAX_REASON + " characters");
+        }
+
+        PublicAuthority from = series.getPublicAuthority();
+        if (target == PublicAuthority.NEW && from != PublicAuthority.NEW) {
+            if (series.getStatus() != SeriesStatus.ACTIVE) {
+                throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_ACTIVE",
+                        "'" + series.getSeriesId() + "' is " + series.getStatus() + ". A series serves "
+                                + "the public only once it is active.");
+            }
+            ShadowDiffService.Readiness readiness =
+                    ShadowDiffService.readinessOf(shadowDiff.forSeries(series.getSeriesId()));
+            if (!readiness.ready() && !force) {
+                throw new IssueLifecycleService.TransitionRefusedException("NOT_READY_FOR_CUTOVER",
+                        "'" + series.getSeriesId() + "' has " + readiness.consecutiveGreen()
+                                + " consecutive green comparison(s) of " + readiness.runs() + " run(s), "
+                                + readiness.skipped() + " skipped. The precondition is "
+                                + ShadowDiffService.REQUIRED_GREEN_RELEASES + ", or a series with no "
+                                + "membership to compare. Pass force with a reason to flip anyway.");
+            }
+        }
+
+        series.setPublicAuthority(target);
+        PublicationSeries saved = seriesService.update(series);
+
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("from", from == null ? null : from.name());
+        detail.put("to", target.name());
+        detail.put("forced", force);
+        audit.seriesAuthority(saved, userService.currentUser(), detail, reason);
+        return saved;
     }
 
     /** S11. Delete, guarded on having no issues. */

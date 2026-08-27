@@ -119,7 +119,16 @@ public class SeriesUpdateContractTest {
     public void theSeriesWriteSurfaceIsComplete() {
         assertNotNull(endpoint("create", SystemPublicationSeriesVo.class), "S8 create");
         assertNotNull(endpoint("update", String.class, SystemPublicationSeriesVo.class), "S9 update");
-        assertNotNull(endpoint("setStatus", String.class, String.class), "S10 status");
+        // The reason travels beside the status: leaving ACTIVE, or returning to
+        // it, changes what editors may cite and what the site lists.
+        assertNotNull(endpoint("setStatus", String.class, String.class, String.class), "S10 status");
+        // And which model answers the public, which is a different decision from
+        // whether the series is active at all -- one endpoint each, so neither
+        // can be reached by a save of the other.
+        assertNotNull(endpoint("setPublicAuthority", String.class, java.util.Map.class),
+                "the cutover flip, per series");
+        assertNotNull(endpoint("setPublicAuthorityForAll", java.util.Map.class),
+                "the cutover flip, whole estate, all or nothing");
         assertNotNull(endpoint("delete", String.class), "S11 delete");
     }
 }

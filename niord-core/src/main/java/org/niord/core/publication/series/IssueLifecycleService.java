@@ -39,14 +39,33 @@ public class IssueLifecycleService extends BaseService {
     /** A transition was refused. Carries the wire code so callers do not invent one. */
     public static class TransitionRefusedException extends RuntimeException {
         private final String code;
+        private final List<SeriesValidator.FieldError> fieldErrors;
 
         public TransitionRefusedException(String code, String message) {
+            this(code, message, List.of());
+        }
+
+        /**
+         * A refusal that knows which fields failed.
+         *
+         * A form cannot render "seven rules fail" against anything. The rules
+         * already say which field each belongs to, and dropping that on the way
+         * out left the client with one sentence and no way to put a message
+         * beside the control that caused it.
+         */
+        public TransitionRefusedException(String code, String message,
+                                          List<SeriesValidator.FieldError> fieldErrors) {
             super(message);
             this.code = code;
+            this.fieldErrors = fieldErrors == null ? List.of() : List.copyOf(fieldErrors);
         }
 
         public String code() {
             return code;
+        }
+
+        public List<SeriesValidator.FieldError> fieldErrors() {
+            return fieldErrors;
         }
     }
 
@@ -56,10 +75,58 @@ public class IssueLifecycleService extends BaseService {
     @Transactional
     public PublicationIssue create(PublicationSeries series, Date intervalFrom,
                                    IntervalBoundSource fromSource, User actor) {
+        assertNoOverlap(series, intervalFrom, null);
         PublicationIssue issue = newIssue(series, intervalFrom, fromSource);
         em.persist(issue);
         audit.created(issue, actor, "CREATED");
         return issue;
+    }
+
+    /**
+     * A new issue may not claim a period a released one already covered.
+     *
+     * Only where issues TILE. An IN_FORCE_AT_CUTOFF series' issues overlap by
+     * construction -- the 2026 and 2027 firing-area editions share thirty-one of
+     * their thirty-two members -- so asking whether they overlap is a category
+     * error rather than a violation.
+     *
+     * The test is against the released neighbour's own close, not against the
+     * cadence. A week published EARLY closes early, and the next issue opening at
+     * that earlier instant is the chain working: it is exactly where the previous
+     * one ended. What is refused is an interval that starts BEFORE a released
+     * neighbour closed, because the content between those two instants has
+     * already gone out in that neighbour, and a second issue claiming it would
+     * publish the same messages twice under two names.
+     */
+    private void assertNoOverlap(PublicationSeries series, Date intervalFrom, PublicationIssue ignoring) {
+        if (series == null || intervalFrom == null
+                || series.getTimeRelation() != TimeRelation.PUBLISHED_IN_INTERVAL) {
+            return;
+        }
+        List<PublicationIssue> released = em.createQuery(
+                        "SELECT i FROM PublicationIssue i WHERE i.series = :s AND i.status IN :st "
+                                + "ORDER BY i.id DESC", PublicationIssue.class)
+                .setParameter("s", series)
+                .setParameter("st", List.of(IssueStatus.PUBLISHED, IssueStatus.RETIRED))
+                .getResultList();
+
+        for (PublicationIssue other : released) {
+            if (ignoring != null && other.getId() != null && other.getId().equals(ignoring.getId())) {
+                continue;
+            }
+            Date closed = other.effectiveCutoff();
+            Date opened = other.getIntervalFrom();
+            // Strictly inside the neighbour's period: at its close is the chain,
+            // at or before its open is a period that ended before this one began.
+            if (closed != null && intervalFrom.before(closed)
+                    && (opened == null || !intervalFrom.before(opened))) {
+                throw new TransitionRefusedException("ISSUE_INTERVAL_OVERLAP",
+                        "a period starting " + intervalFrom + " falls inside '" + other.getPublicId()
+                                + "', which was released covering up to " + closed + ". Those messages "
+                                + "have already gone out; an issue claiming them again would publish "
+                                + "them twice under two names.");
+            }
+        }
     }
 
     /**
@@ -76,6 +143,7 @@ public class IssueLifecycleService extends BaseService {
             throw new TransitionRefusedException("RETRO_CREATE_NOT_APPLICABLE",
                     "this series' issues overlap rather than tile, so there is no missing period to recover");
         }
+        assertNoOverlap(series, intervalFrom, null);
         PublicationIssue issue = newIssue(series, intervalFrom, IntervalBoundSource.RECOVERED);
         issue.setIntervalTo(intervalTo);
         issue.setCutoffReconstructed(true);
@@ -99,17 +167,19 @@ public class IssueLifecycleService extends BaseService {
         }
 
         PublicationSeries series = predecessor.getSeries();
+        assertNoOverlap(series, intervalFrom, predecessor);
         PublicationIssue edition = newIssue(series, intervalFrom, IntervalBoundSource.MANUAL);
         edition.setSupersedes(predecessor);
         em.persist(edition);
 
-        // The cap, in the SAME transaction. Separated, this is the step that gets
-        // forgotten, and forgetting it puts two current editions on the site.
-        if (predecessor.getPublicTo() == null) {
-            predecessor.setPublicTo(new Date(System.currentTimeMillis()));
-            em.merge(predecessor);
-        }
-
+        // The LINK is made here, in the same transaction as the issue, so it can
+        // never be forgotten. The CAP is not, and that is deliberate: this edition
+        // is OPEN and nobody can read it yet, so closing the predecessor's window
+        // now would leave the download site with no current edition at all until
+        // somebody publishes. The cap happens where the successor becomes public
+        // -- the publish transaction caps the predecessor at the new stamp minus
+        // one millisecond, for every series and both time relations, so the two
+        // windows meet exactly and neither overlaps nor gaps.
         audit.created(edition, actor, "CREATED_NEW_EDITION");
         audit.supersededBy(predecessor, edition, actor);
         return edition;

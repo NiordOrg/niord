@@ -11,10 +11,13 @@ import org.niord.core.publication.series.MemberResolutionService;
 import org.niord.core.publication.series.criteria.CriteriaParseException;
 import org.niord.core.publication.series.criteria.CriteriaResolver;
 import org.niord.core.publication.series.resolve.IssueNaming;
+import org.niord.core.publication.series.SeriesValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,6 +64,21 @@ public class PublicationExceptionMapper implements ExceptionMapper<RuntimeExcept
         // rather than send the admin back to the checklist to find out.
         if (e instanceof IssuePublishService.WarningsNotAcknowledgedException warnings) {
             body.put("unacknowledgedWarnings", warnings.codes());
+        }
+        // Which fields failed, so a form can put each message beside the control
+        // that caused it. The message stays a readable sentence for a log; this
+        // is the same information in the shape a client can act on.
+        if (e instanceof IssueLifecycleService.TransitionRefusedException refused
+                && !refused.fieldErrors().isEmpty()) {
+            List<Map<String, Object>> fields = new ArrayList<>();
+            for (SeriesValidator.FieldError fe : refused.fieldErrors()) {
+                Map<String, Object> one = new LinkedHashMap<>();
+                one.put("rule", fe.rule());
+                one.put("field", fe.field());
+                one.put("message", fe.message());
+                fields.add(one);
+            }
+            body.put("fieldErrors", fields);
         }
 
         if (status >= 500) {

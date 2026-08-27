@@ -40,9 +40,10 @@ public class IssueFileService extends BaseService {
     public PublicationIssueDesc upload(PublicationIssue issue, String lang, String fileName,
                                        byte[] bytes, User actor) {
         PublicationIssueDesc desc = descFor(issue, lang);
+        boolean replacing = desc.getFilePath() != null;
 
         String archived = null;
-        if (issue.getStatus() == IssueStatus.PUBLISHED && desc.getFilePath() != null) {
+        if (issue.getStatus() == IssueStatus.PUBLISHED && replacing) {
             archived = archiveExisting(issue, desc);
         }
 
@@ -68,6 +69,18 @@ public class IssueFileService extends BaseService {
                                 + "'. Both languages write into the same folder, so sharing a name "
                                 + "means one silently overwrites the other.");
             }
+        }
+
+        // Who replaced what was there, and when.
+        //
+        // Only on a REPLACEMENT: a first upload replaces nothing, and recording
+        // an actor against it would make every issue look like it had been
+        // corrected once. The pair is what turns "this file is not the one that
+        // was published" from something a reader infers off an archive folder
+        // into something the issue itself says.
+        if (replacing) {
+            desc.setReplacedBy(actor);
+            desc.setReplacedAt(new Date());
         }
 
         desc.setFileName(fileName);

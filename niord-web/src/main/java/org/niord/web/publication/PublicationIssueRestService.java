@@ -40,6 +40,7 @@ import org.niord.core.publication.series.IssueEditService;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.IssueFileService;
 import org.niord.core.publication.series.IssueStatus;
+import org.niord.core.publication.series.OverrideKind;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueService;
 import org.niord.core.publication.series.PublishChecklistService;
@@ -555,6 +556,72 @@ public class PublicationIssueRestService {
         return out;
     }
 
+    /**
+     * I17. Amend: the same decision, taken again, at the same address.
+     *
+     * The cut-off is not a parameter here and cannot be. An amend replaces the
+     * document a citation already points at; re-taking the instant its content
+     * was decided would quietly turn a correction into a different publication.
+     */
+    @PUT
+    @Path("/issue/{publicId}/amend")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Map<String, Object> amend(@PathParam("publicId") String publicId,
+                                     Map<String, Object> params) {
+        PublicationIssue issue = required(publicId);
+
+        @SuppressWarnings("unchecked")
+        List<String> acknowledged = params == null ? List.of()
+                : (List<String>) params.getOrDefault("acknowledgedWarnings", List.of());
+        boolean regenerate = params == null || Boolean.TRUE.equals(params.getOrDefault("regenerate", true));
+        String reason = params == null ? null : String.valueOf(params.getOrDefault("reason", ""));
+
+        IssuePublishService.AmendResult result = publishService.amend(issue.getId(),
+                new IssuePublishService.AmendRequest(regenerate, Set.copyOf(acknowledged),
+                        userService.currentUser(), reason));
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("publicId", publicId);
+        out.put("stampedAt", result.stampedAt() == null ? null : result.stampedAt().getTime());
+        out.put("memberCount", result.memberCount());
+        out.put("unacknowledgedWarnings", result.unacknowledgedWarnings());
+        out.put("archivePaths", result.archivePaths());
+        return out;
+    }
+
+    /**
+     * The new-edition action, which is what gives supersedes a write path.
+     *
+     * A mid-year re-issue is not an edit of the edition it replaces: the old one
+     * stays exactly as it was published, and the new one takes over the window
+     * from the instant it is created. Doing that in two steps is where the cap
+     * gets forgotten, and a forgotten cap puts two current editions on the
+     * public download site at once.
+     */
+    @POST
+    @Path("/issue/{publicId}/new-edition")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationIssueVo newEdition(@PathParam("publicId") String publicId,
+                                               Map<String, Object> params) {
+        PublicationIssue predecessor = required(publicId);
+
+        Date intervalFrom = null;
+        Object raw = params == null ? null : params.get("intervalFrom");
+        if (raw instanceof Number n) {
+            intervalFrom = new Date(n.longValue());
+        } else if (raw instanceof String s && !s.isBlank()) {
+            intervalFrom = new Date(Long.parseLong(s.trim()));
+        }
+
+        PublicationIssue edition = lifecycle.newEdition(predecessor, intervalFrom, userService.currentUser());
+        em.flush();
+        return required(edition.getPublicId()).toVo(SystemPublicationIssueVo.class);
+    }
+
     /** I18 and I19. */
     @PUT
     @Path("/issue/{publicId}/retire")
@@ -765,8 +832,8 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"publication-curate", "admin"})
-    public void includeMember(@PathParam("publicId") String publicId, Map<String, String> body) {
-        curation.include(required(publicId), body.get("messageUid"), null, body.get("reason"));
+    public void includeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
+        curate(publicId, body, OverrideKind.INCLUDE);
     }
 
     @PUT
@@ -774,8 +841,49 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"publication-curate", "admin"})
-    public void excludeMember(@PathParam("publicId") String publicId, Map<String, String> body) {
-        curation.exclude(required(publicId), body.get("messageUid"), null, body.get("reason"));
+    public void excludeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
+        curate(publicId, body, OverrideKind.EXCLUDE);
+    }
+
+    /**
+     * I14. Withdraw a curation decision.
+     *
+     * The reason travels as a query parameter for the same shape as retire and
+     * reactivate: this is a decision about one named thing, and a body carrying
+     * only a reason reads as a form when it is an action.
+     */
+    @DELETE
+    @Path("/issue/{publicId}/overrides/{messageUid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"publication-curate", "admin"})
+    public void clearOverride(@PathParam("publicId") String publicId,
+                              @PathParam("messageUid") String messageUid,
+                              @QueryParam("reason") String reason) {
+        curation.clear(required(publicId), messageUid, userService.currentUser(), reason);
+    }
+
+    /**
+     * One decision, whether it names one message or a selection.
+     *
+     * Both shapes are accepted -- `messageUid` for a single row's button and
+     * `messageUids` for a selection -- and both take the same all-or-nothing
+     * path, so a caller cannot get partial application by choosing a shape.
+     */
+    private void curate(String publicId, Map<String, Object> body, OverrideKind kind) {
+        PublicationIssue issue = required(publicId);
+        String reason = body == null ? null : String.valueOf(body.getOrDefault("reason", ""));
+
+        List<String> uids = new ArrayList<>();
+        Object many = body == null ? null : body.get("messageUids");
+        if (many instanceof List<?> list) {
+            list.forEach(uid -> uids.add(String.valueOf(uid)));
+        }
+        Object one = body == null ? null : body.get("messageUid");
+        if (uids.isEmpty() && one != null) {
+            uids.add(String.valueOf(one));
+        }
+
+        curation.curate(issue, uids, kind, userService.currentUser(), reason);
     }
 
     private PublicationIssue required(String publicId) {

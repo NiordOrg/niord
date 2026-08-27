@@ -1,6 +1,8 @@
 package org.niord.core.publication.series.criteria;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.niord.model.message.MainType;
+import org.niord.model.message.Type;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -128,6 +130,21 @@ public final class CriteriaValidator {
                     continue;
                 }
 
+                // C-4, for the kinds that resolve without a lookup: the operand IS
+                // the enum constant's name, so a mistyped one can be caught while
+                // there is still a form to correct it in. Left to the resolver it
+                // raises at publish instead.
+                if (node.kind() == CriterionKind.MESSAGE_TYPE && !isConstantOf(Type.class, value)) {
+                    out.add(new Violation("C-4", vAt, "operand does not resolve: " + value
+                            + " is not a message type"));
+                    continue;
+                }
+                if (node.kind() == CriterionKind.MESSAGE_MAIN_TYPE && !isConstantOf(MainType.class, value)) {
+                    out.add(new Violation("C-4", vAt, "operand does not resolve: " + value
+                            + " is not a main type"));
+                    continue;
+                }
+
                 // C-4: never save a document with a dangling operand.
                 if (!resolver.exists(node.kind(), value)) {
                     out.add(new Violation("C-4", vAt, "operand does not resolve: " + value));
@@ -164,6 +181,16 @@ public final class CriteriaValidator {
         }
 
         return out;
+    }
+
+    /** Whether a stored operand names a constant of the given enum. */
+    private static boolean isConstantOf(Class<? extends Enum<?>> type, String value) {
+        for (Enum<?> constant : type.getEnumConstants()) {
+            if (constant.name().equals(value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** C-10: canonicalisation normalises, it does not reject. */

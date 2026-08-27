@@ -6,6 +6,7 @@ import jakarta.transaction.Transactional;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -62,6 +63,103 @@ public class IssueCurationService extends BaseService {
         return addOverride(issue, messageUid, OverrideKind.EXCLUDE, author, reason, "OVERRIDE_EXCLUDED");
     }
 
+    /**
+     * The same decision over a selection, and it is ALL OR NOTHING.
+     *
+     * A curator excluding eleven messages is taking one decision about a list,
+     * not eleven decisions that happen to arrive together. Applying the nine that
+     * resolve and refusing the two that do not would leave the issue in a state
+     * nobody asked for and no single message would say so -- so every uid is
+     * checked before any override is written, and the refusal names EVERY
+     * offender rather than the first, because a curator who has to discover them
+     * one request at a time will give up before the list is clean.
+     */
+    @Transactional
+    public List<IssueOverride> curate(PublicationIssue issue, List<String> messageUids,
+                                      OverrideKind kind, User author, String reason) {
+        assertOpen(issue);
+        assertReason(reason);
+        if (messageUids == null || messageUids.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("NO_MESSAGES",
+                    "a curation decision names at least one message");
+        }
+        if (messageUids.size() > MAX_CURATED_AT_ONCE) {
+            throw new IssueLifecycleService.TransitionRefusedException("TOO_MANY_MESSAGES",
+                    "at most " + MAX_CURATED_AT_ONCE + " messages in one decision; " + messageUids.size()
+                            + " were named");
+        }
+
+        List<String> unique = messageUids.stream().distinct().toList();
+        List<String> unknown = unique.stream().filter(uid -> !messageExists(uid)).toList();
+        if (!unknown.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("OVERRIDE_MESSAGE_NOT_FOUND",
+                    "no message has uid " + String.join(", ", unknown)
+                            + ". Nothing was recorded: a decision about a list is taken over the whole "
+                            + "list, and a partly applied one is a state nobody asked for.");
+        }
+
+        List<IssueOverride> written = new ArrayList<>();
+        for (String uid : unique) {
+            written.add(kind == OverrideKind.INCLUDE
+                    ? include(issue, uid, author, reason)
+                    : exclude(issue, uid, author, reason));
+        }
+        return written;
+    }
+
+    /**
+     * Withdraw a curation decision, by the message it was about.
+     *
+     * Addressed by message rather than by override id because that is what the
+     * caller is looking at: a row in the member list with a why-line saying
+     * somebody put it there. An override that is not there is not an error worth
+     * refusing over -- the desired state is "no override for this message", and
+     * it already holds.
+     */
+    @Transactional
+    public void clear(PublicationIssue issue, String messageUid, User actor, String reason) {
+        assertOpen(issue);
+        assertReason(reason);
+        List<IssueOverride> existing = em.createQuery(
+                        "SELECT o FROM IssueOverride o WHERE o.issue = :i AND o.messageUid = :uid",
+                        IssueOverride.class)
+                .setParameter("i", issue).setParameter("uid", messageUid).getResultList();
+        if (existing.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("OVERRIDE_NOT_FOUND",
+                    "no curation decision on this issue names message '" + messageUid + "'");
+        }
+        for (IssueOverride override : existing) {
+            remove(override, actor);
+        }
+    }
+
+    /** One decision, at most this many messages. */
+    public static final int MAX_CURATED_AT_ONCE = 500;
+
+    private boolean messageExists(String uid) {
+        return em.createQuery("SELECT COUNT(m) FROM Message m WHERE m.uid = :uid", Long.class)
+                .setParameter("uid", uid).getSingleResult() > 0;
+    }
+
+    /**
+     * A reason, of a length somebody can actually read.
+     *
+     * The floor is what separates a reason from a keystroke: "x" records that
+     * somebody typed something, which is worse than nothing because it looks like
+     * a decision was explained. The ceiling keeps a rail readable.
+     */
+    private static void assertReason(String reason) {
+        String trimmed = reason == null ? "" : reason.trim();
+        if (trimmed.length() < MIN_REASON || trimmed.length() > MAX_REASON) {
+            throw new IssueLifecycleService.TransitionRefusedException("OVERRIDE_REASON_REQUIRED",
+                    "a curation decision must say why, in between " + MIN_REASON + " and " + MAX_REASON
+                            + " characters; an unexplained override is unreviewable later");
+        }
+    }
+
+    static final int MIN_REASON = 3;
+    static final int MAX_REASON = 512;
+
     @Transactional
     public void remove(IssueOverride override, User actor) {
         assertOpen(override.getIssue());
@@ -84,10 +182,7 @@ public class IssueCurationService extends BaseService {
     private IssueOverride addOverride(PublicationIssue issue, String messageUid, OverrideKind kind,
                                       User author, String reason, String action) {
         assertOpen(issue);
-        if (reason == null || reason.isBlank()) {
-            throw new IssueLifecycleService.TransitionRefusedException("OVERRIDE_REASON_REQUIRED",
-                    "a curation decision must say why; an unexplained override is unreviewable later");
-        }
+        assertReason(reason);
 
         // One override per message per issue: two would be either redundant or
         // contradictory, and neither is something to store.

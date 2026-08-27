@@ -2,6 +2,7 @@ package org.niord.core.publication.series.criteria;
 
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.model.message.MainType;
 import org.niord.model.message.Type;
 
 import java.util.LinkedHashSet;
@@ -53,6 +54,10 @@ public final class CriteriaResolver {
 
         Set<String> seriesIds = new LinkedHashSet<>();
         Set<Type> types = new LinkedHashSet<>();
+        Set<MainType> mainTypes = new LinkedHashSet<>();
+        Set<String> areaIds = new LinkedHashSet<>();
+        Set<String> categoryIds = new LinkedHashSet<>();
+        Set<String> chartNumbers = new LinkedHashSet<>();
 
         for (IssueCriterionVo node : doc.getCriteria()) {
             List<String> values = node.getValues();
@@ -87,17 +92,31 @@ public final class CriteriaResolver {
                     }
                 }
 
-                // Forward-looking vocabulary. Present in the schema so adding them
-                // later is additive; not yet expressed in the resolved envelope,
-                // and no production filter uses one.
-                case MESSAGE_MAIN_TYPE, AREA, CATEGORY, CHART -> throw new UnsupportedOperationException(
-                        node.kind().wireName() + " criteria are declared in the schema but not yet resolved");
+                case MESSAGE_MAIN_TYPE -> {
+                    for (String v : values) {
+                        mainTypes.add(MainType.valueOf(v));
+                    }
+                }
+
+                // The three operands that name a row somewhere else. They are
+                // carried as written -- MRNs and chart numbers -- and turned into
+                // a query where the query is built: that lookup needs a database,
+                // it can fail, and a failure has to refuse rather than quietly
+                // shrink the disjunction. Expanding them here would also make this
+                // envelope unportable, and it is the thing a published issue
+                // freezes to say what it selected.
+                case AREA -> areaIds.addAll(values);
+
+                case CATEGORY -> categoryIds.addAll(values);
+
+                case CHART -> chartNumbers.addAll(values);
 
                 default -> throw new IllegalStateException("unhandled criterion kind: " + node.kind());
             }
         }
 
-        return new ResolvedCriteria(timeRelation, seriesIds, types, aliveAtCutoff);
+        return new ResolvedCriteria(timeRelation, seriesIds, types, mainTypes,
+                areaIds, categoryIds, chartNumbers, aliveAtCutoff);
     }
 
     /** An operand list that would have resolved to an identity element. */

@@ -1,11 +1,21 @@
 package org.niord.core.publication.series;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.FlushModeType;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
+import org.niord.core.area.Area;
+import org.niord.core.area.AreaService;
+import org.niord.core.category.Category;
+import org.niord.core.category.CategoryService;
+import org.niord.core.chart.Chart;
+import org.niord.core.chart.ChartService;
 import org.niord.core.message.Message;
 import org.niord.core.publication.series.resolve.CriteriaMissCode;
 import org.niord.core.publication.series.resolve.CriteriaMissVo;
@@ -22,13 +32,16 @@ import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Resolves the members of an issue: SQL narrows coarsely, the pure predicate decides.
@@ -65,6 +78,15 @@ import java.util.Set;
 @ApplicationScoped
 @Transactional
 public class MemberResolutionService extends BaseService {
+
+    @Inject
+    AreaService areaService;
+
+    @Inject
+    CategoryService categoryService;
+
+    @Inject
+    ChartService chartService;
 
     /** What a resolution produced: every decision, the members, and the diagnostics. */
     public record Resolution(
@@ -148,9 +170,12 @@ public class MemberResolutionService extends BaseService {
         if (criteria == null || interval == null) {
             throw new IllegalArgumentException("resolve() takes no nulls");
         }
-        guardOperands(criteria);
+        // Looked up ONCE, and shared by both queries below. Resolving the same
+        // MRN twice would let the two queries disagree if a row moved between
+        // them, and it doubles the lookups on every open issue.
+        EntityOperands operands = lookUpOperands(criteria);
 
-        List<MessageFacts> candidates = narrow(criteria, interval);
+        List<MessageFacts> candidates = narrow(criteria, operands, interval);
 
         Map<String, MemberDecision> decisions =
                 MembershipPredicate.decideAll(candidates, criteria, interval);
@@ -173,7 +198,7 @@ public class MemberResolutionService extends BaseService {
         // Messages with no publishDateFrom never reach the candidate set, because
         // the query excludes them -- they cannot be compared to any bound. They are
         // found separately so their absence is reported rather than silent.
-        List<MessageFacts> nullDated = messagesWithNoPublishDate(criteria, interval);
+        List<MessageFacts> nullDated = messagesWithNoPublishDate(criteria, operands, interval);
         for (MessageFacts f : nullDated) {
             misses.add(CriteriaMissVo.of(f, MembershipReason.NO_PUBLISH_DATE, interval));
         }
@@ -275,7 +300,9 @@ public class MemberResolutionService extends BaseService {
      * publishDateFrom. Bounded by the lookback so an open issue does not rescan
      * the whole corpus.
      */
-    private List<MessageFacts> messagesWithNoPublishDate(ResolvedCriteria criteria, Interval interval) {
+    private List<MessageFacts> messagesWithNoPublishDate(ResolvedCriteria criteria,
+                                                         EntityOperands operands,
+                                                         Interval interval) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Message> query = cb.createQuery(Message.class);
         Root<Message> message = query.from(Message.class);
@@ -295,14 +322,18 @@ public class MemberResolutionService extends BaseService {
         if (!criteria.types().isEmpty()) {
             where.add(message.get("type").in(criteria.types()));
         }
+        // The same narrowing as the candidate query. An omission report that
+        // ignored the area or chart operands would list messages this series was
+        // never going to select, and a curator cannot tell those from the ones it
+        // dropped for the reason being reported.
+        boolean joined = applyEntityOperands(cb, message, where, criteria, operands);
 
         query.select(message).where(cb.and(where.toArray(new Predicate[0])));
-
-        List<MessageFacts> facts = new ArrayList<>();
-        for (Message m : em.createQuery(query).getResultList()) {
-            facts.add(factsOf(m));
+        if (joined) {
+            query.distinct(true);
         }
-        return facts;
+
+        return readAll(em.createQuery(query).getResultList(), criteria);
     }
 
     /** Convenience for callers with no curation. */
@@ -324,6 +355,151 @@ public class MemberResolutionService extends BaseService {
             throw new UnresolvableOperandException(
                     "a null message-type operand reached the query; it would narrow to nothing");
         }
+        if (criteria.mainTypes().stream().anyMatch(java.util.Objects::isNull)) {
+            throw new UnresolvableOperandException(
+                    "a null main-type operand reached the query; it would narrow to nothing");
+        }
+        for (String value : criteria.areaIds()) {
+            requireOperand("area", value);
+        }
+        for (String value : criteria.categoryIds()) {
+            requireOperand("category", value);
+        }
+        for (String value : criteria.chartNumbers()) {
+            requireOperand("chart", value);
+        }
+    }
+
+    private static void requireOperand(String kind, String value) {
+        if (value == null || value.isBlank()) {
+            throw new UnresolvableOperandException(
+                    "a blank " + kind + " operand reached the query; it would narrow to nothing");
+        }
+    }
+
+    /**
+     * The operands that name a row somewhere else, turned into what the query
+     * matches on.
+     *
+     * An area or category criterion is written as an MRN and matched by LINEAGE,
+     * so that naming a parent selects everything filed under it -- the same
+     * expansion the message search performs, and the reason a criterion has to be
+     * resolved to a row before it can become a predicate at all.
+     *
+     * RI-6, in the form that actually bites. The search resolves each id and
+     * filters the misses out of the stream, so an MRN that names nothing shrinks
+     * the disjunction, and an operand list where NONE resolve leaves an OR over
+     * an empty array -- always false. The issue then resolves to zero members
+     * with no error anywhere. Here a miss refuses, loudly, naming the operand.
+     */
+    private EntityOperands lookUpOperands(ResolvedCriteria criteria) {
+        guardOperands(criteria);
+
+        List<String> areaLineages = new ArrayList<>();
+        for (String mrn : criteria.areaIds()) {
+            Area area = areaService.findByAreaId(mrn);
+            if (area == null) {
+                throw new UnresolvableOperandException("area operand " + mrn
+                        + " resolves to no area; matching on it would select nothing while the issue "
+                        + "reports no problem");
+            }
+            if (area.getLineage() == null || area.getLineage().isBlank()) {
+                throw new UnresolvableOperandException("area operand " + mrn
+                        + " resolves to an area with no lineage, and the match is by lineage prefix; "
+                        + "it would select nothing");
+            }
+            areaLineages.add(area.getLineage());
+        }
+
+        List<String> categoryLineages = new ArrayList<>();
+        for (String mrn : criteria.categoryIds()) {
+            Category category = categoryService.findByCategoryId(mrn);
+            if (category == null) {
+                throw new UnresolvableOperandException("category operand " + mrn
+                        + " resolves to no category; matching on it would select nothing while the issue "
+                        + "reports no problem");
+            }
+            if (category.getLineage() == null || category.getLineage().isBlank()) {
+                throw new UnresolvableOperandException("category operand " + mrn
+                        + " resolves to a category with no lineage, and the match is by lineage prefix; "
+                        + "it would select nothing");
+            }
+            categoryLineages.add(category.getLineage());
+        }
+
+        // Charts match on the number itself, so nothing has to be expanded -- but a
+        // number naming no chart is the same hazard by a shorter route, and it is
+        // the one an admin hits by typing a chart that was withdrawn.
+        for (String chartNumber : criteria.chartNumbers()) {
+            Chart chart = chartService.findByChartNumber(chartNumber);
+            if (chart == null) {
+                throw new UnresolvableOperandException("chart operand " + chartNumber
+                        + " resolves to no chart; matching on it would select nothing while the issue "
+                        + "reports no problem");
+            }
+        }
+
+        return new EntityOperands(areaLineages, categoryLineages);
+    }
+
+    /** The lineage prefixes an area or category criterion has been expanded to. */
+    private record EntityOperands(List<String> areaLineages, List<String> categoryLineages) {
+    }
+
+    /**
+     * The operands that need a join, applied identically to both queries.
+     *
+     * AREAS, NOT AREA. A message carries an ordered list of areas for membership
+     * and a single primary "area" that exists so the sort has something to order
+     * by; joining the sort field would silently drop every message whose second
+     * or third area is the one the criterion names. The publish path's ordering
+     * query joins "area" for exactly the opposite reason, and the two must not be
+     * confused for one another.
+     *
+     * @return whether a to-many join was added, which the caller must answer with
+     *         DISTINCT: a message in three of the named areas would otherwise come
+     *         back three times and be counted three times.
+     */
+    private boolean applyEntityOperands(CriteriaBuilder cb, Root<Message> message,
+                                        List<Predicate> where, ResolvedCriteria criteria,
+                                        EntityOperands operands) {
+        if (!criteria.mainTypes().isEmpty()) {
+            where.add(message.get("mainType").in(criteria.mainTypes()));
+        }
+
+        boolean joined = false;
+
+        if (!operands.areaLineages().isEmpty()) {
+            Join<Message, Area> areas = message.join("areas", JoinType.LEFT);
+            List<Predicate> any = new ArrayList<>();
+            for (String lineage : operands.areaLineages()) {
+                any.add(cb.like(areas.get("lineage"), lineage + "%"));
+            }
+            where.add(cb.or(any.toArray(new Predicate[0])));
+            joined = true;
+        }
+
+        if (!operands.categoryLineages().isEmpty()) {
+            Join<Message, Category> categories = message.join("categories", JoinType.LEFT);
+            List<Predicate> any = new ArrayList<>();
+            for (String lineage : operands.categoryLineages()) {
+                any.add(cb.like(categories.get("lineage"), lineage + "%"));
+            }
+            where.add(cb.or(any.toArray(new Predicate[0])));
+            joined = true;
+        }
+
+        if (!criteria.chartNumbers().isEmpty()) {
+            Join<Message, Chart> charts = message.join("charts", JoinType.LEFT);
+            List<Predicate> any = new ArrayList<>();
+            for (String chartNumber : criteria.chartNumbers()) {
+                any.add(cb.equal(charts.get("chartNumber"), chartNumber));
+            }
+            where.add(cb.or(any.toArray(new Predicate[0])));
+            joined = true;
+        }
+
+        return joined;
     }
 
     /**
@@ -337,7 +513,8 @@ public class MemberResolutionService extends BaseService {
      *  - liveness is not applied at all: its NULL-safety is the hazard, and it
      *    belongs in one place.
      */
-    private List<MessageFacts> narrow(ResolvedCriteria criteria, Interval interval) {
+    private List<MessageFacts> narrow(ResolvedCriteria criteria, EntityOperands operands,
+                                      Interval interval) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Message> query = cb.createQuery(Message.class);
         Root<Message> message = query.from(Message.class);
@@ -367,6 +544,7 @@ public class MemberResolutionService extends BaseService {
         if (!criteria.types().isEmpty()) {
             where.add(message.get("type").in(criteria.types()));
         }
+        boolean joined = applyEntityOperands(cb, message, where, criteria, operands);
 
         // Status is NOT narrowed here. It is a resolver invariant (RI-1) derived
         // from Status.isPublic(), and expressing it as a stored or query-level
@@ -374,19 +552,26 @@ public class MemberResolutionService extends BaseService {
         // historical issue, since most of the corpus is EXPIRED or CANCELLED.
 
         query.select(message).where(cb.and(where.toArray(new Predicate[0])));
+        if (joined) {
+            query.distinct(true);
+        }
 
         // RI-12. No setMaxResults, no paging. The default cap lives in
         // MessageSearchParams.instantiate() and cannot reach a query built here.
         List<Message> rows = em.createQuery(query).getResultList();
 
-        List<MessageFacts> facts = new ArrayList<>(rows.size());
-        for (Message m : rows) {
-            facts.add(factsOf(m));
-        }
-        return facts;
+        return readAll(rows, criteria);
     }
 
-    /** Reads the facts membership depends on, and nothing else. */
+    /**
+     * Reads the facts membership depends on from the message's own row.
+     *
+     * The collection-backed facets come back null -- "not read", which is not the
+     * same as "the message has none". For criteria that select on one of them,
+     * read through readAll() or allFactsOf() instead; the predicate refuses facts
+     * that are missing something it was asked about, rather than deciding on
+     * their absence.
+     */
     static MessageFacts factsOf(Message m) {
         return new MessageFacts(
                 m.getUid(),
@@ -394,7 +579,184 @@ public class MemberResolutionService extends BaseService {
                 m.getPublishDateTo(),
                 m.getStatus(),
                 m.getType(),
-                m.getMessageSeries() == null ? null : m.getMessageSeries().getSeriesId());
+                m.getMessageSeries() == null ? null : m.getMessageSeries().getSeriesId(),
+                m.getMainType(),
+                null, null, null);
+    }
+
+    /**
+     * Reads a batch of messages as the facts THESE criteria decide on.
+     *
+     * Only the facets the criteria select on are read, and each is read for the
+     * WHOLE batch in one pass rather than per row. Both halves matter: the
+     * resolutions in production today select on none of them, so they must keep
+     * costing what they cost; and the ones that do select on a facet run over
+     * batches of thousands, where a lazy load per row is three thousand queries
+     * inside a single transaction -- slow enough to be indistinguishable from a
+     * hang, and the reason to do it this way rather than the obvious way.
+     *
+     * A message absent from a facet map has none of that facet, which is an
+     * empty set and NOT a null: null is reserved for "not read", and the
+     * predicate raises on it.
+     */
+    private List<MessageFacts> readAll(List<Message> rows, ResolvedCriteria criteria) {
+        List<String> uids = new ArrayList<>(rows.size());
+        for (Message m : rows) {
+            uids.add(m.getUid());
+        }
+
+        Map<String, Set<String>> areas = criteria.readsAreas() ? areaMrnsByUid(uids) : null;
+        Map<String, Set<String>> categories = criteria.readsCategories() ? categoryMrnsByUid(uids) : null;
+        Map<String, Set<String>> charts = criteria.readsCharts() ? chartNumbersByUid(uids) : null;
+
+        List<MessageFacts> out = new ArrayList<>(rows.size());
+        for (Message m : rows) {
+            out.add(new MessageFacts(
+                    m.getUid(),
+                    m.getPublishDateFrom(),
+                    m.getPublishDateTo(),
+                    m.getStatus(),
+                    m.getType(),
+                    m.getMessageSeries() == null ? null : m.getMessageSeries().getSeriesId(),
+                    m.getMainType(),
+                    facet(areas, m.getUid()),
+                    facet(categories, m.getUid()),
+                    facet(charts, m.getUid())));
+        }
+        return out;
+    }
+
+    /** Not read stays not read; read-and-absent is empty. */
+    private static Set<String> facet(Map<String, Set<String>> byUid, String uid) {
+        return byUid == null ? null : byUid.getOrDefault(uid, Set.of());
+    }
+
+    /**
+     * Every attached area's own MRN and its ancestors', keyed by message uid.
+     *
+     * The ancestors are what makes a criterion naming a parent match a message
+     * filed under a child, so the hierarchy is expanded into the FACTS rather
+     * than left as a lookup the pure predicate would need a database for. The
+     * lineage of one area is walked once however many messages carry it.
+     */
+    private Map<String, Set<String>> areaMrnsByUid(List<String> uids) {
+        Map<Integer, Set<String>> lineage = new HashMap<>();
+        return facetByUid(uids, "SELECT m.uid, a FROM Message m JOIN m.areas a WHERE m.uid IN :uids",
+                node -> {
+                    Area area = (Area) node;
+                    return lineage.computeIfAbsent(area.getId(),
+                            id -> mrnsOf(area.lineageAsList(), Area::getMrn));
+                });
+    }
+
+    private Map<String, Set<String>> categoryMrnsByUid(List<String> uids) {
+        Map<Integer, Set<String>> lineage = new HashMap<>();
+        return facetByUid(uids, "SELECT m.uid, c FROM Message m JOIN m.categories c WHERE m.uid IN :uids",
+                node -> {
+                    Category category = (Category) node;
+                    return lineage.computeIfAbsent(category.getId(),
+                            id -> mrnsOf(category.lineageAsList(), Category::getMrn));
+                });
+    }
+
+    /** Charts have no hierarchy: the number itself is what a criterion names. */
+    private Map<String, Set<String>> chartNumbersByUid(List<String> uids) {
+        return facetByUid(uids,
+                "SELECT m.uid, c.chartNumber FROM Message m JOIN m.charts c "
+                        + "WHERE m.uid IN :uids AND c.chartNumber IS NOT NULL",
+                node -> Set.of((String) node));
+    }
+
+    /** The MRNs of a lineage, skipping nodes that have none. */
+    private static <T> Set<String> mrnsOf(List<T> lineage, Function<T, String> mrnOf) {
+        Set<String> out = new LinkedHashSet<>();
+        for (T node : lineage) {
+            String mrn = mrnOf.apply(node);
+            if (mrn != null) {
+                out.add(mrn);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * One facet for a batch of messages, chunked.
+     *
+     * The uid list is the candidate set of an issue in production and the whole
+     * corpus when the rule is checked against everything, so it is bounded by
+     * neither; an IN-list of ten thousand literals is where MySQL's parser, not
+     * the query, becomes the cost.
+     *
+     * FLUSH MODE COMMIT, and it is not a micro-optimisation. The caller reached
+     * here through its own query, which already flushed anything pending; these
+     * read association rows nothing in this flow writes. Left on AUTO, every
+     * chunk makes Hibernate dirty-check the whole persistence context -- and a
+     * resolution over a large candidate set holds thousands of managed entities,
+     * so the scan is paid once per chunk and the cost is quadratic in the batch.
+     */
+    private Map<String, Set<String>> facetByUid(List<String> uids, String jpql,
+                                                Function<Object, Set<String>> keysOf) {
+        Map<String, Set<String>> out = new HashMap<>();
+        for (int from = 0; from < uids.size(); from += FACET_CHUNK) {
+            List<String> chunk = uids.subList(from, Math.min(from + FACET_CHUNK, uids.size()));
+            for (Object[] row : em.createQuery(jpql, Object[].class)
+                    .setFlushMode(FlushModeType.COMMIT)
+                    .setParameter("uids", chunk)
+                    .getResultList()) {
+                out.computeIfAbsent((String) row[0], uid -> new LinkedHashSet<>())
+                        .addAll(keysOf.apply(row[1]));
+            }
+        }
+        return out;
+    }
+
+    /** How many uids go into one facet lookup. */
+    private static final int FACET_CHUNK = 1000;
+
+    /**
+     * The facts for ONE message, with every facet read.
+     *
+     * For the readers that hold a message rather than a criteria document and
+     * must be able to answer against ANY series' criteria -- three lazy loads on
+     * a single row, against a wrong answer on every series that selects by area,
+     * category or chart.
+     */
+    public static MessageFacts allFactsOf(Message m) {
+        Set<String> areas = new LinkedHashSet<>();
+        for (Area area : m.getAreas()) {
+            areas.addAll(mrnsOf(area.lineageAsList(), Area::getMrn));
+        }
+        Set<String> categories = new LinkedHashSet<>();
+        for (Category category : m.getCategories()) {
+            categories.addAll(mrnsOf(category.lineageAsList(), Category::getMrn));
+        }
+        Set<String> charts = new LinkedHashSet<>();
+        for (Chart chart : m.getCharts()) {
+            if (chart.getChartNumber() != null) {
+                charts.add(chart.getChartNumber());
+            }
+        }
+        return new MessageFacts(
+                m.getUid(),
+                m.getPublishDateFrom(),
+                m.getPublishDateTo(),
+                m.getStatus(),
+                m.getType(),
+                m.getMessageSeries() == null ? null : m.getMessageSeries().getSeriesId(),
+                m.getMainType(),
+                areas, categories, charts);
+    }
+
+    /**
+     * Messages read as the facts THESE criteria decide on.
+     *
+     * The differential test needs it: running the rule over the whole corpus is
+     * only a check of the SQL narrowing if both sides see the same facts, and a
+     * corpus read without the facets the criteria select on would make the pure
+     * side reject everything and the comparison pass for the wrong reason.
+     */
+    public List<MessageFacts> factsFor(Collection<Message> messages, ResolvedCriteria criteria) {
+        return readAll(new ArrayList<>(messages), criteria);
     }
 
     /**
@@ -403,8 +765,7 @@ public class MemberResolutionService extends BaseService {
      * claim like that is worth being able to check directly.
      */
     public List<MessageFacts> candidatesFor(ResolvedCriteria criteria, Interval interval) {
-        guardOperands(criteria);
-        return narrow(criteria, interval);
+        return narrow(criteria, lookUpOperands(criteria), interval);
     }
 
     /** The reasons, for the why-lines. */

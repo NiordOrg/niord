@@ -166,8 +166,13 @@ public class IssueLifecycleTest {
 
         assertNotNull(edition.getSupersedes(), "supersedes was not set");
         assertEquals(first.getId(), edition.getSupersedes().getId());
-        assertNotNull(em.find(PublicationIssue.class, first.getId()).getPublicTo(),
-                "the predecessor was not capped; two current editions would reach the download site");
+        // The predecessor stays current until the replacement is actually
+        // published: the new edition is OPEN and nobody can read it, so closing
+        // the old window now would leave the download site with no current
+        // edition at all. The cap belongs to the publish that takes over, which
+        // AmendAndOverlapTest drives end to end.
+        assertNull(em.find(PublicationIssue.class, first.getId()).getPublicTo(),
+                "an unpublished replacement must not close the edition people are still reading");
 
         // The audit action that was previously unreachable by any API call.
         List<IssueAuditEntry> superseded = em.createQuery(

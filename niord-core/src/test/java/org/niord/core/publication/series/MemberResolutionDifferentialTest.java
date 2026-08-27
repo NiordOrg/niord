@@ -15,13 +15,16 @@ import org.niord.core.publication.series.resolve.MembershipPredicate;
 import org.niord.core.publication.series.resolve.MessageFacts;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.model.message.MainType;
 import org.niord.model.message.Type;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -78,13 +81,32 @@ public class MemberResolutionDifferentialTest {
         }
     }
 
-    /** The whole seeded corpus, as the facts the rule depends on. */
-    private List<MessageFacts> wholeCorpus() {
-        return em.createQuery("SELECT m FROM Message m", Message.class)
-                .getResultList()
-                .stream()
-                .map(MemberResolutionService::factsOf)
-                .collect(Collectors.toList());
+    /** The whole seeded corpus, as rows. Read once and re-read as facts per criteria. */
+    private List<Message> corpusRows() {
+        return em.createQuery("SELECT m FROM Message m", Message.class).getResultList();
+    }
+
+    /** The corpus read as facts, once per facet shape. Per test instance, so nothing leaks between tests. */
+    private final Map<String, List<MessageFacts>> corpusByShape = new HashMap<>();
+
+    /**
+     * The corpus as the facts THESE criteria decide on.
+     *
+     * Read through the service rather than by mapping a constructor, because the
+     * facts a criteria document needs are not the same for every document: one
+     * selecting by area needs the message's areas joined in, and comparing a pure
+     * run over facts that lack them against a SQL run that has them would make
+     * the two agree for the wrong reason.
+     *
+     * Which facts a document needs depends ONLY on which facets it selects on, so
+     * the twenty-one fixtures that select on none of them share one read. Reading
+     * ten thousand rows per fixture instead is the difference between a test that
+     * finishes and one that trips the transaction timeout.
+     */
+    private List<MessageFacts> wholeCorpus(List<Message> rows, ResolvedCriteria criteria) {
+        String shape = criteria.readsAreas() + "/" + criteria.readsCategories()
+                + "/" + criteria.readsCharts();
+        return corpusByShape.computeIfAbsent(shape, s -> resolver.factsFor(rows, criteria));
     }
 
     /** The cut-off, derived the same way the Tier-1 test derives it. */
@@ -129,9 +151,9 @@ public class MemberResolutionDifferentialTest {
     @Test
     @Transactional
     public void sqlNarrowingNeverDropsAMatch() throws Exception {
-        List<MessageFacts> corpus = wholeCorpus();
-        assertTrue(corpus.size() > 10_000,
-                "the corpus holds only " + corpus.size() + " messages; run scripts/seed-dev-database.mjs");
+        List<Message> rows = corpusRows();
+        assertTrue(rows.size() > 10_000,
+                "the corpus holds only " + rows.size() + " messages; run scripts/seed-dev-database.mjs");
 
         List<String> failures = new ArrayList<>();
 
@@ -141,7 +163,7 @@ public class MemberResolutionDifferentialTest {
             Interval interval = Interval.upTo(cutoffOf(f));
 
             // The rule, applied to everything. This is the answer.
-            Set<String> pureOnly = MembershipPredicate.members(corpus, criteria, interval);
+            Set<String> pureOnly = MembershipPredicate.members(wholeCorpus(rows, criteria), criteria, interval);
 
             // The production path: SQL narrows, the rule decides.
             MemberResolutionService.Resolution sql = resolver.resolve(criteria, interval);
@@ -179,11 +201,10 @@ public class MemberResolutionDifferentialTest {
     @Test
     @Transactional
     public void aTightenedSqlBoundIsDetectable() throws Exception {
-        List<MessageFacts> corpus = wholeCorpus();
-
         // A window whose lower bound sits exactly on a real message's stamp.
         JsonNode f = fixture("nm-w28-2026");
         ResolvedCriteria criteria = criteriaFor("nm-w28-2026", f);
+        List<MessageFacts> corpus = wholeCorpus(corpusRows(), criteria);
         long onTheBound = f.get("members").get(0).get("publishDateFrom").asLong();
         Interval interval = new Interval(new Date(onTheBound - 1), new Date(cutoffOf(f).getTime()));
 
@@ -206,6 +227,154 @@ public class MemberResolutionDifferentialTest {
         MemberResolutionService.Resolution r = resolver.resolve(criteria, interval);
         assertTrue(new LinkedHashSet<>(r.candidateUids()).containsAll(r.members()),
                 "the candidate set does not contain its own members");
+    }
+
+    // -------------------------------------------- the operands that need a join
+
+    /**
+     * The same differential, for the four kinds that select on something other
+     * than the message's own row.
+     *
+     * These are the ones where the two implementations could most easily part
+     * company: the SQL matches an area by LINEAGE PREFIX over a joined
+     * collection, the rule matches by MRN over the facts, and nothing but this
+     * says the two expansions describe the same set. The operand and the message
+     * series it is exercised in are DISCOVERED from a real message rather than
+     * typed, so the test cannot pass by naming something nothing references.
+     *
+     * Each document is scoped to a message series, which is the only shape a
+     * saved document can have -- C-6 refuses an unscoped one precisely because it
+     * resolves across the whole installation. The pure side still decides over
+     * the WHOLE corpus, so a row the SQL wrongly drops is still detected; only
+     * the SQL side is spared resolving the entire archive four times.
+     */
+    @Test
+    @Transactional
+    public void theEntityOperandsNarrowExactlyAsTheRuleMatches() {
+        List<Message> rows = corpusRows();
+        Interval interval = Interval.upTo(new Date());
+        List<String> failures = new ArrayList<>();
+
+        Object[] area = firstUsed("SELECT a.mrn, m.messageSeries.seriesId FROM Message m JOIN m.areas a "
+                + "WHERE a.mrn IS NOT NULL AND a.lineage IS NOT NULL");
+        assertNotNull(area, "no publishable message in the corpus references an area with an MRN");
+        check("area", rows, interval,
+                criteria(seriesOf(area), Set.of(), Set.of(value(area)), Set.of(), Set.of()), failures);
+
+        Object[] category = firstUsed("SELECT c.mrn, m.messageSeries.seriesId FROM Message m JOIN m.categories c "
+                + "WHERE c.mrn IS NOT NULL AND c.lineage IS NOT NULL");
+        if (category != null) {
+            check("category", rows, interval,
+                    criteria(seriesOf(category), Set.of(), Set.of(), Set.of(value(category)), Set.of()), failures);
+        }
+
+        Object[] chart = firstUsed("SELECT c.chartNumber, m.messageSeries.seriesId FROM Message m JOIN m.charts c "
+                + "WHERE c.chartNumber IS NOT NULL");
+        if (chart != null) {
+            check("chart", rows, interval,
+                    criteria(seriesOf(chart), Set.of(), Set.of(), Set.of(), Set.of(value(chart))), failures);
+        }
+
+        Object[] mainType = firstUsed("SELECT m.mainType, m.messageSeries.seriesId FROM Message m "
+                + "WHERE m.mainType IS NOT NULL");
+        assertNotNull(mainType, "no publishable message in the corpus carries a main type");
+        check("mainType", rows, interval,
+                criteria(seriesOf(mainType), Set.of((MainType) mainType[0]), Set.of(), Set.of(), Set.of()),
+                failures);
+
+        if (!failures.isEmpty()) {
+            org.junit.jupiter.api.Assertions.fail(
+                    "the two implementations of the rule have drifted:\n  " + String.join("\n  ", failures));
+        }
+    }
+
+    private void check(String label, List<Message> rows, Interval interval,
+                       ResolvedCriteria criteria, List<String> failures) {
+        Set<String> pureOnly = MembershipPredicate.members(wholeCorpus(rows, criteria), criteria, interval);
+        MemberResolutionService.Resolution sql = resolver.resolve(criteria, interval);
+        Set<String> candidates = new LinkedHashSet<>(sql.candidateUids());
+
+        if (sql.members().isEmpty()) {
+            failures.add(label + ": the operand selected nothing at all, so nothing was compared");
+        }
+        if (!candidates.containsAll(pureOnly)) {
+            Set<String> dropped = new LinkedHashSet<>(pureOnly);
+            dropped.removeAll(candidates);
+            failures.add(label + ": SQL dropped " + dropped.size()
+                    + " row(s) the rule matches, e.g. " + dropped.stream().limit(3).toList());
+        }
+        if (!pureOnly.equals(sql.members())) {
+            Set<String> onlyPure = new LinkedHashSet<>(pureOnly);
+            onlyPure.removeAll(sql.members());
+            Set<String> onlySql = new LinkedHashSet<>(sql.members());
+            onlySql.removeAll(pureOnly);
+            failures.add(label + ": final membership differs -- the rule has " + onlyPure.size()
+                    + " the SQL path lacks, the SQL path has " + onlySql.size() + " the rule does not match");
+        }
+    }
+
+    private ResolvedCriteria criteria(Set<String> seriesIds, Set<MainType> mainTypes, Set<String> areaIds,
+                                      Set<String> categoryIds, Set<String> chartNumbers) {
+        return new ResolvedCriteria(TimeRelation.PUBLISHED_IN_INTERVAL, seriesIds, Set.of(),
+                mainTypes, areaIds, categoryIds, chartNumbers, false);
+    }
+
+    private ResolvedCriteria criteria(Set<MainType> mainTypes, Set<String> areaIds,
+                                      Set<String> categoryIds, Set<String> chartNumbers) {
+        return criteria(Set.of(), mainTypes, areaIds, categoryIds, chartNumbers);
+    }
+
+    /**
+     * An operand the corpus actually uses, with the message series it was found
+     * in, or null when nothing references one.
+     *
+     * Restricted to messages the rule can decide at all -- a public status and a
+     * publish stamp -- so the pair is one the comparison can produce members
+     * from. A row picked without that check can leave both sides empty and the
+     * differential agreeing about nothing.
+     */
+    private Object[] firstUsed(String query) {
+        List<Object[]> hits = em.createQuery(query
+                        + " AND m.messageSeries IS NOT NULL AND m.publishDateFrom IS NOT NULL"
+                        + " AND m.status = org.niord.model.message.Status.PUBLISHED", Object[].class)
+                .setMaxResults(1).getResultList();
+        return hits.isEmpty() ? null : hits.get(0);
+    }
+
+    private static String value(Object[] row) {
+        return (String) row[0];
+    }
+
+    private static Set<String> seriesOf(Object[] row) {
+        return Set.of((String) row[1]);
+    }
+
+    /**
+     * RI-6, on the path the message search takes and this one must not.
+     *
+     * The search resolves each area id and filters the misses out of the stream,
+     * so an operand list where none resolve becomes an OR over an empty array --
+     * always false. The issue then publishes empty and every part of it looks
+     * healthy.
+     */
+    @BindsRule({"RI-6"})
+    @Test
+    @Transactional
+    public void anMrnThatNamesNothingRefusesRatherThanSelectingNothing() {
+        ResolvedCriteria unknownArea =
+                criteria(Set.of(), Set.of("urn:mrn:iala:aton:dk:area:no-such-area"), Set.of(), Set.of());
+        assertThrows(MemberResolutionService.UnresolvableOperandException.class,
+                () -> resolver.resolve(unknownArea, Interval.upTo(new Date())),
+                "an area MRN naming nothing was dropped from the disjunction instead of refusing");
+
+        ResolvedCriteria unknownCategory =
+                criteria(Set.of(), Set.of(), Set.of("urn:mrn:iala:aton:dk:category:no-such-category"), Set.of());
+        assertThrows(MemberResolutionService.UnresolvableOperandException.class,
+                () -> resolver.resolve(unknownCategory, Interval.upTo(new Date())));
+
+        ResolvedCriteria unknownChart = criteria(Set.of(), Set.of(), Set.of(), Set.of("no-such-chart"));
+        assertThrows(MemberResolutionService.UnresolvableOperandException.class,
+                () -> resolver.resolve(unknownChart, Interval.upTo(new Date())));
     }
 
     // ------------------------------------------------------------- B1.1 invariants

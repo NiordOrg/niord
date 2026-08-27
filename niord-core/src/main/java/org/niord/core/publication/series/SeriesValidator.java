@@ -7,6 +7,7 @@ import org.niord.core.publication.series.resolve.TimeRelation;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -290,6 +291,27 @@ public final class SeriesValidator {
                             + "for one"));
         }
 
+        // S-22. Automatic release is modelled and not yet built. Saving a series
+        // that asks for it would leave a publication nobody is watching and
+        // nothing is releasing -- silently, until somebody noticed the week was
+        // missing. Refusing is the honest answer until the scheduler and the way
+        // an aborted release reaches a human both exist.
+        if (s.getReleaseMode() == ReleaseMode.AUTO_RELEASE) {
+            e.add(new FieldError("S-22", "releaseMode",
+                    "automatic release is not available yet; every series releases through the "
+                            + "manual gate"));
+        }
+
+        // S-23. week, year, weekTo and edition are INJECTED into every report
+        // from the issue being rendered. Typing one as a report parameter puts a
+        // second, fixed answer beside the derived one, and which of the two the
+        // template reads is a question about parameter order rather than about
+        // the publication. Refused on the way in, where it is still a typo.
+        for (String key : reservedReportParams(s.getReportParams())) {
+            e.add(new FieldError("S-23", "reportParams." + key,
+                    "'" + key + "' is taken from the issue and cannot be typed here"));
+        }
+
         // C-1 to C-10, on the criteria document itself.
         for (CriteriaValidator.Violation v : CriteriaValidator.validate(s.getCriteria(), CriteriaValidator.ACCEPT_ALL)) {
             e.add(new FieldError(v.rule(), "criteria" + v.pointer(), v.message()));
@@ -332,5 +354,29 @@ public final class SeriesValidator {
                             + "a duplicate rather than replacing"));
         }
         return e;
+    }
+
+    /**
+     * The report parameters that are the issue's to supply, never the series'.
+     *
+     * Matched case-insensitively and after trimming, because the failure this
+     * prevents is a typo rather than an attack, and "Week " reaching a template
+     * beside the injected week is the same problem spelled differently.
+     */
+    public static final Set<String> RESERVED_REPORT_PARAMS =
+            Set.of("week", "weekto", "year", "edition");
+
+    /** Which reserved names a report-parameter map uses, in the order it uses them. */
+    public static List<String> reservedReportParams(Map<String, Object> reportParams) {
+        List<String> hits = new ArrayList<>();
+        if (reportParams == null) {
+            return hits;
+        }
+        for (String key : reportParams.keySet()) {
+            if (key != null && RESERVED_REPORT_PARAMS.contains(key.trim().toLowerCase())) {
+                hits.add(key);
+            }
+        }
+        return hits;
     }
 }

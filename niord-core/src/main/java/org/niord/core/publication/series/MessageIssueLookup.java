@@ -169,7 +169,11 @@ public class MessageIssueLookup extends BaseService {
                         "SELECT m FROM Message m WHERE m.uid = :uid", Message.class)
                 .setParameter("uid", messageUid)
                 .getResultList();
-        return rows.isEmpty() ? null : MemberResolutionService.factsOf(rows.get(0));
+        // EVERY facet, because this reader does not know which series it will be
+        // asked about. One message's areas, categories and charts cost three lazy
+        // loads; getting it wrong costs a panel that tells an editor a message is
+        // in no issue whenever the series selects by one of them.
+        return rows.isEmpty() ? null : MemberResolutionService.allFactsOf(rows.get(0));
     }
 
     /**

@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryDesc;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -37,7 +38,7 @@ import java.util.Map;
 @RequestScoped
 @Transactional
 @SuppressWarnings("unused")
-public class PublicationCategoryRestService {
+public class PublicationCategoryRestService extends org.niord.core.batch.AbstractBatchableRestService {
 
     @Inject
     EntityManager em;
@@ -110,6 +111,50 @@ public class PublicationCategoryRestService {
         }
     }
 
+    /**
+     * C2. Create.
+     *
+     * A series cannot be saved without a category, so without this the only way
+     * to get one was the batch import -- and a deployment that needed a new
+     * section on the public page had to be given one by a sysadmin with a JSON
+     * file.
+     */
+    @POST
+    @Path("/publication-category/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public Map<String, Object> create(Map<String, Object> body) {
+        String categoryId = body == null ? null : String.valueOf(body.getOrDefault("categoryId", "")).trim();
+        if (categoryId.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_INVALID",
+                    "categoryId is required; it is the stable key a series stores");
+        }
+        boolean taken = !em.createQuery(
+                        "SELECT c FROM PublicationCategory c WHERE c.categoryId = :id",
+                        PublicationCategory.class)
+                .setParameter("id", categoryId).getResultList().isEmpty();
+        if (taken) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_ID_TAKEN",
+                    "a category with id '" + categoryId + "' already exists");
+        }
+
+        PublicationCategory c = new PublicationCategory();
+        c.setCategoryId(categoryId);
+        // Lower sorts first on the public page, and a new category lands at the
+        // back rather than silently ahead of everything that was there.
+        c.setPriority(body.containsKey("priority") && body.get("priority") instanceof Number n
+                ? n.intValue() : DEFAULT_PRIORITY);
+        c.setPublish(Boolean.TRUE.equals(body.get("publish")));
+        applyDescs(c, body);
+        em.persist(c);
+        em.flush();
+        return toMap(c, null);
+    }
+
+    /** Where a category lands in the public page's order when nobody says. */
+    public static final int DEFAULT_PRIORITY = 100;
+
     /** C5. Update. */
     @PUT
     @Path("/publication-category/{categoryId}")
@@ -138,14 +183,39 @@ public class PublicationCategoryRestService {
     public void delete(@PathParam("categoryId") String categoryId) {
         PublicationCategory c = required(categoryId);
 
+        // BOTH models, because both still store this row. Counting only the new
+        // side would let a category be deleted out from under the publications
+        // the legacy list is still serving, and the failure would surface as a
+        // missing section on the public page rather than as a refusal here.
         Long series = em.createQuery(
                         "SELECT COUNT(s) FROM PublicationSeries s WHERE s.category = :c", Long.class)
                 .setParameter("c", c).getSingleResult();
-        if (series > 0) {
+        Long publications = em.createQuery(
+                        "SELECT COUNT(p) FROM Publication p WHERE p.category = :c", Long.class)
+                .setParameter("c", c).getSingleResult();
+        if (series + publications > 0) {
             throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_IN_USE",
-                    series + " series still belong to this category");
+                    series + " series and " + publications + " publication(s) still belong to '"
+                            + categoryId + "'. Move them to another category first.");
         }
         em.remove(c);
+    }
+
+    /**
+     * C7. Seed categories from an uploaded JSON file.
+     *
+     * The sysadmin bootstrap path, carried over unchanged. It is how a fresh
+     * deployment gets the sections the public page is built from, and there is no
+     * REST equivalent worth building: this is a file somebody produced from
+     * another installation, not a form.
+     */
+    @POST
+    @Path("/upload-publication-categories")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed("admin")
+    public String importCategories(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "publication-category-import");
     }
 
     private Map<String, Object> toMap(PublicationCategory c, String lang) {

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
+import org.niord.core.publication.series.criteria.MessageMainTypeCriterionVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
@@ -289,6 +290,50 @@ public class IssuePublishTest {
                 "snapshotSeriesIds came from the series, not from the document that ran");
         assertTrue(EffectiveCriteria.isOverridden(after),
                 "a published issue that went out with its own criteria must report itself as tailored");
+    }
+
+    /**
+     * A published issue records EVERY operand it selected on, not only the series.
+     *
+     * The criteria snapshot holds the DOCUMENT; these columns hold what it
+     * resolved to, and the two answer different questions -- a domain node
+     * expands to a message-series set the document never spells out, and an MRN
+     * that has since been renamed is only recoverable from what was written down
+     * at release time. A facet the criteria never mentioned stays NULL, because
+     * an empty string would read as "selected on it, and nothing matched", which
+     * is a different publication.
+     */
+    @Test
+    @Transactional
+    public void aPublishFreezesEveryOperandItSelectedOn() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+
+        IssueCriteriaVo override = new IssueCriteriaVo();
+        MessageSeriesCriterionVo scope = new MessageSeriesCriterionVo();
+        scope.setValues(new ArrayList<>(List.of("dma-nm")));
+        override.getCriteria().add(scope);
+        MessageMainTypeCriterionVo mainType = new MessageMainTypeCriterionVo();
+        mainType.setValues(new ArrayList<>(List.of("NM")));
+        override.getCriteria().add(mainType);
+        i.setCriteriaOverride(override);
+        em.flush();
+
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_700_000_000_000L)));
+        em.flush();
+        em.clear();
+
+        PublicationIssue after = em.find(PublicationIssue.class, i.getId());
+
+        assertEquals("NM", after.getSnapshotMainTypes(),
+                "the main type this issue narrowed on was not recorded, so the published issue can "
+                        + "no longer say why a message of another main type is absent from it");
+        assertNull(after.getSnapshotAreaIds(),
+                "an operand the criteria never mentioned was recorded as a selection that matched "
+                        + "nothing, which describes a different publication");
     }
 
     /** Step 8. An exclude the query never returned freezes appliedAtPublish = false. */
@@ -593,7 +638,7 @@ public class IssuePublishTest {
         // The count is a tripwire, not a rule: every action needs a translation
         // key, and one added without one renders in the Historik panel as its own
         // raw key. Bumping this number is the moment to add it.
-        assertEquals(26, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
+        assertEquals(27, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
         assertTrue(IssueAuditService.ACTIONS.containsAll(
                         List.of("LINK_SET", "LINK_CLEARED", "INTERVAL_CHANGED", "NAME_CHANGED",
                                 "CRITERIA_OVERRIDDEN")),

@@ -65,7 +65,7 @@ public final class MembershipPredicate {
             return MemberDecision.excluded(m.uid(), MembershipReason.STATUS_NOT_PUBLIC);
         }
 
-        if (!c.acceptsSeries(m.messageSeriesId()) || !c.acceptsType(m.type())) {
+        if (!c.acceptsSeries(m.messageSeriesId()) || !c.acceptsType(m.type()) || !acceptsFacets(m, c)) {
             return MemberDecision.excluded(m.uid(), MembershipReason.CRITERIA_MISMATCH);
         }
 
@@ -106,6 +106,46 @@ public final class MembershipPredicate {
                 c.timeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL
                         ? MembershipReason.IN_INTERVAL
                         : MembershipReason.IN_FORCE_AT_CUTOFF);
+    }
+
+    /**
+     * The operands that are not on the message's own row: main type, area,
+     * category, chart.
+     *
+     * Each is consulted ONLY when the criteria select on it, so facts read
+     * without a facet stay perfectly valid for criteria that never ask about it.
+     * When the criteria DO ask and the fact is absent, this raises rather than
+     * judging: absent and empty would otherwise decide the same way, and the
+     * decision they share -- "no match" -- is the one that empties an issue while
+     * every row of it looks correct.
+     */
+    private static boolean acceptsFacets(MessageFacts m, ResolvedCriteria c) {
+        if (!c.mainTypes().isEmpty()
+                && !c.acceptsMainType(required(m.mainType(), m, "mainType", "main-type"))) {
+            return false;
+        }
+        if (c.readsAreas() && !c.acceptsAreas(required(m.areaMrns(), m, "areaMrns", "area"))) {
+            return false;
+        }
+        if (c.readsCategories()
+                && !c.acceptsCategories(required(m.categoryMrns(), m, "categoryMrns", "category"))) {
+            return false;
+        }
+        if (c.readsCharts() && !c.acceptsCharts(required(m.chartNumbers(), m, "chartNumbers", "chart"))) {
+            return false;
+        }
+        return true;
+    }
+
+    /** A fact the criteria need, or a refusal naming the message and the facet. */
+    private static <T> T required(T fact, MessageFacts m, String field, String operand) {
+        if (fact == null) {
+            throw new IllegalStateException("the criteria select on " + operand
+                    + ", but the facts for message " + m.uid() + " were read without " + field
+                    + ". Judging them anyway would reject every candidate and publish an empty issue "
+                    + "that looks correct row by row.");
+        }
+        return fact;
     }
 
     /** Decides a whole candidate set, preserving order, keyed on uid. */

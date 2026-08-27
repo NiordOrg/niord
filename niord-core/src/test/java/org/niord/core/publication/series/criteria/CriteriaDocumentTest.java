@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.niord.core.publication.series.BindsRule;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.model.message.MainType;
 import org.niord.model.message.Type;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,6 +46,33 @@ public class CriteriaDocumentTest {
         MessageTypeCriterionVo n = new MessageTypeCriterionVo();
         n.setValues(new java.util.ArrayList<>(List.of(names)));
         return n;
+    }
+
+    private static IssueCriterionVo node(CriterionKind kind, String... values) {
+        IssueCriterionVo n = switch (kind) {
+            case MESSAGE_SERIES -> new MessageSeriesCriterionVo();
+            case MESSAGE_TYPE -> new MessageTypeCriterionVo();
+            case MESSAGE_MAIN_TYPE -> new MessageMainTypeCriterionVo();
+            case DOMAIN -> new DomainCriterionVo();
+            case AREA -> new AreaCriterionVo();
+            case CATEGORY -> new CategoryCriterionVo();
+            case CHART -> new ChartCriterionVo();
+        };
+        n.setValues(new java.util.ArrayList<>(List.of(values)));
+        return n;
+    }
+
+    /** A value of the right shape for each kind, so a document can be built for any of them. */
+    private static String sampleValue(CriterionKind kind) {
+        return switch (kind) {
+            case MESSAGE_SERIES -> "dma-nm";
+            case MESSAGE_TYPE -> "TEMPORARY_NOTICE";
+            case MESSAGE_MAIN_TYPE -> "NM";
+            case DOMAIN -> "niord-nm";
+            case AREA -> "urn:mrn:iala:aton:dk:area:1";
+            case CATEGORY -> "urn:mrn:iala:aton:dk:category:1";
+            case CHART -> "101";
+        };
     }
 
     // ------------------------------------------------ the four production shapes
@@ -139,6 +168,68 @@ public class CriteriaDocumentTest {
         }
     }
 
+    // ------------------------------------------- the whole vocabulary resolves
+
+    /**
+     * No kind in the vocabulary refuses to resolve.
+     *
+     * Four of them used to throw, which meant a series could pass /validate and
+     * then fail at publish -- the one step with no way back. Driven off the enum
+     * rather than a list, so a kind added later is covered by this the day it
+     * appears, and the criteria probe the editor calls on every edit cannot 500
+     * on a document the same editor is allowed to save.
+     */
+    @Test
+    public void everyKindInTheVocabularyResolves() {
+        for (CriterionKind kind : CriterionKind.values()) {
+            IssueCriteriaVo d = kind == CriterionKind.MESSAGE_SERIES
+                    ? doc(node(kind, sampleValue(kind)))
+                    : doc(series("dma-nm"), node(kind, sampleValue(kind)));
+
+            ResolvedCriteria resolved = CriteriaResolver.resolve(d,
+                    TimeRelation.PUBLISHED_IN_INTERVAL, false,
+                    domainId -> Set.of("dma-nm"));
+
+            assertNotNull(resolved, kind.wireName() + " resolved to nothing");
+        }
+    }
+
+    /** Each of the four operands lands in its own field, as written. */
+    @Test
+    public void theFourEntityKindsResolveIntoTheirOwnOperands() {
+        IssueCriteriaVo d = doc(
+                series("dma-nm"),
+                node(CriterionKind.MESSAGE_MAIN_TYPE, "NM"),
+                node(CriterionKind.AREA, "urn:mrn:iala:aton:dk:area:kattegat"),
+                node(CriterionKind.CATEGORY, "urn:mrn:iala:aton:dk:category:firing"),
+                node(CriterionKind.CHART, "101", "102"));
+
+        ResolvedCriteria r = CriteriaResolver.resolve(d, TimeRelation.PUBLISHED_IN_INTERVAL, false,
+                CriteriaResolver.NO_DOMAINS);
+
+        assertEquals(Set.of(MainType.NM), r.mainTypes());
+        assertEquals(Set.of("urn:mrn:iala:aton:dk:area:kattegat"), r.areaIds());
+        assertEquals(Set.of("urn:mrn:iala:aton:dk:category:firing"), r.categoryIds());
+        assertEquals(Set.of("101", "102"), r.chartNumbers());
+    }
+
+    /**
+     * The MRN is carried as written rather than expanded here.
+     *
+     * Expanding it would need a database, and this envelope is what a published
+     * issue freezes to record what it selected -- a row id frozen years ago is
+     * not something a reader can check, and an MRN is.
+     */
+    @Test
+    public void anAreaOperandIsCarriedAsTheMrnItWasWrittenAs() {
+        ResolvedCriteria r = CriteriaResolver.resolve(
+                doc(series("dma-nm"), node(CriterionKind.AREA, "urn:mrn:iala:aton:dk:area:7")),
+                TimeRelation.PUBLISHED_IN_INTERVAL, false, CriteriaResolver.NO_DOMAINS);
+
+        assertTrue(r.readsAreas(), "the resolved criteria do not report that they select on area");
+        assertEquals("urn:mrn:iala:aton:dk:area:7", r.areaIds().iterator().next());
+    }
+
     // ---------------------------------------------------------- C-1 .. C-10
 
     @BindsRule({"C-1", "C-2", "C-3", "C-4", "C-6", "C-7", "C-8", "C-9"})
@@ -178,6 +269,11 @@ public class CriteriaDocumentTest {
 
         // C-1 empty operand list
         assertRule("C-1", doc(series("dma-nm"), types()), "must not be empty");
+
+        // C-4, for the kinds that resolve to an enum constant with no lookup.
+        assertRule("C-4", doc(series("dma-nm"), types("NOT_A_TYPE")), "is not a message type");
+        assertRule("C-4", doc(series("dma-nm"), node(CriterionKind.MESSAGE_MAIN_TYPE, "NX")),
+                "is not a main type");
     }
 
     private void assertRule(String rule, IssueCriteriaVo d, String messageFragment) {

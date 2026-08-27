@@ -3,9 +3,10 @@ package org.niord.core.publication.series.criteria;
 /**
  * The node kinds. The wire name of each is the Jackson discriminator value.
  *
- * Only messageSeries and messageType occur in production. The rest are
- * forward-looking vocabulary, carried so that using one later needs no format
- * change.
+ * Every one of them resolves and queries end to end. Four of them used to be
+ * carried as vocabulary the resolver refused, which meant a series could pass
+ * validation with a criterion that only failed when somebody pressed publish --
+ * the one moment in the whole flow with no way back.
  */
 public enum CriterionKind {
     MESSAGE_SERIES("messageSeries"),

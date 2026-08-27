@@ -125,6 +125,24 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     @Column(columnDefinition = "TEXT")
     private String snapshotSeriesIds;
 
+    // The rest of the resolved operands, recorded so a published issue can still
+    // say what it selected on. The criteria snapshot holds the DOCUMENT; these
+    // hold what it resolved to, and the two answer different questions -- a
+    // domain node expands to a series set that the document never spells out, and
+    // an area MRN that has since been renamed is only recoverable from what was
+    // written down at the time.
+    @Column(length = 255)
+    private String snapshotMainTypes;
+
+    @Column(columnDefinition = "TEXT")
+    private String snapshotAreaIds;
+
+    @Column(columnDefinition = "TEXT")
+    private String snapshotCategoryIds;
+
+    @Column(columnDefinition = "TEXT")
+    private String snapshotChartNumbers;
+
     @Column(length = 255)
     private String snapshotDomainId;
 
@@ -385,6 +403,38 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
 
     public void setSnapshotSeriesIds(String snapshotSeriesIds) {
         this.snapshotSeriesIds = snapshotSeriesIds;
+    }
+
+    public String getSnapshotMainTypes() {
+        return snapshotMainTypes;
+    }
+
+    public void setSnapshotMainTypes(String snapshotMainTypes) {
+        this.snapshotMainTypes = snapshotMainTypes;
+    }
+
+    public String getSnapshotAreaIds() {
+        return snapshotAreaIds;
+    }
+
+    public void setSnapshotAreaIds(String snapshotAreaIds) {
+        this.snapshotAreaIds = snapshotAreaIds;
+    }
+
+    public String getSnapshotCategoryIds() {
+        return snapshotCategoryIds;
+    }
+
+    public void setSnapshotCategoryIds(String snapshotCategoryIds) {
+        this.snapshotCategoryIds = snapshotCategoryIds;
+    }
+
+    public String getSnapshotChartNumbers() {
+        return snapshotChartNumbers;
+    }
+
+    public void setSnapshotChartNumbers(String snapshotChartNumbers) {
+        this.snapshotChartNumbers = snapshotChartNumbers;
     }
 
     public String getSnapshotDomainId() {

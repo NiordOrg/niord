@@ -118,6 +118,36 @@ public class IssuePublishService extends BaseService {
             Integer successorId) {
     }
 
+    /**
+     * What an amend asked for.
+     *
+     * No stamp: an amend re-runs the decision against the cut-off the issue
+     * already carries. Offering one here would be offering to move it, which is
+     * the one thing this action must not do.
+     */
+    public record AmendRequest(
+            boolean regenerate,
+            Set<String> acknowledgedWarnings,
+            User actor,
+            String reason) {
+    }
+
+    /** What an amend did. The stamp is the issue's own, unchanged. */
+    public record AmendResult(
+            Integer issueId,
+            Date stampedAt,
+            int memberCount,
+            List<String> unacknowledgedWarnings,
+            List<String> archivePaths) {
+    }
+
+    /** What the shared resolve-freeze-write core concluded, for its caller's audit entry. */
+    private record Frozen(
+            int memberCount,
+            List<String> unacknowledgedWarnings,
+            List<String> archivePaths) {
+    }
+
     /** The issue was already published. Carries the winner's stamp. */
     public static class AlreadyPublishedException extends RuntimeException {
         private final Date stampedAt;
@@ -197,6 +227,104 @@ public class IssuePublishService extends BaseService {
         issue.setCutoffStampedAt(stamp);
         issue.setCutoffSource("STAMPED");
 
+        Frozen frozen = resolveFreezeAndWrite(issue, series, request, stamp, stamp);
+        List<String> unacknowledged = frozen.unacknowledgedWarnings();
+
+        // --- 11. STATUS FLIP ----------------------------------------------
+        issue.setStatus(IssueStatus.PUBLISHED);
+        issue.setPublishedAt(stamp);
+        // NULL under AUTO_RELEASE. A fabricated actor is worse than a null one:
+        // it makes an unattended release look like somebody signed it off.
+        issue.setPublishedBy(series.getReleaseMode() == ReleaseMode.AUTO_RELEASE ? null : request.actor());
+
+        // --- 12. OPEN the window, and cap SELF if a successor exists ------
+        openWindow(issue, stamp);
+        capSelfAgainstSuccessor(issue, series, request.actor());
+
+        // --- 13. CAP the predecessor --------------------------------------
+        capPredecessor(issue, series, stamp, request.actor());
+
+        // --- 14. SUCCESSOR -------------------------------------------------
+        PublicationIssue successor = createSuccessorIfDue(issue, series, stamp);
+
+        // --- 15. AUDIT ------------------------------------------------------
+        audit.published(issue, request.actor(), series.getReleaseMode(), stamp,
+                frozen.memberCount(), unacknowledged, frozen.archivePaths());
+        if (successor != null) {
+            audit.createdFromPreviousPublish(successor, issue);
+        }
+
+        em.merge(issue);
+        return new PublishResult(issue.getId(), stamp, frozen.memberCount(), unacknowledged,
+                successor == null ? null : successor.getId());
+    }
+
+    /**
+     * T2. Amend: the same content decision, taken again, in place.
+     *
+     * Everything a citation or the public site keys on is left exactly as it
+     * was -- publicId, the file name and path, the links, the public window and,
+     * above all, the stamped cut-off. An amend does not re-decide WHEN the
+     * content was closed; it re-runs the resolution against that same instant
+     * and replaces the document with what it produces now. That is what makes
+     * "one public version" true: there is no second edition and no second link,
+     * so a reader who followed a citation last week reads the corrected document
+     * at the same address.
+     *
+     * The previous bytes are archived first, by the same rule publish uses and
+     * for the same reason: C3 keeps every generation, and an overwrite that
+     * precedes its archive has destroyed what it was meant to preserve.
+     */
+    @Transactional
+    public AmendResult amend(Integer issueId, AmendRequest request) {
+        PublicationIssue issue = em.find(PublicationIssue.class, issueId, LockModeType.PESSIMISTIC_WRITE);
+        if (issue == null) {
+            throw new IllegalArgumentException("no such issue: " + issueId);
+        }
+        if (issue.getStatus() != IssueStatus.PUBLISHED) {
+            throw new IssueLifecycleService.TransitionRefusedException("ISSUE_NOT_PUBLISHED",
+                    "only a published issue can be amended; an open one is still being worked on "
+                            + "and a retired one is no longer the public version");
+        }
+        if (request.reason() == null || request.reason().isBlank()) {
+            throw new IssueLifecycleService.TransitionRefusedException("REASON_REQUIRED",
+                    "an amend replaces a document people have already read; it must say why");
+        }
+
+        PublicationSeries series = issue.getSeries();
+        // The cut-off is NOT re-taken. It is the instant this issue's content was
+        // decided at, and it is the one thing an amend must not move -- moving it
+        // would silently re-decide the membership of the issue before it too.
+        Date cutoff = issue.getCutoffStampedAt();
+        Date now = new Date();
+
+        Frozen frozen = resolveFreezeAndWrite(issue, series,
+                new PublishRequest(request.regenerate(), request.acknowledgedWarnings(),
+                        request.actor(), null),
+                cutoff, now);
+
+        audit.amended(issue, request.actor(), request.reason(), frozen.archivePaths());
+        em.merge(issue);
+        return new AmendResult(issue.getId(), cutoff, frozen.memberCount(),
+                frozen.unacknowledgedWarnings(), frozen.archivePaths());
+    }
+
+    // =====================================================================
+
+    /**
+     * Steps 3 to 10, which publish and amend share.
+     *
+     * Two instants, deliberately separate. The CUT-OFF decides the content: the
+     * resolution window closes at it, and the file name derives from it, which is
+     * what makes an amended document land on the path the original citation
+     * points at. The FREEZE moment is when this act happened: the snapshot header
+     * records it, and the archive entry is named by it, so two amends of one
+     * issue do not write over each other's archived generation. For a publish the
+     * two are the same instant, and nothing about publish changes.
+     */
+    private Frozen resolveFreezeAndWrite(PublicationIssue issue, PublicationSeries series,
+                                         PublishRequest request, Date cutoff, Date frozenAt) {
+
         // --- 3. RESOLVE, in process ---------------------------------------
         // Never through the search REST layer: it day-snaps the interval and
         // forces PUBLISHED-only.
@@ -219,7 +347,7 @@ public class IssuePublishService extends BaseService {
         // lines below, when it sets the status a published issue answers from.
         ResolvedCriteria resolved = hasMembership ? EffectiveCriteria.resolvedFor(issue) : null;
 
-        Interval window = new Interval(issue.getIntervalFrom(), stamp);
+        Interval window = new Interval(issue.getIntervalFrom(), cutoff);
 
         // The gate is on running the QUERY, not on having members.
         //
@@ -273,7 +401,7 @@ public class IssuePublishService extends BaseService {
         freezeMembers(issue, ordered, sortIndex, resolution);
 
         // --- 7. FREEZE the snapshot header --------------------------------
-        issue.setSnapshotFrozenAt(stamp);
+        issue.setSnapshotFrozenAt(frozenAt);
         issue.setSnapshotTimeRelation(series.getTimeRelation() == null ? null : series.getTimeRelation().name());
         issue.setSnapshotAliveAtCutoff(series.getAliveAtCutoff());
         // The interval the resolve ACTUALLY used. It exists because a later
@@ -284,6 +412,15 @@ public class IssuePublishService extends BaseService {
         issue.setSnapshotSortOrder(sort.direction().name());
         issue.setSnapshotSeriesIds(hasMembership
                 ? String.join(",", resolved.messageSeriesIds()) : null);
+        // The other resolved operands, on the same terms as the series ids: what
+        // this release actually selected on, in the form it was written. NULL
+        // where the criteria did not select on it at all -- an empty string here
+        // would read as "selected on area, and no area matched", which is a
+        // different publication and an unanswerable question years later.
+        issue.setSnapshotMainTypes(hasMembership ? joinedNames(resolved.mainTypes()) : null);
+        issue.setSnapshotAreaIds(hasMembership ? joined(resolved.areaIds()) : null);
+        issue.setSnapshotCategoryIds(hasMembership ? joined(resolved.categoryIds()) : null);
+        issue.setSnapshotChartNumbers(hasMembership ? joined(resolved.chartNumbers()) : null);
         // The EFFECTIVE document at freeze, which is what a published issue is later
         // asked about. The series' criteria stay editable and the override is not
         // frozen anywhere else, so recording the series' copy here would leave a
@@ -306,41 +443,25 @@ public class IssuePublishService extends BaseService {
         }
 
         // --- 9. ARCHIVE, before anything is overwritten -------------------
-        List<String> archived = archiveExistingFiles(issue, stamp);
+        List<String> archived = archiveExistingFiles(issue, frozenAt);
 
         // --- 10. FILES ----------------------------------------------------
-        writeFiles(issue, series, ordered, request.regenerate(), stamp);
+        writeFiles(issue, series, ordered, request.regenerate(), cutoff);
 
-        // --- 11. STATUS FLIP ----------------------------------------------
-        issue.setStatus(IssueStatus.PUBLISHED);
-        issue.setPublishedAt(stamp);
-        // NULL under AUTO_RELEASE. A fabricated actor is worse than a null one:
-        // it makes an unattended release look like somebody signed it off.
-        issue.setPublishedBy(series.getReleaseMode() == ReleaseMode.AUTO_RELEASE ? null : request.actor());
-
-        // --- 12. OPEN the window, and cap SELF if a successor exists ------
-        openWindow(issue, stamp);
-        capSelfAgainstSuccessor(issue, series, request.actor());
-
-        // --- 13. CAP the predecessor --------------------------------------
-        capPredecessor(issue, series, stamp, request.actor());
-
-        // --- 14. SUCCESSOR -------------------------------------------------
-        PublicationIssue successor = createSuccessorIfDue(issue, series, stamp);
-
-        // --- 15. AUDIT ------------------------------------------------------
-        audit.published(issue, request.actor(), series.getReleaseMode(), stamp,
-                members.size(), unacknowledged, archived);
-        if (successor != null) {
-            audit.createdFromPreviousPublish(successor, issue);
-        }
-
-        em.merge(issue);
-        return new PublishResult(issue.getId(), stamp, members.size(), unacknowledged,
-                successor == null ? null : successor.getId());
+        return new Frozen(members.size(), unacknowledged, archived);
     }
 
     // =====================================================================
+
+    /** An operand list as it was written, or null when there was none. */
+    private static String joined(Set<String> operands) {
+        return operands.isEmpty() ? null : String.join(",", operands);
+    }
+
+    private static String joinedNames(Set<? extends Enum<?>> operands) {
+        return operands.isEmpty() ? null
+                : operands.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(","));
+    }
 
     private ResolvedCriteria criteriaOf(PublicationSeries series) {
         return org.niord.core.publication.series.criteria.CriteriaResolver.resolve(

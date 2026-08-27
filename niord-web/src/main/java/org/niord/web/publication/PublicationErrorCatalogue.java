@@ -123,6 +123,28 @@ public final class PublicationErrorCatalogue {
         put("REPORT_NOT_CONFIGURED", 409);
         put("SERIES_ID_TAKEN", 409);
         put("CATEGORY_IN_USE", 409);
+        // A period a released issue already covered. 409 rather than 400: the
+        // request is well formed, and a different period would succeed.
+        put("ISSUE_INTERVAL_OVERLAP", 409);
+        // An action that changes what the public reads must say why. 400: no
+        // retry of the same request can succeed.
+        put("REASON_REQUIRED", 400);
+        put("INVALID_STATUS_TRANSITION", 400);
+        put("INVALID_STATUS", 400);
+        // A setting the model carries and the system cannot yet honour.
+        put("NOT_YET_SUPPORTED", 400);
+        put("PRINT_SETTING_NOT_ALLOWED", 400);
+        // A curation decision that named nothing, too much, or a message the
+        // issue carries no decision about.
+        put("NO_MESSAGES", 400);
+        put("TOO_MANY_MESSAGES", 400);
+        put("OVERRIDE_NOT_FOUND", 404);
+        // The cutover flip, refused. 409: the request is well formed and the
+        // same one succeeds once the evidence is there.
+        put("NOT_READY_FOR_CUTOVER", 409);
+        put("SERIES_NOT_ACTIVE", 409);
+        put("CATEGORY_INVALID", 400);
+        put("CATEGORY_ID_TAKEN", 409);
 
         // 500 -- the server could not do what it was asked, and the caller did
         // nothing wrong. ARCHIVE_FAILED is here deliberately: it aborts a publish,

@@ -66,7 +66,10 @@ public class IssueAuditService extends BaseService {
             "VISIBILITY_CAPPED",
             "IMPORTED",
             "SERIES_ACTIVATED",
-            "SERIES_RETIRED"));
+            "SERIES_RETIRED",
+            // Which model answers the public for this series. Visible to every
+            // anonymous reader the moment it changes, so it is its own action.
+            "SERIES_AUTHORITY_CHANGED"));
 
     /** An action outside the vocabulary. */
     public static class UnknownAuditActionException extends RuntimeException {
@@ -172,6 +175,30 @@ public class IssueAuditService extends BaseService {
     }
 
     /** A series-level event. DM-Q2: the audit is generalised, so this has no issue. */
+    /**
+     * Which model serves this series to the public, changed.
+     *
+     * Its own entry rather than a SERIES_ACTIVATED with a note, because this is
+     * the one change an anonymous reader can see happen: before it, the public
+     * list comes from one place and after it from another. The detail carries
+     * both ends and whether the readiness precondition was overridden, so the
+     * question "who flipped this, and did they know it was not ready" has an
+     * answer that does not depend on anyone remembering.
+     */
+    public IssueAuditEntry seriesAuthority(PublicationSeries series, User actor,
+                                           Map<String, Object> detail, String reason) {
+        assertKnown("SERIES_AUTHORITY_CHANGED");
+        IssueAuditEntry entry = new IssueAuditEntry();
+        entry.setSeries(series);
+        entry.setAction("SERIES_AUTHORITY_CHANGED");
+        entry.setActorKind(actor == null ? ActorKind.SYSTEM : ActorKind.USER);
+        entry.setUser(actor);
+        entry.setReason(reason);
+        entry.setDetail(detail);
+        em.persist(entry);
+        return entry;
+    }
+
     public IssueAuditEntry series(PublicationSeries series, User actor, String action, String reason) {
         assertKnown(action);
         IssueAuditEntry entry = new IssueAuditEntry();
