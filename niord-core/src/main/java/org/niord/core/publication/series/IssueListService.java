@@ -145,7 +145,8 @@ public class IssueListService {
                 // let the arithmetic run off a null.
                 continue;
             }
-            out.add(new GapSynthesis.Issue(issue.getPublicId(), cutoff, cutoffSourceOf(issue)));
+            out.add(new GapSynthesis.Issue(issue.getPublicId(), cutoff, cutoffSourceOf(issue),
+                    issue.getIntervalFrom(), issue.getStatus() == IssueStatus.OPEN));
         }
         return out;
     }

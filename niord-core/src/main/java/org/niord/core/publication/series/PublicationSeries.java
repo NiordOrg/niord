@@ -150,6 +150,16 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     @Column(nullable = false)
     private ReleaseMode releaseMode = ReleaseMode.MANUAL_GATE;
 
+    /**
+     * Where an issue's cut-off falls by default when it is published -- see
+     * {@link CutoffDefault}. RELEASE_MOMENT for the weekly shape; the yearly
+     * shapes are calendar-driven, and the importer and the create form decide
+     * them from cadence and time relation.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CutoffDefault cutoffDefault = CutoffDefault.RELEASE_MOMENT;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NextIssueCreation nextIssueCreation = NextIssueCreation.AUTO_ON_PUBLISH;
@@ -276,6 +286,14 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
     public void setFirstIssueStartsAt(Date firstIssueStartsAt) {
         this.firstIssueStartsAt = firstIssueStartsAt;
+    }
+
+    public CutoffDefault getCutoffDefault() {
+        return cutoffDefault;
+    }
+
+    public void setCutoffDefault(CutoffDefault cutoffDefault) {
+        this.cutoffDefault = cutoffDefault;
     }
 
     public TimeRelation getTimeRelation() {
@@ -502,6 +520,12 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         if (sentKind != null) {
             kind = sentKind;
         }
+        // Same silence rule as the kind: a form written before this field
+        // existed omits it, and omission keeps the stored default.
+        CutoffDefault sentCutoffDefault = enumOf(CutoffDefault.class, vo.getCutoffDefault(), "cutoffDefault");
+        if (sentCutoffDefault != null) {
+            cutoffDefault = sentCutoffDefault;
+        }
         nominalCutoffDay = enumOf(CutoffDay.class, vo.getNominalCutoffDay(), "nominalCutoffDay");
         nominalCutoffDayOfMonth = vo.getNominalCutoffDayOfMonth();
         nominalCutoffMonth = vo.getNominalCutoffMonth();
@@ -644,6 +668,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             sys.setContentMode(contentMode == null ? null : contentMode.name());
             sys.setCadence(cadence == null ? null : cadence.name());
             sys.setKind(kind == null ? null : kind.name());
+            sys.setCutoffDefault(cutoffDefault == null ? null : cutoffDefault.name());
             sys.setNominalCutoffDay(nominalCutoffDay == null ? null : nominalCutoffDay.name());
             sys.setNominalCutoffDayOfMonth(nominalCutoffDayOfMonth);
             sys.setNominalCutoffMonth(nominalCutoffMonth);

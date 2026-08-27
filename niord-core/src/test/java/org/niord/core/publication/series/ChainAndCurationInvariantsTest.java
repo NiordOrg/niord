@@ -79,7 +79,7 @@ public class ChainAndCurationInvariantsTest {
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
-        s.setReportId("fm-report");
+        // No report: these tests are about the chain and the curation, and a series with a report now renders a document at publish.
         s.setCategory(c);
         s.getLanguages().add("da");
 
@@ -98,7 +98,7 @@ public class ChainAndCurationInvariantsTest {
         PublicationIssue i = lifecycle.create(s, intervalFrom, IntervalBoundSource.STAMPED, user());
         em.flush();
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         em.flush();
         return em.find(PublicationIssue.class, i.getId());
     }

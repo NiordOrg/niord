@@ -6,6 +6,7 @@ import jakarta.transaction.Transactional;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -67,6 +68,10 @@ public class IssueCurationService extends BaseService {
         PublicationIssue issue = override.getIssue();
         String uid = override.getMessageUid();
         em.remove(em.contains(override) ? override : em.merge(override));
+        // The member set changed, and the issue's own stamp is what says so --
+        // the preview's freshness is read against it.
+        issue.setUpdated(new Date());
+        em.merge(issue);
         audit.override(issue, actor, "OVERRIDE_REMOVED", uid, null);
     }
 
@@ -125,6 +130,9 @@ public class IssueCurationService extends BaseService {
         override.setAuthor(author);
         override.setReason(reason);
         em.persist(override);
+        // The member set changed; see remove().
+        issue.setUpdated(new Date());
+        em.merge(issue);
 
         audit.override(issue, author, action, messageUid, reason);
         return override;

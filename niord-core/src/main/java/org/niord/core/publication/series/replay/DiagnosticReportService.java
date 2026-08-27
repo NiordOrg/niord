@@ -94,18 +94,17 @@ public class DiagnosticReportService {
 
         List<String> notReady = new ArrayList<>();
         for (Map.Entry<String, List<ShadowDiffRun>> e : bySeries.entrySet()) {
-            List<ShadowDiffRun> seriesRuns = e.getValue();
-            int streak = consecutiveGreen(seriesRuns);
-            long skipped = seriesRuns.stream().filter(r -> r.getSkipReason() != null).count();
-            boolean ready = streak >= REQUIRED_GREEN_RELEASES;
+            List<ShadowDiffRun> seriesRuns = e.getValue();   // newest release first
+            ShadowDiffService.Readiness r = ShadowDiffService.readinessOf(seriesRuns);
 
-            if (!ready) {
+            if (!r.ready()) {
                 notReady.add(e.getKey());
             }
-            md.append("| `").append(e.getKey()).append("` | ").append(streak)
-              .append(" | ").append(seriesRuns.size())
-              .append(" | ").append(skipped)
-              .append(" | ").append(ready ? "**yes**" : "no").append(" |\n");
+            md.append("| `").append(e.getKey()).append("` | ").append(r.consecutiveGreen())
+              .append(" | ").append(r.runs())
+              .append(" | ").append(r.skipped())
+              .append(" | ").append(r.exempt() ? "exempt — not comparable" : r.ready() ? "**yes**" : "no")
+              .append(" |\n");
         }
 
         md.append("\nA **skipped** release does not extend a streak. A week nobody could compare ")
@@ -196,15 +195,9 @@ public class DiagnosticReportService {
      * question is "have the last N releases agreed", and a release nobody
      * compared has not agreed -- it has not been asked.
      */
-    static int consecutiveGreen(List<ShadowDiffRun> newestFirst) {
-        int streak = 0;
-        for (ShadowDiffRun run : newestFirst) {
-            if (run.getSkipReason() != null || !run.isGreen()) {
-                return streak;
-            }
-            streak++;
-        }
-        return streak;
+    /** The one readiness rule, kept here by name for its callers. */
+    static int consecutiveGreen(List<ShadowDiffRun> newestReleaseFirst) {
+        return ShadowDiffService.readinessOf(newestReleaseFirst).consecutiveGreen();
     }
 
     private static String uids(java.util.Set<String> uids) {

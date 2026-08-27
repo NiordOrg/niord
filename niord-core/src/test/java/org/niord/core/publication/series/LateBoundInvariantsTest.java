@@ -112,14 +112,25 @@ public class LateBoundInvariantsTest {
                 "in Copenhagen it is Monday, so week 2 -- reading the wrong zone misnames the issue");
     }
 
-    /** A window spanning two weeks yields weekTo; one inside a single week does not. */
+    /**
+     * A window spanning two cadence PERIODS yields weekTo; a single period does
+     * not -- even though every ordinary Wednesday-to-Wednesday window straddles
+     * two ISO weeks. An issue is named for the week it closed in, and only a
+     * double week carries both numbers.
+     */
     @BindsRule({"I-15"})
     @Test
     public void aspanningWindowGetsAWeekToAndASingleWeekDoesNot() {
         IssueNaming.Numbers spanning =
-                IssueNaming.derive(at(2026, 1, 14, 12), at(2026, 1, 7, 12), CPH, null);
-        assertEquals(2, spanning.week(), "the from-week opens the range");
+                IssueNaming.derive(at(2026, 1, 14, 12), at(2025, 12, 31, 12), CPH, null);
+        assertEquals(2, spanning.week(), "the first week this issue closed opens the range");
         assertEquals(3, spanning.weekTo(), "and the cut-off week closes it");
+
+        IssueNaming.Numbers ordinary =
+                IssueNaming.derive(at(2026, 1, 14, 12), at(2026, 1, 7, 12), CPH, null);
+        assertEquals(3, ordinary.week(), "an ordinary week is named for the week it closed in");
+        assertNull(ordinary.weekTo(),
+                "a single period is not a range, however many ISO weeks its window touches");
 
         IssueNaming.Numbers single =
                 IssueNaming.derive(at(2026, 1, 14, 12), at(2026, 1, 12, 12), CPH, null);

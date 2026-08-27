@@ -225,9 +225,68 @@ public class ShadowDiffService {
                                 + "  SELECT r FROM ShadowDiffRun r "
                                 + "  WHERE r.legacyPublicationId = p.publicationId "
                                 + "  AND r.legacyUpdatedAt = p.updated "
-                                + "  AND r.skipReason IS NULL) "
+                                + "  AND (r.skipReason IS NULL OR r.skipReason NOT IN :transientSkips)) "
                                 + "ORDER BY p.updated", Publication.class)
+                .setParameter("transientSkips", TRANSIENT_SKIPS)
                 .getResultList();
+    }
+
+    /**
+     * The skips that are facts about state which can change, and so are retried.
+     *
+     * NO_IMPORTED_SERIES says the IMPORTED side was missing when the release was
+     * looked at -- an undone estate, an import not yet run -- and that side is
+     * replaced wholesale by the next import, so the skip is worth nothing once it
+     * lands. Every other skip is a fact about the LEGACY release or about the
+     * imported issue as this import wrote it: no member list, an empty tag, a
+     * file replaced by hand, a criteria override. Those do not clear by
+     * themselves, and re-selecting them every sweep is what kept the batch loop
+     * from ever finishing -- "wrote 7, remaining 8", forty times over -- while
+     * their fresh comparedAt stamps sat at the head of every series' list and
+     * broke the streak count. A re-import wipes the runs anyway.
+     */
+    static final Set<String> TRANSIENT_SKIPS = Set.of("NO_IMPORTED_SERIES");
+
+    /** What the runs of one series say about its readiness for cutover. */
+    public record Readiness(int consecutiveGreen, long runs, long skipped, boolean exempt, boolean ready) {
+    }
+
+    /** The streak the cutover precondition requires. */
+    public static final int REQUIRED_GREEN_RELEASES = 2;
+
+    /**
+     * ONE readiness rule, computed over a series' runs NEWEST RELEASE FIRST.
+     *
+     * The question is "have the last N releases agreed", so the order is the
+     * release's cut-off, never when the diff happened to run. A skipped run does
+     * not extend a streak: nothing was compared. And a series none of whose
+     * releases carries a member list -- an annex, an uploaded document -- can
+     * never be compared at all; it is EXEMPT rather than forever "no", and its
+     * evidence is the import figures and the public-feed diff of the rehearsal.
+     */
+    public static Readiness readinessOf(List<ShadowDiffRun> newestReleaseFirst) {
+        int streak = 0;
+        boolean broken = false;
+        long skipped = 0;
+        boolean allWithoutSemantics = !newestReleaseFirst.isEmpty();
+        for (ShadowDiffRun run : newestReleaseFirst) {
+            if (run.getSkipReason() != null) {
+                skipped++;
+            }
+            if (!"NO_MEMBERSHIP_SEMANTICS".equals(run.getSkipReason())) {
+                allWithoutSemantics = false;
+            }
+            if (!broken) {
+                if (run.getSkipReason() != null || !run.isGreen()) {
+                    broken = true;
+                } else {
+                    streak++;
+                }
+            }
+        }
+        boolean exempt = allWithoutSemantics;
+        return new Readiness(streak, newestReleaseFirst.size(), skipped, exempt,
+                exempt || streak >= REQUIRED_GREEN_RELEASES);
     }
 
     /**

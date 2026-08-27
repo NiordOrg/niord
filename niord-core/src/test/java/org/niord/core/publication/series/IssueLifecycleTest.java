@@ -67,7 +67,7 @@ public class IssueLifecycleTest {
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
-        s.setReportId("fm-report");
+        // No report: these tests are about the lifecycle, and a series with a report now renders a document at publish.
         s.setCategory(c);
         s.getLanguages().add("da");
 
@@ -111,7 +111,7 @@ public class IssueLifecycleTest {
         assertNotNull(minted, "publicId must exist from the moment of create -- message HTML cites it");
 
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -155,7 +155,7 @@ public class IssueLifecycleTest {
                 IntervalBoundSource.MANUAL, user());
         em.flush();
         publishService.publish(first.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue predecessor = em.find(PublicationIssue.class, first.getId());
@@ -188,7 +188,7 @@ public class IssueLifecycleTest {
                 IntervalBoundSource.STAMPED, user());
         em.flush();
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, i.getId());
@@ -238,7 +238,7 @@ public class IssueLifecycleTest {
                 IntervalBoundSource.STAMPED, user());
         em.flush();
         publishService.publish(published.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue live = em.find(PublicationIssue.class, published.getId());
@@ -318,7 +318,7 @@ public class IssueLifecycleTest {
                 IntervalBoundSource.STAMPED, user());
         em.flush();
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, i.getId());

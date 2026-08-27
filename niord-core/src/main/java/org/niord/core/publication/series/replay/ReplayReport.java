@@ -27,7 +27,13 @@ public class ReplayReport {
         /** No interval start, so there is no window to resolve over. */
         NO_INTERVAL,
         /** No cut-off, stamped or recovered, so the window has no end. */
-        NO_CUTOFF
+        NO_CUTOFF,
+        /**
+         * No snapshot header (time relation / alive-at-cut-off) on the issue. The
+         * replay reads the issue's own header and never the series' row, so a
+         * row without one is not comparable rather than comparable under a guess.
+         */
+        NO_SNAPSHOT_HEADER
     }
 
     /**

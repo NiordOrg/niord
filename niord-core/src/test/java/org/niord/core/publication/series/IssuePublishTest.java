@@ -52,6 +52,12 @@ public class IssuePublishTest {
     IssueAuditService auditService;
 
     @Inject
+    IssuePreviewService previews;
+
+    @Inject
+    PublicationPathService paths;
+
+    @Inject
     EntityManager em;
 
     @Inject
@@ -145,7 +151,7 @@ public class IssuePublishTest {
                 try {
                     go.await();
                     var result = publishService.publish(issueId,
-                            IssuePublishService.PublishRequest.manual(null));
+                            new IssuePublishService.PublishRequest(true, IssuePublishService.PublishRequest.ALL_WARNINGS, null, null));
                     winners.incrementAndGet();
                     winningStamp.set(result.stampedAt());
                 } catch (IssuePublishService.AlreadyPublishedException e) {
@@ -184,7 +190,7 @@ public class IssuePublishTest {
         em.flush();
 
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, pastStamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, pastStamp));
 
         assertEquals(pastStamp, result.stampedAt());
 
@@ -208,7 +214,7 @@ public class IssuePublishTest {
         em.flush();
 
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -268,7 +274,7 @@ public class IssuePublishTest {
         em.flush();
 
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -309,7 +315,7 @@ public class IssuePublishTest {
         em.flush();
 
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -331,7 +337,7 @@ public class IssuePublishTest {
         em.flush();
 
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -364,7 +370,7 @@ public class IssuePublishTest {
         em.flush();
 
         publishService.publish(recovered.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, recoveredStamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, recoveredStamp));
         em.flush();
         em.clear();
 
@@ -401,7 +407,7 @@ public class IssuePublishTest {
         em.flush();
 
         publishService.publish(next.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, newStamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
 
         PublicationIssue after = em.find(PublicationIssue.class, predecessor.getId());
@@ -424,7 +430,7 @@ public class IssuePublishTest {
         em.flush();
 
         publishService.publish(next.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, newStamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
 
         PublicationIssue after = em.find(PublicationIssue.class, retired.getId());
@@ -448,7 +454,7 @@ public class IssuePublishTest {
         em.flush();
 
         publishService.publish(next.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, newStamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
 
         PublicationIssue after = em.find(PublicationIssue.class, manual.getId());
@@ -477,7 +483,7 @@ public class IssuePublishTest {
         em.flush();
 
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNotNull(result.successorId());
 
         em.flush();
@@ -506,7 +512,7 @@ public class IssuePublishTest {
         PublicationIssue i = issue(all, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNotNull(result.successorId(), "no successor was created when every clause held");
 
         em.flush();
@@ -532,7 +538,7 @@ public class IssuePublishTest {
         PublicationIssue i = issue(s, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNull(result.successorId(), "a successor was created for a series that " + why);
     }
 
@@ -587,7 +593,7 @@ public class IssuePublishTest {
         // The count is a tripwire, not a rule: every action needs a translation
         // key, and one added without one renders in the Historik panel as its own
         // raw key. Bumping this number is the moment to add it.
-        assertEquals(25, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
+        assertEquals(26, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
         assertTrue(IssueAuditService.ACTIONS.containsAll(
                         List.of("LINK_SET", "LINK_CLEARED", "INTERVAL_CHANGED", "NAME_CHANGED",
                                 "CRITERIA_OVERRIDDEN")),
@@ -606,14 +612,104 @@ public class IssuePublishTest {
 
         Date stamp = new Date(1_700_000_000_000L);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         em.flush();
 
         IssuePublishService.AlreadyPublishedException e =
                 assertThrows(IssuePublishService.AlreadyPublishedException.class,
                         () -> publishService.publish(i.getId(),
-                                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date())));
+                                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date())));
         assertEquals("ISSUE_ALREADY_PUBLISHED", e.code());
         assertEquals(stamp, e.stampedAt(), "the refusal did not carry the original stamp");
+    }
+
+    // ============================================================ step 3b: warnings
+
+    /**
+     * A warning nobody acknowledged refuses the publish BEFORE anything is frozen
+     * or written. The issue stays OPEN with no member rows and no PUBLISHED entry;
+     * the refusal names the codes so the dialog can list them.
+     */
+    @Test
+    @Transactional
+    public void anUnacknowledgedWarningRefusesBeforeAnythingIsFrozen() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        IssuePublishService.WarningsNotAcknowledgedException e =
+                assertThrows(IssuePublishService.WarningsNotAcknowledgedException.class,
+                        () -> publishService.publish(i.getId(),
+                                new IssuePublishService.PublishRequest(false, Set.of(), null,
+                                        new Date(1_700_000_000_000L))));
+        assertEquals("WARNING_NOT_ACKNOWLEDGED", e.code());
+        assertFalse(e.codes().isEmpty(), "the refusal names no codes");
+
+        assertEquals(IssueStatus.OPEN, i.getStatus(), "the status flipped despite the refusal");
+        assertEquals(0L, em.createQuery("SELECT COUNT(m) FROM IssueMember m WHERE m.issue = :i", Long.class)
+                .setParameter("i", i).getSingleResult(), "member rows were frozen despite the refusal");
+        assertTrue(auditService.forIssue(i).stream().noneMatch(a -> "PUBLISHED".equals(a.getAction())),
+                "a PUBLISHED entry was written despite the refusal");
+
+        // Acknowledging exactly those codes is what lets the same publish through.
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(false, Set.copyOf(e.codes()), null,
+                        new Date(1_700_000_000_000L)));
+        assertEquals(IssueStatus.PUBLISHED, i.getStatus());
+    }
+
+    // ============================================================ step 10: the document
+
+    /** 10b. Not regenerating promotes the newest preview to the official file. */
+    @Test
+    @Transactional
+    public void notRegeneratingPromotesTheNewestPreview() throws Exception {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        s.setReportId("some-report");
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        previews.record(i, "da", "preview.pdf", "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssueDesc da = i.getDescs().stream().filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow();
+        assertNotNull(da.getFilePath(), "the language has no document after publish");
+        assertEquals(FileSource.GENERATED, da.getFileSource());
+        assertTrue(da.getFilePath().startsWith(i.getRepoPath() + "/"), "the file is not under the issue's repo path");
+        java.nio.file.Path official = paths.repoRoot().resolve(da.getFilePath());
+        assertTrue(java.nio.file.Files.isRegularFile(official), "the official file does not exist: " + official);
+        assertEquals("preview-bytes", java.nio.file.Files.readString(official),
+                "the official file is not the promoted preview");
+    }
+
+    /** 10a/10c. A generated series that cannot produce a document does not publish. */
+    @Test
+    @Transactional
+    public void aGeneratedSeriesThatCannotProduceADocumentIsRefused() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        s.setReportId("no-such-report");
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        // 10a: the report does not exist, so the render fails and the publish with it.
+        assertThrows(IssueRenderService.RenderFailedException.class,
+                () -> publishService.publish(i.getId(),
+                        new IssuePublishService.PublishRequest(true, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                                null, new Date(1_700_000_000_000L))));
+        assertEquals(IssueStatus.OPEN, i.getStatus(), "a publish without a document flipped the status");
+
+        // 10b without a preview to promote: equally refused, not silently skipped.
+        assertThrows(IssueRenderService.RenderFailedException.class,
+                () -> publishService.publish(i.getId(),
+                        new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                                null, new Date(1_700_000_000_000L))));
+        assertEquals(IssueStatus.OPEN, i.getStatus());
     }
 }

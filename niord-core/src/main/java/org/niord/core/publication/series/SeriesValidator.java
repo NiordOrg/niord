@@ -113,6 +113,19 @@ public final class SeriesValidator {
             e.add(new FieldError("S-7", "nominalCutoffTime", "a cadence needs a nominal time of day"));
         }
 
+        // S-21. The cut-off default describes a period, so a series with no period
+        // can only be cut off at the release; and a calendar-driven default on a
+        // weekly series would stamp every issue at a Wednesday noon nobody
+        // pressed, which is the nominal-versus-stamped confusion the model exists
+        // to keep apart.
+        if (s.getCutoffDefault() == null) {
+            e.add(new FieldError("S-21", "cutoffDefault", "a series says where its cut-off falls by default"));
+        } else if (s.getCutoffDefault() != CutoffDefault.RELEASE_MOMENT
+                && s.getCadence() != SeriesCadence.YEARLY) {
+            e.add(new FieldError("S-21", "cutoffDefault",
+                    "only a yearly series is cut off at a period boundary; everything else at the release"));
+        }
+
         // S-8. A one-off has nothing to chain to and no sequence to number within.
         if (s.getCadence() == SeriesCadence.NONE) {
             if (s.getNextIssueCreation() != NextIssueCreation.MANUAL) {

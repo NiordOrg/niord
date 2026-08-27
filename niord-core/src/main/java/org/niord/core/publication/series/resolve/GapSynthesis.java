@@ -68,7 +68,22 @@ public final class GapSynthesis {
      * bound where there is not -- the same coalesce the rest of the feature uses
      * to bound an interval.
      */
-    public record Issue(String publicId, Date effectiveCutoff, IntervalBoundSource cutoffSource) {
+    /**
+     * A real issue, as the synthesis sees it.
+     *
+     * intervalFrom is where its content period OPENED -- which for a chained
+     * series is the previous issue's close, and is what says a double-week issue
+     * covered both weeks. null where nothing records it (the head of a chain).
+     * open says the issue is still being worked on: its period is not missing,
+     * it is late, and it is its own row.
+     */
+    public record Issue(String publicId, Date effectiveCutoff, IntervalBoundSource cutoffSource,
+                        Date intervalFrom, boolean open) {
+
+        /** A released issue whose open is unknown: the shape older callers and tests used. */
+        public Issue(String publicId, Date effectiveCutoff, IntervalBoundSource cutoffSource) {
+            this(publicId, effectiveCutoff, cutoffSource, null, false);
+        }
     }
 
     private GapSynthesis() {
@@ -116,17 +131,27 @@ public final class GapSynthesis {
             return out;
         }
 
-        // Between consecutive issues, GapDetection owns the arithmetic -- including
-        // the tolerance for a release that drifted by hours. Re-deriving it here
-        // would be a second answer to a question that already has one.
-        List<Date> cutoffs = issues.stream()
-                .map(Issue::effectiveCutoff)
-                .filter(Objects::nonNull)
+        // Between consecutive issues a period is MISSING only where no issue's
+        // interval covers it. The next issue's interval start says what it
+        // covered: a double-week issue opens where the previous one closed and
+        // leaves nothing uncovered, however long its window. Only where the
+        // start is unknown does the release-slot arithmetic stand in, because
+        // an unknown start cannot prove coverage.
+        List<Issue> dated = issues.stream()
+                .filter(i -> i.effectiveCutoff() != null)
                 .toList();
-        for (GapDetection.Gap gap : GapDetection.gaps(gate, cutoffs, periodMillis)) {
-            out.add(row(RowKind.MISSING, seriesId, gap.from(), gap.to(),
-                    latestAtOrBefore(issues, gap.from()), earliestAfter(issues, gap.to()),
-                    zone, patterns));
+        for (int i = 1; i < dated.size(); i++) {
+            Issue previous = dated.get(i - 1);
+            Issue next = dated.get(i);
+            List<GapDetection.Gap> gaps = next.intervalFrom() != null
+                    ? GapDetection.uncovered(gate, previous.effectiveCutoff(), next.intervalFrom(), periodMillis)
+                    : GapDetection.gaps(gate, List.of(previous.effectiveCutoff(), next.effectiveCutoff()),
+                            periodMillis);
+            for (GapDetection.Gap gap : gaps) {
+                out.add(row(RowKind.MISSING, seriesId, gap.from(), gap.to(),
+                        latestAtOrBefore(issues, gap.from()), earliestAfter(issues, gap.to()),
+                        zone, patterns));
+            }
         }
 
         // After the newest issue. GapDetection.gaps looks only BETWEEN cut-offs, so
@@ -139,8 +164,12 @@ public final class GapSynthesis {
         // cut-off is still ahead, that issue IS the period being worked toward, and
         // a row past it describes a period nobody has started -- offering a
         // retro-create for the week after the one currently open.
+        // And not at all while the newest issue is still OPEN. Its period is not
+        // missing -- it is the one being worked on, late if its nominal close has
+        // passed, and it is its own row in the list. Synthesizing MISSING rows
+        // behind it offered a retro-create for weeks the open issue will carry.
         Issue newest = issues.get(issues.size() - 1);
-        if (newest.effectiveCutoff() != null && now != null
+        if (!newest.open() && newest.effectiveCutoff() != null && now != null
                 && newest.effectiveCutoff().getTime() <= now.getTime()) {
             forward(out, seriesId, newest.effectiveCutoff(), newest, periodMillis, zone,
                     patterns, now);

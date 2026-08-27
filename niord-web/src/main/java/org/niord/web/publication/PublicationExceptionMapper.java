@@ -57,6 +57,11 @@ public class PublicationExceptionMapper implements ExceptionMapper<RuntimeExcept
         if (e instanceof IssueNaming.UnknownTokenException unknown) {
             body.put("token", unknown.token());
         }
+        // The codes the admin has to acknowledge, so the dialog can list them
+        // rather than send the admin back to the checklist to find out.
+        if (e instanceof IssuePublishService.WarningsNotAcknowledgedException warnings) {
+            body.put("unacknowledgedWarnings", warnings.codes());
+        }
 
         if (status >= 500) {
             log.error("publication error {} -> {}", code, status, e);
@@ -74,6 +79,9 @@ public class PublicationExceptionMapper implements ExceptionMapper<RuntimeExcept
         }
         if (e instanceof IssuePublishService.ArchiveFailedException archive) {
             return archive.code();
+        }
+        if (e instanceof IssuePublishService.WarningsNotAcknowledgedException warnings) {
+            return warnings.code();
         }
         if (e instanceof IssueLifecycleService.TransitionRefusedException refused) {
             return refused.code();

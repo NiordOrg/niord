@@ -767,6 +767,40 @@ public class ShadowDiffTest {
                         + "discarded and recomputed on every sweep");
     }
 
+    /**
+     * A skip that is a fact about the LEGACY release is recorded once and left
+     * alone. NO_MEMBERSHIP_SEMANTICS will never clear -- the publication has no
+     * member list and never will -- so re-selecting it every sweep is what kept
+     * "remaining" from ever reaching zero, forty batches over, while the re-diffed
+     * rows' fresh stamps sat at the head of every streak count.
+     */
+    @Test
+    @Transactional
+    public void aSkipThatCannotClearIsNotOfferedForDiffingAgain() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+        // No member list, and never one: the shape of an annex or an uploaded document.
+        series.setCriteria(null);
+
+        Publication template = new Publication();
+        template.setPublicationId(UUID.randomUUID().toString());
+        em.persist(template);
+        series.setLegacyTemplateId(template.getPublicationId());
+        em.flush();
+
+        Date t1 = new Date(System.currentTimeMillis() - WEEK);
+        Publication week = release(template, t1, tag(message(ms, new Date(t1.getTime() - HOUR))));
+
+        ShadowDiffRun skipped = shadowDiff.diff(week);
+        assertEquals("NO_MEMBERSHIP_SEMANTICS", skipped.getSkipReason());
+
+        assertFalse(shadowDiff.undiffedReleases().stream()
+                        .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
+                "a skip that is a property of the legacy release is terminal: offering it again "
+                        + "every sweep is what stopped the batch loop from converging");
+    }
+
     private List<ShadowDiffRun> runsFor(Publication release) {
         em.flush();
         return em.createQuery(

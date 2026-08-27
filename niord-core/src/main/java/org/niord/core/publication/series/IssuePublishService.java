@@ -4,8 +4,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
+import org.niord.core.message.Message;
+import org.niord.core.message.MessageService;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.resolve.Interval;
+import org.niord.core.publication.series.resolve.IssueNaming;
+import org.niord.model.DataFilter;
+import org.niord.model.message.MessageVo;
 import org.niord.core.publication.series.resolve.IssueOrdering;
 import org.niord.core.publication.series.resolve.MembershipReason;
 import org.niord.core.publication.series.resolve.ResolutionWarningVo;
@@ -72,6 +77,12 @@ public class IssuePublishService extends BaseService {
     IssueRenderService renderService;
 
     @Inject
+    IssuePreviewService previews;
+
+    @Inject
+    MessageService messageService;
+
+    @Inject
     PublicationPathService paths;
 
     @Inject
@@ -87,6 +98,15 @@ public class IssuePublishService extends BaseService {
         public static PublishRequest manual(User actor) {
             return new PublishRequest(true, Set.of(), actor, null);
         }
+
+        /**
+         * Every resolution warning code, for a caller that has reviewed the
+         * checklist as a whole -- a test fixture, or a surface with no rail to
+         * acknowledge on. The audit still records what the resolution raised.
+         */
+        public static final Set<String> ALL_WARNINGS = java.util.Arrays.stream(
+                        org.niord.core.publication.series.resolve.ResolutionWarningCode.values())
+                .map(Enum::name).collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
     /** What happened. */
@@ -113,6 +133,32 @@ public class IssuePublishService extends BaseService {
 
         public String code() {
             return "ISSUE_ALREADY_PUBLISHED";
+        }
+    }
+
+    /**
+     * The resolution raised warnings the caller did not acknowledge; nothing was
+     * stamped, frozen, written or opened.
+     *
+     * Raised BEFORE the member rows are frozen and the files written, because a
+     * warning the admin has not seen is exactly the thing the checklist exists
+     * to put in front of them, and an issue that publishes first and reports the
+     * warning afterwards has already put the wrong list on the public site.
+     */
+    public static class WarningsNotAcknowledgedException extends RuntimeException {
+        private final List<String> codes;
+
+        public WarningsNotAcknowledgedException(List<String> codes) {
+            super("the resolution raised warnings that were not acknowledged: " + codes);
+            this.codes = List.copyOf(codes);
+        }
+
+        public List<String> codes() {
+            return codes;
+        }
+
+        public String code() {
+            return "WARNING_NOT_ACKNOWLEDGED";
         }
     }
 
@@ -195,6 +241,19 @@ public class IssuePublishService extends BaseService {
                 ? resolver.resolve(resolved, window, includes(issue), excludes(issue))
                 : MemberResolutionService.Resolution.curated(curated);
 
+        // --- 3b. REFUSE an unacknowledged warning, before anything is frozen ---
+        // The warnings are a property of the resolution, so they are known here
+        // and nowhere earlier. Refusing now leaves the issue exactly as it was:
+        // the transaction rolls back the stamp above and nothing below has run.
+        // Under AUTO_RELEASE there is nobody to acknowledge, and the entry at step
+        // 15 records what went unacknowledged instead; the abort path for an
+        // unattended release is a later concern, and until it exists an
+        // automatic release behaves as it did.
+        List<String> unacknowledged = unacknowledgedWarnings(resolution, request);
+        if (!unacknowledged.isEmpty() && series.getReleaseMode() != ReleaseMode.AUTO_RELEASE) {
+            throw new WarningsNotAcknowledgedException(unacknowledged);
+        }
+
         // --- 4. OVERRIDES: already applied by the resolver ----------------
         Set<String> members = resolution.members();
 
@@ -203,7 +262,9 @@ public class IssuePublishService extends BaseService {
                 series.getMessageSortBy(),
                 series.getMessageSortOrder() == null ? null
                         : IssueOrdering.Direction.valueOf(series.getMessageSortOrder().name()),
-                null);
+                // The middle rung of the fallback: a series that names no sort
+                // inherits its domain's, which used to be passed as null here.
+                series.getDomain() == null ? null : series.getDomain().getMessageSortOrder());
         List<IssueOrdering.Orderable> ordered =
                 IssueOrdering.order(orderablesFor(members), sort);
         Map<String, Integer> sortIndex = IssueOrdering.assignSortIndex(ordered);
@@ -248,7 +309,7 @@ public class IssuePublishService extends BaseService {
         List<String> archived = archiveExistingFiles(issue, stamp);
 
         // --- 10. FILES ----------------------------------------------------
-        writeFiles(issue, series, ordered, request.regenerate());
+        writeFiles(issue, series, ordered, request.regenerate(), stamp);
 
         // --- 11. STATUS FLIP ----------------------------------------------
         issue.setStatus(IssueStatus.PUBLISHED);
@@ -259,16 +320,15 @@ public class IssuePublishService extends BaseService {
 
         // --- 12. OPEN the window, and cap SELF if a successor exists ------
         openWindow(issue, stamp);
-        capSelfAgainstSuccessor(issue, series);
+        capSelfAgainstSuccessor(issue, series, request.actor());
 
         // --- 13. CAP the predecessor --------------------------------------
-        capPredecessor(issue, series, stamp);
+        capPredecessor(issue, series, stamp, request.actor());
 
         // --- 14. SUCCESSOR -------------------------------------------------
         PublicationIssue successor = createSuccessorIfDue(issue, series, stamp);
 
         // --- 15. AUDIT ------------------------------------------------------
-        List<String> unacknowledged = unacknowledgedWarnings(resolution, request);
         audit.published(issue, request.actor(), series.getReleaseMode(), stamp,
                 members.size(), unacknowledged, archived);
         if (successor != null) {
@@ -425,9 +485,78 @@ public class IssuePublishService extends BaseService {
         return archived;
     }
 
-    /** Step 10. Render each non-sticky configured language, or copy the newest preview. */
+    /**
+     * A preview of the OPEN issue as it stands: the live resolution, ordered as
+     * publish would order it, rendered per language into the preview store.
+     *
+     * The same renderer and the same request publish uses, over the same member
+     * list it would freeze -- so what the admin sees is what would go out, and
+     * publishing with regenerate=false promotes exactly these bytes. Nothing on
+     * the issue changes; the preview store is outside the repository and the
+     * audit records that a preview was generated.
+     */
+    @Transactional
+    public List<IssuePreviewService.Preview> preview(Integer issueId) {
+        PublicationIssue issue = em.find(PublicationIssue.class, issueId);
+        if (issue == null) {
+            throw new IllegalArgumentException("no such issue: " + issueId);
+        }
+        if (issue.getStatus() != IssueStatus.OPEN) {
+            throw new IssueLifecycleService.TransitionRefusedException("ISSUE_NOT_OPEN",
+                    "only an open issue has a live member list to preview; a published one has its document");
+        }
+        PublicationSeries series = issue.getSeries();
+        if (series.getReportId() == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("REPORT_NOT_CONFIGURED",
+                    "the series has no report to render a preview from");
+        }
+
+        Date now = new Date();
+        IssueCriteriaVo effective = EffectiveCriteria.documentOf(issue);
+        boolean hasMembership = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
+                && effective != null && series.getTimeRelation() != null;
+        Set<String> curated = includes(issue);
+        curated.removeAll(excludes(issue));
+        MemberResolutionService.Resolution resolution = hasMembership
+                ? resolver.resolve(EffectiveCriteria.resolvedFor(issue),
+                        new Interval(issue.getIntervalFrom(), now), includes(issue), excludes(issue))
+                : MemberResolutionService.Resolution.curated(curated);
+
+        IssueOrdering.SortSpec sort = IssueOrdering.resolveSort(
+                series.getMessageSortBy(),
+                series.getMessageSortOrder() == null ? null
+                        : IssueOrdering.Direction.valueOf(series.getMessageSortOrder().name()),
+                // The middle rung of the fallback: a series that names no sort
+                // inherits its domain's, which used to be passed as null here.
+                series.getDomain() == null ? null : series.getDomain().getMessageSortOrder());
+        List<IssueOrdering.Orderable> ordered = IssueOrdering.order(orderablesFor(resolution.members()), sort);
+
+        List<IssuePreviewService.Preview> out = new ArrayList<>();
+        for (PublicationIssueDesc desc : issue.getDescs()) {
+            String lang = desc.getLang();
+            byte[] bytes = renderService.render(renderRequest(issue, series, ordered, lang));
+            out.add(previews.record(issue, lang, fileNameFor(issue, series, desc, now), bytes));
+        }
+        return out;
+    }
+
+    /**
+     * Step 10. Render each non-sticky configured language, or promote the newest
+     * preview -- and refuse to finish without a document.
+     *
+     * 10a renders in-process from the ORDERED, FROZEN member list (R1): the
+     * resolver decided what is in the issue and the renderer prints exactly that,
+     * with no query and no cap in between. 10b, when the admin asked not to
+     * regenerate, promotes the newest preview of that language to the official
+     * file -- the preview IS a render of the same list, and re-rendering would
+     * only risk a different one. 10c is the guard the two need: a generated
+     * series that ends PUBLISHED with no file is the failure that looks like
+     * success, and it is refused here rather than discovered on the public site.
+     *
+     * A sticky language (an uploaded replacement) is left alone in every branch.
+     */
     private void writeFiles(PublicationIssue issue, PublicationSeries series,
-                            List<IssueOrdering.Orderable> ordered, boolean regenerate) {
+                            List<IssueOrdering.Orderable> ordered, boolean regenerate, Date stamp) {
         if (series.getReportId() == null) {
             return; // nothing to generate: an uploaded or link-only issue
         }
@@ -435,11 +564,116 @@ public class IssuePublishService extends BaseService {
             if (desc.isFileSourceSticky()) {
                 continue; // an uploaded replacement is not regenerated over
             }
-            if (!regenerate) {
-                continue; // 10b copies the newest preview; handled by the preview path
+            String lang = desc.getLang();
+            String fileName = fileNameFor(issue, series, desc, stamp);
+            Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
+
+            if (regenerate) {
+                // 10a
+                renderService.renderToFile(renderRequest(issue, series, ordered, lang), target);
+            } else {
+                // 10b
+                IssuePreviewService.Preview preview = previews.newest(issue, lang).orElseThrow(() ->
+                        new IssueRenderService.RenderFailedException(
+                                "no preview exists for language " + lang + " to promote; publish with "
+                                        + "regenerate=true or generate a preview first", null));
+                try {
+                    Files.createDirectories(target.getParent());
+                    Files.copy(preview.path(), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    throw new IssueRenderService.RenderFailedException(
+                            "could not promote the preview " + preview.path() + " to " + target, e);
+                }
             }
+
+            desc.setFileName(fileName);
+            desc.setFilePath(issue.getRepoPath() + "/" + fileName);
             desc.setFileSource(FileSource.GENERATED);
         }
+
+        // 10c. Nothing above may have left a language without a document.
+        for (PublicationIssueDesc desc : issue.getDescs()) {
+            if (desc.getFilePath() == null
+                    || !Files.isRegularFile(paths.repoRoot().resolve(desc.getFilePath()))) {
+                throw new IssueRenderService.RenderFailedException(
+                        "language " + desc.getLang() + " has no document after step 10; refusing to "
+                                + "publish an issue whose official record and official file would disagree",
+                        null);
+            }
+        }
+    }
+
+    /**
+     * The render request for one language: the frozen, ordered members as
+     * MessageVos, the series' print settings, and the report parameters with
+     * the issue's own numbers injected. Week, year and edition are never typed
+     * by an admin; they are what the issue is.
+     */
+    private IssueRenderService.RenderRequest renderRequest(PublicationIssue issue, PublicationSeries series,
+                                                           List<IssueOrdering.Orderable> ordered, String lang) {
+        DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(lang);
+        List<MessageVo> messages = new ArrayList<>(ordered.size());
+        for (IssueOrdering.Orderable o : ordered) {
+            Message m = messageService.findByUid(o.uid());
+            if (m == null) {
+                throw new IssueRenderService.RenderFailedException(
+                        "frozen member " + o.uid() + " no longer exists; the issue cannot be rendered", null);
+            }
+            messages.add(m.toVo(MessageVo.class, filter));
+        }
+
+        Map<String, Object> params = new LinkedHashMap<>();
+        if (series.getReportParams() != null) {
+            params.putAll(series.getReportParams());
+        }
+        if (issue.getReportParams() != null) {
+            params.putAll(issue.getReportParams());
+        }
+        params.put("week", issue.getWeek());
+        params.put("weekTo", issue.getWeekTo());
+        params.put("year", issue.getYear());
+        params.put("edition", issue.getEdition());
+
+        boolean areaHeadings = "AREA".equalsIgnoreCase(series.getMessageSortBy());
+
+        return new IssueRenderService.RenderRequest(
+                series.getReportId(),
+                lang,
+                messages,
+                series.getPageSize() == null ? null : series.getPageSize().name(),
+                series.getPageOrientation() == null ? null : series.getPageOrientation().name(),
+                series.getMapThumbnails(),
+                areaHeadings,
+                null,
+                params);
+    }
+
+    /**
+     * The official file name for one language: the series' pattern expanded with
+     * the issue's numbers, else the name the language already carries, else the
+     * issue's public id -- always a PDF.
+     */
+    private String fileNameFor(PublicationIssue issue, PublicationSeries series, PublicationIssueDesc desc,
+                               Date stamp) {
+        String pattern = null;
+        for (PublicationSeriesDesc sd : series.getDescs()) {
+            if (desc.getLang().equals(sd.getLang())) {
+                pattern = sd.getFileNamePattern();
+            }
+        }
+        String name = null;
+        if (pattern != null && !pattern.isBlank()) {
+            Integer edition = issue.getEdition() == null || !issue.getEdition().matches("\\d+")
+                    ? null : Integer.valueOf(issue.getEdition());
+            IssueNaming.Numbers numbers = IssueNaming.derive(stamp, issue.getIntervalFrom(),
+                    series.cutoffZone(), edition);
+            name = IssueNaming.expand(pattern, numbers);
+        }
+        if (name == null || name.isBlank()) {
+            name = desc.getFileName() != null && !desc.getFileName().isBlank()
+                    ? desc.getFileName() : issue.getPublicId() + ".pdf";
+        }
+        return name.toLowerCase().endsWith(".pdf") ? name : name + ".pdf";
     }
 
     private void openWindow(PublicationIssue issue, Date stamp) {
@@ -458,7 +692,7 @@ public class IssuePublishService extends BaseService {
      * later issues are out. Without this, the recovered issue has a NULL publicTo
      * and the public site's "current" publication becomes a two-year-old one.
      */
-    private void capSelfAgainstSuccessor(PublicationIssue issue, PublicationSeries series) {
+    private void capSelfAgainstSuccessor(PublicationIssue issue, PublicationSeries series, User actor) {
         List<PublicationIssue> laters = em.createQuery(
                         "SELECT i FROM PublicationIssue i WHERE i.series = :s AND i.status IN :st "
                                 + "AND i.cutoffStampedAt > :stamp ORDER BY i.cutoffStampedAt ASC",
@@ -470,7 +704,9 @@ public class IssuePublishService extends BaseService {
                 .getResultList();
 
         if (!laters.isEmpty()) {
-            issue.setPublicTo(new Date(laters.get(0).getCutoffStampedAt().getTime() - 1));
+            Date cappedAt = new Date(laters.get(0).getCutoffStampedAt().getTime() - 1);
+            issue.setPublicTo(cappedAt);
+            audit.visibilityCapped(issue, actor, cappedAt, laters.get(0));
         }
     }
 
@@ -482,7 +718,7 @@ public class IssuePublishService extends BaseService {
      * manual or not, because an uncapped predecessor is what leaves two issues
      * claiming to be current.
      */
-    private void capPredecessor(PublicationIssue issue, PublicationSeries series, Date stamp) {
+    private void capPredecessor(PublicationIssue issue, PublicationSeries series, Date stamp, User actor) {
         List<PublicationIssue> earlier = em.createQuery(
                         "SELECT i FROM PublicationIssue i WHERE i.series = :s AND i.status IN :st "
                                 + "AND i.cutoffStampedAt < :stamp ORDER BY i.cutoffStampedAt DESC",
@@ -500,8 +736,10 @@ public class IssuePublishService extends BaseService {
         boolean manuallyClosed = predecessor.getPublicWindowSource() == PublicWindowSource.MANUAL
                 && predecessor.getPublicTo() != null;
         if (!manuallyClosed) {
-            predecessor.setPublicTo(new Date(stamp.getTime() - 1));
+            Date cappedAt = new Date(stamp.getTime() - 1);
+            predecessor.setPublicTo(cappedAt);
             em.merge(predecessor);
+            audit.visibilityCapped(predecessor, actor, cappedAt, issue);
         }
     }
 

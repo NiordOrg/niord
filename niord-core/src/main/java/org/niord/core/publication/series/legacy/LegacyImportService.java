@@ -78,6 +78,9 @@ public class LegacyImportService extends BaseService {
     @Inject
     MessageSeriesService messageSeriesService;
 
+    @Inject
+    org.niord.core.publication.series.IssueAuditService audit;
+
     /** Everything one import run would write, plus everything wrong with it. */
     public static class Plan {
 
@@ -330,6 +333,18 @@ public class LegacyImportService extends BaseService {
                 .setParameter("ids", seriesIds)
                 .executeUpdate();
 
+        // The trail the import wrote, and anything written against these issues
+        // and series since: an audit entry owns a foreign key to the row it
+        // describes, and the rows are about to go.
+        em.createQuery(
+                        "DELETE FROM IssueAuditEntry a WHERE a.issue IN "
+                                + "(SELECT i FROM PublicationIssue i WHERE i.series.id IN :ids)")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+        em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.series.id IN :ids")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
         int issues = em.createQuery(
                         "DELETE FROM PublicationIssue i WHERE i.series.id IN :ids")
                 .setParameter("ids", seriesIds)
@@ -392,10 +407,17 @@ public class LegacyImportService extends BaseService {
         // failed against the unique key mid-write.
         Set<String> authored = seriesIdsAlreadyTaken();
 
+        // Timed per phase and logged once. The plan runs inside a transaction
+        // with a budget, and "the plan took too long" is only actionable when the
+        // log says which phase did.
+        long t0 = System.nanoTime();
         planAlreadyImported(plan, templates, publications);
         planCategories(plan, templates, publications);
+        long t1 = System.nanoTime();
         Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates, authored);
+        long t2 = System.nanoTime();
         planOrphanSeries(plan, publications, seriesByTemplate, authored);
+        long t3 = System.nanoTime();
         // After BOTH passes, because a ruling can name a series either pass
         // produced -- and for a long time this ran inside planSeries, so the two
         // orphan-grouped annex series it names never received one.
@@ -403,7 +425,9 @@ public class LegacyImportService extends BaseService {
         // After the orphan pass, because a redirect destination may be a series
         // only that pass produces -- and before planIssues, which files by this map.
         resolveTemplateRedirects(plan, templates, seriesByTemplate);
+        long t4 = System.nanoTime();
         planIssues(plan, publications, seriesByTemplate, frozenAt);
+        long t5 = System.nanoTime();
         // After planIssues, because the kind of a cadence-less series is decided
         // by how many issues it turned out to have.
         applySeriesKinds(plan);
@@ -412,7 +436,14 @@ public class LegacyImportService extends BaseService {
         // scoped by what the archive actually drew from, which is a fact about
         // the tagged messages rather than about any one series row.
         planSeriesCriteria(plan, templates, publications, seriesByTemplate);
+        long t6 = System.nanoTime();
         assertSeriesIdsAreUnique(plan);
+        log.info("plan over {} templates and {} publications: categories {} ms, series {} ms, "
+                        + "orphans {} ms, rulings {} ms, issues {} ms, criteria {} ms, total {} ms",
+                templates.size(), publications.size(),
+                (t1 - t0) / 1_000_000, (t2 - t1) / 1_000_000, (t3 - t2) / 1_000_000,
+                (t4 - t3) / 1_000_000, (t5 - t4) / 1_000_000, (t6 - t5) / 1_000_000,
+                (t6 - t0) / 1_000_000);
 
         plan.report().setSeriesImported(plan.series().size());
         plan.report().setIssuesImported(plan.issues().size());
@@ -441,14 +472,16 @@ public class LegacyImportService extends BaseService {
      */
     private void planAlreadyImported(Plan plan, List<Publication> templates,
                                      List<Publication> publications) {
-        for (Publication template : concat(templates, publications.stream()
-                .filter(x -> x.getTemplate() == null).toList())) {
-            Long seriesRows = em.createQuery(
-                            "SELECT COUNT(s) FROM PublicationSeries s WHERE s.legacyTemplateId = :id",
-                            Long.class)
-                    .setParameter("id", template.getPublicationId())
-                    .getSingleResult();
-            if (seriesRows > 0) {
+        // Two set-based lookups, not one query per row. This ran a COUNT per
+        // template and per publication -- ~3,800 round trips over a full estate --
+        // and at the ~20 ms a round trip costs across a container boundary that
+        // was 75 of a 76-second plan, most of the way to the transaction budget.
+        List<Publication> seriesSources = concat(templates, publications.stream()
+                .filter(x -> x.getTemplate() == null).toList());
+        Set<String> takenSeries = idsPresent("SELECT s.legacyTemplateId FROM PublicationSeries s "
+                + "WHERE s.legacyTemplateId IN :ids", seriesSources);
+        for (Publication template : seriesSources) {
+            if (takenSeries.contains(template.getPublicationId())) {
                 problem(plan, "ALREADY_IMPORTED", template,
                         "a series already carries legacyTemplateId '" + template.getPublicationId()
                                 + "'. The importer does not merge or update: re-running it against an "
@@ -456,17 +489,26 @@ public class LegacyImportService extends BaseService {
                                 + "silently.");
             }
         }
+
+        Set<String> takenIssues = idsPresent("SELECT i.publicId FROM PublicationIssue i "
+                + "WHERE i.publicId IN :ids", publications);
         for (Publication legacy : publications) {
-            Long issueRows = em.createQuery(
-                            "SELECT COUNT(i) FROM PublicationIssue i WHERE i.publicId = :id",
-                            Long.class)
-                    .setParameter("id", legacy.getPublicationId())
-                    .getSingleResult();
-            if (issueRows > 0) {
+            if (takenIssues.contains(legacy.getPublicationId())) {
                 problem(plan, "ALREADY_IMPORTED", legacy,
                         "an issue already carries publicId '" + legacy.getPublicationId() + "'.");
             }
         }
+    }
+
+    /** The ids among these rows that the query finds, fetched in bounded chunks. */
+    private Set<String> idsPresent(String jpql, List<Publication> rows) {
+        Set<String> out = new LinkedHashSet<>();
+        List<String> ids = rows.stream().map(Publication::getPublicationId).toList();
+        for (int from = 0; from < ids.size(); from += 500) {
+            List<String> chunk = ids.subList(from, Math.min(from + 500, ids.size()));
+            out.addAll(em.createQuery(jpql, String.class).setParameter("ids", chunk).getResultList());
+        }
+        return out;
     }
 
     private List<Publication> legacyRows(PublicationMainType mainType) {
@@ -919,7 +961,7 @@ public class LegacyImportService extends BaseService {
         Map<String, List<Publication>> byTag = MemberSnapshotImport.byTagName(publications);
         Map<Integer, List<MemberSnapshotImport.MemberFacts>> factsByTag =
                 memberFactsByTag(publications);
-        Map<String, List<Publication>> chains = chainsByTemplate(publications);
+        Map<String, List<Publication>> chains = chainsBySeries(publications, seriesByTemplate);
         Map<String, Integer> byStatus = new LinkedHashMap<>();
         Map<String, Integer> byCutoffSource = new LinkedHashMap<>();
 
@@ -928,9 +970,21 @@ public class LegacyImportService extends BaseService {
             // issue has already been translated AND had its cut-off recovered, so
             // its effective close is known and is what this period opens at.
             Date previousCutoff = null;
+            // Siblings -- rows released at the same instant, a withdrawal and its
+            // replacement -- describe ONE period. They open where the row before
+            // the pair closed, and the chain moves on past the pair as a whole.
+            Date siblingsOpenAt = null;
+            Date siblingsCloseAt = null;
+            Date previousRelease = null;
 
             for (int i = 0; i < chain.size(); i++) {
                 Publication legacy = chain.get(i);
+                boolean sibling = isSibling(previousRelease, legacy.getPublishDateFrom());
+                if (!sibling) {
+                    siblingsOpenAt = previousCutoff;
+                    siblingsCloseAt = null;
+                }
+                previousRelease = legacy.getPublishDateFrom();
                 try {
                     // repoPath is where the bytes live, and it is NOT NULL on the
                     // issue. Every one of the 1,077 production rows has one.
@@ -963,21 +1017,19 @@ public class LegacyImportService extends BaseService {
                     }
 
                     // Where the previous issue actually closed is when this one's
-                    // content period opened; the chain is already ordered.
+                    // content period opened; the chain is already ordered. A sibling
+                    // opens where the row BEFORE its pair closed, not where its twin did.
                     PublicationIssue issue = LegacyIssueTranslation.translate(
-                            legacy, series, frozenAt, previousCutoff);
+                            legacy, series, frozenAt, sibling ? siblingsOpenAt : previousCutoff);
 
-                    // RETIRED counts as released: it was published and then withdrawn,
-                    // so a release instant exists. OPEN is the one that never had one.
-                    // Bounded by the interval just derived: a stage whose answer falls
-                    // outside the period it supposedly closes is not believed.
-                    CutoffRecovery.Recovered cutoff = CutoffRecovery.recover(
-                            legacy, CutoffRecovery.nextTagCreated(chain, i), null,
-                            issue.getStatus() != IssueStatus.OPEN,
-                            new CutoffRecovery.Bounds(issue.getIntervalFrom(), issue.getIntervalTo()));
+                    CutoffRecovery.Recovered cutoff = recoverCutoff(issue, legacy, series, chain, i);
                     issue.setCutoffStampedAt(cutoff.cutoff());
                     issue.setCutoffSource(cutoff.source());
                     issue.setCutoffReconstructed(cutoff.reconstructed());
+                    // The release action's own moment, kept apart from the cut-off and
+                    // only where a stage actually witnessed it. A nominal close or a
+                    // window boundary is not a moment anybody pressed publish.
+                    issue.setPublishedAt(publishedAtOf(cutoff, legacy, issue));
 
                     List<MemberSnapshotImport.MemberFacts> facts =
                             legacy.getMessageTag() == null || legacy.getMessageTag().getId() == null
@@ -992,9 +1044,14 @@ public class LegacyImportService extends BaseService {
 
                     // Only advance on a real close. A row that produced none must
                     // not reset the chain to null and orphan the next interval --
-                    // the last known close is still the better answer.
+                    // the last known close is still the better answer. Within a
+                    // sibling pair the published row's close wins over the withdrawn
+                    // one's, so the issue after the pair chains from the replacement.
                     if (issue.effectiveCutoff() != null) {
-                        previousCutoff = issue.effectiveCutoff();
+                        if (siblingsCloseAt == null || issue.getStatus() == IssueStatus.PUBLISHED) {
+                            siblingsCloseAt = issue.effectiveCutoff();
+                        }
+                        previousCutoff = siblingsCloseAt;
                     }
 
                     byStatus.merge(issue.getStatus().name(), 1, Integer::sum);
@@ -1193,7 +1250,100 @@ public class LegacyImportService extends BaseService {
     }
 
     /**
-     * The issues of one template, in chain order.
+     * The cut-off of one issue, by the shape of its series.
+     *
+     * A cut-off is the end of the content period -- a fact about the content --
+     * and the release action is a separate fact recorded as publishedAt. For a
+     * weekly release the two are minutes apart, so the release stamp is the
+     * cut-off whenever it is credible as one: after the period opened and no
+     * more than a day past its nominal close. Outside that it is an edit, and the
+     * nominal close is the honest answer. For a yearly issue the two can be a
+     * year apart, and the public window -- which for every yearly row in the
+     * estate is 1 January to 31 December -- is the content period: an in-force
+     * list is decided where the window opens, an accumulated list where it
+     * closes.
+     *
+     * RETIRED counts as released: it was published and then withdrawn, so a
+     * release instant exists. OPEN is the one that never had one.
+     */
+    private static CutoffRecovery.Recovered recoverCutoff(PublicationIssue issue, Publication legacy,
+                                                          PublicationSeries series,
+                                                          List<Publication> chain, int i) {
+        boolean released = issue.getStatus() != IssueStatus.OPEN;
+        if (!released) {
+            return CutoffRecovery.recover(legacy, null, null, false, CutoffRecovery.Bounds.NONE);
+        }
+
+        if (LegacyIssueTranslation.isYearly(legacy, series)) {
+            boolean inForce = series != null
+                    && series.getTimeRelation() == org.niord.core.publication.series.resolve.TimeRelation.IN_FORCE_AT_CUTOFF;
+            return CutoffRecovery.fromPublicWindow(inForce ? issue.getPublicFrom() : issue.getIntervalTo());
+        }
+
+        if (LegacyIssueTranslation.isCadenced(legacy, series)) {
+            // The tiling and the weekly in-force shapes alike: the release stamp
+            // must sit within a day after the nominal close, else the close itself.
+            Date nominalClose = legacy.getPublishDateFrom();
+            return CutoffRecovery.recoverOrNominal(
+                    legacy, CutoffRecovery.nextTagCreated(chain, i), null, true,
+                    CutoffRecovery.Bounds.release(issue.getIntervalFrom(), nominalClose,
+                            CutoffRecovery.RELEASE_LEAD_MS, CutoffRecovery.RELEASE_SLACK_MS),
+                    nominalClose);
+        }
+
+        // A one-off: the interval is its window, and the original bounds apply.
+        return CutoffRecovery.recover(legacy, CutoffRecovery.nextTagCreated(chain, i), null, true,
+                new CutoffRecovery.Bounds(issue.getIntervalFrom(), issue.getIntervalTo()));
+    }
+
+    /**
+     * When the release action ran, where the row says so credibly.
+     *
+     * A stage that witnessed the release is the answer. Where the cut-off came
+     * from the calendar instead, the row's last-write stamp is accepted only if
+     * it falls inside the issue's own public window -- the year an annual was
+     * current -- because a stamp outside it is an edit made some other year.
+     */
+    private static Date publishedAtOf(CutoffRecovery.Recovered cutoff, Publication legacy,
+                                      PublicationIssue issue) {
+        if (issue.getStatus() == IssueStatus.OPEN) {
+            return null;
+        }
+        if (CutoffRecovery.witnessesTheRelease(cutoff)) {
+            return cutoff.cutoff();
+        }
+        Date updated = legacy.getUpdated();
+        Date from = issue.getPublicFrom();
+        // An open legacy end is not "still current": the derived content end --
+        // the last day of an accumulated year -- is the latest a release could be.
+        Date to = issue.getPublicTo() != null ? issue.getPublicTo() : issue.getIntervalTo();
+        if (updated == null || from == null || updated.before(from)) {
+            return null;
+        }
+        return to == null || !updated.after(to) ? updated : null;
+    }
+
+    /**
+     * Whether two releases are the same release seen twice.
+     *
+     * Five minutes, the same agreement window the cascade uses: a withdrawal and
+     * its replacement are written by one action, and rows minutes apart were
+     * released together. Rows hours apart were not.
+     */
+    private static boolean isSibling(Date previousRelease, Date release) {
+        return previousRelease != null && release != null
+                && Math.abs(release.getTime() - previousRelease.getTime()) <= CutoffRecovery.AGREEMENT_WINDOW_MS;
+    }
+
+    /**
+     * The issues of one SERIES, in chain order.
+     *
+     * Keyed by the series each publication resolves to -- its template's, or the
+     * one the orphan grouping and the template redirects filed it under -- not by
+     * its legacy template. The double-week issues are template-less rows filed
+     * into the weekly series by ruling, and chaining by template put them in a
+     * chain of their own: "EfS uge 17 - 2017" opened where "uge 14" closed, and
+     * "uge 15-16" between them opened where some unrelated orphan had.
      *
      * Ordered by the public window's start, because that is the order the issues
      * were released in and it is what makes "the NEXT issue's tag" mean anything.
@@ -1201,10 +1351,17 @@ public class LegacyImportService extends BaseService {
      * make the cut-off cascade's stage 2 depend on which rows the database
      * happened to return first.
      */
-    private Map<String, List<Publication>> chainsByTemplate(List<Publication> publications) {
+    private Map<String, List<Publication>> chainsBySeries(List<Publication> publications,
+                                                          Map<String, PublicationSeries> seriesByTemplate) {
         Map<String, List<Publication>> out = new LinkedHashMap<>();
         for (Publication p : publications) {
-            String key = p.getTemplate() == null ? "" : p.getTemplate().getPublicationId();
+            PublicationSeries series = p.getTemplate() == null
+                    ? null : seriesByTemplate.get(p.getTemplate().getPublicationId());
+            if (series == null) {
+                series = seriesByTemplate.get(p.getPublicationId());
+            }
+            // A row that resolves to no series chains alone; planIssues reports it.
+            String key = series != null ? "series:" + series.getSeriesId() : "none:" + p.getPublicationId();
             out.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
         }
         Comparator<Publication> order = Comparator
@@ -1386,6 +1543,11 @@ public class LegacyImportService extends BaseService {
         int written = 0;
         for (PublicationIssue issue : plan.issues().values()) {
             em.persist(issue);
+            // The one honest entry an imported issue carries: it was imported,
+            // by nobody, from a named legacy row. No fabricated publish, no
+            // fabricated overrides -- the trail starts where this system's
+            // knowledge of the issue does.
+            audit.imported(issue, "legacy publication " + issue.getLegacyPublicationId());
             if (++written % FLUSH_EVERY == 0) {
                 em.flush();
             }

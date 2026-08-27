@@ -39,11 +39,17 @@ import java.util.Set;
                 columnNames = {"legacyPublicationId", "legacyUpdatedAt"}),
         indexes = @Index(name = "shadowdiff_series_k", columnList = "seriesId, comparedAt"))
 @NamedQueries({
+        // NEWEST RELEASE first, never newest diff first. The readiness question is
+        // "have the last N releases agreed", and a re-diffed old release with a
+        // fresh comparedAt sorted to the head of the list and ended every streak.
+        // cutoffAt is the release's own instant; a skipped run may carry none, and
+        // then the legacy row's stamp stands in.
         @NamedQuery(name = "ShadowDiffRun.bySeries",
                 query = "SELECT r FROM ShadowDiffRun r WHERE r.seriesId = :seriesId "
-                        + "ORDER BY r.comparedAt DESC"),
+                        + "ORDER BY COALESCE(r.cutoffAt, r.legacyUpdatedAt) DESC, r.comparedAt DESC"),
         @NamedQuery(name = "ShadowDiffRun.all",
-                query = "SELECT r FROM ShadowDiffRun r ORDER BY r.comparedAt DESC")
+                query = "SELECT r FROM ShadowDiffRun r "
+                        + "ORDER BY COALESCE(r.cutoffAt, r.legacyUpdatedAt) DESC, r.comparedAt DESC")
 })
 @SuppressWarnings("unused")
 public class ShadowDiffRun extends VersionedEntity<Integer> {

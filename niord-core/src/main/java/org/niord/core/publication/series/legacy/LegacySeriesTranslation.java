@@ -256,6 +256,12 @@ public final class LegacySeriesTranslation {
             series.setAliveAtCutoff(t.aliveAtCutoff());
         }
 
+        // Where the cut-off falls, decided from the shape: yearly lists are
+        // calendar-driven (in force where the year opens, accumulated where it
+        // closes), everything else is stamped at the release.
+        series.setCutoffDefault(org.niord.core.publication.series.CutoffDefault.forShape(
+                series.getCadence(), series.getTimeRelation()));
+
         series.setNumberingScheme(numbering(template));
         series.setMessagePublication(template.getMessagePublication());
         series.setLanguageSpecific(template.isLanguageSpecific());

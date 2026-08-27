@@ -42,6 +42,63 @@ public class GapSynthesisTest {
         return new GapSynthesis.Issue(id, cutoff, IntervalBoundSource.STAMPED);
     }
 
+    /** A released issue whose content period opened at a known instant. */
+    private static GapSynthesis.Issue chained(String id, Date openedAt, Date cutoff) {
+        return new GapSynthesis.Issue(id, cutoff, IntervalBoundSource.STAMPED, openedAt, false);
+    }
+
+    /** An issue still being worked on, with the nominal close it is working toward. */
+    private static GapSynthesis.Issue open(String id, Date openedAt, Date nominalClose) {
+        return new GapSynthesis.Issue(id, nominalClose, IntervalBoundSource.NOMINAL, openedAt, true);
+    }
+
+    // ------------------------------------------------------------------ coverage
+
+    /**
+     * A double-week issue is not a gap. It opened where the previous issue closed
+     * and carried both weeks; that its window is two periods long is the whole
+     * of what happened. Counting release slots reported one week missing here,
+     * with a retro-create for content already in the archive.
+     */
+    @Test
+    public void aDoubleWeekIssueChainedFromThePreviousCloseLeavesNothingMissing() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(chained("before", wed(9), wed(10)), chained("double", wed(10), wed(12))),
+                WEEK, CPH, PATTERNS, null, wed(12));
+
+        assertEquals(0, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
+                "the double week covered both periods; nothing is missing");
+    }
+
+    /** A next issue that opens LATER than the previous close leaves the stretch between uncovered. */
+    @Test
+    public void aStretchNoIntervalCoversIsMissingOnePeriodAtATime() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(chained("before", wed(9), wed(10)), chained("after", wed(12), wed(13))),
+                WEEK, CPH, PATTERNS, null, wed(13));
+
+        List<GapSynthesis.Row> missing = rows.stream()
+                .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).toList();
+        assertEquals(2, missing.size(), "weeks 11 and 12 are covered by no interval");
+        assertEquals(wed(10), missing.get(0).intervalFrom(), "the first uncovered period opens at the previous close");
+        assertEquals("before", missing.get(0).precedingPublicId());
+        assertEquals("after", missing.get(0).followingPublicId());
+    }
+
+    /**
+     * While the newest issue is OPEN nothing is synthesized after it. Its period
+     * is late, not missing -- it is the row being worked on -- and rows behind it
+     * would offer retro-creates for weeks that issue will carry when it publishes.
+     */
+    @Test
+    public void anOpenNewestIssueIsLateNotMissing() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(chained("published", wed(39), wed(40)), open("working", wed(40), wed(41))),
+                WEEK, CPH, PATTERNS, null, new Date(wed(43).getTime() + 3600_000L));
+
+        assertEquals(0, rows.size(), "an open issue three weeks late is late, and is its own row");
+    }
+
     private static GapDetection.Gate tiling() {
         return GapDetection.gate(TimeRelation.PUBLISHED_IN_INTERVAL, "WEEKLY", true, false);
     }

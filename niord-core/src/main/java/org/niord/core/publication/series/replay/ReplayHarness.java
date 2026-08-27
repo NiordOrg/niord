@@ -142,6 +142,9 @@ public class ReplayHarness {
         if (cutoffOf(issue) == null) {
             return ReplayReport.SkipReason.NO_CUTOFF;
         }
+        if (issue.getSnapshotTimeRelation() == null || issue.getSnapshotAliveAtCutoff() == null) {
+            return ReplayReport.SkipReason.NO_SNAPSHOT_HEADER;
+        }
         return null;
     }
 
@@ -156,13 +159,20 @@ public class ReplayHarness {
     private ResolvedCriteria criteriaOf(PublicationIssue issue) {
         PublicationSeries series = issue.getSeries();
 
-        TimeRelation relation = issue.getSnapshotTimeRelation() != null
-                ? TimeRelation.valueOf(issue.getSnapshotTimeRelation())
-                : series.getTimeRelation();
-
-        boolean aliveAtCutoff = issue.getSnapshotAliveAtCutoff() != null
-                ? issue.getSnapshotAliveAtCutoff()
-                : Boolean.TRUE.equals(series.getAliveAtCutoff());
+        // Read from the ISSUE and never from the series. The importer derives the
+        // snapshot header from each release's own legacy filter, and a series
+        // spanning two filter eras carries one answer on the series row while 122
+        // of its issues need the other. Falling back to the series here would
+        // replay those issues under the wrong relation and report the difference
+        // as a defect in the engine. A row without a header is not comparable,
+        // and saying so is better than comparing it wrongly.
+        if (issue.getSnapshotTimeRelation() == null || issue.getSnapshotAliveAtCutoff() == null) {
+            throw new IllegalStateException("issue " + issue.getPublicId()
+                    + " carries no snapshot header (timeRelation / aliveAtCutoff); the replay reads the "
+                    + "issue's own header and never the series' row");
+        }
+        TimeRelation relation = TimeRelation.valueOf(issue.getSnapshotTimeRelation());
+        boolean aliveAtCutoff = issue.getSnapshotAliveAtCutoff();
 
         // The SERIES' document, deliberately -- not EffectiveCriteria. A replay
         // reproduces what the legacy engine produced, and a criteriaOverride is a

@@ -792,17 +792,31 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                 : shadowDiff.forSeries(seriesId);
 
         Map<String, List<Map<String, Object>>> bySeries = new LinkedHashMap<>();
-        for (ShadowDiffRun run : runs) {
-            bySeries.computeIfAbsent(
-                            run.getSeriesId() == null ? "(unmapped)" : run.getSeriesId(),
-                            k -> new ArrayList<>())
-                    .add(describe(run));
+        Map<String, List<ShadowDiffRun>> runsBySeries = new LinkedHashMap<>();
+        for (ShadowDiffRun run : runs) {   // newest release first, by the named query
+            String key = run.getSeriesId() == null ? "(unmapped)" : run.getSeriesId();
+            bySeries.computeIfAbsent(key, k -> new ArrayList<>()).add(describe(run));
+            runsBySeries.computeIfAbsent(key, k -> new ArrayList<>()).add(run);
         }
+
+        // ONE readiness rule, shared with the diagnostic report.
+        Map<String, Object> readiness = new LinkedHashMap<>();
+        runsBySeries.forEach((series, seriesRuns) -> {
+            org.niord.core.publication.series.replay.ShadowDiffService.Readiness r =
+                    org.niord.core.publication.series.replay.ShadowDiffService.readinessOf(seriesRuns);
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("consecutiveGreen", r.consecutiveGreen());
+            row.put("runs", r.runs());
+            row.put("skipped", r.skipped());
+            row.put("exempt", r.exempt());
+            row.put("meetsCutoverPrecondition", r.ready());
+            readiness.put(series, row);
+        });
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("runs", runs.size());
         out.put("series", bySeries);
-        out.put("readiness", readiness(bySeries));
+        out.put("readiness", readiness);
         return out;
     }
 
@@ -816,35 +830,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         out.put("skipReason", run.getSkipReason());
         out.put("missing", run.missing());
         out.put("extra", run.extra());
-        return out;
-    }
-
-    /**
-     * Per series: is it two consecutive green releases clear of cutover?
-     *
-     * A SKIPPED run breaks the streak rather than extending it. A week nobody
-     * could compare is not evidence that the week agreed, and letting it count
-     * would let a series reach the precondition without a single comparison.
-     */
-    private static Map<String, Object> readiness(
-            Map<String, List<Map<String, Object>>> bySeries) {
-
-        Map<String, Object> out = new LinkedHashMap<>();
-        bySeries.forEach((series, runs) -> {
-            int streak = 0;
-            for (Map<String, Object> run : runs) {   // newest first
-                boolean counts = Boolean.TRUE.equals(run.get("green"))
-                        && run.get("skipReason") == null;
-                if (!counts) {
-                    break;
-                }
-                streak++;
-            }
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("consecutiveGreen", streak);
-            row.put("meetsCutoverPrecondition", streak >= 2);
-            out.put(series, row);
-        });
         return out;
     }
 

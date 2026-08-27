@@ -118,6 +118,9 @@ public final class PublicationErrorCatalogue {
         put("SERIES_NOT_ONE_OFF", 400);
         put("PREDECESSOR_NOT_PUBLISHED", 409);
         put("WARNING_NOT_ACKNOWLEDGED", 409);
+        put("CUTOFF_IN_FUTURE", 400);
+        put("NO_PREVIEW", 404);
+        put("REPORT_NOT_CONFIGURED", 409);
         put("SERIES_ID_TAKEN", 409);
         put("CATEGORY_IN_USE", 409);
 

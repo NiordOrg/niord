@@ -417,6 +417,68 @@ public class PublicationIssueRestService {
         return out;
     }
 
+    @jakarta.inject.Inject
+    org.niord.core.publication.series.IssuePreviewService previews;
+
+    /**
+     * Whether any language's preview predates the current member set -- or is
+     * absent -- for a series that renders a document. The issue's own stamp moves
+     * on every edit and every curation, so it is what "current" is read against.
+     */
+    private boolean previewStale(PublicationIssue issue) {
+        if (issue.getSeries() == null || issue.getSeries().getReportId() == null) {
+            return false;
+        }
+        for (PublicationIssueDesc desc : issue.getDescs()) {
+            if (previews.isStale(issue, desc.getLang(), issue.getUpdated())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Generate a preview of the open issue as it stands, per language.
+     *
+     * The same render publish performs, into the preview store rather than the
+     * repository. Publishing with regenerate=false afterwards promotes exactly
+     * these bytes.
+     */
+    @POST
+    @Path("/issue/{publicId}/preview")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public List<Map<String, Object>> generatePreview(@PathParam("publicId") String publicId) {
+        PublicationIssue issue = required(publicId);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (org.niord.core.publication.series.IssuePreviewService.Preview p : publishService.preview(issue.getId())) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("lang", p.lang());
+            row.put("renderedAt", p.renderedAt().getTime());
+            row.put("href", "/rest/publication-issues/issue/" + publicId + "/preview/" + p.lang());
+            out.add(row);
+        }
+        return out;
+    }
+
+    /** The newest preview of one language, as a document. */
+    @GET
+    @Path("/issue/{publicId}/preview/{lang}")
+    @Produces("application/pdf")
+    @RolesAllowed("admin")
+    public jakarta.ws.rs.core.Response preview(@PathParam("publicId") String publicId,
+                                               @PathParam("lang") String lang) throws Exception {
+        PublicationIssue issue = required(publicId);
+        org.niord.core.publication.series.IssuePreviewService.Preview p = previews.newest(issue, lang)
+                .orElseThrow(() -> new IssueLifecycleService.TransitionRefusedException("NO_PREVIEW",
+                        "no preview has been generated for language " + lang));
+        byte[] bytes = java.nio.file.Files.readAllBytes(p.path());
+        return jakarta.ws.rs.core.Response.ok(bytes)
+                .header("Content-Disposition", "inline; filename=\"" + p.path().getFileName() + "\"")
+                .header("Cache-Control", "no-store")
+                .build();
+    }
+
     /** I15. The release rail. */
     @GET
     @Path("/issue/{publicId}/publish-checklist")
@@ -426,7 +488,7 @@ public class PublicationIssueRestService {
                                                 @QueryParam("allowFuture") boolean allowFuture) {
         PublicationIssue issue = required(publicId);
         PublishChecklistService.Checklist result =
-                checklist.compute(issue, new Date(), allowFuture, false);
+                checklist.compute(issue, new Date(), allowFuture, previewStale(issue));
 
         List<Map<String, Object>> rows = new ArrayList<>();
         for (PublishChecklistService.CheckRow r : result.rows()) {
@@ -463,8 +525,26 @@ public class PublicationIssueRestService {
                 : (List<String>) params.getOrDefault("acknowledgedWarnings", List.of());
         boolean regenerate = params == null || Boolean.TRUE.equals(params.getOrDefault("regenerate", true));
 
+        // The chosen cut-off, if any: the end of the content period, which the
+        // admin may place in the past (a week published late, a gap recovered)
+        // and never in the future -- a future cut-off would freeze the list
+        // before its window closed. Absent means now. The publication moment is
+        // always now and is not the caller's to set.
+        Date cutoff = null;
+        Object raw = params == null ? null : params.get("cutoff");
+        if (raw instanceof Number n) {
+            cutoff = new Date(n.longValue());
+        } else if (raw instanceof String s && !s.isBlank()) {
+            cutoff = new Date(Long.parseLong(s.trim()));
+        }
+        if (cutoff != null && cutoff.after(new Date())) {
+            throw new IssueLifecycleService.TransitionRefusedException("CUTOFF_IN_FUTURE",
+                    "a cut-off cannot lie in the future: the content period has not closed yet");
+        }
+
         IssuePublishService.PublishResult result = publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(regenerate, Set.copyOf(acknowledged), null, null));
+                new IssuePublishService.PublishRequest(regenerate, Set.copyOf(acknowledged),
+                        userService.currentUser(), cutoff));
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("publicId", publicId);
@@ -482,7 +562,8 @@ public class PublicationIssueRestService {
     @RolesAllowed("admin")
     public SystemPublicationIssueVo retire(@PathParam("publicId") String publicId,
                                            @QueryParam("reason") String reason) {
-        return lifecycle.retire(required(publicId), null, reason).toVo(SystemPublicationIssueVo.class);
+        return lifecycle.retire(required(publicId), userService.currentUser(), reason)
+                .toVo(SystemPublicationIssueVo.class);
     }
 
     @PUT
@@ -491,7 +572,8 @@ public class PublicationIssueRestService {
     @RolesAllowed("admin")
     public SystemPublicationIssueVo reactivate(@PathParam("publicId") String publicId,
                                                @QueryParam("reason") String reason) {
-        return lifecycle.reactivate(required(publicId), null, reason).toVo(SystemPublicationIssueVo.class);
+        return lifecycle.reactivate(required(publicId), userService.currentUser(), reason)
+                .toVo(SystemPublicationIssueVo.class);
     }
 
     /** I9. Delete, guarded. */

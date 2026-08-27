@@ -42,6 +42,43 @@ public final class CutoffRecovery {
     public static final String MANUAL = "MANUAL";
 
     /**
+     * Not a witness of the release: the period's own nominal close, taken as the
+     * cut-off because no stamp was believable.
+     *
+     * For a tiling issue that is the honest answer rather than a loss. The
+     * content period closed at its nominal instant whatever time the release
+     * action happened to run, and the membership rule reads the close, not the
+     * action. A stamp that trails the close by days is an edit, and an edit is
+     * not when the content was decided.
+     */
+    public static final String NOMINAL_CLOSE = "NOMINAL_CLOSE";
+
+    /**
+     * Not a witness of the release either: the boundary the public window names.
+     *
+     * An annual publication is released some time into the year it is valid for
+     * -- or the year after the one it accumulates -- and the row's last-write
+     * stamp says when somebody touched it, not what its contents describe. The
+     * cut-off is the end of the content period, and for a yearly series the
+     * public window IS that period (verified 2026-08-27: all 46 yearly rows carry
+     * 1 January to 31 December). The release moment is kept separately, as
+     * publishedAt, where it is credible.
+     */
+    public static final String PUBLIC_WINDOW = "PUBLIC_WINDOW";
+
+    /** How far past the nominal close a release stamp may trail and still be the release. */
+    public static final long RELEASE_SLACK_MS = 24L * 60 * 60 * 1000L;
+
+    /**
+     * How far BEFORE the nominal close a release stamp may run and still be the
+     * release. The archive's shape is the release action running shortly before
+     * the window opens -- a row written 11:30 for a 12:00 window, every week --
+     * so a stamp minutes early is the release; one days early is the previous
+     * issue's action, or a tag created ahead of time.
+     */
+    public static final long RELEASE_LEAD_MS = 3L * 60 * 60 * 1000L;
+
+    /**
      * Not a stage. The issue was never released, so there is no instant to find.
      *
      * Distinct from MANUAL, which means the release happened and the evidence is
@@ -72,18 +109,42 @@ public final class CutoffRecovery {
      * present is not the same as it being this release. The bounds are what turns
      * a plausible date into a checkable claim.
      */
-    public record Bounds(Date from, Date to) {
+    public record Bounds(Date from, Date to, Long leadMillis, Long slackMillis) {
 
         /** No interval to check against -- an in-force issue, or the head of a chain. */
-        public static final Bounds NONE = new Bounds(null, null);
+        public static final Bounds NONE = new Bounds(null, null, null, null);
+
+        /** The original shape: after the open, up to a full period past the close. */
+        public Bounds(Date from, Date to) {
+            this(from, to, null, null);
+        }
+
+        /**
+         * The release shape: the stamp must sit close to the nominal close -- no
+         * more than {@code lead} before it and {@code slack} after it -- and after
+         * the period opened.
+         *
+         * Measured at the holiday seams, both directions fail without this. Early:
+         * a creation stamp a minute after the previous issue's on "uge 12-13 -
+         * 2018", and next-tag stamps a full week early on the Christmas 2024 pair.
+         * Late: an `updated` five days late on "EfS uge 14 - 2017", and the day the
+         * clone was made on "uge 52 - 2024 og uge 1 - 2025". A full period of
+         * slack after the close, with only the interval start as a floor, believed
+         * all of them.
+         */
+        public static Bounds release(Date opened, Date nominalClose, long lead, long slack) {
+            return new Bounds(opened, nominalClose, lead, slack);
+        }
 
         /**
          * Whether a candidate could be this period's close.
          *
          * Strictly after the open, because a period cannot close before it begins.
-         * The upper bound is deliberately loose -- a full period past the nominal
-         * close -- because the release action legitimately runs a little AFTER the
-         * bound it closes at, and a tight ceiling would reject the ordinary case.
+         * Not earlier than the close minus the lead, where a lead is given. The
+         * upper bound is the nominal close plus the slack -- a full period where
+         * none is given, because the release action legitimately runs a little
+         * AFTER the bound it closes at and a tight ceiling would reject the
+         * ordinary case; a day where the caller knows the shape of the release.
          */
         boolean believable(Date candidate) {
             if (candidate == null) {
@@ -92,9 +153,13 @@ public final class CutoffRecovery {
             if (from != null && !candidate.after(from)) {
                 return false;
             }
-            if (from != null && to != null) {
-                long period = to.getTime() - from.getTime();
-                return candidate.getTime() <= to.getTime() + period;
+            if (to != null && leadMillis != null && candidate.getTime() < to.getTime() - leadMillis) {
+                return false;
+            }
+            if (to != null) {
+                long slack = slackMillis != null ? slackMillis
+                        : from != null ? to.getTime() - from.getTime() : Long.MAX_VALUE / 4;
+                return candidate.getTime() <= to.getTime() + slack;
             }
             return true;
         }
@@ -180,6 +245,52 @@ public final class CutoffRecovery {
         }
 
         return new Recovered(null, MANUAL, true);
+    }
+
+    /**
+     * The cascade for a tiling issue whose nominal close is known.
+     *
+     * Same stages, same order, same bounds -- and when none of them produces a
+     * believable release stamp the answer is the nominal close itself rather
+     * than "a human decides". The period closed at that instant regardless of
+     * what happened to the row afterwards; what is unknown is only the minute
+     * the release action ran, and that is publishedAt's question, not this one.
+     */
+    public static Recovered recoverOrNominal(Publication legacy, Date nextTagCreated, Date coverDate,
+                                             boolean released, Bounds bounds, Date nominalClose) {
+        Recovered r = recover(legacy, nextTagCreated, coverDate, released, bounds);
+        if (MANUAL.equals(r.source()) && nominalClose != null) {
+            return new Recovered(nominalClose, NOMINAL_CLOSE, true);
+        }
+        return r;
+    }
+
+    /**
+     * The cut-off of a yearly issue: the boundary its public window names.
+     *
+     * In-force lists (EfS A, Skydeområder) describe what was in force when the
+     * year's edition took effect, so the cut-off is where the window OPENS.
+     * Accumulated lists describe what was published during the year, so it is
+     * where the window CLOSES. The caller passes the right end; this records the
+     * provenance.
+     */
+    public static Recovered fromPublicWindow(Date boundary) {
+        return boundary == null ? new Recovered(null, MANUAL, true)
+                : new Recovered(boundary, PUBLIC_WINDOW, true);
+    }
+
+    /**
+     * Whether a stamp is credible as the moment the release action ran.
+     *
+     * Only the stamps a stage actually believed as the release qualify. A
+     * nominal close or a public-window boundary is not a moment anybody pressed
+     * anything, and reporting it as one would be the laundering this class
+     * exists to prevent.
+     */
+    public static boolean witnessesTheRelease(Recovered r) {
+        return r != null && r.cutoff() != null
+                && (FROM_UPDATED.equals(r.source()) || FROM_NEXT_TAG.equals(r.source())
+                    || FROM_COVER.equals(r.source()));
     }
 
     /**

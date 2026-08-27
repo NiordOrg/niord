@@ -57,15 +57,36 @@ public class IssueNamingTest {
 
     // ----------------------------------------------------------- the multi-week case
 
+    /**
+     * A window spanning two cadence PERIODS -- the double week over a holiday --
+     * is named for both weeks it closed. The from-week is the first week no
+     * other issue closed, not the week the previous cut-off happened to fall in.
+     */
     @Test
     public void aWindowSpanningTwoWeeksCarriesBothNumbers() {
-        Date from = at(2026, 1, 8, 10, 0);   // week 2
-        Date to = at(2026, 1, 15, 10, 0);    // week 3
+        Date from = at(2026, 1, 1, 10, 0);   // the previous cut-off, in week 1
+        Date to = at(2026, 1, 15, 10, 0);    // two weeks later, week 3
         IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null);
 
-        assertEquals(2, n.week(), "the from-week");
+        assertEquals(2, n.week(), "the first week this issue closed");
         assertEquals(3, n.weekTo(), "the cut-off week");
         assertEquals("Uge 2+3, 2026", "Uge " + n.week() + "+" + n.weekTo() + ", " + n.year());
+    }
+
+    /**
+     * An ORDINARY week straddles two ISO weeks too -- every Wednesday-to-Wednesday
+     * window does -- and is named for the one it closed in, with no second number.
+     * Naming it "2+3" was the defect: it made every week of the year read as a
+     * double week.
+     */
+    @Test
+    public void anOrdinaryWeekStraddlingTwoIsoWeeksIsNotADoubleWeek() {
+        Date from = at(2026, 1, 8, 10, 0);   // the previous cut-off, in week 2
+        Date to = at(2026, 1, 15, 10, 0);    // one period later, week 3
+        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null);
+
+        assertEquals(3, n.week(), "named for the week it closed in");
+        assertNull(n.weekTo(), "a single period carries no second number");
     }
 
     /**

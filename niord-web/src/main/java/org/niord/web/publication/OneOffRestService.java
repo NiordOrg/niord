@@ -437,6 +437,9 @@ public class OneOffRestService {
         seriesService.update(series);
     }
 
+    @Inject
+    org.niord.core.user.UserService userService;
+
     /**
      * Publish when there is something to publish.
      *
@@ -444,6 +447,11 @@ public class OneOffRestService {
      * kind with a report to run. An uploaded publication with no bytes yet is
      * left OPEN: the checklist would refuse it, and refusing here would turn
      * "you still need to attach the file" into an error on save.
+     *
+     * The one-off surface has no release rail to acknowledge resolution
+     * warnings on, so it acknowledges them all; the publish audit still records
+     * what the resolution raised. A one-off is almost always an uploaded file or
+     * a link, where nothing resolves and nothing can warn.
      */
     private void publishIfComplete(PublicationSeries series, PublicationIssue issue) {
         if (issue == null || !isPublishable(series, issue)) {
@@ -451,7 +459,8 @@ public class OneOffRestService {
         }
         boolean queryBacked = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY;
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(queryBacked, Set.of(), null, null));
+                new IssuePublishService.PublishRequest(queryBacked,
+                        IssuePublishService.PublishRequest.ALL_WARNINGS, userService.currentUser(), null));
     }
 
     private boolean isPublishable(PublicationSeries series, PublicationIssue issue) {

@@ -375,4 +375,58 @@ public class SeriesValidatorTest {
 
         assertDoesNotFire("S-20", s);
     }
+
+    // ------------------------------------------------------------------- S-21
+
+    /** The weekly shape is cut off at the release; a calendar default there is refused. */
+    @Test
+    public void aweeklySeriesIsCutOffAtTheRelease() {
+        PublicationSeries s = valid();
+        assertDoesNotFire("S-21", s);
+
+        s.setCutoffDefault(CutoffDefault.PERIOD_START);
+        assertFires("S-21", s);
+    }
+
+    /** A yearly series may be cut off where its period opens or closes. */
+    @Test
+    public void ayearlySeriesMayBeCutOffAtAPeriodBoundary() {
+        PublicationSeries s = valid();
+        s.setCadence(SeriesCadence.YEARLY);
+        s.setNominalCutoffDay(null);
+        s.setNominalCutoffDayOfMonth(1);
+        s.setNominalCutoffMonth(1);
+        s.setNumberingScheme(NumberingScheme.YEAR_EDITION);
+
+        s.setCutoffDefault(CutoffDefault.PERIOD_START);
+        assertDoesNotFire("S-21", s);
+        s.setCutoffDefault(CutoffDefault.PERIOD_END);
+        assertDoesNotFire("S-21", s);
+        s.setCutoffDefault(CutoffDefault.RELEASE_MOMENT);
+        assertDoesNotFire("S-21", s);
+    }
+
+    /** A series always says where its cut-off falls. */
+    @Test
+    public void thecutoffDefaultIsRequired() {
+        PublicationSeries s = valid();
+        s.setCutoffDefault(null);
+
+        assertFires("S-21", s);
+    }
+
+    /** The shape rule the importer and the create form share. */
+    @Test
+    public void theDefaultFollowsTheShape() {
+        assertEquals(CutoffDefault.RELEASE_MOMENT,
+                CutoffDefault.forShape(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL));
+        assertEquals(CutoffDefault.RELEASE_MOMENT,
+                CutoffDefault.forShape(SeriesCadence.WEEKLY, TimeRelation.IN_FORCE_AT_CUTOFF));
+        assertEquals(CutoffDefault.PERIOD_START,
+                CutoffDefault.forShape(SeriesCadence.YEARLY, TimeRelation.IN_FORCE_AT_CUTOFF));
+        assertEquals(CutoffDefault.PERIOD_END,
+                CutoffDefault.forShape(SeriesCadence.YEARLY, TimeRelation.PUBLISHED_IN_INTERVAL));
+        assertEquals(CutoffDefault.RELEASE_MOMENT,
+                CutoffDefault.forShape(SeriesCadence.NONE, null));
+    }
 }

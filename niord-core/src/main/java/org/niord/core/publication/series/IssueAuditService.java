@@ -59,6 +59,11 @@ public class IssueAuditService extends BaseService {
             "LINK_CLEARED",
             "PREVIEW_GENERATED",
             "WINDOW_ADJUSTED",
+            // The public window closed by a NEIGHBOUR's publish -- the predecessor
+            // capped at this stamp, or this issue capped at a successor that had
+            // already published. Written on the issue whose window moved, because
+            // that is where somebody looks when a publication left the site.
+            "VISIBILITY_CAPPED",
             "IMPORTED",
             "SERIES_ACTIVATED",
             "SERIES_RETIRED"));
@@ -111,6 +116,17 @@ public class IssueAuditService extends BaseService {
         detail.put("supersededByIssueId", successor.getId());
         detail.put("supersededByPublicId", successor.getPublicId());
         return write(predecessor, "SUPERSEDED_BY", ActorKind.USER, actor, null, detail);
+    }
+
+    /** Steps 12 and 13: a window closed by a neighbour's publish, on the issue whose window moved. */
+    public IssueAuditEntry visibilityCapped(PublicationIssue capped, User actor, Date cappedAt,
+                                            PublicationIssue byIssue) {
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("publicTo", cappedAt == null ? null : cappedAt.getTime());
+        detail.put("byIssueId", byIssue == null ? null : byIssue.getId());
+        detail.put("byPublicId", byIssue == null ? null : byIssue.getPublicId());
+        return write(capped, "VISIBILITY_CAPPED", actor == null ? ActorKind.SYSTEM : ActorKind.USER,
+                actor, null, detail);
     }
 
     public IssueAuditEntry retired(PublicationIssue issue, User actor, String reason) {

@@ -146,6 +146,34 @@ public final class GapDetection {
     }
 
     /**
+     * The periods left UNCOVERED between one issue's close and the next issue's
+     * open -- which is what "a period with no issue" actually means.
+     *
+     * Counting release slots between consecutive cut-offs reported every
+     * double-week issue as one week present and one missing: the next issue
+     * had carried both weeks, and its interval said so. Coverage is read off
+     * the interval. A next issue that opens where the previous closed leaves
+     * nothing uncovered however long its window; one that opens later leaves
+     * the stretch in between, tiled into periods, with half a period of slack
+     * for a release that drifted by hours.
+     *
+     * Returns empty whenever the gate is closed.
+     */
+    public static List<Gap> uncovered(Gate gate, Date previousClose, Date nextOpen, long periodMillis) {
+        List<Gap> out = new ArrayList<>();
+        if (!gate.enabled() || previousClose == null || nextOpen == null || periodMillis <= 0) {
+            return out;
+        }
+        long stretch = nextOpen.getTime() - previousClose.getTime();
+        long missing = Math.round((double) stretch / periodMillis);
+        for (int k = 0; k < missing; k++) {
+            long from = previousClose.getTime() + k * periodMillis;
+            out.add(new Gap(new Date(from), new Date(from + periodMillis), out.size()));
+        }
+        return out;
+    }
+
+    /**
      * Whether a series is dormant: nothing published for DORMANCY_PERIODS
      * cadence periods.
      *

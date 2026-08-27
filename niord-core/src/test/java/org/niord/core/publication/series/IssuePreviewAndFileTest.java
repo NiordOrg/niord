@@ -190,7 +190,7 @@ public class IssuePreviewAndFileTest {
         em.flush();
 
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
@@ -246,7 +246,7 @@ public class IssuePreviewAndFileTest {
         files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
@@ -322,7 +322,7 @@ public class IssuePreviewAndFileTest {
         files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, issue.getId());

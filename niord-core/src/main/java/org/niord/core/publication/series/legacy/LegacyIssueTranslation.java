@@ -161,6 +161,24 @@ public final class LegacyIssueTranslation {
             return;
         }
 
+        // A YEARLY tiling issue describes the year its window names, not the
+        // stretch since the previous edition was released. "Akkumuleret EfS 2003"
+        // is what was published during 2003, and it came out in 2016 -- chaining it
+        // from the previous edition's release would give it a thirteen-year
+        // interval running backwards. The public window is the content period
+        // (every yearly row in the estate carries 1 January to 31 December), and
+        // an open end closes at the end of the window's own year.
+        if (isYearly(legacy, series)) {
+            Date to = legacy.getPublishDateTo() != null
+                    ? legacy.getPublishDateTo()
+                    : endOfYear(released, series);
+            issue.setIntervalFrom(released);
+            issue.setIntervalFromSource(released == null ? null : IntervalBoundSource.NOMINAL);
+            issue.setIntervalTo(to);
+            issue.setIntervalToSource(to == null ? null : IntervalBoundSource.NOMINAL.name());
+            return;
+        }
+
         // A one-off has no cadence, so it has no preceding period to have closed.
         // Its window is the only period anybody ever described it by, and stepping
         // it back by "one period" would be stepping back by nothing defined.
@@ -206,6 +224,35 @@ public final class LegacyIssueTranslation {
             return series.getCadence() != null && series.getCadence() != SeriesCadence.NONE;
         }
         return legacy.getPeriodicalType() != null;
+    }
+
+    /**
+     * Whether the period is a calendar year -- the cadence under which the public
+     * window, not the release chain, is the content period.
+     */
+    public static boolean isYearly(Publication legacy, PublicationSeries series) {
+        if (series != null) {
+            return series.getCadence() == SeriesCadence.YEARLY;
+        }
+        return legacy.getPeriodicalType() == org.niord.core.publication.vo.PeriodicalType.YEARLY;
+    }
+
+    /**
+     * The last instant of the year a window opened in, in the series' own zone.
+     *
+     * Used only where legacy left the window open, which it did for every
+     * annual edition from 2021 on: nobody set an end date because in the old
+     * model each publication stood alone and nothing needed one.
+     */
+    static Date endOfYear(Date opened, PublicationSeries series) {
+        if (opened == null) {
+            return null;
+        }
+        java.time.ZoneId zone = series != null ? series.cutoffZone() : java.time.ZoneOffset.UTC;
+        java.time.ZonedDateTime start = opened.toInstant().atZone(zone);
+        java.time.ZonedDateTime end = start.withMonth(12).withDayOfMonth(31)
+                .withHour(23).withMinute(59).withSecond(59).withNano(0);
+        return Date.from(end.toInstant());
     }
 
     /**

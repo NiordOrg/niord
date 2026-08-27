@@ -182,7 +182,7 @@ public class IssueInvariantsTest {
                         + "from it, so a special character silently appends a duplicate citation");
 
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         PublicationIssue after = em.find(PublicationIssue.class, issue.getId());
         assertEquals(minted, after.getPublicId(), "publish changed publicId");
@@ -407,7 +407,7 @@ public class IssueInvariantsTest {
         em.flush();
 
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -443,7 +443,7 @@ public class IssueInvariantsTest {
         em.flush();
 
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -518,7 +518,7 @@ public class IssueInvariantsTest {
                 IntervalBoundSource.STAMPED, null);
         em.flush();
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         em.flush();
         return em.find(PublicationIssue.class, i.getId());
     }

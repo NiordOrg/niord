@@ -109,13 +109,19 @@ public final class IssueNaming {
 
         Integer weekTo = null;
         if (intervalFrom != null) {
-            ZonedDateTime start = Instant.ofEpochMilli(intervalFrom.getTime()).atZone(z);
-            int startWeek = start.get(iso.weekOfWeekBasedYear());
-            if (startWeek != week) {
-                // The window spans more than one week: "Uge 2+3, 2026". The FIRST
-                // week is the from-week and the cut-off week is the to-week.
+            // An issue is named for the week it CLOSED in. An ordinary weekly
+            // window runs Wednesday to Wednesday and therefore straddles two ISO
+            // weeks, so "the start falls in a different week" is true of every
+            // ordinary week and names nothing. A multi-week issue -- "Uge 15+16",
+            // the double week over a holiday -- is one whose window spans more
+            // than one cadence PERIOD, and it is named for the weeks it closed:
+            // the cut-off week and the ones before it that no issue closed.
+            long days = (cutoff.getTime() - intervalFrom.getTime()) / 86_400_000L;
+            long periods = Math.round(days / 7.0);
+            if (periods >= 2) {
+                ZonedDateTime firstClosed = end.minusWeeks(periods - 1);
                 weekTo = week;
-                week = startWeek;
+                week = firstClosed.get(iso.weekOfWeekBasedYear());
             }
         }
 

@@ -75,6 +75,9 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     private String releaseMode;
 
+    /** Where the cut-off falls by default at publish: RELEASE_MOMENT, PERIOD_START or PERIOD_END. */
+    private String cutoffDefault;
+
     private String nextIssueCreation;
 
     /** The per-series cutover switch. */
@@ -272,6 +275,14 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setMessagePublication(String messagePublication) {
         this.messagePublication = messagePublication;
+    }
+
+    public String getCutoffDefault() {
+        return cutoffDefault;
+    }
+
+    public void setCutoffDefault(String cutoffDefault) {
+        this.cutoffDefault = cutoffDefault;
     }
 
     public String getReleaseMode() {
