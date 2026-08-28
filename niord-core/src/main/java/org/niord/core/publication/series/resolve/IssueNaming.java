@@ -1,5 +1,7 @@
 package org.niord.core.publication.series.resolve;
 
+import org.niord.core.publication.series.PublicationException;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -67,21 +69,16 @@ public final class IssueNaming {
     }
 
     /** A pattern referenced a token that does not exist. */
-    public static class UnknownTokenException extends RuntimeException {
+    public static class UnknownTokenException extends PublicationException {
         private final String token;
 
         public UnknownTokenException(String token) {
-            super("unknown token ${" + token + "}; the vocabulary is " + TOKENS);
+            super("UNKNOWN_TOKEN", "unknown token ${" + token + "}; the vocabulary is " + TOKENS);
             this.token = token;
         }
 
         public String token() {
             return token;
-        }
-
-        /** The wire code, so the API does not invent its own. */
-        public String code() {
-            return "UNKNOWN_TOKEN";
         }
     }
 

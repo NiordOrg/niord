@@ -4,14 +4,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.IssuePublishService;
-import org.niord.core.publication.series.IssueRenderService;
-import org.niord.core.publication.series.MemberResolutionService;
-import org.niord.core.publication.series.criteria.CriteriaParseException;
-import org.niord.core.publication.series.criteria.CriteriaResolver;
-import org.niord.core.publication.series.resolve.IssueNaming;
+import org.niord.core.publication.series.PublicationException;
 import org.niord.core.publication.series.SeriesValidator;
+import org.niord.core.publication.series.resolve.IssueNaming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Turns the domain exceptions into the wire shape, once.
+ * Turns the publication failures into the wire shape, once.
  *
  * Without this every endpoint catches the same handful of exceptions and picks
  * its own status and body, and they drift -- so the same failure looks different
@@ -30,21 +26,25 @@ import java.util.Map;
  * Every response carries a CODE, not just a message. The message is for a human
  * reading a log; the code is what a client branches on, and a client that has to
  * match on message text breaks the first time somebody improves the wording.
+ *
+ * THE TYPE PARAMETER IS LOAD-BEARING. It is {@link PublicationException} and it
+ * must stay that. A provider declared for RuntimeException is a provider for
+ * every runtime failure in the deployment -- JAX-RS selects the mapper whose type
+ * parameter is the nearest supertype of what was thrown, and with no competing
+ * mapper that is the RuntimeException one for everything. Recognising nothing and
+ * rethrowing does not undo it either: a rethrow from inside a mapper escapes the
+ * container's own handling, so a bare {@code WebApplicationException(403)} raised
+ * anywhere else, and every request that matched no route, came back as a 500.
+ * Narrowing the parameter is what leaves those alone.
  */
 @Provider
-public class PublicationExceptionMapper implements ExceptionMapper<RuntimeException> {
+public class PublicationExceptionMapper implements ExceptionMapper<PublicationException> {
 
     private static final Logger log = LoggerFactory.getLogger(PublicationExceptionMapper.class);
 
     @Override
-    public Response toResponse(RuntimeException e) {
-        String code = codeOf(e);
-        if (code == null) {
-            // Not ours. Let it fall through rather than dressing an unrelated
-            // failure up as a publication error.
-            throw e;
-        }
-
+    public Response toResponse(PublicationException e) {
+        String code = e.code();
         int status = PublicationErrorCatalogue.statusOf(code);
 
         Map<String, Object> body = new LinkedHashMap<>();
@@ -68,10 +68,9 @@ public class PublicationExceptionMapper implements ExceptionMapper<RuntimeExcept
         // Which fields failed, so a form can put each message beside the control
         // that caused it. The message stays a readable sentence for a log; this
         // is the same information in the shape a client can act on.
-        if (e instanceof IssueLifecycleService.TransitionRefusedException refused
-                && !refused.fieldErrors().isEmpty()) {
+        if (!e.fieldErrors().isEmpty()) {
             List<Map<String, Object>> fields = new ArrayList<>();
-            for (SeriesValidator.FieldError fe : refused.fieldErrors()) {
+            for (SeriesValidator.FieldError fe : e.fieldErrors()) {
                 Map<String, Object> one = new LinkedHashMap<>();
                 one.put("rule", fe.rule());
                 one.put("field", fe.field());
@@ -90,35 +89,13 @@ public class PublicationExceptionMapper implements ExceptionMapper<RuntimeExcept
         return Response.status(status).entity(body).type(MediaType.APPLICATION_JSON).build();
     }
 
-    /** Maps an exception to its catalogue code, or null when it is not ours. */
-    static String codeOf(RuntimeException e) {
-        if (e instanceof IssuePublishService.AlreadyPublishedException already) {
-            return already.code();
-        }
-        if (e instanceof IssuePublishService.ArchiveFailedException archive) {
-            return archive.code();
-        }
-        if (e instanceof IssuePublishService.WarningsNotAcknowledgedException warnings) {
-            return warnings.code();
-        }
-        if (e instanceof IssueLifecycleService.TransitionRefusedException refused) {
-            return refused.code();
-        }
-        if (e instanceof IssueNaming.UnknownTokenException unknown) {
-            return unknown.code();
-        }
-        if (e instanceof CriteriaResolver.EmptyOperandException) {
-            return "EMPTY_OPERAND";
-        }
-        if (e instanceof MemberResolutionService.UnresolvableOperandException) {
-            return "UNRESOLVABLE_OPERAND";
-        }
-        if (e instanceof CriteriaParseException) {
-            return "CRITERIA_INVALID";
-        }
-        if (e instanceof IssueRenderService.RenderFailedException) {
-            return "RENDER_FAILED";
-        }
-        return null;
+    /**
+     * The catalogue code of a failure, or null when it is not one of ours.
+     *
+     * Kept as a static helper because the guard test asserts the code of every
+     * mapped type against the catalogue without standing a container up.
+     */
+    static String codeOf(Throwable e) {
+        return e instanceof PublicationException pe ? pe.code() : null;
     }
 }

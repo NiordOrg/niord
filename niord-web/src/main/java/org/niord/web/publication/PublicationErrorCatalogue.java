@@ -40,6 +40,12 @@ public final class PublicationErrorCatalogue {
         // 409 as well: the upload is well formed, and conflicts with the file
         // name another language already holds in the same folder.
         put("FILE_NAME_NOT_DISTINCT", 409);
+        // 400, not 409: a released document's address is fixed for its lifetime,
+        // so no change of state makes the same request correct. The bytes may be
+        // replaced in place -- that is the correction path -- but the name and the
+        // path may not move, because every stored citation is a URL into them and
+        // a rename leaves those pointing at the file that was just superseded.
+        put("FILE_NAME_IMMUTABLE", 400);
         put("NO_SUCH_LANGUAGE", 400);
         put("RETRO_CREATE_NOT_APPLICABLE", 400);
         put("SERIES_INVALID", 400);
@@ -145,6 +151,12 @@ public final class PublicationErrorCatalogue {
         put("SERIES_NOT_ACTIVE", 409);
         put("CATEGORY_INVALID", 400);
         put("CATEGORY_ID_TAKEN", 409);
+        // The interchange key a series stores, and the key an import upserts on.
+        // Renaming it through an update would rename the thing every series row
+        // points at, so the path wins and a body disagreeing with it is refused
+        // rather than quietly ignored -- a caller that believes it renamed a
+        // category and did not is worse off than one that got an error.
+        put("CATEGORY_ID_IMMUTABLE", 400);
         // An authority token that is not NEW or LEGACY: a client error, not a
         // server failure.
         put("INVALID_AUTHORITY", 400);

@@ -149,7 +149,7 @@ public class PublicationIssueRestService {
     @Path("/issue")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationIssueVo create(CreateIssueRequest request) {
         if (request == null || request.seriesId() == null || request.seriesId().isBlank()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
@@ -181,11 +181,20 @@ public class PublicationIssueRestService {
 
     // ------------------------------------------------------------------ reads
 
-    /** I3. Public shape. */
+    /**
+     * I3. One issue, lean shape, editor tier.
+     *
+     * NOT anonymous. An id is enough to read the row here, and the lean shape
+     * carries the name, the window and the per-language file name and link with
+     * no status field to tell an OPEN issue from a released one -- so an
+     * unauthenticated caller who holds an id reads an unreleased publication and
+     * cannot even tell that is what it is. Anonymous hydration of held ids is
+     * /by-ids, which is deliberately status-carrying and deliberately minimal.
+     */
     @GET
     @Path("/issue/{publicId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @PermitAll
+    @RolesAllowed(Roles.USER)
     public PublicationIssueVo get(@PathParam("publicId") String publicId) {
         return required(publicId).toVo(PublicationIssueVo.class);
     }
@@ -219,7 +228,7 @@ public class PublicationIssueRestService {
     @GET
     @Path("/series/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public IssueListResultVo bySeries(@PathParam("seriesId") String seriesId,
                                       @QueryParam("page") @DefaultValue("0") int page,
                                       @QueryParam("maxSize") Integer maxSize) {
@@ -401,11 +410,19 @@ public class PublicationIssueRestService {
         }
     }
 
-    /** I4. Editor shape. */
+    /**
+     * I4. The system shape of one issue.
+     *
+     * Open to a curator as well as an admin, because the curation screen is built
+     * on it: deciding whether a message belongs in an issue needs the issue's own
+     * criteria, its cut-off and its interval, and a curator refused this read can
+     * only curate blind. It is the same tier the member list, the trail and the
+     * standing decisions carry, so the whole curation surface answers one gate.
+     */
     @GET
     @Path("/editable-issue/{publicId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public SystemPublicationIssueVo getEditable(@PathParam("publicId") String publicId) {
         return required(publicId).toVo(SystemPublicationIssueVo.class);
     }
@@ -555,20 +572,29 @@ public class PublicationIssueRestService {
      * The rules live in the core service. The endpoint is the address, not the
      * behaviour -- the web layer has no container tests, so anything decided here
      * is decided where nothing can pin it.
+     *
+     * Open to a curator, who otherwise has three endpoints that CHANGE the member
+     * set and none that shows it.
      */
     @GET
     @Path("/issue/{publicId}/members")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public List<IssueMemberVo> members(@PathParam("publicId") String publicId) {
         return memberList.members(required(publicId));
     }
 
-    /** I11. The Historik panel. */
+    /**
+     * I11. The Historik panel.
+     *
+     * A curator reads it too: every curation decision writes a line here, and a
+     * curator who cannot see the trail cannot tell whether the exclusion they are
+     * about to make has already been made and withdrawn once.
+     */
     @GET
     @Path("/issue/{publicId}/audit")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public List<IssueAuditEntryVo> auditTrail(@PathParam("publicId") String publicId) {
         List<IssueAuditEntryVo> out = new ArrayList<>();
         for (IssueAuditEntry e : audit.forIssue(required(publicId))) {
@@ -576,7 +602,12 @@ public class PublicationIssueRestService {
             vo.setId(e.getId());
             vo.setAction(e.getAction());
             vo.setActorKind(e.getActorKind() == null ? null : e.getActorKind().name());
-            vo.setActorLabel(e.getUser() == null ? e.getActorLabel() : e.getUser().getUsername());
+            // The person's NAME, not their login. User.getName() is first plus
+            // last name and already falls back to the username when both are
+            // blank, so this can never render emptier than the login did -- and
+            // the Historik panel is read by people asking who did something,
+            // for whom "hlp" is not an answer.
+            vo.setActorLabel(e.getUser() == null ? e.getActorLabel() : e.getUser().getName());
             vo.setCreated(e.getCreated());
             vo.setReason(e.getReason());
             vo.setArchivePath(e.getArchivePath());
@@ -616,7 +647,7 @@ public class PublicationIssueRestService {
     @POST
     @Path("/issue/{publicId}/preview")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public List<Map<String, Object>> generatePreview(@PathParam("publicId") String publicId) {
         PublicationIssue issue = required(publicId);
         List<Map<String, Object>> out = new ArrayList<>();
@@ -634,7 +665,7 @@ public class PublicationIssueRestService {
     @GET
     @Path("/issue/{publicId}/preview/{lang}")
     @Produces("application/pdf")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public jakarta.ws.rs.core.Response preview(@PathParam("publicId") String publicId,
                                                @PathParam("lang") String lang) throws Exception {
         PublicationIssue issue = required(publicId);
@@ -652,7 +683,7 @@ public class PublicationIssueRestService {
     @GET
     @Path("/issue/{publicId}/publish-checklist")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> publishChecklist(@PathParam("publicId") String publicId,
                                                 @QueryParam("allowFuture") boolean allowFuture) {
         PublicationIssue issue = required(publicId);
@@ -684,7 +715,7 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/publish")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> publish(@PathParam("publicId") String publicId,
                                        Map<String, Object> params) {
         PublicationIssue issue = required(publicId);
@@ -735,7 +766,7 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/amend")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> amend(@PathParam("publicId") String publicId,
                                      Map<String, Object> params) {
         PublicationIssue issue = required(publicId);
@@ -773,7 +804,7 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/new-edition")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationIssueVo newEdition(@PathParam("publicId") String publicId,
                                                Map<String, Object> params) {
         PublicationIssue predecessor = required(publicId);
@@ -795,7 +826,7 @@ public class PublicationIssueRestService {
     @PUT
     @Path("/issue/{publicId}/retire")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationIssueVo retire(@PathParam("publicId") String publicId,
                                            @QueryParam("reason") String reason) {
         return lifecycle.retire(required(publicId), userService.currentUser(), reason)
@@ -805,7 +836,7 @@ public class PublicationIssueRestService {
     @PUT
     @Path("/issue/{publicId}/reactivate")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationIssueVo reactivate(@PathParam("publicId") String publicId,
                                                @QueryParam("reason") String reason) {
         return lifecycle.reactivate(required(publicId), userService.currentUser(), reason)
@@ -815,7 +846,7 @@ public class PublicationIssueRestService {
     /** I9. Delete, guarded. */
     @DELETE
     @Path("/issue/{publicId}")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public void delete(@PathParam("publicId") String publicId) {
         lifecycle.deleteIssue(required(publicId), null);
     }
@@ -838,7 +869,7 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationIssueVo update(@PathParam("publicId") String publicId,
                                            UpdateIssueRequest request) {
         PublicationIssue issue = required(publicId);
@@ -903,7 +934,7 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/file/{lang}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationIssueVo uploadFile(@PathParam("publicId") String publicId,
                                                @PathParam("lang") String lang,
                                                MultipartFormDataInput input) throws Exception {
@@ -964,7 +995,7 @@ public class PublicationIssueRestService {
     @DELETE
     @Path("/issue/{publicId}/file/{lang}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationIssueVo clearFile(@PathParam("publicId") String publicId,
                                               @PathParam("lang") String lang) {
         fileService.clear(required(publicId), lang, userService.currentUser());
@@ -983,7 +1014,7 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/link/{lang}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationIssueVo setLink(@PathParam("publicId") String publicId,
                                             @PathParam("lang") String lang,
                                             Map<String, String> body) {
@@ -1000,7 +1031,7 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/overrides/include")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"publication-curate", "admin"})
+    @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public void includeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
         curate(publicId, body, OverrideKind.INCLUDE);
     }
@@ -1009,7 +1040,7 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/overrides/exclude")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"publication-curate", "admin"})
+    @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public void excludeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
         curate(publicId, body, OverrideKind.EXCLUDE);
     }
@@ -1030,7 +1061,7 @@ public class PublicationIssueRestService {
     @GET
     @Path("/issue/{publicId}/overrides")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"publication-curate", "admin"})
+    @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public List<IssueOverrideVo> overrides(@PathParam("publicId") String publicId) {
         return memberList.standingDecisions(required(publicId));
     }
@@ -1045,7 +1076,7 @@ public class PublicationIssueRestService {
     @DELETE
     @Path("/issue/{publicId}/overrides/{messageUid}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"publication-curate", "admin"})
+    @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public void clearOverride(@PathParam("publicId") String publicId,
                               @PathParam("messageUid") String messageUid,
                               @QueryParam("reason") String reason) {

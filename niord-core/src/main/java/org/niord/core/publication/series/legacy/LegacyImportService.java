@@ -333,6 +333,17 @@ public class LegacyImportService extends BaseService {
                 .setParameter("ids", seriesIds)
                 .executeUpdate();
 
+        // Curation decisions taken on an imported issue since the import ran.
+        // An override owns a foreign key to the issue, so leaving one behind
+        // fails the issue delete below with a constraint violation naming a table
+        // nobody was thinking about -- and this undo is the only escape hatch the
+        // cutover window has, so it must not be the thing that breaks in it.
+        int overrides = em.createQuery(
+                        "DELETE FROM IssueOverride o WHERE o.issue IN "
+                                + "(SELECT i FROM PublicationIssue i WHERE i.series.id IN :ids)")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
         // The trail the import wrote, and anything written against these issues
         // and series since: an audit entry owns a foreign key to the row it
         // describes, and the rows are about to go.
@@ -347,6 +358,16 @@ public class LegacyImportService extends BaseService {
 
         int issues = em.createQuery(
                         "DELETE FROM PublicationIssue i WHERE i.series.id IN :ids")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
+        // The configured language list, which lives in its own collection table
+        // with a foreign key back to the series. JPQL cannot address it -- it is
+        // not an entity -- and a bulk delete of the owner does not cascade the way
+        // remove() would, so the rows survive and the series delete below fails
+        // on the constraint.
+        em.createNativeQuery(
+                        "DELETE FROM PublicationSeries_languages WHERE PublicationSeries_id IN (:ids)")
                 .setParameter("ids", seriesIds)
                 .executeUpdate();
 
@@ -370,9 +391,9 @@ public class LegacyImportService extends BaseService {
 
         int descs = issueDescs + seriesDescs + orphanedDescs;
 
-        log.warn("legacy import undone: {} series, {} issues, {} members, {} descs deleted"
-                        + " (of which {} were orphaned by an earlier import)",
-                series, issues, members, descs, orphanedDescs);
+        log.warn("legacy import undone: {} series, {} issues, {} members, {} overrides, {} descs"
+                        + " deleted (of which {} descs were orphaned by an earlier import)",
+                series, issues, members, overrides, descs, orphanedDescs);
         return new UndoReport(true, series, issues, members, descs, List.of());
     }
 
@@ -791,15 +812,17 @@ public class LegacyImportService extends BaseService {
             Publication source = LegacyOrphanGrouping.configurationSource(group);
             LegacyOrphanGrouping.Placement place = LegacyOrphanGrouping.placeOf(source);
 
-            // A ruled id is not auto-suffixed. B5-v names these three series in
-            // words -- nm-annex-ncags and the rest -- so a clash means the ruling
-            // and the estate disagree, which is a sentence for a human and not a
-            // name for the importer to invent.
+            // A hand-authored id is not auto-suffixed. These series -- the NCAGS
+            // and ice-service annexes and their siblings -- are named explicitly
+            // rather than derived, so a clash means the naming and the estate
+            // disagree, which is a sentence for a human and not a name for the
+            // importer to invent.
             if (!authored.add(e.getKey())) {
                 problem(plan, "SERIES_ID_COLLISION", source,
-                        "the ruled seriesId '" + e.getKey() + "' is already taken by another series. "
-                                + "B5-v names this series explicitly, so the importer will not rename "
-                                + "it: either the ruling or the colliding series has to change.");
+                        "the hand-authored seriesId '" + e.getKey() + "' is already taken by another "
+                                + "series. This id was chosen explicitly rather than derived, so the "
+                                + "importer will not rename it: either the chosen name or the "
+                                + "colliding series has to change.");
                 continue;
             }
 
@@ -1023,6 +1046,19 @@ public class LegacyImportService extends BaseService {
                             legacy, series, frozenAt, sibling ? siblingsOpenAt : previousCutoff);
 
                     CutoffRecovery.Recovered cutoff = recoverCutoff(issue, legacy, series, chain, i);
+                    // A released row that ends up with no cut-off is carried
+                    // through and NAMED. The alternative to naming it is not
+                    // naming it: this import runs once, in one window, and a row
+                    // nobody was told about is a row nobody goes back to. It is a
+                    // note rather than a problem because refusing the whole estate
+                    // over one undated archive row is not proportionate.
+                    if (cutoff.cutoff() == null && issue.getStatus() != IssueStatus.OPEN) {
+                        note(plan, "CUTOFF_NOT_RECOVERABLE", legacy,
+                                "this row carries neither a start date nor a credible release stamp, "
+                                        + "so its content period has no end that can be believed. It "
+                                        + "imports without one rather than with an invented date; set "
+                                        + "the cut-off by hand if the archive needs it.");
+                    }
                     issue.setCutoffStampedAt(cutoff.cutoff());
                     issue.setCutoffSource(cutoff.source());
                     issue.setCutoffReconstructed(cutoff.reconstructed());
@@ -1266,7 +1302,11 @@ public class LegacyImportService extends BaseService {
      * RETIRED counts as released: it was published and then withdrawn, so a
      * release instant exists. OPEN is the one that never had one.
      */
-    private static CutoffRecovery.Recovered recoverCutoff(PublicationIssue issue, Publication legacy,
+    // Package-visible so the branch decisions can be asserted on one row. Reaching
+    // them through plan() means reading the whole legacy estate to ask a question
+    // about a single archive entry, and the estate a shared database happens to
+    // hold is not a fixture.
+    static CutoffRecovery.Recovered recoverCutoff(PublicationIssue issue, Publication legacy,
                                                           PublicationSeries series,
                                                           List<Publication> chain, int i) {
         boolean released = issue.getStatus() != IssueStatus.OPEN;
@@ -1284,6 +1324,22 @@ public class LegacyImportService extends BaseService {
             // The tiling and the weekly in-force shapes alike: the release stamp
             // must sit within a day after the nominal close, else the close itself.
             Date nominalClose = legacy.getPublishDateFrom();
+
+            // A HALF-DATED ROW HAS NOTHING TO CHECK A STAMP AGAINST, so it gets
+            // no stamp at all.
+            //
+            // The believability bounds are built from the period's open and its
+            // nominal close. With neither -- an archived row that carries no start
+            // date, on a series whose issues have no lower bound -- every bound is
+            // null and the test degenerates to "yes": the cascade then adopts
+            // whatever timestamp it finds first, and one archived row imported a
+            // cut-off two years and three months before the publication existed,
+            // which made it the oldest issue of its archive forever afterwards.
+            // This import is one-way, so an invented date is not a display bug.
+            if (nominalClose == null && issue.getIntervalFrom() == null) {
+                return new CutoffRecovery.Recovered(null, CutoffRecovery.MANUAL, true);
+            }
+
             return CutoffRecovery.recoverOrNominal(
                     legacy, CutoffRecovery.nextTagCreated(chain, i), null, true,
                     CutoffRecovery.Bounds.release(issue.getIntervalFrom(), nominalClose,
@@ -1631,6 +1687,18 @@ public class LegacyImportService extends BaseService {
 
     private void problem(Plan plan, String code, Publication legacy, String detail) {
         plan.report().getProblems().add(new LegacyImportReportVo.ProblemVo(
+                code, legacy.getPublicationId(), titleOf(legacy), detail));
+    }
+
+    /**
+     * A row that imports, carrying a decision somebody should read.
+     *
+     * Separate from problem() because a problem refuses the estate. Anything that
+     * belongs on this list would otherwise be invisible: the estate is too large
+     * to read row by row, and the run happens once.
+     */
+    private void note(Plan plan, String code, Publication legacy, String detail) {
+        plan.report().getNotes().add(new LegacyImportReportVo.ProblemVo(
                 code, legacy.getPublicationId(), titleOf(legacy), detail));
     }
 

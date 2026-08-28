@@ -15,7 +15,7 @@ import org.niord.model.ILocalizedDesc;
  * Identity comes from DescEntity and nothing else. Every id in this
  * system is drawn from one shared sequence row, and inheriting the base class IS the whole
  * contract. Giving this table its own id generator would break that silently, for this
- * table alone. EntityIdentityTest enforces it.
+ * table alone. EntityContractTest.noEntityBringsItsOwnIdGenerator() enforces it.
  */
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))

@@ -51,6 +51,11 @@ public class IssueAuditService extends BaseService {
             "OVERRIDE_EXCLUDED",
             "OVERRIDE_REMOVED",
             "FILE_UPLOADED",
+            // A document that was already released, overwritten by hand. Distinct
+            // from an upload because the trail has to say whether a file appeared
+            // or a cited one was replaced -- the archive path on this entry is
+            // the only route back to what the public was reading before.
+            "FILE_REPLACED_MANUALLY",
             "FILE_CLEARED",
             // A link is the published artefact for an external publication, exactly
             // as a file is for a hosted one, so changing one is as much a change to
@@ -220,17 +225,29 @@ public class IssueAuditService extends BaseService {
 
     // ------------------------------------------------------------------ reads
 
-    /** The Historik panel, oldest first. */
+    /**
+     * The Historik panel, oldest first.
+     *
+     * BY THE TIME, with the surrogate id only as a tiebreak. The created column
+     * exists precisely so the panel has something to order by that is a time
+     * rather than an insertion order -- ordering on the id alone reads correctly
+     * only while nothing is ever backfilled, and an import that writes its
+     * entries in one pass writes them in whatever order it iterated. The id keeps
+     * the order total for entries written in the same millisecond, which the
+     * publish transaction does.
+     */
     public List<IssueAuditEntry> forIssue(PublicationIssue issue) {
         return em.createQuery(
-                        "SELECT a FROM IssueAuditEntry a WHERE a.issue = :i ORDER BY a.id ASC",
+                        "SELECT a FROM IssueAuditEntry a WHERE a.issue = :i "
+                                + "ORDER BY a.created ASC, a.id ASC",
                         IssueAuditEntry.class)
                 .setParameter("i", issue).getResultList();
     }
 
     public List<IssueAuditEntry> forSeries(PublicationSeries series) {
         return em.createQuery(
-                        "SELECT a FROM IssueAuditEntry a WHERE a.series = :s ORDER BY a.id ASC",
+                        "SELECT a FROM IssueAuditEntry a WHERE a.series = :s "
+                                + "ORDER BY a.created ASC, a.id ASC",
                         IssueAuditEntry.class)
                 .setParameter("s", series).getResultList();
     }

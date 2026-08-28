@@ -149,20 +149,16 @@ public class IssuePublishService extends BaseService {
     }
 
     /** The issue was already published. Carries the winner's stamp. */
-    public static class AlreadyPublishedException extends RuntimeException {
+    public static class AlreadyPublishedException extends PublicationException {
         private final Date stampedAt;
 
         public AlreadyPublishedException(Date stampedAt) {
-            super("ISSUE_ALREADY_PUBLISHED");
+            super("ISSUE_ALREADY_PUBLISHED", "ISSUE_ALREADY_PUBLISHED");
             this.stampedAt = stampedAt;
         }
 
         public Date stampedAt() {
             return stampedAt;
-        }
-
-        public String code() {
-            return "ISSUE_ALREADY_PUBLISHED";
         }
     }
 
@@ -175,31 +171,24 @@ public class IssuePublishService extends BaseService {
      * to put in front of them, and an issue that publishes first and reports the
      * warning afterwards has already put the wrong list on the public site.
      */
-    public static class WarningsNotAcknowledgedException extends RuntimeException {
+    public static class WarningsNotAcknowledgedException extends PublicationException {
         private final List<String> codes;
 
         public WarningsNotAcknowledgedException(List<String> codes) {
-            super("the resolution raised warnings that were not acknowledged: " + codes);
+            super("WARNING_NOT_ACKNOWLEDGED",
+                    "the resolution raised warnings that were not acknowledged: " + codes);
             this.codes = List.copyOf(codes);
         }
 
         public List<String> codes() {
             return codes;
         }
-
-        public String code() {
-            return "WARNING_NOT_ACKNOWLEDGED";
-        }
     }
 
     /** The archive step failed; nothing may proceed. */
-    public static class ArchiveFailedException extends RuntimeException {
+    public static class ArchiveFailedException extends PublicationException {
         public ArchiveFailedException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        public String code() {
-            return "ARCHIVE_FAILED";
+            super("ARCHIVE_FAILED", message, cause);
         }
     }
 

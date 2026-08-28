@@ -12,7 +12,10 @@ import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.SeriesValidator;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
+
+import java.util.List;
 
 /**
  * Turns one imported series document into an entity to persist, or drops it.
@@ -84,9 +87,52 @@ public class BatchPublicationSeriesImportProcessor extends AbstractItemHandler {
 
         SeriesStatus keep = existing == null ? SeriesStatus.DRAFT : existing.getStatus();
         series.updateFromVo(vo);
-        series.setCategory(category);
+
+        // AN ABSENT categoryId LEAVES THE CATEGORY ALONE; it does not clear it.
+        //
+        // The column is NOT NULL, so writing null here does not drop a category:
+        // it throws inside the flush, and a batch flush covers a whole chunk --
+        // so one document without the field killed the ten items around it, and
+        // the log named a Java property rather than the file. A document that
+        // omits the field is not asking for the series to leave its category; a
+        // NEW series with no category has nowhere to go at all, and that row is
+        // dropped with a sentence rather than taking its neighbours down.
+        if (category != null) {
+            series.setCategory(category);
+        } else if (series.getCategory() == null) {
+            getLog().warning("Skipping series " + vo.getSeriesId() + ": no categoryId, and every "
+                    + "series belongs to a category -- it decides where the series appears on the "
+                    + "public page");
+            return null;
+        }
+
         series.setDomain(domain);
         series.setStatus(keep);
+
+        // THE SAME GATE THE REST SAVES APPLY. A draft may be incomplete; it may
+        // not be wrong. Without this a file could store a release mode the system
+        // cannot honour, or a report parameter the issue supplies, and the series
+        // would look imported until somebody tried to activate it -- at which
+        // point the error names a field nobody typed.
+        List<SeriesValidator.FieldError> hard = SeriesValidator.hardRules(series);
+        if (!hard.isEmpty()) {
+            getLog().warning("Skipping series " + vo.getSeriesId() + ": " + hard.size()
+                    + " rule(s) fail -- " + hard);
+            return null;
+        }
+
+        // And an ACTIVE series may not be edited into incompleteness, exactly as
+        // the update endpoint refuses. An imported document never ACTIVATES a
+        // series, but it can arrive against one that is already active.
+        if (keep == SeriesStatus.ACTIVE) {
+            List<SeriesValidator.FieldError> errors =
+                    SeriesValidator.validateForActivation(series, null);
+            if (!errors.isEmpty()) {
+                getLog().warning("Skipping series " + vo.getSeriesId() + ": it is ACTIVE and the "
+                        + "document would leave it failing " + errors.size() + " rule(s) -- " + errors);
+                return null;
+            }
+        }
 
         getLog().info((existing == null ? "Importing new series " : "Updating series ")
                 + vo.getSeriesId());

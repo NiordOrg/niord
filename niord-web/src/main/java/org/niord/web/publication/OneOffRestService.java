@@ -1,6 +1,7 @@
 package org.niord.web.publication;
 
 import jakarta.annotation.security.RolesAllowed;
+import org.niord.core.user.Roles;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -27,6 +28,7 @@ import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
+import org.niord.core.publication.series.SeriesIdSlug;
 import org.niord.core.publication.series.PublicationIssueService;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesDesc;
@@ -153,7 +155,7 @@ public class OneOffRestService {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public List<OneOffVo> list() {
         return seriesService.findAll().stream()
                 .filter(s -> s.getKind() == SeriesKind.ONE_OFF)
@@ -174,7 +176,7 @@ public class OneOffRestService {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public OneOffVo create(OneOffVo request) {
         SystemPublicationSeriesVo vo = seriesOf(request);
 
@@ -235,7 +237,7 @@ public class OneOffRestService {
     @Path("/{seriesId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public OneOffVo update(@PathParam("seriesId") String seriesId, OneOffVo request) {
         PublicationSeries series = required(seriesId);
         SystemPublicationSeriesVo vo = seriesOf(request);
@@ -526,7 +528,11 @@ public class OneOffRestService {
                     "a series with id " + proposed + " already exists");
         }
         for (int n = 2; n < 100; n++) {
-            String candidate = truncate(proposed, 60) + "-" + n;
+            // Room for the suffix, so the disambiguator is never the part that
+            // gets cut -- a truncated one reintroduces the collision it exists
+            // to break.
+            String suffix = "-" + n;
+            String candidate = truncate(proposed, SeriesIdSlug.MAX_SERIES_ID - suffix.length()) + suffix;
             if (seriesService.findBySeriesId(candidate) == null) {
                 return candidate;
             }
@@ -538,25 +544,18 @@ public class OneOffRestService {
     /**
      * Danish letters fold to ASCII rather than vanishing.
      *
-     * NFD strips the diacritic off the ring above a, but slashed o has none to
-     * strip and ae is a ligature, so a bare non-ASCII filter would drop both and
-     * leave a hole in the middle of the identifier.
+     * Delegated to the shared minting, because the legacy import mints into the
+     * SAME namespace and the two used to disagree about where the fold happens.
+     * A series id is immutable after create, so the disagreement would not have
+     * surfaced as a conflict -- it would have produced two series meant to be one.
      */
     private static String slug(String text) {
-        String folded = text
-                .replace("æ", "ae").replace("Æ", "AE")
-                .replace("ø", "oe").replace("Ø", "OE")
-                .replace("å", "aa").replace("Å", "AA");
-        String ascii = Normalizer.normalize(folded, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .toLowerCase(Locale.ROOT);
-        String cleaned = ascii.replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+", "").replaceAll("-+$", "");
-        return truncate(cleaned.isEmpty() ? "publication" : cleaned, 64);
+        String cleaned = SeriesIdSlug.fold(text);
+        return truncate(cleaned.isEmpty() ? "publication" : cleaned, SeriesIdSlug.MAX_SERIES_ID);
     }
 
     private static String truncate(String text, int max) {
-        return text.length() <= max ? text : text.substring(0, max).replaceAll("-+$", "");
+        return SeriesIdSlug.fit(text, max);
     }
 
     private OneOffVo toVo(PublicationSeries series) {

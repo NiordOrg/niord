@@ -2,6 +2,7 @@ package org.niord.web.publication;
 
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
+import org.niord.core.user.Roles;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -13,6 +14,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -43,21 +45,27 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
     @Inject
     EntityManager em;
 
+    /** The bound an anonymous read falls back to when none is given. */
+    public static final int DEFAULT_LIMIT = 1000;
+
     /** C1. Everything, for a picker. */
     @GET
     @Path("/all")
     @Produces(MediaType.APPLICATION_JSON)
     @PermitAll
     public List<Map<String, Object>> all(@QueryParam("lang") String lang,
-                                         @QueryParam("limit") Integer limit) {
+                                         @QueryParam("limit") @DefaultValue("1000") int limit) {
         var query = em.createQuery(
                 "SELECT c FROM PublicationCategory c ORDER BY c.priority ASC, c.categoryId ASC",
                 PublicationCategory.class);
-        // The limit is a real bound, not a page: every shipped picker in the
-        // legacy app capped silently at 100 and nobody noticed until a list grew.
-        if (limit != null && limit > 0) {
-            query.setMaxResults(limit);
-        }
+        // The limit is a real bound, not a page, and it is ALWAYS applied. This
+        // endpoint is anonymous and externally consumed -- the admin "Export…"
+        // link is a bare href with no role and no ticket -- so an absent or zero
+        // limit meaning "everything" hands anybody an unbounded read of the
+        // table. The default is the one the shipped contract carries; the
+        // parameter name is that contract too, and the asymmetry with
+        // /publications/all's maxSize is deliberate and must not be "fixed".
+        query.setMaxResults(limit > 0 ? limit : DEFAULT_LIMIT);
         List<Map<String, Object>> out = new ArrayList<>();
         for (PublicationCategory c : query.getResultList()) {
             out.add(toMap(c, lang));
@@ -123,9 +131,12 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
     @Path("/publication-category/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> create(Map<String, Object> body) {
-        String categoryId = body == null ? null : String.valueOf(body.getOrDefault("categoryId", "")).trim();
+        // "" and not null, so the emptiness test below answers an absent body
+        // with the same coded refusal it answers an absent field -- rather than
+        // with a NullPointerException the caller reads as a server failure.
+        String categoryId = body == null ? "" : String.valueOf(body.getOrDefault("categoryId", "")).trim();
         if (categoryId.isEmpty()) {
             throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_INVALID",
                     "categoryId is required; it is the stable key a series stores");
@@ -160,12 +171,34 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
     @Path("/publication-category/{categoryId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> update(@PathParam("categoryId") String categoryId,
                                       Map<String, Object> body) {
+        if (body == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_INVALID",
+                    "a category body is required");
+        }
+        // The path wins, and a body that disagrees is refused rather than
+        // silently ignored. categoryId is what a series stores and what an
+        // import upserts on, so a caller that believes it renamed a category and
+        // did not is worse off than one that got an error.
+        Object bodyId = body.get("categoryId");
+        if (bodyId != null && !String.valueOf(bodyId).isBlank()
+                && !categoryId.equals(String.valueOf(bodyId))) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_ID_IMMUTABLE",
+                    "categoryId is the key every series stores; it cannot be changed after create. "
+                            + "The path says '" + categoryId + "' and the body says '" + bodyId + "'");
+        }
+
         PublicationCategory c = required(categoryId);
-        if (body.containsKey("priority")) {
-            c.setPriority(((Number) body.get("priority")).intValue());
+        // The same instanceof guard create uses two methods up. A blind cast made
+        // {"priority": null} -- and {"priority": "100"} -- a 500 out of an
+        // ordinary form save.
+        if (body.get("priority") instanceof Number n) {
+            c.setPriority(n.intValue());
+        } else if (body.containsKey("priority") && body.get("priority") != null) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_INVALID",
+                    "priority is a number; it decides where the category sorts on the public page");
         }
         if (body.containsKey("publish")) {
             c.setPublish(Boolean.TRUE.equals(body.get("publish")));
@@ -179,7 +212,7 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
     /** C6. Delete, refused while anything still points at it. */
     @DELETE
     @Path("/publication-category/{categoryId}")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public void delete(@PathParam("categoryId") String categoryId) {
         PublicationCategory c = required(categoryId);
 
@@ -213,29 +246,49 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
     @Path("/upload-publication-categories")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String importCategories(MultipartFormDataInput input) throws Exception {
         return executeBatchJobFromUploadedFile(input, "publication-category-import");
     }
 
-    private Map<String, Object> toMap(PublicationCategory c, String lang) {
+    /**
+     * The wire shape of one category.
+     *
+     * Package-visible and static because the language fallback below is a rule
+     * rather than a formatting detail, and testing it through the endpoint means
+     * standing up a container this module does not have.
+     */
+    static Map<String, Object> toMap(PublicationCategory c, String lang) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("categoryId", c.getCategoryId());
         out.put("priority", c.getPriority());
         out.put("publish", c.isPublish());
+        // The requested language, or the first one the category HAS.
+        //
+        // The fallback is not a nicety. A category with no desc in the requested
+        // language used to answer with an empty descs array, and every consumer
+        // of that -- the series form's dropdown, the still-shipped admin list --
+        // then rendered the raw slug or threw on descs[0].name. Every other
+        // localized read in the product falls back the same way, and this is the
+        // shape that was there before the two category resources were merged.
+        List<PublicationCategoryDesc> rows = c.getDescs().stream()
+                .filter(d -> lang == null || lang.equals(d.getLang()))
+                .toList();
+        if (rows.isEmpty() && !c.getDescs().isEmpty()) {
+            rows = List.of(c.getDescs().get(0));
+        }
+
         List<Map<String, String>> descs = new ArrayList<>();
-        c.getDescs().forEach(d -> {
-            if (lang == null || lang.equals(d.getLang())) {
-                Map<String, String> dm = new LinkedHashMap<>();
-                dm.put("lang", d.getLang());
-                dm.put("name", d.getName());
-                // CAT-004: the description exists on the entity and is carried
-                // here, so that keeping it is a decision rather than an accident
-                // of which fields somebody happened to map.
-                dm.put("description", d.getDescription());
-                descs.add(dm);
-            }
-        });
+        for (PublicationCategoryDesc d : rows) {
+            Map<String, String> dm = new LinkedHashMap<>();
+            dm.put("lang", d.getLang());
+            dm.put("name", d.getName());
+            // The description exists on the entity and is carried here, so that
+            // keeping it is a decision rather than an accident of which fields
+            // somebody happened to map.
+            dm.put("description", d.getDescription());
+            descs.add(dm);
+        }
         out.put("descs", descs);
         return out;
     }

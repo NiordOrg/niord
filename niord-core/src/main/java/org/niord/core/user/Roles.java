@@ -31,4 +31,13 @@ public interface Roles {
     String EDITOR = "editor";
     String ADMIN = "admin";
     String SYSADMIN = "sysadmin";
+
+    /**
+     * The right to add or remove a publication issue's members by hand.
+     * <p>
+     * Not part of the composite ladder above: it is a Keycloak client role granted
+     * per domain, and it is named here so the endpoints that gate on it spell it
+     * once rather than repeating the literal at every annotation.
+     */
+    String PUBLICATION_CURATE = "publication-curate";
 }

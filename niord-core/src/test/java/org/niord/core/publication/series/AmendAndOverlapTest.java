@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.publication.series.BindsRule;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
@@ -233,6 +234,7 @@ public class AmendAndOverlapTest {
     }
 
     /** An interval reaching back into a released issue is refused, and says which one. */
+    @BindsRule({"I-8"})
     @Test
     @Transactional
     public void anIntervalInsideAReleasedIssueIsRefused() {
@@ -257,7 +259,11 @@ public class AmendAndOverlapTest {
      *
      * The 2026 and 2027 firing-area editions share thirty-one of their
      * thirty-two members. Asking whether they overlap is a category error.
+     *
+     * The exemption is asserted PRESENT, not merely left untested: a rule that
+     * refused these would refuse the only way this series can be run.
      */
+    @BindsRule({"I-8"})
     @Test
     @Transactional
     public void anInForceSeriesIsExemptFromTheOverlapRule() {

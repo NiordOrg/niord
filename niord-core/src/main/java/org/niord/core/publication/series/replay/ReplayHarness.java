@@ -115,7 +115,11 @@ public class ReplayHarness {
      * semantics AND a hand-replaced file is really the former, because there was
      * never a member list for the file to have been generated from.
      */
-    private ReplayReport.SkipReason skipReasonFor(PublicationIssue issue) {
+    // Package-visible and static so the skip decisions can be asserted directly.
+    // Every one of them is a statement about whether an issue is COMPARABLE, and
+    // reaching them through replayAll() means standing up an imported estate to
+    // ask a question about one row.
+    static ReplayReport.SkipReason skipReasonFor(PublicationIssue issue) {
         PublicationSeries series = issue.getSeries();
 
         // Roughly 48 publications are an uploaded file, an external link, or
@@ -141,6 +145,15 @@ public class ReplayHarness {
         }
         if (cutoffOf(issue) == null) {
             return ReplayReport.SkipReason.NO_CUTOFF;
+        }
+        // A window with no time in it. Three archived issues have one -- a
+        // withdrawal and its replacement written minutes apart chain off each
+        // other's close -- and constructing the interval raises rather than
+        // returning nothing, which took the whole historical replay down with it
+        // and left the manifest gate unable to run at all. Skipping says the same
+        // thing the empty resolution would have, and says it about one issue.
+        if (!issue.getIntervalFrom().before(cutoffOf(issue))) {
+            return ReplayReport.SkipReason.EMPTY_INTERVAL;
         }
         if (issue.getSnapshotTimeRelation() == null || issue.getSnapshotAliveAtCutoff() == null) {
             return ReplayReport.SkipReason.NO_SNAPSHOT_HEADER;
@@ -190,7 +203,7 @@ public class ReplayHarness {
      * otherwise -- B5.4b's cascade put a value there for all 1,077 imported
      * issues, 994 from the legacy updated stamp and 83 from the next tag.
      */
-    private Date cutoffOf(PublicationIssue issue) {
+    static Date cutoffOf(PublicationIssue issue) {
         return issue.getCutoffStampedAt();
     }
 

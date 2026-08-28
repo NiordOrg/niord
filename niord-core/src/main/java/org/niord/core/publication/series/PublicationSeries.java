@@ -40,7 +40,7 @@ import org.niord.model.search.PagedSearchParamsVo;
  * Identity comes from VersionedEntity and nothing else. Every id in this
  * system is drawn from one shared sequence row, and inheriting the base class IS the whole
  * contract. Giving this table its own id generator would break that silently, for this
- * table alone. EntityIdentityTest enforces it.
+ * table alone. EntityContractTest.noEntityBringsItsOwnIdGenerator() enforces it.
  */
 @Entity
 public class PublicationSeries extends VersionedEntity<Integer> implements ILocalizable<PublicationSeriesDesc> {
@@ -655,18 +655,31 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         vo.setCategoryId(category == null ? null : category.getCategoryId());
         vo.setSortOrder(sortOrder);
 
+        // THE PATTERNS ARE AUTHORING, and they travel only on the system shape.
+        //
+        // A pattern is the recipe an admin writes -- the file name every issue of
+        // this series will be published under, the link every citation will point
+        // at, the wording of the citation itself. An editor reads the EXPANDED
+        // values off the issue, which is what a citation dialog actually consumes;
+        // the recipe is a setting on the admin screens, and handing it to every
+        // logged-in caller publishes the naming and the repository layout of every
+        // future issue to an audience that has no use for either.
+        boolean system = vo instanceof SystemPublicationSeriesVo;
         for (PublicationSeriesDesc d : getDescs()) {
             PublicationSeriesDescVo dv = new PublicationSeriesDescVo();
             dv.setLang(d.getLang());
             dv.setName(d.getName());
-            dv.setNameSuggestionPattern(d.getNameSuggestionPattern());
-            dv.setFileNamePattern(d.getFileNamePattern());
-            dv.setMessageReferenceFormat(d.getMessageReferenceFormat());
-            dv.setLinkPattern(d.getLinkPattern());
+            if (system) {
+                dv.setNameSuggestionPattern(d.getNameSuggestionPattern());
+                dv.setFileNamePattern(d.getFileNamePattern());
+                dv.setMessageReferenceFormat(d.getMessageReferenceFormat());
+                dv.setLinkPattern(d.getLinkPattern());
+            }
             vo.getDescs().add(dv);
         }
 
-        if (vo instanceof SystemPublicationSeriesVo sys) {
+        if (system) {
+            SystemPublicationSeriesVo sys = (SystemPublicationSeriesVo) vo;
             sys.setStatus(status == null ? null : status.name());
             sys.setContentMode(contentMode == null ? null : contentMode.name());
             sys.setCadence(cadence == null ? null : cadence.name());
@@ -703,15 +716,6 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         return vo;
     }
 
-    /**
-     * The time zone every cut-off of this series is reckoned in.
-     *
-     * Lives on the entity because the zone is a property of the series, and
-     * because three callers were each resolving it themselves -- naming, issue
-     * creation and gap synthesis. A blank or unparseable zone falls back to UTC
-     * rather than throwing: a misconfigured zone shifts a cut-off by hours, while
-     * throwing here would take out the screens that merely wanted to name a week.
-     */
     /**
      * The zone this series' cut-offs are read and written in.
      *

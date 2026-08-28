@@ -48,6 +48,9 @@ public class IssuePreviewAndFileTest {
     PublicationPathService paths;
 
     @Inject
+    IssueAuditService audit;
+
+    @Inject
     EntityManager em;
 
     /**
@@ -393,5 +396,138 @@ public class IssuePreviewAndFileTest {
         assertNotNull(files.upload(issue, "da", "same.pdf",
                 "replacement".getBytes(StandardCharsets.UTF_8), user()),
                 "replacing a language's own file is a replacement, not a collision");
+    }
+
+    /**
+     * A REFUSED upload writes no bytes at all.
+     *
+     * The sharp half of D-3, and it is about ordering rather than about the rule.
+     * The write used to run before the checks, so a collision overwrote the other
+     * language's document and then answered with an error -- the caller was told
+     * no and the file was gone. A transaction cannot undo that: the rollback
+     * reverts the row and leaves the bytes.
+     */
+    @BindsRule({"D-3"})
+    @Test
+    @Transactional
+    public void arefusedUploadLeavesTheOtherLanguagesBytesUntouched() throws Exception {
+        PublicationIssue issue = anIssueInTwoLanguages();
+
+        files.upload(issue, "da", "shared.pdf", "dansk".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+
+        Path written = paths.repoRoot().resolve(issue.getRepoPath()).resolve("shared.pdf");
+        assertEquals("dansk", Files.readString(written));
+
+        assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                () -> files.upload(issue, "en", "shared.pdf",
+                        "english".getBytes(StandardCharsets.UTF_8), user()));
+
+        assertEquals("dansk", Files.readString(written),
+                "the refused upload had already overwritten the Danish document. The guard has to "
+                        + "run before the write, because nothing rolls a file back.");
+    }
+
+    /**
+     * A published issue's correction goes to the SAME path, under the same name.
+     *
+     * The address is the citation. A stored citation is a URL into this file, and
+     * an imported issue keeps the legacy layout -- revision segment and all -- so
+     * a path re-derived from the repo root would write beside the cited document
+     * rather than over it, leaving the download link and the citations pointing at
+     * different bytes.
+     */
+    @Test
+    @Transactional
+    public void apublishedIssuesReplacementKeepsItsPath() throws Exception {
+        PublicationIssue issue = anIssue();
+        files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(false,
+                        IssuePublishService.PublishRequest.ALL_WARNINGS, null,
+                        new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
+        PublicationIssueDesc da = published.getDescs().stream()
+                .filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow();
+        String pathBefore = da.getFilePath();
+        String nameBefore = da.getFileName();
+
+        files.upload(published, "da", "first.pdf",
+                "corrected".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+
+        assertEquals(pathBefore, da.getFilePath(), "the published address moved");
+        assertEquals(nameBefore, da.getFileName(), "the published file name moved");
+        assertEquals("corrected",
+                Files.readString(paths.repoRoot().resolve(da.getFilePath())),
+                "the correction was written somewhere other than the cited path");
+    }
+
+    /**
+     * And a differently named replacement is refused rather than accepted quietly.
+     *
+     * Accepting it would leave the old bytes at the cited URL and the new ones at
+     * an address nothing points at -- the worst of the three outcomes, because
+     * both the upload and the download appear to work.
+     */
+    @Test
+    @Transactional
+    public void apublishedIssueRefusesAReplacementUnderANewName() {
+        PublicationIssue issue = anIssue();
+        files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(false,
+                        IssuePublishService.PublishRequest.ALL_WARNINGS, null,
+                        new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> files.upload(published, "da", "renamed.pdf",
+                                "corrected".getBytes(StandardCharsets.UTF_8), user()));
+        assertEquals("FILE_NAME_IMMUTABLE", e.code());
+    }
+
+    /**
+     * The correction is audited as a REPLACEMENT, carrying the archive path.
+     *
+     * "FILE_UPLOADED" against a published issue tells a reader nothing about
+     * whether a document appeared or a cited one was overwritten, and the archive
+     * path on the entry is the only route back to what the public was reading
+     * before.
+     */
+    @Test
+    @Transactional
+    public void replacingAPublishedFileIsAuditedAsAReplacement() {
+        PublicationIssue issue = anIssue();
+        files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(false,
+                        IssuePublishService.PublishRequest.ALL_WARNINGS, null,
+                        new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
+        files.upload(published, "da", "first.pdf",
+                "corrected".getBytes(StandardCharsets.UTF_8), user());
+        em.flush();
+
+        IssueAuditEntry replacement = audit.forIssue(published).stream()
+                .filter(a -> "FILE_REPLACED_MANUALLY".equals(a.getAction()))
+                .reduce((first, second) -> second)
+                .orElseThrow(() -> new AssertionError(
+                        "the replacement was not audited as one; the trail shows an upload, which "
+                                + "reads as a document appearing rather than a cited one being "
+                                + "overwritten"));
+        assertNotNull(replacement.getArchivePath(),
+                "the entry carries no archive path, so nothing can reach the superseded bytes");
+        assertTrue(IssueAuditService.ACTIONS.contains("FILE_REPLACED_MANUALLY"),
+                "an action outside the vocabulary is refused at write time");
     }
 }

@@ -1,6 +1,7 @@
-package org.niord.web;
+package org.niord.web.publication;
 
 import org.junit.jupiter.api.Test;
+import org.niord.web.PublicationRestService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.niord.model.publication.PublicationVo;
 
@@ -50,7 +51,7 @@ public class PublicationSearchUnionTest {
     public void issuesLeadTheResults() {
         PublicationVo issue = pub("issue-1");
         var merged = PublicationRestService.merge(
-                List.of(issue), List.of("issue-1"), legacy(pub("legacy-1")), 100);
+                List.of(issue), List.of("issue-1"), legacy(pub("legacy-1")), 0, 100);
 
         assertEquals(2, merged.getData().size());
         assertSame(issue, merged.getData().get(0), "the issue half must lead");
@@ -69,7 +70,7 @@ public class PublicationSearchUnionTest {
         PublicationVo issue = pub("shared-id");
         var merged = PublicationRestService.merge(
                 List.of(issue), List.of("shared-id"),
-                legacy(pub("shared-id"), pub("legacy-only")), 100);
+                legacy(pub("shared-id"), pub("legacy-only")), 0, 100);
 
         assertEquals(2, merged.getData().size(),
                 "the legacy twin of an imported issue must not appear alongside it");
@@ -78,7 +79,7 @@ public class PublicationSearchUnionTest {
     }
 
     /**
-     * The cap is applied AFTER merging, never to each half separately.
+     * The page is taken out of the MERGED order, never out of each half.
      *
      * Truncating first is the failure the public adapter documents: two halves
      * that each truncate independently produce a merge of two wrong lists. Here
@@ -92,7 +93,7 @@ public class PublicationSearchUnionTest {
                 List.of(pub("issue-1"), pub("issue-2")),
                 List.of("issue-1", "issue-2"),
                 legacy(pub("legacy-1")),
-                2);
+                0, 2);
 
         assertEquals(2, merged.getData().size());
         assertEquals(List.of("issue-1", "issue-2"),
@@ -102,11 +103,69 @@ public class PublicationSearchUnionTest {
                         + "otherwise stops one page early");
     }
 
-    /** No issues, no change: the legacy result passes through untouched. */
+    /**
+     * The second page is the SECOND slice of the union, not the first one again.
+     *
+     * This is the defect the paging argument exists for. Prepending the whole
+     * issue half to every page put the same issues at the top of page 0 and
+     * page 1, so no legacy row past the first page was reachable at all and the
+     * archive had roughly a hundred identical pages.
+     */
+    @Test
+    public void thesecondPageContinuesTheUnionRatherThanRepeatingIt() {
+        var page0 = PublicationRestService.merge(
+                List.of(pub("issue-1"), pub("issue-2")),
+                List.of("issue-1", "issue-2"),
+                legacy(pub("legacy-1"), pub("legacy-2")),
+                0, 2);
+        var page1 = PublicationRestService.merge(
+                List.of(pub("issue-1"), pub("issue-2")),
+                List.of("issue-1", "issue-2"),
+                legacy(pub("legacy-1"), pub("legacy-2")),
+                1, 2);
+
+        assertEquals(List.of("issue-1", "issue-2"),
+                page0.getData().stream().map(PublicationVo::getPublicationId).toList());
+        assertEquals(List.of("legacy-1", "legacy-2"),
+                page1.getData().stream().map(PublicationVo::getPublicationId).toList(),
+                "the second page must continue the union; repeating the issue half makes every "
+                        + "legacy row past the first page unreachable");
+        assertEquals(4L, page1.getTotal());
+    }
+
+    /** A page past the end is empty rather than an index error. */
+    @Test
+    public void apageBeyondTheEndIsEmpty() {
+        var merged = PublicationRestService.merge(
+                List.of(pub("issue-1")), List.of("issue-1"), legacy(pub("legacy-1")), 9, 10);
+
+        assertEquals(List.of(), merged.getData().stream()
+                .map(PublicationVo::getPublicationId).toList());
+        assertEquals(2L, merged.getTotal(), "the total still reports what matched");
+    }
+
+    /**
+     * An absurd page number does not overflow into a negative index.
+     *
+     * page * maxSize is computed in long arithmetic for this reason: any caller
+     * may send any number, and the int product wraps long before it stops being
+     * accepted.
+     */
+    @Test
+    public void anabsurdPageNumberIsEmptyRatherThanAnIndexError() {
+        var merged = PublicationRestService.merge(
+                List.of(pub("issue-1")), List.of("issue-1"),
+                legacy(pub("legacy-1")), Integer.MAX_VALUE, 1000);
+
+        assertEquals(0, merged.getData().size());
+        assertEquals(2L, merged.getTotal());
+    }
+
+    /** No issues, no change: the legacy rows pass through in order. */
     @Test
     public void anEmptyIssueHalfLeavesTheLegacyResultAlone() {
         var merged = PublicationRestService.merge(
-                List.of(), List.of(), legacy(pub("legacy-1"), pub("legacy-2")), 100);
+                List.of(), List.of(), legacy(pub("legacy-1"), pub("legacy-2")), 0, 100);
 
         assertEquals(List.of("legacy-1", "legacy-2"),
                 merged.getData().stream().map(PublicationVo::getPublicationId).toList());
@@ -116,7 +175,7 @@ public class PublicationSearchUnionTest {
     @Test
     public void alegacyRowWithNoIdSurvives() {
         var merged = PublicationRestService.merge(
-                List.of(pub("issue-1")), List.of("issue-1"), legacy(pub(null)), 100);
+                List.of(pub("issue-1")), List.of("issue-1"), legacy(pub(null)), 0, 100);
 
         assertEquals(2, merged.getData().size(),
                 "a null id matches no issue, so dropping the row would lose data on a guess");

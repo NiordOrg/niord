@@ -41,20 +41,16 @@ public class IssueFileService extends BaseService {
                                        byte[] bytes, User actor) {
         PublicationIssueDesc desc = descFor(issue, lang);
         boolean replacing = desc.getFilePath() != null;
+        boolean published = issue.getStatus() == IssueStatus.PUBLISHED;
+        boolean inPlace = published && replacing;
 
-        String archived = null;
-        if (issue.getStatus() == IssueStatus.PUBLISHED && replacing) {
-            archived = archiveExisting(issue, desc);
-        }
-
-        Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
-        try {
-            Files.createDirectories(target.getParent());
-            Files.write(target, bytes);
-        } catch (IOException e) {
-            throw new IssueLifecycleService.TransitionRefusedException("FILE_WRITE_FAILED",
-                    "could not write " + target + ": " + e.getMessage());
-        }
+        // EVERY REFUSAL HAPPENS BEFORE A BYTE IS WRITTEN.
+        //
+        // The write used to run first and the checks after, so a refused upload
+        // had already overwritten the file on disk -- and on a published issue
+        // that is the cited document, destroyed by a request the server then
+        // answered with an error. @Transactional cannot undo it: the rollback
+        // reverts the row and leaves the bytes.
 
         // D-3. One file name per issue, across ALL its languages.
         //
@@ -71,6 +67,40 @@ public class IssueFileService extends BaseService {
             }
         }
 
+        // The published address does not move. A citation is a stored URL inside
+        // message HTML, and correcting the document must not change where it
+        // lives -- a replacement under a new name leaves every citation pointing
+        // at the old bytes and the download link pointing at the new ones.
+        if (inPlace && !fileName.equals(desc.getFileName())) {
+            throw new IssueLifecycleService.TransitionRefusedException("FILE_NAME_IMMUTABLE",
+                    "this issue is published and its " + lang + " document already lives at '"
+                            + desc.getFileName() + "'. A correction replaces those bytes in place; "
+                            + "uploading under the name '" + fileName + "' would leave every stored "
+                            + "citation pointing at the old file. Retire the issue if the address "
+                            + "itself has to change.");
+        }
+
+        // The target. For a published replacement it is the desc's OWN stored
+        // path, not one re-derived from the repo root: an imported issue keeps
+        // the legacy layout, revision segment and all, so a re-derived path would
+        // write beside the cited file rather than over it.
+        Path target = inPlace
+                ? paths.repoRoot().resolve(desc.getFilePath())
+                : paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
+
+        // Archive what is about to be overwritten, and do it before the write.
+        // Every generation is kept indefinitely, so overwriting without archiving
+        // destroys the published artefact -- the one people cited.
+        String archived = inPlace ? archiveExisting(issue, desc) : null;
+
+        try {
+            Files.createDirectories(target.getParent());
+            Files.write(target, bytes);
+        } catch (IOException e) {
+            throw new IssueLifecycleService.TransitionRefusedException("FILE_WRITE_FAILED",
+                    "could not write " + target + ": " + e.getMessage());
+        }
+
         // Who replaced what was there, and when.
         //
         // Only on a REPLACEMENT: a first upload replaces nothing, and recording
@@ -83,12 +113,19 @@ public class IssueFileService extends BaseService {
             desc.setReplacedAt(new Date());
         }
 
-        desc.setFileName(fileName);
-        desc.setFilePath(issue.getRepoPath() + "/" + fileName);
+        if (!inPlace) {
+            desc.setFileName(fileName);
+            desc.setFilePath(issue.getRepoPath() + "/" + fileName);
+        }
         desc.setFileSource(FileSource.UPLOADED);
         desc.setFileSourceSticky(true);
 
-        IssueAuditEntry entry = audit.override(issue, actor, "FILE_UPLOADED", lang, fileName);
+        // A hand replacement of a released document is its own action. Reading
+        // "FILE_UPLOADED" against a published issue tells nobody whether a
+        // document appeared or a cited one was overwritten, and those are
+        // different events to anyone reading the trail afterwards.
+        IssueAuditEntry entry = audit.override(issue, actor,
+                inPlace ? "FILE_REPLACED_MANUALLY" : "FILE_UPLOADED", lang, desc.getFileName());
         if (archived != null) {
             entry.setArchivePath(archived);
         }

@@ -29,6 +29,13 @@ public class ReplayReport {
         /** No cut-off, stamped or recovered, so the window has no end. */
         NO_CUTOFF,
         /**
+         * The window has both bounds and they leave no time in it -- the cut-off
+         * lands on or before the interval start. Nothing can be resolved over an
+         * empty period, and building the interval anyway raises out of the whole
+         * replay, which takes the historical diagnostic report down with it.
+         */
+        EMPTY_INTERVAL,
+        /**
          * No snapshot header (time relation / alive-at-cut-off) on the issue. The
          * replay reads the issue's own header and never the series' row, so a
          * row without one is not comparable rather than comparable under a guess.

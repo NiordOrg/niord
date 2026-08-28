@@ -335,4 +335,26 @@ public class LegacyTranslationTest {
         }
         assertTrue(checked > 0, "the estate fixture carried no issue descs to check");
     }
+
+    /**
+     * The import and the one-off editor mint into ONE seriesId namespace.
+     *
+     * They used to fold Danish letters at different points -- one before the
+     * accent strip, one after -- and NFD turns the ring above a into a combining
+     * mark, so a fold applied afterwards has nothing left to see. The importer
+     * answered "arsberetning" where the editor answered "aarsberetning". A series
+     * id is immutable after create, so that disagreement never surfaces as a
+     * conflict: it produces two series meant to be one.
+     */
+    @Test
+    public void theSeriesIdFoldIsTheSharedOne() {
+        for (String title : new String[]{"Årsberetning", "Søkort", "Ædelmetal", "Skydeområder"}) {
+            assertEquals(org.niord.core.publication.series.SeriesIdSlug.fold(title),
+                    LegacySeriesTranslation.slug(title),
+                    "the importer folds '" + title + "' differently from the interactive editor");
+        }
+        assertEquals("aarsberetning", LegacySeriesTranslation.slug("Årsberetning"),
+                "aa is the Danish transliteration; dropping the ring loses a letter rather than "
+                        + "an accent");
+    }
 }

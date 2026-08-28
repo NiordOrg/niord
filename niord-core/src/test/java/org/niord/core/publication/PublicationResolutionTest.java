@@ -347,10 +347,15 @@ public class PublicationResolutionTest {
     }
 
     /**
-     * A retired issue is still resolvable to a public caller.
+     * A retired issue still answers publication= for a public caller.
      *
      * Different from the listing rule on purpose: retiring an issue removes it
-     * from what the site advertises, not from what a citation can reach.
+     * from what the site advertises, not from what a citation can reach. The
+     * member set was frozen at publish and retiring did not unfreeze it, so
+     * "which messages were in this publication" has the same true answer it had
+     * the day before. Refusing it would take the entire imported archive dark for
+     * anonymous callers the moment the import runs, because every INACTIVE legacy
+     * row arrives as RETIRED.
      */
     @Test
     @Transactional
@@ -359,12 +364,72 @@ public class PublicationResolutionTest {
         lifecycle.retire(issue, null, "superseded");
         em.flush();
 
-        assertThrows(TransitionRefusedException.class,
-                () -> resolver.designate(ordered(issue.getPublicId()), Audience.PUBLIC),
-                "a RETIRED issue must not answer publication= on the public message search");
+        MemberSetDesignation designation =
+                resolver.designate(ordered(issue.getPublicId()), Audience.PUBLIC);
+        assertTrue(designation.designated(),
+                "a RETIRED issue must still designate its frozen member set on the public search");
+        assertEquals(1, designation.memberUids().size(),
+                "the frozen members are the answer; retiring froze nothing further");
 
         assertNotNull(resolver.findIssue(issue.getPublicId()),
-                "but the citation resolver must still find it, or every stored link goes dead");
+                "and the citation resolver must still find it, or every stored link goes dead");
+    }
+
+    /**
+     * The single public read still refuses it, and that asymmetry is the contract.
+     *
+     * The download page resolves a deep link through this call, and a retired
+     * issue is precisely what that page must stop offering -- so it answers as a
+     * missing id does, with nothing to tell the two apart.
+     */
+    @Test
+    @Transactional
+    public void aRetiredIssueIsStillAbsentFromTheSinglePublicRead() {
+        PublicationIssue issue = publishedIssueWith(someMessageUids(1));
+        lifecycle.retire(issue, null, "superseded");
+        em.flush();
+
+        assertNull(resolver.publicVo(issue.getPublicId(), "en", Audience.PUBLIC),
+                "a RETIRED issue must read as missing on the public single read");
+        assertNotNull(resolver.publicVo(issue.getPublicId(), "en", Audience.INTERNAL),
+                "but an internal caller still reads it");
+    }
+
+    /**
+     * An OPEN issue designates nothing publicly -- that is the one status that is
+     * genuinely not there yet.
+     */
+    @Test
+    @Transactional
+    public void anOpenIssueDoesNotDesignateForAPublicCaller() {
+        PublicationIssue issue = publishedIssueWith(someMessageUids(1));
+        issue.setStatus(org.niord.core.publication.series.IssueStatus.OPEN);
+        em.flush();
+
+        assertThrows(TransitionRefusedException.class,
+                () -> resolver.designate(ordered(issue.getPublicId()), Audience.PUBLIC),
+                "an OPEN issue has no frozen member set and must not answer publication= publicly");
+    }
+
+    /**
+     * A published issue in a non-publishing category reads as missing.
+     *
+     * The public LIST has always applied the category's publish flag; the single
+     * read did not, so the same issue was absent from the list and readable by id.
+     * The estate carries four such rows on day one.
+     */
+    @Test
+    @Transactional
+    public void aPublishedIssueInANonPublishingCategoryIsNotPubliclyReadable() {
+        PublicationIssue issue = publishedIssueWith(someMessageUids(1));
+        issue.getSeries().getCategory().setPublish(false);
+        em.flush();
+
+        assertNull(resolver.publicVo(issue.getPublicId(), "en", Audience.PUBLIC),
+                "a non-publishing category must hide the issue from the public single read, "
+                        + "exactly as it hides it from the public list");
+        assertNotNull(resolver.publicVo(issue.getPublicId(), "en", Audience.INTERNAL),
+                "an internal caller still reads it -- the gate is about what the public page carries");
     }
 
     /**
@@ -606,6 +671,11 @@ public class PublicationResolutionTest {
     private PublicationSeries series() {
         PublicationCategory c = new PublicationCategory();
         c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        // Explicit, because the single public read gates on it: an issue in a
+        // non-publishing category reads as missing, so a fixture that left the
+        // column at its false default would be testing the gate rather than the
+        // resolution.
+        c.setPublish(true);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();

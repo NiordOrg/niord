@@ -1,6 +1,5 @@
 package org.niord.web.publication;
 
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -76,9 +75,16 @@ import java.util.Set;
  * cutover switch to an anonymous caller -- and nothing about the response would
  * look wrong.
  *
- * So: /search returns the public shape and is @PermitAll; /search-details
- * returns the system shape and requires a role. Two endpoints, two types, no
- * runtime decision.
+ * So: /search returns the lean shape at the editor tier; /search-details returns
+ * the system shape and requires admin. Two endpoints, two types, no runtime
+ * decision.
+ *
+ * NOTHING HERE IS ANONYMOUS. The lean shape is the shape an EDITOR gets, not the
+ * shape the world gets: listing a series discloses that it exists, what it is
+ * called and which category it belongs to, and doing that for DRAFT and RETIRED
+ * rows to an unauthenticated caller is an enumeration of the whole catalogue in
+ * every state. The public site reads publications through the public adapter,
+ * which serves released issues only.
  */
 @Path("/publication-series")
 @RequestScoped
@@ -127,17 +133,52 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
 
     // ------------------------------------------------------------------ reads
 
-    /** S1. The public list. */
+    /**
+     * S1. The editor list, lean shape.
+     *
+     * ACTIVE only, and that is the contract rather than a convenience. This is
+     * what a picker and a filter panel read, and offering a DRAFT series there
+     * lets an editor bind a message to a publication nobody has finished
+     * configuring; offering a RETIRED one invites a citation into something the
+     * public list no longer carries. An admin who needs every state has
+     * /search-details, which takes a status and says so.
+     *
+     * The language narrows the desc rows, with a fallback to whatever the series
+     * does have. A one-language series is legitimate, and answering a request for
+     * English with an empty descs array leaves every consumer rendering the raw
+     * seriesId.
+     */
     @GET
     @Path("/search")
     @Produces(MediaType.APPLICATION_JSON)
-    @PermitAll
+    @RolesAllowed(Roles.USER)
     public List<PublicationSeriesVo> search(@QueryParam("lang") String lang) {
         List<PublicationSeriesVo> out = new ArrayList<>();
-        for (PublicationSeries s : seriesService.findAll()) {
-            out.add(s.toVo(PublicationSeriesVo.class));
+        for (PublicationSeries s : seriesService.findByStatus(SeriesStatus.ACTIVE)) {
+            out.add(narrowToLang(s.toVo(PublicationSeriesVo.class), lang));
         }
         return out;
+    }
+
+    /**
+     * Keeps the desc row for one language, or the first one when it has none.
+     *
+     * The fallback is the behaviour every other localized read in the product
+     * has: a caller that asked for a language it cannot have is better served the
+     * name that exists than an empty list it has to invent a label for.
+     */
+    private static <V extends PublicationSeriesVo> V narrowToLang(V vo, String lang) {
+        if (lang == null || lang.isBlank() || vo.getDescs().size() < 2) {
+            return vo;
+        }
+        List<PublicationSeriesDescVo> wanted = vo.getDescs().stream()
+                .filter(d -> lang.equals(d.getLang()))
+                .toList();
+        List<PublicationSeriesDescVo> kept = wanted.isEmpty()
+                ? List.of(vo.getDescs().get(0))
+                : wanted;
+        vo.getDescs().retainAll(kept);
+        return vo;
     }
 
     /**
@@ -152,7 +193,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/search-details")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public List<SystemPublicationSeriesVo> searchDetails(@QueryParam("status") String status) {
         List<PublicationSeries> found = status == null
                 ? seriesService.findAll()
@@ -169,11 +210,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         return out;
     }
 
-    /** S3. One series, public shape. */
+    /** S3. One series, lean shape. */
     @GET
     @Path("/series/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @PermitAll
+    @RolesAllowed(Roles.USER)
     public PublicationSeriesVo get(@PathParam("seriesId") String seriesId) {
         return required(seriesId).toVo(PublicationSeriesVo.class);
     }
@@ -182,7 +223,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/editable-series/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo getEditable(@PathParam("seriesId") String seriesId) {
         PublicationSeries series = required(seriesId);
         SystemPublicationSeriesVo vo = series.toVo(SystemPublicationSeriesVo.class);
@@ -198,7 +239,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/series-by-ids/{seriesIds}")
     @Produces(MediaType.APPLICATION_JSON)
-    @PermitAll
+    @RolesAllowed(Roles.USER)
     public List<PublicationSeriesVo> byIds(@PathParam("seriesIds") String seriesIds) {
         List<PublicationSeriesVo> out = new ArrayList<>();
         for (String id : seriesIds.split(",")) {
@@ -217,7 +258,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Path("/series/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo create(SystemPublicationSeriesVo vo) {
         if (vo == null || vo.getSeriesId() == null || vo.getSeriesId().isBlank()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
@@ -257,16 +298,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     /**
-     * Resolves the two references the value object carries only by id.
-     *
-     * They are separate from updateFromVo because that method is on the entity
-     * and has no persistence context. A category that does not exist is refused
-     * rather than created: the categories are a small curated set with a publish
-     * flag and a priority that decides where the series appears on the public
-     * page, and inventing one silently would put a series in a category nobody
-     * configured.
-     */
-    /**
      * A draft may be incomplete; it may not be wrong. Asking for a release mode
      * the system cannot honour, or typing a report parameter the issue supplies,
      * is refused on the save that carries it -- as field errors, so the form can
@@ -281,6 +312,16 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         }
     }
 
+    /**
+     * Resolves the two references the value object carries only by id.
+     *
+     * They are separate from updateFromVo because that method is on the entity
+     * and has no persistence context. A category that does not exist is refused
+     * rather than created: the categories are a small curated set with a publish
+     * flag and a priority that decides where the series appears on the public
+     * page, and inventing one silently would put a series in a category nobody
+     * configured.
+     */
     private void resolveReferences(PublicationSeries series, SystemPublicationSeriesVo vo) {
         if (vo.getCategoryId() != null && !vo.getCategoryId().isBlank()) {
             PublicationCategory category = categoryService.findByCategoryId(vo.getCategoryId());
@@ -330,7 +371,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/new-series-template")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo newSeriesTemplate() {
         return newSeriesTemplate(app.getLanguages());
     }
@@ -417,7 +458,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/copy-series-template/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo copySeriesTemplate(@PathParam("seriesId") String seriesId) {
         return copyOf(required(seriesId).toVo(SystemPublicationSeriesVo.class));
     }
@@ -469,7 +510,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Path("/resolve-preview")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> resolvePreview(ResolvePreviewRequest request) {
         if (request == null || request.criteria() == null) {
             throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
@@ -481,9 +522,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                             + "\"everything ever\" is not the question the editor is asking");
         }
 
+        // Parsed with a coded refusal rather than valueOf: an unknown token is a
+        // client error, and an IllegalArgumentException out of a probe fired on
+        // every edit answers 500 to the editor with nothing to act on.
         TimeRelation relation = request.timeRelation() == null
                 ? TimeRelation.PUBLISHED_IN_INTERVAL
-                : TimeRelation.valueOf(request.timeRelation());
+                : parseEnum(TimeRelation.class, request.timeRelation(), "timeRelation");
 
         // An in-force probe has no lower bound, exactly as a real in-force issue has
         // none -- passing one would preview a narrower set than the series produces.
@@ -512,7 +556,15 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         out.put("sample", sample);
         out.put("truncated", resolution.members().size() > sample.size());
         out.put("warnings", resolution.warnings());
-        out.put("misses", resolution.misses());
+        // The misses are a SAMPLE too, and the count travels beside them.
+        //
+        // Every candidate the predicate rejected produces one of these, so a wide
+        // criteria document over a live corpus yields thousands of nested objects
+        // -- serialised on a path the editor fires while somebody is still typing,
+        // to answer a question nobody asked. Fifty is enough to see the shape of
+        // what is being dropped; missCount is what says how much there is.
+        out.put("missCount", resolution.misses().size());
+        out.put("misses", resolution.misses().stream().limit(PROBE_SAMPLE).toList());
         return out;
     }
 
@@ -523,6 +575,23 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
 
     /** The contract's probe cap: a sample, not a page. */
     private static final int PROBE_SAMPLE = 50;
+
+    /**
+     * An enum from a client token, or a catalogued 400.
+     *
+     * Enum.valueOf on request data is the pattern the error catalogue exists to
+     * stop: it raises an IllegalArgumentException, nothing maps it, and a
+     * mistyped filter comes back as "the server broke" with a stack trace in the
+     * log for something the caller did.
+     */
+    private static <E extends Enum<E>> E parseEnum(Class<E> type, String token, String field) {
+        try {
+            return Enum.valueOf(type, token.trim().toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new IssueLifecycleService.TransitionRefusedException("INVALID_FILTER_VALUE",
+                    "'" + token + "' is not a value of " + field);
+        }
+    }
 
     /**
      * S9. Update a series.
@@ -553,7 +622,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Path("/series/{seriesId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo update(@PathParam("seriesId") String seriesId,
                                            SystemPublicationSeriesVo vo) {
         if (vo == null) {
@@ -626,12 +695,15 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Path("/series/{seriesId}/status")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo setStatus(@PathParam("seriesId") String seriesId,
                                                @QueryParam("reason") String reason,
                                                String status) {
         PublicationSeries series = required(seriesId);
-        SeriesStatus target = seriesStatusOf(status.replace("\"", "").trim());
+        // Null-safe: an empty body reaches here as null, and seriesStatusOf
+        // answers that with a coded 400 rather than a NullPointerException the
+        // caller reads as a server failure.
+        SeriesStatus target = seriesStatusOf(status == null ? null : status.replace("\"", "").trim());
         return seriesService.transition(series, target, reason, userService.currentUser())
                 .toVo(SystemPublicationSeriesVo.class);
     }
@@ -682,10 +754,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Path("/series/{seriesId}/public-authority")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo setPublicAuthority(@PathParam("seriesId") String seriesId,
                                                         Map<String, Object> body) {
-        return flip(required(seriesId), body).toVo(SystemPublicationSeriesVo.class);
+        return flip(required(seriesId), authorityOf(body), body)
+                .toVo(SystemPublicationSeriesVo.class);
     }
 
     /**
@@ -695,39 +768,62 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * transaction: a partial flip leaves editors working in two systems for the
      * series that did not make it, and discovering which those are means reading
      * the database. One refusal refuses the lot.
+     *
+     * THE TWO DIRECTIONS DO NOT HAVE THE SAME UNNAMED TARGET SET, and that
+     * asymmetry is the point. Going to NEW is an editorial step taken on series
+     * the estate is actually running, so it takes the ACTIVE ones. Coming back to
+     * LEGACY is a rollback, and a rollback has to reach everything the flip
+     * reached: the public adapter chooses its half by this column alone and never
+     * looks at the series status, so a series retired after a cutover is still
+     * being served from the new model. Leaving those behind would strand exactly
+     * the rows nobody is watching.
      */
     @PUT
     @Path("/public-authority")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public List<SystemPublicationSeriesVo> setPublicAuthorityForAll(Map<String, Object> body) {
+        PublicAuthority target = authorityOf(body);
         List<PublicationSeries> targets = new ArrayList<>();
         Object named = body == null ? null : body.get("seriesIds");
         if (named instanceof List<?> ids && !ids.isEmpty()) {
             for (Object id : ids) {
                 targets.add(required(String.valueOf(id)));
             }
+        } else if (target == PublicAuthority.LEGACY) {
+            targets.addAll(seriesService.findByPublicAuthority(PublicAuthority.NEW));
         } else {
             targets.addAll(seriesService.findByStatus(SeriesStatus.ACTIVE));
         }
 
         List<SystemPublicationSeriesVo> out = new ArrayList<>();
         for (PublicationSeries series : targets) {
-            out.add(flip(series, body).toVo(SystemPublicationSeriesVo.class));
+            out.add(flip(series, target, body).toVo(SystemPublicationSeriesVo.class));
         }
         return out;
     }
 
-    private PublicationSeries flip(PublicationSeries series, Map<String, Object> body) {
-        String token = String.valueOf(body == null ? "" : body.getOrDefault("authority", "")).trim().toUpperCase();
-        PublicAuthority target;
+    /**
+     * The requested authority, or a coded refusal.
+     *
+     * valueOf on client input is the pattern the error catalogue exists to stop:
+     * an unknown token is a client error, and letting it out as an
+     * IllegalArgumentException made it a 500 that says nothing.
+     */
+    private static PublicAuthority authorityOf(Map<String, Object> body) {
+        String token = String.valueOf(body == null ? "" : body.getOrDefault("authority", ""))
+                .trim().toUpperCase();
         try {
-            target = PublicAuthority.valueOf(token);
+            return PublicAuthority.valueOf(token);
         } catch (IllegalArgumentException e) {
             throw new IssueLifecycleService.TransitionRefusedException("INVALID_AUTHORITY",
                     "'" + token + "' is not a public authority; it is NEW or LEGACY");
         }
+    }
+
+    private PublicationSeries flip(PublicationSeries series, PublicAuthority target,
+                                   Map<String, Object> body) {
         boolean force = body != null && Boolean.TRUE.equals(body.get("force"));
         String reason = body == null ? null : String.valueOf(body.getOrDefault("reason", ""));
         return seriesService.setPublicAuthority(series, target, force, reason, userService.currentUser());
@@ -760,7 +856,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/series/{seriesId}/issue-draft")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public IssueDraftVo issueDraft(@PathParam("seriesId") String seriesId,
                                    @QueryParam("afterPublicId") String afterPublicId,
                                    @QueryParam("intervalFrom") Long intervalFrom,
@@ -774,7 +870,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     /** S11. Delete, guarded on having no issues. */
     @DELETE
     @Path("/series/{seriesId}")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public void delete(@PathParam("seriesId") String seriesId) {
         lifecycle.deleteSeries(required(seriesId));
     }
@@ -787,11 +883,15 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * Served from the constant the expander itself uses. A menu built from a
      * second list is a second source of truth, and the drift shows up as a token
      * the UI offers and the backend rejects.
+     *
+     * Editor tier: it is a fixed vocabulary of placeholder names and discloses
+     * nothing about any series, while the surfaces that render a pattern hint sit
+     * below the admin screens.
      */
     @GET
     @Path("/name-tokens")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.USER)
     public List<String> nameTokens() {
         return new ArrayList<>(IssueNaming.TOKENS);
     }
@@ -813,7 +913,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Path("/validate")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public List<Map<String, String>> validate(SystemPublicationSeriesVo vo) {
         String[] languages = app.getLanguages();
         return validationReport(vo,
@@ -868,15 +968,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     /**
-     * S18 and S19. The legacy import.
-     *
-     * Refused rather than half-implemented. The importer reads legacy fields --
-     * messageTagFilter, messageTag, template, periodicalType -- that are not
-     * reachable from here, and an import that silently produced approximate
-     * series would be far worse than one that declines to run.
-     */
-    /**
-     * S18. The dry run.
+     * S18. The dry run of the legacy import.
      *
      * Reads and translates the whole legacy estate, reports everything wrong with
      * it, and writes NOTHING -- not written-and-rolled-back, but never opened for
@@ -898,7 +990,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @POST
     @Path("/import-legacy/validate")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public LegacyImportReportVo importDryRun() {
         return importService.dryRun();
     }
@@ -922,7 +1014,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @POST
     @Path("/import-legacy")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Response importLegacy() {
         LegacyImportReportVo report = importService.run();
         return report.isWouldSucceed()
@@ -956,7 +1048,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @DELETE
     @Path("/import-legacy")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Response undoImport() {
         LegacyImportService.UndoReport report = importService.undo();
         return report.deleted()
@@ -980,24 +1072,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/diagnostic-report")
     @Produces(MediaType.TEXT_PLAIN)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String diagnosticReport(@QueryParam("historical") boolean historical) {
         return diagnostics.render(historical);
     }
 
-    /**
-     * B6.2/B6.3. The shadow-diff results, per series and per release.
-     *
-     * The artifact the cutover decision is made from. B7.1 waits on TWO
-     * CONSECUTIVE GREEN WEEKS PER SERIES, and this is what evidences them.
-     *
-     * Deltas are keyed on uid rather than short id: a short id is display text
-     * and is reused across years, so a delta keyed on it would collide between
-     * an NM from 2018 and one from 2024 and read as agreement.
-     *
-     * Read-only. A shadow-diff that could change what it measures would not be
-     * a measurement, and neither would an endpoint that could.
-     */
     /**
      * Runs the shadow diff now, rather than waiting for the hourly tick.
      *
@@ -1019,7 +1098,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @POST
     @Path("/shadow-diff/run")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> runShadowDiff(@QueryParam("max") Integer max) {
         int written = shadowDiff.runOnce(
                 max == null ? ShadowDiffService.DEFAULT_BATCH : max);
@@ -1041,17 +1120,30 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @POST
     @Path("/shadow-diff/reset")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> resetShadowDiff() {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("discarded", shadowDiff.reset());
         return out;
     }
 
+    /**
+     * The shadow-diff results, per series and per release.
+     *
+     * The artefact the cutover decision is made from: the flip waits on two
+     * consecutive green comparisons per series, and this is what evidences them.
+     *
+     * Deltas are keyed on uid rather than short id: a short id is display text
+     * and is reused across years, so a delta keyed on it would collide between
+     * an NM from 2018 and one from 2024 and read as agreement.
+     *
+     * Read-only. A shadow diff that could change what it measures would not be a
+     * measurement, and neither would an endpoint that could.
+     */
     @GET
     @Path("/shadow-diff")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> shadowDiff(@QueryParam("seriesId") String seriesId) {
         List<ShadowDiffRun> runs = seriesId == null || seriesId.isBlank()
                 ? shadowDiff.all()
@@ -1120,7 +1212,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/cutover-preflight")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> cutoverPreflight() {
         CutoverPreflightService.Preflight result = preflight.run();
 
@@ -1158,7 +1250,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Path("/export")
     @Produces("application/json;charset=UTF-8")
     @GZIP
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public List<SystemPublicationSeriesVo> exportSeries() {
         // The same grouped count the admin list carries, so a round trip through
@@ -1193,12 +1285,18 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      *
      * The same batch-job shape as every other admin import in the system, so it
      * appears in the Batch Jobs screen and its log says which rows were dropped.
+     *
+     * ADMIN, matching the export beside it and the category import. An admin who
+     * can produce the file and can create every series in it by hand gains
+     * nothing from being refused the upload, and the admin page that offers the
+     * control is reachable by admin -- so a sysadmin gate showed a button that
+     * answered 403.
      */
     @POST
     @Path("/upload-series")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed(Roles.SYSADMIN)
+    @RolesAllowed(Roles.ADMIN)
     public String importSeries(MultipartFormDataInput input) throws Exception {
         return executeBatchJobFromUploadedFile(input, "publication-series-import");
     }

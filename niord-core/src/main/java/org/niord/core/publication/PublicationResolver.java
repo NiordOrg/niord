@@ -91,7 +91,7 @@ public class PublicationResolver extends BaseService implements PublicationMembe
             //    its publicId, so checking legacy first would keep serving the old
             //    row forever after cutover.
             PublicationIssue issue = findIssue(publicationId);
-            if (issue != null && servable(issue, audience)) {
+            if (issue != null && designatable(issue, audience)) {
                 memberUids.addAll(memberUids(publicationId));
                 continue;
             }
@@ -176,7 +176,15 @@ public class PublicationResolver extends BaseService implements PublicationMembe
         }
 
         PublicationIssue issue = findIssue(publicationId);
-        if (issue != null && servable(issue, audience)) {
+        if (issue != null && citable(issue, audience)) {
+            // The publish flag of the CATEGORY, applied on this branch exactly as
+            // it is on the legacy one below. Four imported issues land in
+            // non-publishing categories on day one, and without the gate the same
+            // issue is absent from the public list and readable by id -- so the
+            // list and the single read disagree about what is public.
+            if (audience == Audience.PUBLIC && !inAPublishingCategory(issue)) {
+                return null;
+            }
             return IssuePublicationMapping.toPublicationVo(issue, lang);
         }
 
@@ -267,14 +275,41 @@ public class PublicationResolver extends BaseService implements PublicationMembe
     }
 
     /**
-     * Whether a public caller may be served this issue.
+     * Whether an id may designate this issue's member set.
      *
-     * PUBLISHED only. An OPEN or RETIRED issue exists, and an internal caller may
-     * work with it, but to the public API it is refused exactly as a missing id
-     * is.
+     * Everything but OPEN, for the public caller as well as the internal one. A
+     * RETIRED issue is withdrawn from the public LIST, not unmade: its file link
+     * and every citation written into it stay live, and the whole point of
+     * retiring rather than deleting is that references do not dangle. Refusing it
+     * here would break {@code ?publication=} for the entire imported archive on
+     * day one, because the import maps every INACTIVE legacy row to RETIRED.
+     *
+     * OPEN is the one that is genuinely not there yet: no member set has been
+     * frozen, so serving it publicly would publish an unfinished list.
      */
-    private static boolean servable(PublicationIssue issue, Audience audience) {
+    private static boolean designatable(PublicationIssue issue, Audience audience) {
+        return audience == Audience.INTERNAL || issue.getStatus() != IssueStatus.OPEN;
+    }
+
+    /**
+     * Whether a public caller may be handed this issue as a citation row.
+     *
+     * PUBLISHED only, and the asymmetry with the rule above is deliberate. The
+     * single read is what the public download page resolves a deep link through,
+     * and a retired issue is exactly the thing that page must stop listing -- so
+     * it answers as a missing id does, with no way to tell the two apart. The
+     * membership question is a different question: "what was in this publication"
+     * has a true answer for a withdrawn one.
+     */
+    private static boolean citable(PublicationIssue issue, Audience audience) {
         return audience == Audience.INTERNAL || issue.getStatus() == IssueStatus.PUBLISHED;
+    }
+
+    /** Whether the issue's series sits in a category the public page carries. */
+    private static boolean inAPublishingCategory(PublicationIssue issue) {
+        return issue.getSeries() != null
+                && issue.getSeries().getCategory() != null
+                && issue.getSeries().getCategory().isPublish();
     }
 
     /**

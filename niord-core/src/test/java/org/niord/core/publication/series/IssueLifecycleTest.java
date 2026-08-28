@@ -119,8 +119,15 @@ public class IssueLifecycleTest {
                 "publicId changed across publish; every citation to it would break");
     }
 
-    /** Retro-create is a category error for a series whose issues overlap. */
-    @BindsRule({"I-8"})
+    /**
+     * Retro-create is a category error for a series whose issues overlap.
+     *
+     * Deliberately NOT bound to I-8. It asserts one code and nothing about the
+     * overlap rule itself, so binding it here certified a rule off a test that
+     * could not fail for it. Both halves of I-8 -- the refusal on a tiling series
+     * and the exemption on an in-force one -- are asserted in AmendAndOverlapTest,
+     * which is where the binding now lives.
+     */
     @Test
     @Transactional
     public void retroCreateIsRefusedForAnOverlappingSeries() {

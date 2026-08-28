@@ -102,6 +102,17 @@ public class LegacyImportReportVo implements IJsonSerializable {
     private Map<String, Integer> issuesByCutoffSource = new LinkedHashMap<>();
     private List<ProblemVo> problems = new ArrayList<>();
 
+    /**
+     * Rows the import carried through with a decision somebody should see.
+     *
+     * Deliberately NOT problems: a problem refuses the whole estate, and these
+     * are rows that import correctly while carrying less than the archive would
+     * have liked. The distinction matters because the alternative to naming them
+     * here is not naming them at all -- the import runs once, in one window, and
+     * a row nobody was told about is a row nobody goes back to.
+     */
+    private List<ProblemVo> notes = new ArrayList<>();
+
     public boolean isDryRun() {
         return dryRun;
     }
@@ -180,6 +191,14 @@ public class LegacyImportReportVo implements IJsonSerializable {
 
     public void setProblems(List<ProblemVo> problems) {
         this.problems = problems == null ? new ArrayList<>() : problems;
+    }
+
+    public List<ProblemVo> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(List<ProblemVo> notes) {
+        this.notes = notes == null ? new ArrayList<>() : notes;
     }
 
     public int getSeriesCriteriaWritten() {

@@ -95,12 +95,18 @@ public final class MemberProvenanceRules {
                     + "was swept across the series history and none matches");
         }
 
-        // B5-iv wins the LABEL where it applies, because "named by hand" is a
+        // The annex label wins where it applies, because "named by hand" is a
         // stronger statement about this row than "shared" -- it says there was
         // never a derivation, not that the derivation is untrustworthy. The other
         // reasons still travel in the note.
+        //
+        // The note itself is PERSISTED, on a column an admin reads years from
+        // now, so it says what happened in plain words and carries no internal
+        // identifier: this archive outlives the documents those identifiers point
+        // at, and once the import has run the rows cannot be edited except by
+        // hand against a live database.
         if (isAnnexTag(tagName)) {
-            reasons.add(0, "hand-named annex (ruling B5-iv): the locked tag holds the one message this "
+            reasons.add(0, "hand-named annex: the locked tag holds the one message this "
                     + "annex contained, and no query can select it because the only discriminator "
                     + "between the year's two annex messages is the message body");
             return new Decision(MembershipProvenance.IMPORTED, String.join("; ", reasons));

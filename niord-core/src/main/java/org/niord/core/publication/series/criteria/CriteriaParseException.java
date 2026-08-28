@@ -1,5 +1,7 @@
 package org.niord.core.publication.series.criteria;
 
+import org.niord.core.publication.series.PublicationException;
+
 /**
  * A criteria document could not be read.
  *
@@ -9,9 +11,9 @@ package org.niord.core.publication.series.criteria;
  * which is indistinguishable from a legitimately empty query and resolves very
  * differently.
  */
-public class CriteriaParseException extends RuntimeException {
+public class CriteriaParseException extends PublicationException {
 
     public CriteriaParseException(String message, Throwable cause) {
-        super(message, cause);
+        super("CRITERIA_INVALID", message, cause);
     }
 }

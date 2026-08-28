@@ -67,9 +67,9 @@ public class IssueRenderService {
     }
 
     /** A render failed. Carried rather than swallowed: a missing PDF is a failed publish. */
-    public static class RenderFailedException extends RuntimeException {
+    public static class RenderFailedException extends PublicationException {
         public RenderFailedException(String message, Throwable cause) {
-            super(message, cause);
+            super("RENDER_FAILED", message, cause);
         }
     }
 

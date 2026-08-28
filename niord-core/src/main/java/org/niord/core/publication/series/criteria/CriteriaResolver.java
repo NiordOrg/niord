@@ -1,5 +1,6 @@
 package org.niord.core.publication.series.criteria;
 
+import org.niord.core.publication.series.PublicationException;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.model.message.MainType;
@@ -120,7 +121,7 @@ public final class CriteriaResolver {
     }
 
     /** An operand list that would have resolved to an identity element. */
-    public static class EmptyOperandException extends RuntimeException {
+    public static class EmptyOperandException extends PublicationException {
 
         private final CriterionKind kind;
 
@@ -129,7 +130,7 @@ public final class CriteriaResolver {
         }
 
         public EmptyOperandException(CriterionKind kind, String message) {
-            super(kind.wireName() + ": " + message);
+            super("EMPTY_OPERAND", kind.wireName() + ": " + message);
             this.kind = kind;
         }
 

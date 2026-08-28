@@ -9,6 +9,7 @@ import org.niord.core.publication.series.PageOrientation;
 import org.niord.core.publication.series.PageSize;
 import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.SeriesIdSlug;
 import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.ReleaseMode;
 import org.niord.core.publication.series.SeriesCadence;
@@ -54,7 +55,7 @@ public final class LegacySeriesTranslation {
      * always fits rather than being cut off -- a truncated disambiguator would
      * reintroduce exactly the collision it was added to break.
      */
-    public static final int MAX_SERIES_ID = 64;
+    public static final int MAX_SERIES_ID = SeriesIdSlug.MAX_SERIES_ID;
 
     /** printSettings keys that map onto a typed column. Anything else is refused. */
     public static final Set<String> ALLOWED_PRINT_SETTINGS =
@@ -435,20 +436,16 @@ public final class LegacySeriesTranslation {
                         .findFirst().orElse(""));
     }
 
-    /** Lower-case ASCII with single hyphens. Danish letters fold rather than vanish. */
+    /**
+     * Lower-case ASCII with single hyphens. Danish letters fold rather than vanish.
+     *
+     * Delegated, because the interactive editor mints into the SAME namespace: two
+     * implementations of this produced two answers for the same title, and a
+     * series id is immutable once authored, so the disagreement would have been
+     * permanent rather than a conflict somebody notices.
+     */
     static String slug(String s) {
-        if (s == null) {
-            return "";
-        }
-        String folded = Normalizer.normalize(s, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "")
-                .replace("ø", "oe").replace("Ø", "oe")
-                .replace("æ", "ae").replace("Æ", "ae")
-                .replace("å", "aa").replace("Å", "aa");
-        return folded.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+", "")
-                .replaceAll("-+$", "");
+        return SeriesIdSlug.fold(s);
     }
 
     private static String str(Object o) {

@@ -38,9 +38,7 @@ public class IssueLifecycleService extends BaseService {
     IssueAuditService audit;
 
     /** A transition was refused. Carries the wire code so callers do not invent one. */
-    public static class TransitionRefusedException extends RuntimeException {
-        private final String code;
-        private final List<SeriesValidator.FieldError> fieldErrors;
+    public static class TransitionRefusedException extends PublicationException {
 
         public TransitionRefusedException(String code, String message) {
             this(code, message, List.of());
@@ -56,17 +54,7 @@ public class IssueLifecycleService extends BaseService {
          */
         public TransitionRefusedException(String code, String message,
                                           List<SeriesValidator.FieldError> fieldErrors) {
-            super(message);
-            this.code = code;
-            this.fieldErrors = fieldErrors == null ? List.of() : List.copyOf(fieldErrors);
-        }
-
-        public String code() {
-            return code;
-        }
-
-        public List<SeriesValidator.FieldError> fieldErrors() {
-            return fieldErrors;
+            super(code, message, fieldErrors);
         }
     }
 

@@ -59,6 +59,46 @@ public class ContentIntervalTest {
         return s;
     }
 
+    /**
+     * The imported year is read in the SERIES' zone, never the JVM's.
+     *
+     * The zone a series' cut-offs are reckoned in comes from its domain, and the
+     * domains genuinely differ. The JVM default is whatever the container happens
+     * to be configured with, so the same archive row imported on a UTC container
+     * and on a European workstation carried two different years -- and this import
+     * runs once, permanently.
+     *
+     * The instant here is chosen so the two answers differ by a whole year: half
+     * past noon UTC on the last day of 2025 is already the small hours of 2026 in
+     * a zone fourteen hours ahead.
+     */
+    @Test
+    public void theImportedYearIsReadInTheSeriesZone() {
+        Date newYearSomewhere = Date.from(
+                ZonedDateTime.of(2025, 12, 31, 12, 0, 0, 0, ZoneId.of("UTC")).toInstant());
+
+        PublicationSeries ahead = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.YEARLY);
+        ahead.setDomain(domainIn("Pacific/Kiritimati"));
+        PublicationIssue inThatZone = LegacyIssueTranslation.translate(
+                release(newYearSomewhere, null), ahead, FROZEN, null);
+        assertEquals(2026, inThatZone.getYear(),
+                "the year was read somewhere other than the series' own zone");
+
+        // And a series with no domain reads in UTC, which is the documented last
+        // resort rather than "whatever this machine is set to".
+        PublicationSeries none = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.YEARLY);
+        PublicationIssue inUtc = LegacyIssueTranslation.translate(
+                release(newYearSomewhere, null), none, FROZEN, null);
+        assertEquals(2025, inUtc.getYear());
+    }
+
+    private static org.niord.core.domain.Domain domainIn(String zone) {
+        org.niord.core.domain.Domain d = new org.niord.core.domain.Domain();
+        d.setDomainId("tz-" + zone);
+        d.setTimeZone(zone);
+        return d;
+    }
+
     // ------------------------------------------------------------ the tiling case
 
     /**

@@ -151,9 +151,9 @@ public class MemberResolutionService extends BaseService {
     public static final int MEMBER_LIMIT = 1000;
 
     /** An operand that would have produced an always-false or always-true query. */
-    public static class UnresolvableOperandException extends RuntimeException {
+    public static class UnresolvableOperandException extends PublicationException {
         public UnresolvableOperandException(String message) {
-            super(message);
+            super("UNRESOLVABLE_OPERAND", message);
         }
     }
 

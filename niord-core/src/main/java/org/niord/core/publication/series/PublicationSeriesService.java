@@ -56,6 +56,23 @@ public class PublicationSeriesService extends BaseService {
     }
 
     /**
+     * Every series whose public reads are answered by the given model.
+     *
+     * Status-blind on purpose. The public adapter does not read the series status
+     * either -- what it reads is this column -- so a series retired after a
+     * cutover keeps serving the public from the new half. A rollback that skipped
+     * it would leave exactly the rows nobody is watching pointed at the model
+     * being rolled back.
+     */
+    public List<PublicationSeries> findByPublicAuthority(PublicAuthority authority) {
+        return em.createQuery(
+                        "SELECT s FROM PublicationSeries s WHERE s.publicAuthority = :authority "
+                                + "ORDER BY s.seriesId", PublicationSeries.class)
+                .setParameter("authority", authority)
+                .getResultList();
+    }
+
+    /**
      * Persists a series, dropping desc rows that carry no defined content.
      *
      * The blank-desc filter is not tidiness. A desc row whose name is blank but

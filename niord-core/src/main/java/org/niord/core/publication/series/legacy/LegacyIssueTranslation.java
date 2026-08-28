@@ -113,7 +113,7 @@ public final class LegacyIssueTranslation {
         issue.setEdition(legacy.getEdition() == null ? null : String.valueOf(legacy.getEdition()));
 
         if (legacy.getPublishDateFrom() != null) {
-            issue.setYear(yearOf(legacy.getPublishDateFrom()));
+            issue.setYear(yearOf(legacy.getPublishDateFrom(), series));
         }
 
         attachDescs(legacy, issue);
@@ -273,10 +273,20 @@ public final class LegacyIssueTranslation {
         return legacy.getRepoPath() + "/" + legacy.getRevision() + "/" + fileName;
     }
 
-    private static Integer yearOf(Date d) {
-        java.util.Calendar c = java.util.Calendar.getInstance();
-        c.setTime(d);
-        return c.get(java.util.Calendar.YEAR);
+    /**
+     * The calendar year an instant falls in, read in the SERIES' own zone.
+     *
+     * The JVM default zone is whatever the container happens to be configured
+     * with, and it is not the zone the issue's cut-offs are read in -- the domain
+     * supplies that. An annual whose window opens at midnight on 1 January is one
+     * hour either side of the boundary in CET, so reading it in UTC on a UTC
+     * container and in CET on a developer workstation gives two different years
+     * for the same row. The import is one-way and permanent, so the answer has to
+     * be the same wherever it runs.
+     */
+    private static Integer yearOf(Date d, PublicationSeries series) {
+        java.time.ZoneId zone = series != null ? series.cutoffZone() : java.time.ZoneOffset.UTC;
+        return d.toInstant().atZone(zone).getYear();
     }
 
     /**

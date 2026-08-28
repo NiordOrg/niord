@@ -144,8 +144,8 @@ public class PublicationRestService extends AbstractBatchableRestService {
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
         return unionWithIssues(params,
-                publicationService.searchPublications(params)
-                        .map(p -> p.toVo(PublicationVo.class, dataFilter)),
+                p -> publicationService.searchPublications(p)
+                        .map(row -> row.toVo(PublicationVo.class, dataFilter)),
                 issue -> IssuePublicationMapping.toPublicationVo(issue, lang));
     }
 
@@ -185,8 +185,8 @@ public class PublicationRestService extends AbstractBatchableRestService {
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
         return unionWithIssues(params,
-                publicationService.searchPublications(params)
-                        .map(p -> p.toVo(SystemPublicationVo.class, dataFilter)),
+                p -> publicationService.searchPublications(p)
+                        .map(row -> row.toVo(SystemPublicationVo.class, dataFilter)),
                 issue -> IssuePublicationMapping.toSystemPublicationVo(issue, lang));
     }
 
@@ -203,42 +203,59 @@ public class PublicationRestService extends AbstractBatchableRestService {
      * cutover -- is resolvable by id and findable by nobody, which makes the
      * current week the one publication an editor cannot cite.
      *
-     * MERGED BEFORE TRUNCATION, so the two halves cannot each truncate
-     * independently and leave the merge working on two wrong lists. The picker
-     * does not page (it is a title-filtered type-ahead), so the total is capped at
-     * the requested size after merging rather than paged through.
+     * MERGED BEFORE PAGING, so the two halves cannot each page independently and
+     * leave the merge working on two wrong lists.
+     *
+     * WHICH IS WHY THE LEGACY HALF IS FETCHED UNPAGED. Prepending the complete
+     * issue list to whatever page the legacy query returned put every issue at the
+     * top of EVERY page and then cut the result to size, so page 2 began with the
+     * same rows page 1 did and no legacy row past the first page was ever
+     * reachable -- the paging was dead for the whole archive. Ordering the union
+     * once and slicing it afterwards is the only arrangement in which a page means
+     * what it says. The legacy query already materialises every matching id before
+     * it sublists, so asking it for the whole match set costs the hydration of
+     * about eleven hundred rows and no extra round trip.
      *
      * SystemPublicationVo extends PublicationVo, so one instanceof covers both
      * shapes this is called with.
      */
     private <V> PagedSearchResultVo<V> unionWithIssues(
             PublicationSearchParams params,
-            PagedSearchResultVo<V> legacy,
+            java.util.function.Function<PublicationSearchParams, PagedSearchResultVo<V>> legacyHalf,
             java.util.function.Function<PublicationIssue, V> asVo) {
 
+        int page = params.getPage();
+        int maxSize = params.getMaxSize();
+
         List<PublicationIssue> issues = publicationSearchAdapter.search(params);
-        if (issues.isEmpty()) {
-            return legacy;
-        }
+
+        // Widened for the legacy fetch only. The adapter above reads neither
+        // field, and nothing downstream reads params again.
+        params.maxSize(Integer.MAX_VALUE).page(0);
+        PagedSearchResultVo<V> legacy = legacyHalf.apply(params);
+
         List<V> issueVos = new ArrayList<>();
         List<String> issueIds = new ArrayList<>();
         for (PublicationIssue issue : issues) {
             issueIds.add(issue.getPublicId());
             issueVos.add(asVo.apply(issue));
         }
-        return merge(issueVos, issueIds, legacy, params.getMaxSize());
+        return merge(issueVos, issueIds, legacy, page, maxSize);
     }
 
     /**
      * The merge itself, without the container.
      *
-     * Package-private and static so the three rules that matter can be asserted
-     * directly: issues first, a colliding legacy row dropped, and the cap applied
-     * only AFTER merging. niord-web has no CDI test harness, and the alternative
-     * is testing this through two endpoints and a database.
+     * A pure static function so the rules that matter can be asserted directly:
+     * issues first, a colliding legacy row dropped, the page taken out of the
+     * MERGED order, and a total that counts what matched rather than what fitted.
+     * niord-web has no CDI test harness, and the alternative is testing this
+     * through two endpoints and a database. Visible because the test that pins it
+     * sits with the rest of the publication tests rather than beside this class.
      */
-    static <V> PagedSearchResultVo<V> merge(List<V> issueVos, List<String> issueIds,
-                                            PagedSearchResultVo<V> legacy, int maxSize) {
+    public static <V> PagedSearchResultVo<V> merge(List<V> issueVos, List<String> issueIds,
+                                                   PagedSearchResultVo<V> legacy,
+                                                   int page, int maxSize) {
         Set<String> taken = new LinkedHashSet<>(issueIds);
         List<V> merged = new ArrayList<>(issueVos);
         for (V row : legacy.getData()) {
@@ -248,14 +265,19 @@ public class PublicationRestService extends AbstractBatchableRestService {
             }
         }
 
-        List<V> capped = maxSize > 0 && merged.size() > maxSize
-                ? new ArrayList<>(merged.subList(0, maxSize))
-                : merged;
+        // Long arithmetic: a caller may send any page number, and page * maxSize
+        // overflows into a negative index long before it stops being accepted.
+        long start = maxSize > 0 ? (long) Math.max(0, page) * maxSize : 0L;
+        int from = (int) Math.min(merged.size(), start);
+        int to = maxSize > 0 ? (int) Math.min(merged.size(), start + maxSize) : merged.size();
+        List<V> rows = new ArrayList<>(merged.subList(from, to));
 
         PagedSearchResultVo<V> out = new PagedSearchResultVo<>();
-        out.setData(capped);
+        out.setData(rows);
+        // What matched, not what fitted. A caller paging on this otherwise stops
+        // one page early.
         out.setTotal((long) merged.size());
-        out.setSize(capped.size());
+        out.setSize(rows.size());
         return out;
     }
 
@@ -317,10 +339,8 @@ public class PublicationRestService extends AbstractBatchableRestService {
         // citation that resolves in one place and not the other is worse than
         // one that resolves nowhere.
         //
-        // The tier comes from the caller: the class is @PermitAll, so an
-        // anonymous request reaches it, and an OPEN issue must not be readable
-        // by anyone who guesses an id.
-        // INTERNAL, unconditionally, and NOT derived from the caller.
+        // The audience is INTERNAL, unconditionally, and is NOT derived from the
+        // caller.
         //
         // This endpoint renders stored citations for the editor, and the previous
         // implementation applied no status or category filter at all -- it returned

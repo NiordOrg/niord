@@ -351,8 +351,17 @@ public class IssueListService {
         // On the COALESCE rather than on cutoffStampedAt alone. An OPEN issue has
         // no stamp, so ordering by the stamp sorted the issue being worked on to
         // the BOTTOM of its own series -- below issues published years earlier.
+        //
+        // THE DESCS COME WITH THEM. Every row is mapped to a value object that
+        // reads its per-language names, file names and links, so a lazy
+        // collection means one extra SELECT per issue: on the weekly series that
+        // is five hundred round trips to render one screen. The fetch join is a
+        // LEFT one because an issue with no desc row must still appear -- an inner
+        // join would silently drop exactly the rows that look wrong. DISTINCT
+        // because the join multiplies each issue by its language count.
         return em.createQuery(
-                        "SELECT i FROM PublicationIssue i WHERE i.series = :s "
+                        "SELECT DISTINCT i FROM PublicationIssue i LEFT JOIN FETCH i.descs "
+                                + "WHERE i.series = :s "
                                 + "ORDER BY COALESCE(i.cutoffStampedAt, i.intervalTo) DESC, i.publicId DESC",
                         PublicationIssue.class)
                 .setParameter("s", series)

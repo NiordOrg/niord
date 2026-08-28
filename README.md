@@ -7,11 +7,16 @@ The niord repository contains the common code-base for the NW + NM T&P editing a
 The build is pinned to **Java 21 (Temurin)** and driven through the checked-in Maven wrapper, so it does
 not depend on a Maven installed on PATH or bundled with an IDE:
 
-```
+```bash
 JAVA_HOME=<path to a Temurin 21 JDK>
-./mvnw -pl niord-core -am test          # 31 tests
+./mvnw -pl niord-core -am test
 ./mvnw -DskipTests -Dmaven.source.skip=true install
 ```
+
+`niord-core` alone runs a few hundred tests. Rather more than half of them need the MySQL
+container described below and skip themselves silently without it, so a run that finishes
+suspiciously fast is a run that tested a fraction of what it looks like it did -- start the
+container first and compare the totals if a number matters to you.
 
 Two notes on those flags, so they are not copied around without reason:
 
@@ -31,7 +36,7 @@ exactly what those tests exist to exercise, and an in-memory substitute would qu
 of them. Keeping the container outside the build also means it stays warm between runs and its
 schema survives for inspection after a failure.
 
-```
+```bash
 docker run -d --name niord-test-db -p 13306:3306 \
   -e MYSQL_ROOT_PASSWORD=mysql -e MYSQL_DATABASE=niord \
   -e MYSQL_USER=niord -e MYSQL_PASSWORD=niord mysql:8.0.35
@@ -41,7 +46,7 @@ Seed it once with the committed baseline. Flyway then adopts that database at ve
 applies the migrations on top, which is exactly what happens on a deployed environment -- so the
 tests exercise the real delivery path rather than a Hibernate-generated approximation of it:
 
-```
+```bash
 docker exec -i niord-test-db mysql -uroot -pmysql niord \
   < niord-core/src/test/resources/schema/baseline-MaDaMe.sql
 ```
