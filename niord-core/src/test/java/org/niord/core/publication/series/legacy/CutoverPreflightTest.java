@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.7. The pre-flight, and the trigger audit that has to be read before cutover.
+ * The pre-flight, and the trigger audit that has to be read before cutover.
  *
  * The pass reports rather than throws, because it is a checklist an admin runs
  * and reads. What must not happen is a violation going unnoticed, so the test
@@ -130,7 +130,7 @@ public class CutoverPreflightTest {
      * I-18 is asserted across every imported issue, and the id space does not
      * collide.
      *
-     * Both are cheap to state and one-way to get wrong: after B7.1 a second
+     * Both are cheap to state and one-way to get wrong: after the flip a second
      * current issue is serving the public, and a colliding id means one citation
      * resolves to whichever document the query found first.
      */

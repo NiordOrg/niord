@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B1.7b. The four rules that had no enforcement at all.
+ * The four rules that had no enforcement at all.
  *
- * O-4, O-6, D-3 and D-8 were left @Pending on B2.9 and B2.12. Both tasks are
+ * O-4, O-6, D-3 and D-8 were each left @Pending on a task. Those tasks are
  * marked complete, and none of the four had a line of code behind it -- the
  * pending was the only record that the rule existed. That is precisely the
  * failure the gate is for: without it these four would have reached cutover as

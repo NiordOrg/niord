@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B6.2. The shadow-diff, driven over two consecutive fixture weeks.
+ * The shadow-diff, driven over two consecutive fixture weeks.
  *
  * Two weeks rather than one because the second is where the chaining shows: its
  * window has to open at the FIRST week's cut-off, and that boundary is supplied
@@ -759,11 +759,11 @@ public class ShadowDiffTest {
                 "the scheduler must retry a release it could not compare; otherwise the skip "
                         + "holds the only slot forever and no green week can ever be recorded");
 
-        // And a settled release is left alone: the comparison is the evidence B6.3
+        // And a settled release is left alone: the comparison is the evidence the report
         // counts, so re-running must not disturb it.
         assertFalse(shadowDiff.undiffedReleases().stream()
                         .anyMatch(p -> p.getPublicationId().equals(week.getPublicationId())),
-                "a COMPARISON settles the release: the evidence B6.3 counts must not be "
+                "a COMPARISON settles the release: the evidence the report counts must not be "
                         + "discarded and recomputed on every sweep");
     }
 

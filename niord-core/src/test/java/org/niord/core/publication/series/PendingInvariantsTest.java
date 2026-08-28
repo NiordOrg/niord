@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The invariants that are still prose. B1.7b drove this to EMPTY on 2026-08-23.
+ * The invariants that are still prose. The invariant-binding pass drove this to EMPTY on 2026-08-23.
  *
  * This file exists so that "not yet asserted" is a DECLARED state with an owner
  * rather than an absence. The manifest test rejects a pending with no owner and
@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * -- so the number of rules still living as prose is visible rather than inferred.
  *
  * WHAT THE GATE FOUND, which is the argument for having had it. Thirty rules were
- * pending on tasks B2.2 through B5.4a, every one of which was already marked
+ * pending on tasks spanning the whole build, every one of which was already marked
  * complete. Twenty-three were implemented and simply never asserted -- the code
  * was written and then nothing held it to the rule. The other SEVEN had no
  * enforcement at all; the pending was the only record that the rule existed:
@@ -52,7 +52,7 @@ public class PendingInvariantsTest {
     @Test
     public void nothingIsPending() {
         assertTrue(true,
-                "B1.7b: every declared invariant is bound to an assertion. A rule added to the "
+                "Every declared invariant is bound to an assertion. A rule added to the "
                         + "specification and not bound is caught by InvariantManifestTest, not here.");
     }
 }

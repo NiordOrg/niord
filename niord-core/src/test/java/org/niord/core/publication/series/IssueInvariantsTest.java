@@ -235,9 +235,9 @@ public class IssueInvariantsTest {
             // not merely when members exist. Two shapes have members and no
             // criteria, and both are legitimate: an annex issue curated by hand,
             // and an imported annex carrying its one recorded member (ruling
-            // B5-iv). S-1 forbids criteria on a non-query series, so demanding it
+            // hand-named annexes). S-1 forbids criteria on a non-query series, so demanding it
             // whenever memberCount > 0 makes those shapes unrepresentable -- and
-            // B1.7b gates the exit from Phase B5 on this harness, so the assertion
+            // The exit from the import phase is gated on this harness, so the assertion
             // would go red for a row the importer is required to write.
             if (issue.getSeries().getContentMode() == ContentMode.GENERATED_FROM_QUERY) {
                 assertNotNull(issue.getCriteriaSnapshot(),

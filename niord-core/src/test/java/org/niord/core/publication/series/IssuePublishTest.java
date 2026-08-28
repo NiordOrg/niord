@@ -673,7 +673,7 @@ public class IssuePublishTest {
         em.clear();
 
         List<IssueAuditEntry> entries = em.createQuery(
-                        "SELECT a FROM IssueAuditEntry a WHERE a.issue.id = :id AND a.action = 'PUBLISHED'",
+                        "SELECT a FROM IssueAuditEntry a WHERE a.issue.id = :id AND a.action = org.niord.core.publication.series.AuditAction.PUBLISHED",
                         IssueAuditEntry.class)
                 .setParameter("id", i.getId()).getResultList();
 

@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B6.1's gate, driven over synthetic diffs.
+ * The historical replay's gate, driven over synthetic diffs.
  *
  * Synthetic on purpose. The gate's job is to decide what a diff MEANS, and that
  * decision has to be tested against cases the real estate does not currently

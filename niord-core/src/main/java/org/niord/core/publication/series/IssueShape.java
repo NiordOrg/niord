@@ -256,7 +256,7 @@ public class IssueShape extends BaseService {
                         "SELECT COUNT(a) FROM IssueAuditEntry a WHERE a.issue = :i AND a.action = :action",
                         Long.class)
                 .setParameter("i", issue)
-                .setParameter("action", "NAME_CHANGED")
+                .setParameter("action", AuditAction.NAME_CHANGED)
                 .getSingleResult() > 0;
     }
 

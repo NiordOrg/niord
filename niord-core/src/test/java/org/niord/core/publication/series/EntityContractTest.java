@@ -86,7 +86,7 @@ public class EntityContractTest {
      *
      * Checked against a generated manifest rather than by review, so a column
      * dropped during a refactor is a red build. The manifest is regenerated from
-     * DATA-MODEL by gen-field-manifest.js; a stale one is caught in the other repo.
+     * the data model by gen-field-manifest.js; a stale one is caught in the other repo.
      */
     @Test
     public void everyDeclaredColumnExistsOnItsEntity() throws Exception {
@@ -97,7 +97,7 @@ public class EntityContractTest {
         }
 
         // Inherited from BaseEntity / VersionedEntity / DescEntity, or replaced by
-        // the generalised audit (DM-Q2).
+        // the generalised audit.
         Set<String> notOwnFields = Set.of("id", "version", "created", "updated", "entity", "lang",
                 "statusChangedAt", "statusChangedBy", "statusChangeReason");
 
@@ -167,7 +167,7 @@ public class EntityContractTest {
         assertHasField(PublicationIssue.class, "criteriaOverride");
     }
 
-    /** DM-Q2: the audit is generalised, so a row can belong to a series instead of an issue. */
+    /** The audit is generalised, so a row can belong to a series instead of an issue. */
     @Test
     public void theAuditIsGeneralisedNotThreeFixedColumns() {
         assertHasField(IssueAuditEntry.class, "issue");

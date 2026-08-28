@@ -366,7 +366,7 @@ public class IssuePreviewAndFileTest {
      * the first, and the issue then serves the Danish PDF to an English reader
      * with nothing anywhere recording that it happened.
      *
-     * Left unimplemented until B1.7b -- the rule was pending on B2.12, which
+     * Left unimplemented until the invariant-binding pass -- the rule was pending on a task which
      * completed without it.
      */
     @BindsRule({"D-3"})

@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.3 and B5.4a, translated over the whole captured estate.
+ * Templates into series and publications into issues, translated over the whole captured estate.
  *
  * No database and no Quarkus: the translation is a pure function of a legacy row,
  * which is deliberate -- it means the id-space and path assertions below run over
@@ -51,7 +51,7 @@ public class LegacyTranslationTest {
         return out;
     }
 
-    // ------------------------------------------------------------------ B5.3
+    // ------------------------------------------------------ templates to series
 
     /** The twelve templates land as reviewable drafts, each naming its origin. */
     @Test
@@ -163,7 +163,7 @@ public class LegacyTranslationTest {
         }
     }
 
-    // ----------------------------------------------------------------- B5.4a
+    // --------------------------------------------------- publications to issues
 
     /** Id-space continuity, over every row: publicId IS the legacy id. */
     @BindsRule({"X-2"})
@@ -201,7 +201,7 @@ public class LegacyTranslationTest {
      * Paths are carried verbatim, revision segment included, and every filePath
      * is contained by its issue's repoPath.
      *
-     * The containment rule is D-4's imported layout, which is the fixture B1.7b
+     * The containment rule is D-4's imported layout, which is the fixture the invariant-binding pass
      * waits on.
      */
     @BindsRule({"D-4"})
@@ -281,7 +281,7 @@ public class LegacyTranslationTest {
         assertEquals(4, distribution.get(IssueStatus.OPEN), "3 RECORDING + 1 DRAFT");
     }
 
-    /** Every issue arrives with its snapshot header already written (B5.4a2). */
+    /** Every issue arrives with its own snapshot header already written. */
     @Test
     public void theTranslationWritesTheSnapshotHeader() {
         for (Publication p : LegacyEstateFixture.publications()) {

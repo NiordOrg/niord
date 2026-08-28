@@ -40,7 +40,15 @@ public class InvariantManifestTest {
     /** Where the bindings live. Scanned as source, so no classpath scanner is needed. */
     private static final Path TEST_SOURCES = Paths.get("src", "test", "java");
 
-    /** Tasks that may own a @Pending. Anything else is a typo or a task that does not exist. */
+    /**
+     * Tasks that may own a @Pending. Anything else is a typo or a task that does
+     * not exist.
+     *
+     * DATA, not a citation. These ids are the closed vocabulary a @Pending
+     * annotation is checked against, so they are values this test compares
+     * against rather than a reference to anything outside the repository -- which
+     * is why they survive here where the same ids in a comment do not.
+     */
     private static final Set<String> KNOWN_TASKS = new LinkedHashSet<>(List.of(
             "B1.7b", "B2.1", "B2.2", "B2.3a", "B2.3b", "B2.4", "B2.5", "B2.6", "B2.7", "B2.8",
             "B2.9", "B2.10", "B2.11", "B2.12",
@@ -148,7 +156,7 @@ public class InvariantManifestTest {
     /**
      * The pending count is printed, not hidden.
      *
-     * B1.7b is the task that drives it to zero, and it cannot run until the
+     * The invariant-binding pass is what drives it to zero, and it cannot run until the
      * transactional actions exist. Until then the number is the honest measure of
      * how much of the rule set is still prose.
      */

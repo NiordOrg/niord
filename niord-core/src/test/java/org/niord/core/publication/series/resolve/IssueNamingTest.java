@@ -141,7 +141,7 @@ public class IssueNamingTest {
                 "without the padded token, a pattern that wants 'w01' is inexpressible");
     }
 
-    /** DM-Q15: a DAILY series must be nameable, which is why the day tokens exist. */
+    /** A DAILY series must be nameable, which is why the day tokens exist. */
     @Test
     public void aDailySeriesCanBeNamed() {
         IssueNaming.Numbers n = IssueNaming.derive(at(2026, 3, 5, 8, 0), null, DK, null);

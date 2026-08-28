@@ -24,9 +24,9 @@ public class GapDetectionTest {
     // ------------------------------------------------------------------ the gate
 
     /**
-     * The half of the firing-areas fixture B0.3 defers to here.
+     * The half of the firing-areas fixture the corpus check defers to here.
      *
-     * B0.3 asserts the two issues share 31 of 32 members. At that point there is
+     * That check asserts the two issues share 31 of 32 members. At that point there is
      * no gap-detection code whose absence could be checked. Here there is, so the
      * absence is asserted rather than merely omitted: for an in-force series NO
      * tiling, NO gap check and NO overlap refusal runs.

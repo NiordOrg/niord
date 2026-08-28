@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.4b. The cut-off recovery cascade.
+ * The cut-off recovery cascade.
  *
  * ON THE DECLARED FIGURES. The plan states the cascade is "exact on 452 of 496
  * chained pairs". Neither number reproduces against the captured estate under
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * So this suite asserts the cascade's STRUCTURE -- which stage wins, in what
  * order, and what each records -- and pins the distribution AS MEASURED rather
- * than asserting figures it cannot reproduce. B5.4b's numeric acceptance
+ * than asserting figures it cannot reproduce. The cascade's numeric acceptance
  * ("matches the declared figures +/-1, asserted as four counts") is deliberately
  * NOT claimed here; it needs the definition of a chained pair confirmed first.
  *

@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.6. The dry run writes nothing, and one bad row aborts the whole import.
+ * The dry run writes nothing, and one bad row aborts the whole import.
  *
  * @QuarkusTest with a database, because the two claims being made are both about
  * the database: that S18 does not touch it, and that S19 leaves it untouched when
@@ -355,8 +355,8 @@ public class LegacyImportServiceTest {
             assertEquals(issueRow.getPublicationId(), issue.getLegacyPublicationId(),
                     "id-space continuity: the legacy id IS the publicId");
             assertEquals(issueRow.getRepoPath(), issue.getRepoPath(), "paths travel verbatim (R6)");
-            assertNotNull(issue.getSnapshotTimeRelation(), "B5.4a2's header must be written");
-            assertNotNull(issue.getCutoffStampedAt(), "B5.4b must have recovered a cut-off");
+            assertNotNull(issue.getSnapshotTimeRelation(), "the per-issue snapshot header must be written");
+            assertNotNull(issue.getCutoffStampedAt(), "the recovery cascade must have recovered a cut-off");
         } finally {
             cleanUpImported();
         }
@@ -515,7 +515,7 @@ public class LegacyImportServiceTest {
                 "the INACTIVE edition released the same day is closed, not left current");
     }
 
-    // ------------------------------------------------------ B5.2: the categories
+    // ----------------------------------------------------------- the categories
 
     /**
      * All five live category ids round-trip, carrying their real flags.

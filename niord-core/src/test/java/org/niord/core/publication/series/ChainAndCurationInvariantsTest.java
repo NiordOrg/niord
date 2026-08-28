@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B1.7b. The chain invariants, and the author on a curation decision.
+ * The chain invariants, and the author on a curation decision.
  *
- * I-7 and I-9 were left pending on B2.3b and O-2 on B2.9. All three tasks
+ * I-7, I-9 and O-2 were each left pending on a task. All three tasks
  * completed, so the behaviour exists -- what was missing is anything holding it
  * to the rule. These assert the stored STATE rather than an API refusal, because
  * that is what the invariants are about: I-7 and I-9 describe what must be true

@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.4c: R8's window source, and the one-off series the orphans get (B5-v).
+ * R8's window source, and the one-off series the orphans get.
  *
  * Driven over the captured estate, because both rules were got wrong against it
  * before this suite existed: 9 cadenced rows were being marked MANUAL, and 8
@@ -35,12 +35,12 @@ public class OrphanSeriesAndWindowSourceTest {
                 .toList();
     }
 
-    // -------------------------------------------------------------- B5.4c / R8
+    // -------------------------------------------------------- R8, window source
 
     /**
      * No row of anything cadenced carries MANUAL.
      *
-     * Marking a cadenced imported issue MANUAL is what B2.3b step 13 skips by
+     * Marking a cadenced imported issue MANUAL is what the publish transaction skips by
      * design, and the first native publish would then leave two current EfS
      * issues on the public site at once.
      */
@@ -99,7 +99,7 @@ public class OrphanSeriesAndWindowSourceTest {
                 "only a genuinely open-ended one-off is MANUAL");
     }
 
-    // ---------------------------------------------------------------- B5-v
+    // ------------------------------------------------- the orphans, grouped
 
     /** Every orphan is authored an id, and they are unique. */
     @Test
@@ -280,7 +280,7 @@ public class OrphanSeriesAndWindowSourceTest {
                 "one id per planned series, and no two the same");
     }
 
-    /** The three shared series B5-v names in words. */
+    /** The three shared series the orphan ruling names in words. */
     private static final List<String> RULED_SERIES_IDS =
             List.of("nm-annex-ncags", "nm-annex-ice-service", "danish-list-of-lights");
 

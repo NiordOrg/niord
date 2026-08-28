@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.4a2. The snapshot header is derived per issue and never copied from the series.
+ * The snapshot header is derived per issue and never copied from the series.
  *
  * The population figures are read from the captured estate rather than asserted
  * as literals alone, so that a change in the capture shows up here instead of
@@ -79,7 +79,7 @@ public class IssueSnapshotDeriverTest {
         }
 
         assertTrue(missing.isEmpty(),
-                "NULL snapshot columns are the state DATA-MODEL section 8 reserves for NO_MEMBERSHIP; "
+                "NULL snapshot columns are the state the data model reserves for NO_MEMBERSHIP; "
                         + "leaving them null on an imported issue makes it indistinguishable from one that "
                         + "genuinely has no membership. Offenders: " + missing.size());
     }
@@ -173,7 +173,7 @@ public class IssueSnapshotDeriverTest {
                 "the blank-era weekly EfS population is 116 issues in the captured estate");
         assertTrue(leaked.isEmpty(),
                 "these issues took their answer from the series instead of their own filter, which is "
-                        + "the defect B5.4a2 exists to close: " + leaked);
+                        + "the defect the per-issue header exists to close: " + leaked);
     }
 
     /** 122 tag-carrying blank-era issues need false, not only the weekly ones. */
@@ -264,7 +264,7 @@ public class IssueSnapshotDeriverTest {
      *
      * Set.of randomises its iteration order per JVM run. While the translation
      * held one, two imports of the same estate produced two different stored
-     * criteria documents -- which would flake the export round trip and B5.6's
+     * criteria documents -- which would flake the export round trip and the importer's
      * byte-identical dry run, intermittently and only on some JVM starts. The
      * order asserted here is the legacy filter's own.
      */

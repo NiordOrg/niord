@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5-v as revised: the 39 template-less publications are 8 series, not 39.
+ * The 39 template-less publications are 8 series, not 39.
  *
  * The counts are Rasmus's ruling, checked against the captured estate. They are
  * asserted as exact figures rather than "more than one" because the ruling IS the
@@ -165,7 +165,7 @@ public class OrphanGroupingTest {
     /**
      * Identity is untouched by any of this.
      *
-     * B5.4a forbids keying an issue on its title, and classifying by title here
+     * The keying rule forbids keying an issue on its title, and classifying by title here
      * does not: every issue still takes its publicId from the legacy
      * publicationId. What the title decides is only which series files it.
      */

@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.5, over the captured estate: 1,077 publications and their real member sets.
+ * The frozen member snapshot, over the captured estate: 1,077 publications and their real member sets.
  *
  * The member uids are not in the capture -- it recorded shortIds and counts --
  * so where a test needs rows it synthesises uids of the right CARDINALITY from
@@ -84,7 +84,7 @@ public class MemberSnapshotImportTest {
         return out;
     }
 
-    // -------------------------------------------------- the annexes (B5-iv)
+    // --------------------------------------------------------- the annexes
 
     /**
      * The six tag-carrying annexes import exactly one member row each; the
@@ -127,7 +127,7 @@ public class MemberSnapshotImportTest {
             }
         }
 
-        assertEquals(6, tagCarrying, "six tag-carrying annexes, as ruled in B5-iv");
+        assertEquals(6, tagCarrying, "six tag-carrying annexes, as ruled");
         assertEquals(13, tagless, "measured; the plan says ten");
     }
 
@@ -167,7 +167,7 @@ public class MemberSnapshotImportTest {
             PublicationIssue issue = imported.get(p.getPublicationId()).issue();
             assertFalse(MemberProvenanceRules.isReplayOracle(issue.getMembershipProvenance()),
                     p.getPublicationId() + " (" + tag + ") is contaminated but claims to be an oracle; "
-                            + "B6.1 would hold it to a standard it cannot meet and the divergence would "
+                            + "the historical replay would hold it to a standard it cannot meet and the divergence would "
                             + "be pushed into the expected-diff manifest");
             assertNotNull(issue.getMembershipProvenanceNote(), p.getPublicationId());
             assertFalse(issue.getMembershipProvenanceNote().isBlank(),
@@ -215,7 +215,7 @@ public class MemberSnapshotImportTest {
             assertTrue(issue.getMembershipProvenanceNote().contains("no query at any instant"));
         }
 
-        assertEquals(4, found, "the four annuals named in B5.5");
+        assertEquals(4, found, "the four annuals the snapshot rules name");
     }
 
     // --------------------------------------------------------- the mechanics

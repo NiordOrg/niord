@@ -83,7 +83,7 @@ public class FlywayBaselineTest {
     /**
      * The migration applies on top of the baseline rather than instead of it.
      *
-     * This holds the B0.1 acceptance automatically: an existing database is
+     * This is the acceptance the delivery mechanism turns on: an existing database is
      * adopted at version 0, the publication tables arrive as a migration, and
      * nothing else in the schema is touched.
      */

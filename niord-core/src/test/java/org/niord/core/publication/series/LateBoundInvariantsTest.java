@@ -15,11 +15,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B1.7b. Invariants whose enforcement shipped but whose assertion did not.
+ * Invariants whose enforcement shipped but whose assertion did not.
  *
- * X-6 was left pending on B2.2 and I-15 on B2.6. Both tasks completed; both
+ * X-6 and I-15 were each left pending on a task. Both tasks completed; both
  * rules went unasserted, so the code was written and then never held to what it
- * was written for. Closing that is the whole of B1.7b, and it is why the plan
+ * was written for. Closing that is the whole of the invariant-binding pass, and it is why the plan
  * forbids deferring it to Phase Z: a pending binding that survives into cutover
  * is a rule nothing checks.
  *

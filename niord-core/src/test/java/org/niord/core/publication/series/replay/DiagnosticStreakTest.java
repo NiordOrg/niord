@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B6.3. The green-release streak, which is the cutover precondition itself.
+ * The green-release streak, which is the cutover precondition itself.
  *
  * Split out of DiagnosticReportTest and kept free of Quarkus deliberately. The
  * streak rule decides whether a series may be cut over at all, so it is the last

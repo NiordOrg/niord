@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B6.3. The rendered report the cutover decision is read from.
+ * The rendered report the cutover decision is read from.
  *
  * The failure mode being tested for is not a wrong number. It is a number that
  * is technically right and reads as more than it is -- a series shown as ready

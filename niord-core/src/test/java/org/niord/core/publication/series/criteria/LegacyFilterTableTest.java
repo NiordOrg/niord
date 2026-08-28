@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.1. The translation table matches the bytes the estate actually stores.
+ * The translation table matches the bytes the estate actually stores.
  *
  * Every string in this class comes from message-tag-filters.json, which is
  * generated from the captured production estate. Nothing here is hand-typed,
@@ -103,7 +103,7 @@ public class LegacyFilterTableTest {
         }
 
         assertTrue(failures.isEmpty(), "the translation table does not match the bytes the estate stores. "
-                + "This is the B5.1 failure exactly -- an abbreviation in the table means every publication "
+                + "This is the failure this table exists to prevent -- an abbreviation in it means every publication "
                 + "carrying the spelled-out form fails the import: " + failures);
     }
 

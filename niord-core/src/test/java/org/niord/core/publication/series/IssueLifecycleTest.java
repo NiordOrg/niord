@@ -152,7 +152,7 @@ public class IssueLifecycleTest {
     }
 
     /**
-     * OQ-10. The new edition sets supersedes AND caps the predecessor in one
+     * The new edition sets supersedes AND caps the predecessor in one
      * transaction -- the multi-step alternative is where the cap gets forgotten.
      */
     @BindsRule({"I-13"})
@@ -186,7 +186,7 @@ public class IssueLifecycleTest {
 
         // The audit action that was previously unreachable by any API call.
         List<IssueAuditEntry> superseded = em.createQuery(
-                        "SELECT a FROM IssueAuditEntry a WHERE a.issue.id = :id AND a.action = 'SUPERSEDED_BY'",
+                        "SELECT a FROM IssueAuditEntry a WHERE a.issue.id = :id AND a.action = org.niord.core.publication.series.AuditAction.SUPERSEDED_BY",
                         IssueAuditEntry.class)
                 .setParameter("id", first.getId()).getResultList();
         assertEquals(1, superseded.size(), "SUPERSEDED_BY was not written");
@@ -232,7 +232,7 @@ public class IssueLifecycleTest {
     // ================================================================= delete
 
     /**
-     * DM-Q3 restated. C7's literal "no publicId" can never be true, because
+     * C7's literal "no publicId" can never be true, because
      * publicId is minted at create. The real test is never-stamped and
      * never-published.
      */

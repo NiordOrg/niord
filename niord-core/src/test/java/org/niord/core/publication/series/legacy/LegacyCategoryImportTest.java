@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * B5.2. The categories the estate actually carries, and the flag that decides
+ * The categories the estate actually carries, and the flag that decides
  * who can see what.
  *
  * A category is a label with a priority and a publish flag, and the publish flag
