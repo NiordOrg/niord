@@ -74,6 +74,15 @@ public class IssuePublishService extends BaseService {
     MemberResolutionService resolver;
 
     @Inject
+    PublishChecklistService checklist;
+
+    @Inject
+    IssueShape shape;
+
+    @Inject
+    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+
+    @Inject
     IssueRenderService renderService;
 
     @Inject
@@ -198,9 +207,25 @@ public class IssuePublishService extends BaseService {
     public PublishResult publish(Integer issueId, PublishRequest request) {
 
         // --- 1. LOCK ------------------------------------------------------
-        // A pessimistic write lock, not an optimistic version check: two
-        // concurrent publishes must not both stamp, and the loser must lose
-        // before it does any work rather than after.
+        // THE SERIES ROW FIRST, and for the whole transaction. Everything this
+        // action decides is a fact about the series rather than about one issue:
+        // the neighbour bracket it stamps inside, the predecessor whose window it
+        // closes, and the successor it mints. Two issues of one series publishing
+        // at once would each read a bracket the other was in the middle of moving,
+        // and both would cap the same predecessor.
+        //
+        // A pessimistic write lock, not an optimistic version check: the loser has
+        // to lose before it does any work rather than after. The series is looked
+        // up by a scalar so the issue is still read fresh, under its own lock,
+        // rather than arriving in the persistence context unlocked.
+        Integer seriesRowId = em.createQuery(
+                        "SELECT i.series.id FROM PublicationIssue i WHERE i.id = :id", Integer.class)
+                .setParameter("id", issueId)
+                .getResultStream().findFirst().orElse(null);
+        if (seriesRowId != null) {
+            em.find(PublicationSeries.class, seriesRowId, LockModeType.PESSIMISTIC_WRITE);
+        }
+
         PublicationIssue issue = em.find(PublicationIssue.class, issueId, LockModeType.PESSIMISTIC_WRITE);
         if (issue == null) {
             throw new IllegalArgumentException("no such issue: " + issueId);
@@ -211,12 +236,37 @@ public class IssuePublishService extends BaseService {
 
         PublicationSeries series = issue.getSeries();
 
-        // --- 2. STAMP, before resolving -----------------------------------
+        // --- 1b. THE RAIL, ENFORCED ---------------------------------------
+        // Every BLOCK row the release rail shows an admin is refused HERE, before
+        // anything is stamped. A rail that only advises is a rail the API does not
+        // have: the checklist was server-authoritative on the way out and unread on
+        // the way in, so a publish that the screen said could not happen went
+        // through, stamped a cut-off, and could never be un-stamped.
         Date stamp = request.explicitStamp() != null ? request.explicitStamp() : new Date();
-        issue.setCutoffStampedAt(stamp);
-        issue.setCutoffSource("STAMPED");
+        PublishChecklistService.Checklist rail =
+                checklist.compute(issue, stamp, false, previewStale(issue));
+        refuseBlockingRows(issue, series, rail, stamp);
 
-        Frozen frozen = resolveFreezeAndWrite(issue, series, request, stamp, stamp);
+        // --- 2. STAMP, before resolving -----------------------------------
+        issue.setCutoffStampedAt(stamp);
+        // NOW and an admin-chosen instant are stamped identically, and this column
+        // is the only thing that tells them apart afterwards. A reader asking
+        // whether a late release was decided at the moment it went out, or at the
+        // moment its content closed, has no other source.
+        issue.setCutoffSource(request.explicitStamp() != null
+                ? "STAMPED_MANUAL_TIME" : "STAMPED_AT_PUBLISH");
+        // A retro-created issue carried a reconstructed cut-off until this moment.
+        // It has now been stamped by this system, and leaving the flag set would
+        // badge a genuinely stamped instant as recovered for the rest of its life.
+        issue.setCutoffReconstructed(false);
+
+        // The numbers and the names follow the stamp. Until now they rendered the
+        // NOMINAL close, which is a prediction: a week released five days late
+        // closes five days late, and the header, the file name and the citation
+        // format all have to say which week actually went out.
+        shape.restamp(issue, series);
+
+        Frozen frozen = resolveFreezeAndWrite(issue, series, request, stamp, stamp, rail.resolution());
         List<String> unacknowledged = frozen.unacknowledgedWarnings();
 
         // --- 11. STATUS FLIP ----------------------------------------------
@@ -302,7 +352,7 @@ public class IssuePublishService extends BaseService {
         Frozen frozen = resolveFreezeAndWrite(issue, series,
                 new PublishRequest(request.regenerate(), request.acknowledgedWarnings(),
                         request.actor(), null),
-                cutoff, now);
+                cutoff, now, null);
 
         audit.amended(issue, request.actor(), request.reason(), frozen.archivePaths());
         em.merge(issue);
@@ -322,9 +372,16 @@ public class IssuePublishService extends BaseService {
      * records it, and the archive entry is named by it, so two amends of one
      * issue do not write over each other's archived generation. For a publish the
      * two are the same instant, and nothing about publish changes.
+     *
+     * @param railResolution the resolution the release rail already took over this
+     *                       same cut-off, or null to take one here. Publish passes
+     *                       the rail's so that what the rail counted and what gets
+     *                       frozen cannot be two different member sets; amend has
+     *                       no rail and passes null.
      */
     private Frozen resolveFreezeAndWrite(PublicationIssue issue, PublicationSeries series,
-                                         PublishRequest request, Date cutoff, Date frozenAt) {
+                                         PublishRequest request, Date cutoff, Date frozenAt,
+                                         MemberResolutionService.Resolution railResolution) {
 
         // --- 3. RESOLVE, in process ---------------------------------------
         // Never through the search REST layer: it day-snaps the interval and
@@ -346,7 +403,7 @@ public class IssuePublishService extends BaseService {
         // read it, and re-deriving it per use would make them depend on this
         // method not having changed the issue in between -- which it does, a few
         // lines below, when it sets the status a published issue answers from.
-        ResolvedCriteria resolved = hasMembership ? EffectiveCriteria.resolvedFor(issue) : null;
+        ResolvedCriteria resolved = hasMembership ? EffectiveCriteria.resolvedFor(issue, domains) : null;
 
         Interval window = new Interval(issue.getIntervalFrom(), cutoff);
 
@@ -366,9 +423,19 @@ public class IssuePublishService extends BaseService {
         Set<String> curated = includes(issue);
         curated.removeAll(excludes(issue));
 
-        MemberResolutionService.Resolution resolution = hasMembership
-                ? resolver.resolve(resolved, window, includes(issue), excludes(issue))
-                : MemberResolutionService.Resolution.curated(curated);
+        // The rail's own resolution where it took one, and it took it over exactly
+        // this cut-off, this document and these overrides. Re-running the query
+        // here would cost a second full narrowing on every publish AND leave open
+        // the one outcome the rail exists to close: the count the admin approved
+        // and the set that gets frozen being two different answers.
+        MemberResolutionService.Resolution resolution;
+        if (hasMembership) {
+            resolution = railResolution != null
+                    ? railResolution
+                    : resolver.resolve(resolved, window, includes(issue), excludes(issue));
+        } else {
+            resolution = MemberResolutionService.Resolution.curated(curated);
+        }
 
         // --- 3b. REFUSE an unacknowledged warning, before anything is frozen ---
         // The warnings are a property of the resolution, so they are known here
@@ -464,14 +531,6 @@ public class IssuePublishService extends BaseService {
                 : operands.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(","));
     }
 
-    private ResolvedCriteria criteriaOf(PublicationSeries series) {
-        return org.niord.core.publication.series.criteria.CriteriaResolver.resolve(
-                series.getCriteria(),
-                series.getTimeRelation(),
-                Boolean.TRUE.equals(series.getAliveAtCutoff()),
-                org.niord.core.publication.series.criteria.CriteriaResolver.NO_DOMAINS);
-    }
-
     private List<IssueOverride> overridesOf(PublicationIssue issue) {
         return em.createQuery("SELECT o FROM IssueOverride o WHERE o.issue = :i", IssueOverride.class)
                 .setParameter("i", issue).getResultList();
@@ -498,41 +557,16 @@ public class IssuePublishService extends BaseService {
     }
 
     /**
-     * Reads the ordering fields for a member set.
+     * The ordering facts for a member set.
      *
-     * A JPQL projection rather than entity getters: Message carries a year
-     * field with no accessor, and adding one to a shared entity just to order a
-     * publication would be the wrong place to change.
+     * One definition, in the resolver, because the live member list has to order
+     * the same way: what an admin reads on screen and what the renderer prints
+     * are supposed to be the same list.
      */
     private List<IssueOrdering.Orderable> orderablesFor(Set<String> uids) {
-        List<IssueOrdering.Orderable> out = new ArrayList<>();
-        if (uids.isEmpty()) {
-            return out;
-        }
-        // LEFT JOIN, explicitly. "m.area.treeSortOrder" is an IMPLICIT INNER join,
-        // which silently drops every message with no primary area -- and most of
-        // the corpus has none, so the issue would freeze with a member count that
-        // does not match its own rows.
-        List<Object[]> rows = em.createQuery(
-                        "SELECT m.uid, a.treeSortOrder, m.areaSortOrder, m.year, m.number, m.id, "
-                                + "m.publishDateFrom, m.eventDateFrom, m.followUpDate "
-                                + "FROM Message m LEFT JOIN m.area a WHERE m.uid IN :uids", Object[].class)
-                .setParameter("uids", uids).getResultList();
-
-        for (Object[] r : rows) {
-            out.add(new IssueOrdering.Orderable(
-                    (String) r[0],
-                    (Integer) r[1],
-                    r[2] == null ? null : ((Number) r[2]).doubleValue(),
-                    (Integer) r[3],
-                    (Integer) r[4],
-                    (Integer) r[5],
-                    (Date) r[6],
-                    (Date) r[7],
-                    (Date) r[8]));
-        }
-        return out;
+        return resolver.orderablesFor(uids);
     }
+
     /** Steps 6: one frozen row per member, carrying the mutable facts as at freeze. */
     private void freezeMembers(PublicationIssue issue, List<IssueOrdering.Orderable> ordered,
                                Map<String, Integer> sortIndex,
@@ -640,7 +674,7 @@ public class IssuePublishService extends BaseService {
         Set<String> curated = includes(issue);
         curated.removeAll(excludes(issue));
         MemberResolutionService.Resolution resolution = hasMembership
-                ? resolver.resolve(EffectiveCriteria.resolvedFor(issue),
+                ? resolver.resolve(EffectiveCriteria.resolvedFor(issue, domains),
                         new Interval(issue.getIntervalFrom(), now), includes(issue), excludes(issue))
                 : MemberResolutionService.Resolution.curated(curated);
 
@@ -683,6 +717,16 @@ public class IssuePublishService extends BaseService {
     private void writeFiles(PublicationIssue issue, PublicationSeries series,
                             List<IssueOrdering.Orderable> ordered, boolean regenerate, Date stamp) {
         if (series.getReportId() == null) {
+            // A query-backed series with no report has nothing to render and no
+            // bytes to fall back on, so returning quietly here left it PUBLISHED
+            // with no document -- the failure that looks exactly like success. The
+            // rail refuses this before the stamp; this is the same refusal at the
+            // one place where the value could still be missing.
+            if (series.getContentMode() == ContentMode.GENERATED_FROM_QUERY) {
+                throw new IssueLifecycleService.TransitionRefusedException("REPORT_NOT_CONFIGURED",
+                        "'" + series.getSeriesId() + "' generates its document from a report and names "
+                                + "none; there is nothing to render and no file to publish");
+            }
             return; // nothing to generate: an uploaded or link-only issue
         }
         for (PublicationIssueDesc desc : issue.getDescs()) {
@@ -791,7 +835,7 @@ public class IssuePublishService extends BaseService {
             Integer edition = issue.getEdition() == null || !issue.getEdition().matches("\\d+")
                     ? null : Integer.valueOf(issue.getEdition());
             IssueNaming.Numbers numbers = IssueNaming.derive(stamp, issue.getIntervalFrom(),
-                    series.cutoffZone(), edition);
+                    series.cutoffZone(), edition, IssueShape.yearBasisOf(series));
             name = IssueNaming.expand(pattern, numbers);
         }
         if (name == null || name.isBlank()) {
@@ -807,8 +851,19 @@ public class IssuePublishService extends BaseService {
      */
     static Date defaultCutoff(PublicationIssue issue, PublicationSeries series, Date now) {
         CutoffDefault d = series.getCutoffDefault();
-        if (d == CutoffDefault.PERIOD_START && issue.getIntervalFrom() != null) {
-            return issue.getIntervalFrom();
+        if (d == CutoffDefault.PERIOD_START) {
+            if (issue.getIntervalFrom() != null) {
+                return issue.getIntervalFrom();
+            }
+            // An in-force issue has ONE bound, and it is the upper one -- the
+            // validity date the edition describes. PERIOD_START is exactly the
+            // setting such a series carries (1 January, or a mid-year seam), so
+            // falling through to the clock here named every annual edition for the
+            // day somebody happened to press publish rather than for the boundary
+            // it is the edition of.
+            if (issue.getIntervalTo() != null) {
+                return issue.getIntervalTo();
+            }
         }
         if (d == CutoffDefault.PERIOD_END && issue.getIntervalTo() != null) {
             return issue.getIntervalTo();
@@ -899,6 +954,28 @@ public class IssuePublishService extends BaseService {
             return null;
         }
 
+        // NOTHING IS DUE WHEN SOMETHING IS ALREADY THERE, and this is not a
+        // concurrency guard -- it is the ordinary outcome of recovering a missing
+        // week. Publishing a recovered 2024 issue would otherwise mint a second
+        // OPEN issue opening at the 2024 stamp, beside the real current one, and
+        // the editor's publication panel then reports every message published
+        // since as a live member of a two-year-old period.
+        //
+        // Both cases are "already there": a later issue means the chain has moved
+        // past this stamp, and an OPEN issue means the next one exists and is
+        // still being worked on.
+        Long ahead = em.createQuery(
+                        "SELECT COUNT(i) FROM PublicationIssue i WHERE i.series = :s AND i.id <> :self "
+                                + "AND (i.status = :open OR i.cutoffStampedAt > :stamp)", Long.class)
+                .setParameter("s", series)
+                .setParameter("self", issue.getId() == null ? -1 : issue.getId())
+                .setParameter("open", IssueStatus.OPEN)
+                .setParameter("stamp", stamp)
+                .getSingleResult();
+        if (ahead > 0) {
+            return null;
+        }
+
         PublicationIssue next = new PublicationIssue();
         next.setSeries(series);
         next.setPublicId(java.util.UUID.randomUUID().toString());
@@ -909,35 +986,146 @@ public class IssuePublishService extends BaseService {
         next.setIntervalFrom(stamp);
         next.setIntervalFromSource(IntervalBoundSource.STAMPED);
 
-        // One named desc row per configured language, exactly as a hand-created
-        // issue gets. This chain built none at all, so the issue an admin finds
-        // waiting for them every week was the one issue with no name -- blank in
-        // every list that shows it -- and with no per-language row for its file
-        // name either, which is the failure the create path documents as surfacing
-        // at upload time as "no such language".
-        //
-        // Suggested from the stamp, which is this issue's interval start, matching
-        // what the create path derives from. Provisional either way: the admin may
-        // override it before this issue publishes.
+        // One desc row per configured language, exactly as a hand-created issue
+        // gets. This chain built none at all, so the issue an admin finds waiting
+        // for them every week was the one issue with no name -- blank in every list
+        // that shows it -- and with no per-language row for its file name either,
+        // which is the failure the create path documents as surfacing at upload
+        // time as "no such language".
         for (String lang : series.getLanguages()) {
-            next.createDesc(lang).setName(
-                    IssueLifecycleService.suggestName(series, lang, stamp));
+            next.createDesc(lang);
         }
+
+        // The same shaping a hand-created issue gets, from the same helper: the
+        // nominal close one cadence period on, the numbers that close derives, and
+        // the per-language names. Without it the successor an admin finds every
+        // week has no effective cut-off, sorts below every dated issue in its own
+        // series, and the gap detector proposes a MISSING row for the very period
+        // it covers.
+        shape.apply(next, series, stamp);
 
         em.persist(next);
         return next;
     }
 
+    /**
+     * The warnings a human still has to sign off, and ONLY those.
+     *
+     * A warning nobody can acknowledge cannot be the reason a publish is refused.
+     * There is no control that clears it, so the refusal has no remedy: the admin
+     * presses publish, is told a code, and pressing it again fails identically
+     * forever. STALE_OVERRIDE and NULL_PUBLISH_FROM_DROPPED are exactly this kind
+     * -- they describe the resolution rather than ask a question about it, and the
+     * rail already shows them as the warnings they are.
+     *
+     * The acknowledgeable ones do have a remedy, and it is the point: a member
+     * that is cancelled yet still open at the cut-off is invisible in an
+     * exclusions panel, so somebody has to say out loud that it belongs in the
+     * issue.
+     */
     private List<String> unacknowledgedWarnings(MemberResolutionService.Resolution resolution,
                                                 PublishRequest request) {
         Set<String> acknowledged = request.acknowledgedWarnings() == null
                 ? Set.of() : request.acknowledgedWarnings();
         List<String> out = new ArrayList<>();
         for (ResolutionWarningVo w : resolution.warnings()) {
-            if (!acknowledged.contains(w.code().name())) {
+            if (w.code().isAcknowledgeable() && !acknowledged.contains(w.code().name())) {
                 out.add(w.code().name());
             }
         }
         return out;
+    }
+
+    // ==================================================== the rail, enforced
+
+    /**
+     * Refuses this publish for every BLOCK row the rail failed.
+     *
+     * ONE CODE PER ROW, each of them catalogued with one HTTP status, because a
+     * refusal a client cannot branch on is a refusal it retries. The rail names
+     * the CONDITION that has to hold; the error names the VIOLATION -- so
+     * CUTOFF_AFTER_PREVIOUS, the condition, refuses as CUTOFF_BEFORE_PREVIOUS.
+     *
+     * The rows are checked in the rail's own order, and only the first failure is
+     * reported: an admin fixing a missing report does not also need to be told
+     * that a reference format is missing in the same breath, and the rail itself
+     * is where the whole list is read.
+     */
+    private void refuseBlockingRows(PublicationIssue issue, PublicationSeries series,
+                                    PublishChecklistService.Checklist rail, Date stamp) {
+        for (PublishChecklistService.CheckRow row : rail.rows()) {
+            if (row.severity() != PublishChecklistService.Severity.BLOCK || row.passed()) {
+                continue;
+            }
+            switch (row.code()) {
+                case "ISSUE_OPEN" -> {
+                    if (issue.getStatus() != IssueStatus.OPEN) {
+                        throw new IssueLifecycleService.TransitionRefusedException("ISSUE_NOT_OPEN",
+                                "only an open issue can be published; this one is " + issue.getStatus());
+                    }
+                    throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_ACTIVE",
+                            "'" + series.getSeriesId() + "' is " + series.getStatus()
+                                    + "; a draft series has not been finished, and publishing from it "
+                                    + "would put a publication on the public site that nothing has "
+                                    + "validated");
+                }
+                case "INTERVAL_PRESENT" -> throw new IssueLifecycleService.TransitionRefusedException(
+                        "INTERVAL_INVALID",
+                        "the interval does not match what " + series.getTimeRelation() + " requires: "
+                                + row.detail() + ". Resolving against it would select the wrong period, "
+                                + "and the issue would go out with a member list nobody chose.");
+                case "FILE_PRESENT_PER_LANGUAGE" -> throw new IssueLifecycleService.TransitionRefusedException(
+                        "MISSING_FILE_FOR_LANGUAGE",
+                        "this publication's content has to exist before it is released -- "
+                                + row.detail() + " -- and nothing in this action writes it");
+                case "REPORT_CONFIGURED" -> throw new IssueLifecycleService.TransitionRefusedException(
+                        "REPORT_NOT_CONFIGURED",
+                        "the series generates its document from a report and names none, so publishing "
+                                + "would produce a published issue with no document at all");
+                case "REFERENCE_FORMAT_COMPLETE" -> throw new IssueLifecycleService.TransitionRefusedException(
+                        "REFERENCE_FORMAT_MISSING_LANGUAGE",
+                        "the series is citable, so every configured language needs a reference format; "
+                                + "without one a message citing this issue renders a blank citation");
+                case "CUTOFF_AFTER_PREVIOUS" -> throw new IssueLifecycleService.TransitionRefusedException(
+                        "CUTOFF_BEFORE_PREVIOUS",
+                        "a cut-off of " + stamp + " is at or before the previous issue's -- " + row.detail()
+                                + ". The two would claim the same content, and this issue's period would "
+                                + "end before it began.");
+                case "CUTOFF_BEFORE_SUCCESSOR" -> throw new IssueLifecycleService.TransitionRefusedException(
+                        "CUTOFF_AFTER_SUCCESSOR",
+                        "a cut-off of " + stamp + " is at or after an issue that has already been "
+                                + "released -- " + row.detail() + ". Stamping there would cap the live "
+                                + "issue's window and make this one the site's current publication.");
+                case "CUTOFF_NOT_FUTURE" -> throw new IssueLifecycleService.TransitionRefusedException(
+                        "CUTOFF_IN_FUTURE",
+                        "a cut-off cannot lie in the future: the content period has not closed yet");
+                case "MEMBER_LIMIT" -> throw new IssueLifecycleService.TransitionRefusedException(
+                        "MEMBER_LIMIT_EXCEEDED",
+                        "this issue would carry " + row.detail() + " members. That is a loud stop rather "
+                                + "than a truncation: an official publication silently missing its tail "
+                                + "is worse than one that was not released.");
+                default -> throw new IssueLifecycleService.TransitionRefusedException(row.code(),
+                        "the release checklist refuses this publish: " + row.detail());
+            }
+        }
+    }
+
+    /**
+     * Whether any language's preview predates the current member set.
+     *
+     * The issue's own stamp moves on every edit and every curation, so it is what
+     * "current" is read against. Only meaningful for a series that renders a
+     * document; an uploaded one has no preview to be stale.
+     */
+    private boolean previewStale(PublicationIssue issue) {
+        if (issue.getSeries() == null || issue.getSeries().getReportId() == null) {
+            return false;
+        }
+        for (PublicationIssueDesc desc : issue.getDescs()) {
+            if (previews.isStale(issue, desc.getLang(), issue.getUpdated())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

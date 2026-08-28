@@ -59,6 +59,7 @@ public class IssueLifecycleTest {
         s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setReportId("some-report");
         s.setCadence(SeriesCadence.WEEKLY);
         s.setTimeRelation(relation);
         s.setAliveAtCutoff(relation == TimeRelation.IN_FORCE_AT_CUTOFF);
@@ -110,6 +111,7 @@ public class IssueLifecycleTest {
         String minted = i.getPublicId();
         assertNotNull(minted, "publicId must exist from the moment of create -- message HTML cites it");
 
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -161,6 +163,7 @@ public class IssueLifecycleTest {
         PublicationIssue first = lifecycle.create(s, new Date(1_699_000_000_000L),
                 IntervalBoundSource.MANUAL, user());
         em.flush();
+        previewFor(first);
         publishService.publish(first.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -199,6 +202,7 @@ public class IssueLifecycleTest {
         PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
                 IntervalBoundSource.STAMPED, user());
         em.flush();
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -249,6 +253,7 @@ public class IssueLifecycleTest {
         PublicationIssue published = lifecycle.create(s, new Date(1_699_000_000_000L),
                 IntervalBoundSource.STAMPED, user());
         em.flush();
+        previewFor(published);
         publishService.publish(published.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -329,6 +334,7 @@ public class IssueLifecycleTest {
         PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
                 IntervalBoundSource.STAMPED, user());
         em.flush();
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -532,4 +538,22 @@ public class IssueLifecycleTest {
         assertTrue(checklist.compute(i, future, false, false).blockingCodes().contains("CUTOFF_NOT_FUTURE"));
         assertFalse(checklist.compute(i, future, true, false).blockingCodes().contains("CUTOFF_NOT_FUTURE"));
     }
+    @jakarta.inject.Inject
+    org.niord.core.publication.series.IssuePreviewService previewService;
+
+    /**
+     * Records a preview so the publish has bytes to promote.
+     *
+     * A query-backed series names a report and publish refuses to leave a
+     * language without a document, so these fixtures release the way an admin
+     * does after looking at the preview: regenerate = false, promoting exactly
+     * the bytes that were reviewed. The bytes themselves are irrelevant here.
+     */
+    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
+        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
+            previewService.record(issue, desc.getLang(), "preview.pdf",
+                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
 }

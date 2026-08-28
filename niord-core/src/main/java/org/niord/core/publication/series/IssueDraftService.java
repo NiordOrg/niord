@@ -50,6 +50,9 @@ public class IssueDraftService extends BaseService {
     @Inject
     IssueLifecycleService lifecycle;
 
+    @Inject
+    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+
     // ------------------------------------------------------------------ warnings
 
     /** The interval opens where nothing closed: nobody's chain continues here. */
@@ -299,7 +302,7 @@ public class IssueDraftService extends BaseService {
         }
         try {
             ResolvedCriteria resolved = CriteriaResolver.resolve(document, series.getTimeRelation(),
-                    Boolean.TRUE.equals(series.getAliveAtCutoff()), CriteriaResolver.NO_DOMAINS);
+                    Boolean.TRUE.equals(series.getAliveAtCutoff()), domains);
             return memberResolver.resolve(resolved, new Interval(from, cutoff)).members().size();
         } catch (RuntimeException e) {
             warnings.add(new IssueDraftWarningVo(CRITERIA_UNRESOLVABLE,

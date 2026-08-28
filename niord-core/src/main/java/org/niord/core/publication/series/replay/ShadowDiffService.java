@@ -23,9 +23,12 @@ import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -288,6 +291,43 @@ public class ShadowDiffService {
         return new Readiness(streak, newestReleaseFirst.size(), skipped, exempt,
                 exempt || streak >= REQUIRED_GREEN_RELEASES);
     }
+
+    /**
+     * The readiness of EVERY series, including the ones nothing has compared yet.
+     *
+     * "Never compared" and "not in the response" are different facts and looked
+     * identical: a readiness map assembled from the runs alone simply has no key
+     * for a series with no runs, so the operator driving the cutover to
+     * convergence read an absent row as one that had been left out of the answer
+     * rather than as one that has never been checked. A series with no runs gets
+     * an explicit row -- zero runs, zero streak, not exempt, precondition not met
+     * -- which is the truthful answer and the one that keeps it visible.
+     *
+     * The unmapped bucket is kept as its own key: those runs belong to a legacy
+     * release no series claimed, and losing them would hide exactly the rows the
+     * import needs to account for.
+     */
+    public Map<String, Readiness> readinessBySeries(List<ShadowDiffRun> newestReleaseFirst) {
+        Map<String, List<ShadowDiffRun>> runsBySeries = new LinkedHashMap<>();
+        for (ShadowDiffRun run : newestReleaseFirst) {
+            runsBySeries.computeIfAbsent(run.getSeriesId() == null ? UNMAPPED : run.getSeriesId(),
+                    k -> new ArrayList<>()).add(run);
+        }
+
+        Map<String, Readiness> out = new LinkedHashMap<>();
+        for (String seriesId : em.createQuery(
+                        "SELECT s.seriesId FROM PublicationSeries s ORDER BY s.seriesId", String.class)
+                .getResultList()) {
+            out.put(seriesId, readinessOf(runsBySeries.getOrDefault(seriesId, List.of())));
+        }
+        // Anything the runs name that the estate does not -- the unmapped bucket,
+        // and a series deleted since it was compared.
+        runsBySeries.forEach((seriesId, runs) -> out.computeIfAbsent(seriesId, k -> readinessOf(runs)));
+        return out;
+    }
+
+    /** The key runs of a legacy release no series claimed are grouped under. */
+    public static final String UNMAPPED = "(unmapped)";
 
     /**
      * Discards comparisons of releases that are STILL RECORDING.

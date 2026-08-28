@@ -20,6 +20,7 @@ import org.niord.core.message.Message;
 import org.niord.core.publication.series.resolve.CriteriaMissCode;
 import org.niord.core.publication.series.resolve.CriteriaMissVo;
 import org.niord.core.publication.series.resolve.Interval;
+import org.niord.core.publication.series.resolve.IssueOrdering;
 import org.niord.core.publication.series.resolve.MemberDecision;
 import org.niord.core.publication.series.resolve.MembershipPredicate;
 import org.niord.core.publication.series.resolve.MembershipReason;
@@ -212,11 +213,10 @@ public class MemberResolutionService extends BaseService {
     /**
      * The warnings one resolution can raise on its own.
      *
-     * TYPE_DRIFT and OVERLAPPING_ISSUE are not among them: one needs a frozen
-     * snapshot to compare against, the other needs the sibling issues, and neither
-     * is available here. Both have their own entry points below, so a caller
-     * holding that context can raise them without this method pretending to
-     * knowledge it does not have.
+     * OVERLAPPING_ISSUE is not among them: it needs the sibling issues, which are
+     * not available here. It has its own entry point below, so a caller holding
+     * that context can raise it without this method pretending to knowledge it
+     * does not have.
      */
     private List<ResolutionWarningVo> warningsFor(List<MessageFacts> candidates,
                                                   Set<String> members,
@@ -273,21 +273,13 @@ public class MemberResolutionService extends BaseService {
         return out;
     }
 
-    /** TYPE_DRIFT: a frozen member type no longer matches the live message. */
-    public static Optional<ResolutionWarningVo> typeDrift(Map<String, Type> frozen, List<MessageFacts> live) {
-        List<String> drifted = new ArrayList<>();
-        for (MessageFacts f : live) {
-            Type was = frozen.get(f.uid());
-            if (was != null && was != f.type()) {
-                drifted.add(f.uid());
-            }
-        }
-        return drifted.isEmpty()
-                ? Optional.empty()
-                : Optional.of(ResolutionWarningVo.of(ResolutionWarningCode.TYPE_DRIFT, drifted));
-    }
-
-    /** OVERLAPPING_ISSUE: two issues of one series sharing members. */
+    /**
+     * OVERLAPPING_ISSUE: two issues of one series sharing members.
+     *
+     * Static, and given both sets, because the caller is the one holding the
+     * sibling: the rail compares this resolution against the frozen rows of the
+     * issue before it, which is what that issue actually printed.
+     */
     public static Optional<ResolutionWarningVo> overlappingIssue(Set<String> these, Set<String> others) {
         List<String> shared = these.stream().filter(others::contains).toList();
         return shared.isEmpty()
@@ -309,6 +301,14 @@ public class MemberResolutionService extends BaseService {
 
         List<Predicate> where = new ArrayList<>();
         where.add(cb.isNull(message.get("publishDateFrom")));
+
+        // The SAME status conjunct the membership predicate applies, and it has to
+        // be here or this reports the normal editorial state as a problem. A DRAFT
+        // has no publish date yet -- that is what being a draft means -- so without
+        // this every draft of the right type inside the lookback is listed as a
+        // message the criteria dropped, and the resolution raises a warning that
+        // refuses the first publish attempt on a live system every week.
+        where.add(message.get("status").in(MembershipPredicate.PUBLIC_STATUSES));
 
         Date lookbackFrom = new Date(interval.cutoff().getTime()
                 - OMISSION_LOOKBACK_DAYS * 24L * 60L * 60L * 1000L);
@@ -339,6 +339,46 @@ public class MemberResolutionService extends BaseService {
     /** Convenience for callers with no curation. */
     public Resolution resolve(ResolvedCriteria criteria, Interval interval) {
         return resolve(criteria, interval, Set.of(), Set.of());
+    }
+
+    /**
+     * The ordering facts for a member set, as one projection.
+     *
+     * Here rather than beside each caller because publish, preview and the live
+     * member list must order identically: the list an admin reads on screen and
+     * the list the renderer prints are supposed to be the same list, and two
+     * copies of the projection is how they stop being.
+     *
+     * A JPQL projection rather than entity getters, and a LEFT join on purpose.
+     * Message carries a year field with no accessor, and "m.area.treeSortOrder"
+     * is an IMPLICIT INNER join, which silently drops every message with no
+     * primary area -- most of the corpus has none, so the issue would freeze with
+     * a member count that does not match its own rows.
+     */
+    public List<IssueOrdering.Orderable> orderablesFor(Set<String> uids) {
+        List<IssueOrdering.Orderable> out = new ArrayList<>();
+        if (uids == null || uids.isEmpty()) {
+            return out;
+        }
+        List<Object[]> rows = em.createQuery(
+                        "SELECT m.uid, a.treeSortOrder, m.areaSortOrder, m.year, m.number, m.id, "
+                                + "m.publishDateFrom, m.eventDateFrom, m.followUpDate "
+                                + "FROM Message m LEFT JOIN m.area a WHERE m.uid IN :uids", Object[].class)
+                .setParameter("uids", uids).getResultList();
+
+        for (Object[] r : rows) {
+            out.add(new IssueOrdering.Orderable(
+                    (String) r[0],
+                    (Integer) r[1],
+                    r[2] == null ? null : ((Number) r[2]).doubleValue(),
+                    (Integer) r[3],
+                    (Integer) r[4],
+                    (Integer) r[5],
+                    (Date) r[6],
+                    (Date) r[7],
+                    (Date) r[8]));
+        }
+        return out;
     }
 
     /**

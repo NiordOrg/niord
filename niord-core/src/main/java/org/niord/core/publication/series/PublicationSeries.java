@@ -541,11 +541,28 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         messageSortBy = vo.getMessageSortBy();
         messageSortOrder = enumOf(PagedSearchParamsVo.SortOrder.class, vo.getMessageSortOrder(),
                 "messageSortOrder");
-        messagePublication = enumOf(MessagePublication.class, vo.getMessagePublication(),
-                "messagePublication");
-        releaseMode = enumOf(ReleaseMode.class, vo.getReleaseMode(), "releaseMode");
-        nextIssueCreation = enumOf(NextIssueCreation.class, vo.getNextIssueCreation(),
-                "nextIssueCreation");
+        // THREE NOT NULL COLUMNS, and absent therefore means UNCHANGED rather than
+        // cleared -- the same silence rule the kind and the cut-off default carry.
+        // Every other field on this VO is nullable, so a client that omits one
+        // stores a null and nothing breaks; these three take the save down with a
+        // constraint violation naming a Java field, from a body that was merely
+        // incomplete. The lean series shape does not carry releaseMode or
+        // nextIssueCreation at all, so any client assembling a save from what it
+        // read back hits exactly this.
+        MessagePublication sentMessagePublication =
+                enumOf(MessagePublication.class, vo.getMessagePublication(), "messagePublication");
+        if (sentMessagePublication != null) {
+            messagePublication = sentMessagePublication;
+        }
+        ReleaseMode sentReleaseMode = enumOf(ReleaseMode.class, vo.getReleaseMode(), "releaseMode");
+        if (sentReleaseMode != null) {
+            releaseMode = sentReleaseMode;
+        }
+        NextIssueCreation sentNextIssueCreation =
+                enumOf(NextIssueCreation.class, vo.getNextIssueCreation(), "nextIssueCreation");
+        if (sentNextIssueCreation != null) {
+            nextIssueCreation = sentNextIssueCreation;
+        }
         // publicAuthority is deliberately NOT read here. Which model serves a
         // series to the public is a cutover decision with its own endpoint, a
         // reason and an audit entry; a value arriving in a save -- from the form,
@@ -727,8 +744,11 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
      * consults one.
      *
      * The UTC branch is a last resort for a series with no domain, which S-20
-     * refuses. It is reachable only by a series that is already invalid, and it is
-     * here so that resolving one cannot throw rather than as a policy about zones.
+     * refuses -- along with a domain whose zone is blank or unreadable, because
+     * TimeZone.getTimeZone answers GMT for anything it does not recognise and
+     * would otherwise shift every cut-off silently. It is reachable only by a
+     * series that is already invalid, and it is here so that naming a week cannot
+     * throw rather than as a policy about zones.
      */
     public ZoneId cutoffZone() {
         return domain == null ? ZoneId.of("UTC") : domain.timeZone().toZoneId();

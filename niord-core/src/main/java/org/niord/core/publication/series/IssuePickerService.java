@@ -251,6 +251,18 @@ public class IssuePickerService {
         PublicationIssuePickerVo vo = new PublicationIssuePickerVo();
         vo.setPublicId(issue.getPublicId());
         vo.setPublicationSeriesId(series == null ? null : series.getSeriesId());
+        // Every language the series is named in, not just the requested one: the
+        // picker groups rows under the publication and the heading has to read as
+        // a name rather than as the slug the id is. Unfiltered because the caller
+        // resolves its own fallback -- a series named only in Danish should still
+        // head its group when the editor is working in English.
+        if (series != null && series.getDescs() != null) {
+            for (PublicationSeriesDesc sd : series.getDescs()) {
+                if (sd.getLang() != null && sd.getName() != null && !sd.getName().isBlank()) {
+                    vo.getSeriesNames().put(sd.getLang(), sd.getName());
+                }
+            }
+        }
         vo.setStatus(issue.getStatus() == null ? null : issue.getStatus().name());
         vo.setPublicFrom(issue.getPublicFrom());
         vo.setType(legacyTypeOf(series == null ? null : series.getContentMode()));

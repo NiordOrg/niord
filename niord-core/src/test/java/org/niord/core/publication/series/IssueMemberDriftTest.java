@@ -289,15 +289,21 @@ public class IssueMemberDriftTest {
     }
 
     /**
-     * An OPEN issue's list carries no drift at all.
+     * An OPEN issue's list carries no drift at all, and is not read from rows.
      *
-     * There is nothing frozen for the live message to disagree with, and a drift
-     * marker on a list that is being resolved live would say a value had changed
-     * when it is simply the current one.
+     * There is nothing frozen for the live message to disagree with: an open issue
+     * is RESOLVED, every time it is asked, so every value on it is the current one
+     * and a drift marker would claim something had changed when nothing had.
+     *
+     * The row planted below is exactly what an open issue must not be answered
+     * from. Member rows are written by the freeze, so a row on an OPEN issue is a
+     * leftover -- an issue that was amended, or a fixture like this one -- and
+     * serving it would report a membership decided at some earlier instant as
+     * though it were what the issue contains now.
      */
     @Test
     @Transactional
-    public void anOpenIssueCarriesNoDrift() {
+    public void anOpenIssueIsResolvedLiveAndCarriesNoDrift() {
         PublicationSeries s = series();
         PublicationIssue i = issue(s, IssueStatus.OPEN);
         Message m = message(Type.TEMPORARY_NOTICE, Status.PUBLISHED, null);
@@ -308,9 +314,14 @@ public class IssueMemberDriftTest {
         em.merge(m);
         em.flush();
 
-        IssueMemberVo row = rowFor(memberList.members(i), m.getUid());
-        assertNull(row.getDrift(), "a LIVE member list carried drift");
-        assertNull(row.getCurrent());
+        List<IssueMemberVo> rows = memberList.members(i);
+        assertTrue(rows.stream().noneMatch(r -> m.getUid().equals(r.getMessageUid())),
+                "the frozen row was served for an OPEN issue; its list is the live resolution, and "
+                        + "this message is not one the criteria select");
+        for (IssueMemberVo row : rows) {
+            assertNull(row.getDrift(), "a LIVE member list carried drift");
+            assertNull(row.getCurrent());
+        }
     }
 
     /** A RETIRED issue is frozen too, so its rows drift like a published one's. */

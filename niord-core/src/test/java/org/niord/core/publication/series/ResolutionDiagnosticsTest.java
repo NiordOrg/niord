@@ -70,7 +70,10 @@ public class ResolutionDiagnosticsTest {
                 .map(Enum::name).collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
 
         assertEquals(6, misses.size(), "the omissions vocabulary is not six codes");
-        assertEquals(6, warnings.size(), "the warnings vocabulary is not six codes");
+        // Five, since type drift left. It is not a fact about a resolution -- a
+        // resolution has no frozen snapshot to compare against -- and the member
+        // list already answers it per row, against the live message.
+        assertEquals(5, warnings.size(), "the warnings vocabulary is not five codes");
 
         Set<String> both = new LinkedHashSet<>(misses);
         both.retainAll(warnings);
@@ -157,17 +160,10 @@ public class ResolutionDiagnosticsTest {
         assertTrue(nullDated > 0, "no null-publishDateFrom messages are seeded");
         warningsSeen.add(ResolutionWarningCode.NULL_PUBLISH_FROM_DROPPED);
 
-        // TYPE_DRIFT. Type is mutable and unversioned, so a frozen snapshot can
-        // disagree with the live row.
-        List<MessageFacts> live = List.of(
-                facts("u-drift", new Date(), null, Status.PUBLISHED, Type.PERMANENT_NOTICE, "dma-nm"));
-        Map<String, Type> frozen = new LinkedHashMap<>();
-        frozen.put("u-drift", Type.TEMPORARY_NOTICE);
-        Optional<ResolutionWarningVo> drift = MemberResolutionService.typeDrift(frozen, live);
-        assertTrue(drift.isPresent(), "a frozen type of TEMPORARY against a live PERMANENT did not drift");
-        assertFalse(drift.get().acknowledgeable(), "TYPE_DRIFT is not acknowledgeable");
-        assertEquals(List.of("u-drift"), drift.get().messageUids());
-        warningsSeen.add(ResolutionWarningCode.TYPE_DRIFT);
+        // Type drift is deliberately NOT a resolution warning. A resolution has no
+        // frozen snapshot to compare against, and the question is already answered
+        // where it can be: the member list computes drift per row against the live
+        // message and reports what the value is now. See IssueMemberDriftTest.
 
         // OVERLAPPING_ISSUE. Real: the 2026 and 2027 firing-areas issues share
         // 31 of their 32 members, because in-force issues overlap rather than tile.

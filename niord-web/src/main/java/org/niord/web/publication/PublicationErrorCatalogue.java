@@ -164,6 +164,40 @@ public final class PublicationErrorCatalogue {
         // action that exists.
         put("ISSUE_IMPORTED", 409);
 
+        // The release rail, enforced. Every BLOCK row an admin can be shown has a
+        // code here, because a refusal the screen can render as a sentence and the
+        // client cannot branch on is a refusal that gets retried.
+        //
+        // 400: the interval does not match what the series' time relation
+        // requires. No change of state makes the same request right -- an in-force
+        // issue carrying a lower bound is wrong about what kind of publication it
+        // belongs to.
+        put("INTERVAL_INVALID", 400);
+        // 409: uploaded and link-backed content has to exist before it is
+        // released, and publish does not write it. The same request succeeds once
+        // the bytes or the link are there. Deliberately NOT raised for the
+        // generated languages of a query-backed series, whose file publish itself
+        // writes -- gating those here would make the first publish of every weekly
+        // issue impossible.
+        put("MISSING_FILE_FOR_LANGUAGE", 409);
+        // 400: a citable series needs a reference format in every configured
+        // language, or a message citing the issue renders a blank citation. The
+        // format is a series field, so the request is wrong until somebody edits
+        // the series -- not a state that clears on its own.
+        put("REFERENCE_FORMAT_MISSING_LANGUAGE", 400);
+        // 400 for both cut-off bracket violations, and 400 rather than 409 for the
+        // same reason: the instant is IN the request. Re-sending it unchanged
+        // fails identically; choosing another one succeeds. Until now the
+        // half-open Interval raised an IllegalArgumentException here, which no
+        // mapper knew, so an admin choosing a cut-off one second too early got a
+        // bare 500.
+        put("CUTOFF_BEFORE_PREVIOUS", 400);
+        put("CUTOFF_AFTER_SUCCESSOR", 400);
+        // 409: a loud stop rather than a truncation. An official publication
+        // silently missing its tail is worse than one that was not released, and
+        // the same request succeeds once the period or the criteria are narrowed.
+        put("MEMBER_LIMIT_EXCEEDED", 409);
+
         // The three consumer endpoints. All 400: each names a bound on the
         // REQUEST rather than a state of anything, so the same request never
         // succeeds later and a client retrying it would loop.

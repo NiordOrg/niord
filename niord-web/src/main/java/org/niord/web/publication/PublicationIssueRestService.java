@@ -169,14 +169,26 @@ public class PublicationIssueRestService {
         Date intervalFrom = request.intervalFrom() == null ? null : new Date(request.intervalFrom());
         IntervalBoundSource source = intervalFrom == null ? null
                 : (request.recovered() ? IntervalBoundSource.RECOVERED : IntervalBoundSource.STAMPED);
+        // The close, where the caller reviewed one. Absent lets the cadence derive
+        // the nominal bound, which is what an ordinary "next issue" wants.
+        Date intervalTo = request.intervalTo() == null ? null : new Date(request.intervalTo());
 
-        PublicationIssue issue = lifecycle.create(series, intervalFrom, source, userService.currentUser());
+        PublicationIssue issue = lifecycle.create(series, intervalFrom, source, intervalTo,
+                userService.currentUser());
         em.flush();
         return issue.toVo(SystemPublicationIssueVo.class);
     }
 
-    /** What a create needs, and nothing more. */
-    public record CreateIssueRequest(String seriesId, Long intervalFrom, boolean recovered) {
+    /**
+     * What a create needs, and nothing more.
+     *
+     * `intervalTo` is optional and is the bound the draft put on the screen. It is
+     * here so a reviewed period is created in ONE call: sending only the start and
+     * correcting the close afterwards is two writes with a window in between where
+     * the issue covers a period nobody chose.
+     */
+    public record CreateIssueRequest(String seriesId, Long intervalFrom, Long intervalTo,
+                                     boolean recovered) {
     }
 
     // ------------------------------------------------------------------ reads
@@ -643,6 +655,13 @@ public class PublicationIssueRestService {
      * The same render publish performs, into the preview store rather than the
      * repository. Publishing with regenerate=false afterwards promotes exactly
      * these bytes.
+     *
+     * NO href IN THE RESPONSE. The document endpoint below is role-guarded and the
+     * caller's token lives in memory, so a URL handed over here is only openable by
+     * a request that carries the bearer -- which a top-level navigation does not.
+     * An address in the payload reads as "put this in a link", and the link 401s.
+     * The client composes the address it already knows and fetches it the way it
+     * fetches everything else.
      */
     @POST
     @Path("/issue/{publicId}/preview")
@@ -655,7 +674,6 @@ public class PublicationIssueRestService {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("lang", p.lang());
             row.put("renderedAt", p.renderedAt().getTime());
-            row.put("href", "/rest/publication-issues/issue/" + publicId + "/preview/" + p.lang());
             out.add(row);
         }
         return out;
@@ -679,16 +697,27 @@ public class PublicationIssueRestService {
                 .build();
     }
 
-    /** I15. The release rail. */
+    /**
+     * I15. The release rail.
+     *
+     * FOR A CUT-OFF, and the caller may name it. Half these rows are answers about
+     * one instant -- which issue is the predecessor, whether the stamp falls inside
+     * the neighbour bracket, which members the query returns at it -- so a rail
+     * computed for NOW while the dialog is offering to publish at a past instant
+     * describes a release nobody is about to make. The dialog sends the instant it
+     * is showing, and the same instant reaches the publish; absent means now.
+     */
     @GET
     @Path("/issue/{publicId}/publish-checklist")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> publishChecklist(@PathParam("publicId") String publicId,
-                                                @QueryParam("allowFuture") boolean allowFuture) {
+                                                @QueryParam("allowFuture") boolean allowFuture,
+                                                @QueryParam("cutoff") Long cutoff) {
         PublicationIssue issue = required(publicId);
+        Date proposed = cutoff == null ? new Date() : new Date(cutoff);
         PublishChecklistService.Checklist result =
-                checklist.compute(issue, new Date(), allowFuture, previewStale(issue));
+                checklist.compute(issue, proposed, allowFuture, previewStale(issue));
 
         List<Map<String, Object>> rows = new ArrayList<>();
         for (PublishChecklistService.CheckRow r : result.rows()) {
@@ -697,6 +726,12 @@ public class PublicationIssueRestService {
             row.put("severity", r.severity().name());
             row.put("passed", r.passed());
             row.put("acknowledgeable", r.acknowledgeable());
+            // The warning code the publish gate compares against, said by the row
+            // rather than mapped by every client. The rail names a condition and
+            // the acknowledgement travels as the resolver's warning code, and the
+            // two are deliberately different strings -- a client translating one
+            // into the other by hand gets a refusal for a code nobody ticked.
+            row.put("acknowledgeCode", r.acknowledgeCode());
             row.put("detail", r.detail());
             rows.add(row);
         }

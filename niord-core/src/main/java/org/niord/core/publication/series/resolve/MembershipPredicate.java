@@ -36,7 +36,7 @@ public final class MembershipPredicate {
      * without anyone having to remember. The emptiness check is not paranoia --
      * an empty set here silently empties every issue in the system.
      */
-    static final Set<Status> PUBLIC_STATUSES = Arrays.stream(Status.values())
+    public static final Set<Status> PUBLIC_STATUSES = Arrays.stream(Status.values())
             .filter(Status::isPublic)
             .collect(Collectors.collectingAndThen(
                     Collectors.toCollection(LinkedHashSet::new),

@@ -108,6 +108,19 @@ public final class EffectiveCriteria {
      * resolving an empty document would either raise or match the whole corpus.
      */
     public static ResolvedCriteria resolvedFor(PublicationIssue issue) {
+        return resolvedFor(issue, CriteriaResolver.NO_DOMAINS);
+    }
+
+    /**
+     * The effective document, resolved with a domain macro that can expand.
+     *
+     * The overload exists because this class is a pure function and the expansion
+     * needs the database. Every caller that HAS one passes it; the pair above is
+     * for callers with no persistence context, and a document carrying a domain
+     * node refuses there rather than resolving to a narrower set than it names.
+     */
+    public static ResolvedCriteria resolvedFor(PublicationIssue issue,
+                                               CriteriaResolver.DomainExpander expander) {
         IssueCriteriaVo document = documentOf(issue);
         PublicationSeries series = issue == null ? null : issue.getSeries();
         if (document == null || series == null || series.getTimeRelation() == null) {
@@ -117,6 +130,6 @@ public final class EffectiveCriteria {
                 document,
                 series.getTimeRelation(),
                 Boolean.TRUE.equals(series.getAliveAtCutoff()),
-                CriteriaResolver.NO_DOMAINS);
+                expander == null ? CriteriaResolver.NO_DOMAINS : expander);
     }
 }
