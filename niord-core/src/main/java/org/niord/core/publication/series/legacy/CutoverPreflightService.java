@@ -3,11 +3,16 @@ package org.niord.core.publication.series.legacy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.niord.core.mailinglist.MailingListTrigger;
+import org.niord.core.publication.series.IssueListService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicWindowSource;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesCadence;
+import org.niord.core.publication.series.SeriesKind;
+import org.niord.core.publication.series.replay.ShadowDiffRun;
+import org.niord.core.publication.series.replay.ShadowDiffService;
+import org.niord.core.publication.series.vo.IssueListResultVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -37,6 +42,9 @@ public class CutoverPreflightService extends BaseService {
     @Inject
     Logger log;
 
+    @Inject
+    ShadowDiffService shadowDiff;
+
     /**
      * A tag named the way the weekly convention names them.
      *
@@ -58,9 +66,28 @@ public class CutoverPreflightService extends BaseService {
     public record Violation(String code, String subject, String detail) {
     }
 
+    /**
+     * What the rehearsal checklist reads about ONE series, in one row.
+     *
+     * Three separate steps of the checklist ask about the same series -- the
+     * shadow diff's verdict, how many periods the archive is missing, and what
+     * kind of publication it is -- and reading them from three endpoints is how a
+     * sheet gets ticked from three different moments. One row, one request.
+     *
+     * NONE OF IT IS A VIOLATION. A gap is a fact about the archive that predates
+     * this system, and readiness is the flip's own precondition, refused at the
+     * flip. Folding either into `clear` would stop the pre-flight passing on an
+     * estate that is in exactly the state everybody expects.
+     */
+    public record SeriesRow(String seriesId, String status, String kind,
+                            int consecutiveGreen, long runs, long skipped, boolean exempt,
+                            boolean meetsCutoverPrecondition,
+                            Integer gapCount, boolean gapDetectionEnabled, String gapReasonCode) {
+    }
+
     /** What the pre-flight found. Empty problems means cleared to flip. */
     public record Preflight(List<Violation> violations, List<TriggerHit> triggerAudit,
-                            Map<String, Integer> counts) {
+                            Map<String, Integer> counts, Map<String, SeriesRow> series) {
 
         public boolean isClear() {
             return violations.isEmpty();
@@ -92,9 +119,98 @@ public class CutoverPreflightService extends BaseService {
         List<TriggerHit> audit = auditTriggers();
         counts.put("triggersNamingAWeeklyTag", audit.size());
 
-        log.info("cutover pre-flight: {} violation(s), {} trigger(s) naming a weekly tag",
-                violations.size(), audit.size());
-        return new Preflight(violations, audit, counts);
+        Map<String, SeriesRow> series = describeSeries(counts, new Date());
+
+        log.info("cutover pre-flight: {} violation(s), {} trigger(s) naming a weekly tag, "
+                        + "{} series described", violations.size(), audit.size(), series.size());
+        return new Preflight(violations, audit, counts, series);
+    }
+
+    /**
+     * The per-series sheet: the diff's verdict, the missing periods, and the kind.
+     *
+     * Steps 4 and 5 of the rehearsal read these, and both were previously only
+     * answerable by calling two other endpoints and counting rows in a third. A
+     * checklist ticked from three moments is a checklist that can be ticked
+     * against three different states of the estate.
+     *
+     * The gap count is the ISSUE LIST'S OWN, computed by the same builder the
+     * list uses rather than by a second walk over the intervals. That matters more
+     * than the duplication it saves: the coverage rule -- a double-week issue
+     * leaves nothing uncovered, an OPEN newest issue suppresses the rows after it
+     * -- is the whole reason the numbers on the sheet and the rows on the screen
+     * ever agreed, and a second implementation of it is a second answer.
+     *
+     * Absent, not zero, where gap detection did not run: a closed gate is the
+     * absence of a finding, and reporting it as "0 gaps" claims something nobody
+     * checked. The reason code travels beside it so the sheet says which.
+     */
+    private Map<String, SeriesRow> describeSeries(Map<String, Integer> counts, Date now) {
+        List<PublicationSeries> all = em.createQuery(
+                        "SELECT s FROM PublicationSeries s ORDER BY s.seriesId", PublicationSeries.class)
+                .getResultList();
+
+        // One query for every issue, grouped in memory, rather than one per
+        // series: the estate is ~1,100 issues over ~50 series, and the pre-flight
+        // is run inside a cutover window where a minute of round trips is a minute
+        // nobody has.
+        Map<String, List<PublicationIssue>> issuesBySeries = new LinkedHashMap<>();
+        for (PublicationIssue i : em.createQuery(
+                        "SELECT i FROM PublicationIssue i ORDER BY "
+                                + "COALESCE(i.cutoffStampedAt, i.intervalTo) DESC, i.publicId DESC",
+                        PublicationIssue.class).getResultList()) {
+            if (i.getSeries() != null) {
+                issuesBySeries.computeIfAbsent(i.getSeries().getSeriesId(), k -> new ArrayList<>()).add(i);
+            }
+        }
+
+        // The same grouping the shadow-diff endpoint does, from one query, so
+        // readiness here and readiness there are the same computation over the
+        // same runs.
+        Map<String, List<ShadowDiffRun>> runsBySeries = new LinkedHashMap<>();
+        for (ShadowDiffRun run : shadowDiff.all()) {
+            String key = run.getSeriesId() == null ? "(unmapped)" : run.getSeriesId();
+            runsBySeries.computeIfAbsent(key, k -> new ArrayList<>()).add(run);
+        }
+
+        Map<String, SeriesRow> out = new LinkedHashMap<>();
+        Map<String, Integer> kinds = new LinkedHashMap<>();
+        for (SeriesKind kind : SeriesKind.values()) {
+            // Every kind is named whether or not the estate has one. A kind absent
+            // from the report and a kind with no series read alike on a sheet, and
+            // step 5 is ticked by comparing the three numbers against expected ones.
+            kinds.put(kind.name(), 0);
+        }
+        int totalGaps = 0;
+
+        for (PublicationSeries s : all) {
+            ShadowDiffService.Readiness readiness = ShadowDiffService.readinessOf(
+                    runsBySeries.getOrDefault(s.getSeriesId(), List.of()));
+
+            IssueListResultVo list = IssueListService.build(s,
+                    issuesBySeries.getOrDefault(s.getSeriesId(), List.of()), now);
+
+            SeriesKind kind = s.getKind() == null ? SeriesKind.SCHEDULED : s.getKind();
+            kinds.merge(kind.name(), 1, Integer::sum);
+            if (list.getGapCount() != null) {
+                totalGaps += list.getGapCount();
+            }
+
+            out.put(s.getSeriesId(), new SeriesRow(
+                    s.getSeriesId(),
+                    s.getStatus() == null ? null : s.getStatus().name(),
+                    kind.name(),
+                    readiness.consecutiveGreen(), readiness.runs(), readiness.skipped(),
+                    readiness.exempt(), readiness.ready(),
+                    list.getGapCount(),
+                    list.getGapDetection() != null && list.getGapDetection().isEnabled(),
+                    list.getGapDetection() == null ? null : list.getGapDetection().getReasonCode()));
+        }
+
+        counts.put("series", all.size());
+        kinds.forEach((kind, n) -> counts.put("seriesOfKind" + kind, n));
+        counts.put("uncoveredPeriods", totalGaps);
+        return out;
     }
 
     /**

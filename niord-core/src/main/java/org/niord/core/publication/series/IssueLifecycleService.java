@@ -3,6 +3,7 @@ package org.niord.core.publication.series;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.niord.core.publication.series.resolve.IssueNaming;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
@@ -110,6 +111,11 @@ public class IssueLifecycleService extends BaseService {
      * their thirty-two members -- so asking whether they overlap is a category
      * error rather than a violation.
      *
+     * Public because the DRAFT asks the same question before an admin presses
+     * create. One rule, called from both places: a draft that answered "this is
+     * fine" from its own copy of the test and then hit a refusal on save would be
+     * worse than no preview at all.
+     *
      * The test is against the released neighbour's own close, not against the
      * cadence. A week published EARLY closes early, and the next issue opening at
      * that earlier instant is the chain working: it is exactly where the previous
@@ -118,7 +124,7 @@ public class IssueLifecycleService extends BaseService {
      * already gone out in that neighbour, and a second issue claiming it would
      * publish the same messages twice under two names.
      */
-    private void assertNoOverlap(PublicationSeries series, Date intervalFrom, PublicationIssue ignoring) {
+    public void assertNoOverlap(PublicationSeries series, Date intervalFrom, PublicationIssue ignoring) {
         if (series == null || intervalFrom == null
                 || series.getTimeRelation() != TimeRelation.PUBLISHED_IN_INTERVAL) {
             return;
@@ -261,6 +267,27 @@ public class IssueLifecycleService extends BaseService {
 
 
     /**
+     * A provisional name for a new issue, derived from a single instant.
+     *
+     * The instant is treated as the issue's cut-off, and no interval start is
+     * passed -- so the name is the one week the cut-off falls in. A caller that
+     * knows the whole interval, and therefore whether the issue spans two weeks,
+     * derives the numbers itself and uses the overload below.
+     */
+    static String suggestName(PublicationSeries series, String lang, Date basis) {
+        IssueNaming.Numbers numbers = null;
+        if (basis != null) {
+            try {
+                numbers = IssueNaming.derive(basis, null, series.cutoffZone(), null);
+            } catch (RuntimeException e) {
+                // An instant that cannot be read as a cut-off leaves the name to
+                // the fallbacks below rather than failing the create.
+            }
+        }
+        return suggestName(series, lang, numbers);
+    }
+
+    /**
      * A provisional name for a new issue.
      *
      * Falls back through the series pattern, then the series name, then the
@@ -268,18 +295,15 @@ public class IssueLifecycleService extends BaseService {
      * a name reading "untitled" is what ends up on a published document when
      * nobody noticed it was never set.
      */
-    static String suggestName(PublicationSeries series, String lang, Date basis) {
+    static String suggestName(PublicationSeries series, String lang, IssueNaming.Numbers numbers) {
         PublicationSeriesDesc seriesDesc = series.getDescs().stream()
                 .filter(d -> lang.equals(d.getLang()))
                 .findFirst().orElse(null);
 
         if (seriesDesc != null && seriesDesc.getNameSuggestionPattern() != null
-                && !seriesDesc.getNameSuggestionPattern().isBlank() && basis != null) {
+                && !seriesDesc.getNameSuggestionPattern().isBlank() && numbers != null) {
             try {
-                java.time.ZoneId zone = series.cutoffZone();
-                return org.niord.core.publication.series.resolve.IssueNaming.expand(
-                        seriesDesc.getNameSuggestionPattern(),
-                        org.niord.core.publication.series.resolve.IssueNaming.derive(basis, null, zone, null));
+                return IssueNaming.expand(seriesDesc.getNameSuggestionPattern(), numbers);
             } catch (RuntimeException e) {
                 // A pattern that cannot expand is a series-validation problem,
                 // not a reason to refuse to create an issue.

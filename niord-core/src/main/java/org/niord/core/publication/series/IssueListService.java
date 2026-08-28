@@ -156,8 +156,13 @@ public class IssueListService {
      *
      * A stamped cut-off is the publish action's own record and outranks whatever
      * the nominal bound says, which is why it is checked first.
+     *
+     * Package-visible because the draft endpoint inherits the same marker when it
+     * chains an interval off an issue's close. The list and the draft describe the
+     * same bound, and two answers about how firm it is would show one marker in the
+     * table and a different one in the form the row opens.
      */
-    private static IntervalBoundSource cutoffSourceOf(PublicationIssue issue) {
+    static IntervalBoundSource cutoffSourceOf(PublicationIssue issue) {
         if (issue.getCutoffStampedAt() != null) {
             return IntervalBoundSource.STAMPED;
         }

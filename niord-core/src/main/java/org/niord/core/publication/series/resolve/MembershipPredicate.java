@@ -97,7 +97,8 @@ public final class MembershipPredicate {
 
         // RI-4. NULL-safe: a null publishDateTo means "still open", which is alive.
         // Treating null as though it were a date is what collapses P&T uge 28/2026
-        // from 165 members to 47.
+        // to 42 members -- measured on the estate, against the 165 the issue
+        // actually carries.
         if (c.aliveAtCutoff() && m.publishDateTo() != null && m.publishDateTo().getTime() < cutoff) {
             return MemberDecision.excluded(m.uid(), MembershipReason.NOT_ALIVE_AT_CUTOFF);
         }
