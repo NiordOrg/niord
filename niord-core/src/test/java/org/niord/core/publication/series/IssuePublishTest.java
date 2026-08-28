@@ -501,7 +501,7 @@ public class IssuePublishTest {
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
         PublicationIssue predecessor = publishedIssue(s, new Date(1_700_000_000_000L), null,
                 PublicWindowSource.DERIVED, IssueStatus.PUBLISHED);
-        PublicationIssue next = issue(s, new Date(1_700_000_000_000L));
+        PublicationIssue next = issue(s, new Date(newStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
         previewFor(next);
@@ -525,7 +525,7 @@ public class IssuePublishTest {
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
         PublicationIssue retired = publishedIssue(s, new Date(1_700_000_000_000L), null,
                 PublicWindowSource.DERIVED, IssueStatus.RETIRED);
-        PublicationIssue next = issue(s, new Date(1_700_000_000_000L));
+        PublicationIssue next = issue(s, new Date(newStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
         previewFor(next);
@@ -550,7 +550,7 @@ public class IssuePublishTest {
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
         PublicationIssue manual = publishedIssue(s, new Date(1_700_000_000_000L), handChosen,
                 PublicWindowSource.MANUAL, IssueStatus.PUBLISHED);
-        PublicationIssue next = issue(s, new Date(1_700_000_000_000L));
+        PublicationIssue next = issue(s, new Date(newStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
         previewFor(next);

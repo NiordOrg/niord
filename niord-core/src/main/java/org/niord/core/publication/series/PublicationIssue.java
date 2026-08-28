@@ -616,6 +616,7 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             // describe rows with no entity, and only the synthesizer sets those.
             sys.setComputedStatus(status == null ? null : status.name());
             sys.setCutoffReconstructed(cutoffReconstructed);
+            sys.setCutoffSource(cutoffSource);
             sys.setPublishedAt(publishedAt);
             sys.setPublishedBy(publishedBy == null ? null : publishedBy.getUsername());
             sys.setRetiredAt(retiredAt);

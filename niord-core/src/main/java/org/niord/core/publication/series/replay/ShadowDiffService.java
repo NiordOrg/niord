@@ -66,6 +66,11 @@ public class ShadowDiffService {
     @Inject
     MemberResolutionService resolver;
 
+    // Imported criteria carry no domain node, so this changes nothing for the
+    // estate; it keeps the replay resolving exactly as a publish does.
+    @Inject
+    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+
     /**
      * Hourly, at 07 past.
      *
@@ -632,7 +637,7 @@ public class ShadowDiffService {
                 series.getCriteria(),
                 t.timeRelation() != null ? t.timeRelation() : series.getTimeRelation(),
                 t.aliveAtCutoff(),
-                CriteriaResolver.NO_DOMAINS);
+                domains);
     }
 
     /** What legacy actually recorded, keyed on uid. */

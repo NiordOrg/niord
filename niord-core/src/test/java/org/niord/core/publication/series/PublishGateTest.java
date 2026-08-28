@@ -273,7 +273,7 @@ public class PublishGateTest {
                 "the issue still claims a reconstructed cut-off after this system stamped one");
 
         PublicationSeries other = series(SeriesStatus.ACTIVE);
-        PublicationIssue now = issue(other, new Date(1_699_000_000_000L));
+        PublicationIssue now = issue(other, new Date(System.currentTimeMillis() - 7 * 24 * 3600_000L));
         em.flush();
         publishService.publish(now.getId(),
                 new IssuePublishService.PublishRequest(false,

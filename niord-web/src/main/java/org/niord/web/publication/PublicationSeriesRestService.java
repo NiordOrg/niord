@@ -110,6 +110,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Inject
     ShadowDiffService shadowDiff;
 
+    // The preview resolves exactly as a publish would, domain nodes included; a
+    // probe that could not expand a domain would answer "nothing" for a series
+    // whose issues then select plenty.
+    @Inject
+    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+
     @Inject
     DiagnosticReportService diagnostics;
 
@@ -538,7 +544,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         MemberResolutionService.Resolution resolution;
         try {
             ResolvedCriteria resolved = CriteriaResolver.resolve(request.criteria(), relation,
-                    Boolean.TRUE.equals(request.aliveAtCutoff()), CriteriaResolver.NO_DOMAINS);
+                    Boolean.TRUE.equals(request.aliveAtCutoff()), domains);
             resolution = memberResolver.resolve(resolved, new Interval(from, cutoff));
         } catch (IllegalArgumentException e) {
             // A malformed document or an impossible interval is the caller's, and
@@ -1157,11 +1163,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
             runsBySeries.computeIfAbsent(key, k -> new ArrayList<>()).add(run);
         }
 
-        // ONE readiness rule, shared with the diagnostic report.
+        // ONE readiness rule, shared with the diagnostic report -- and a row for
+        // EVERY known series, so "never compared" is a row that says so rather
+        // than an absence a client cannot tell from "not asked".
         Map<String, Object> readiness = new LinkedHashMap<>();
-        runsBySeries.forEach((series, seriesRuns) -> {
-            org.niord.core.publication.series.replay.ShadowDiffService.Readiness r =
-                    org.niord.core.publication.series.replay.ShadowDiffService.readinessOf(seriesRuns);
+        shadowDiff.readinessBySeries(runs).forEach((series, r) -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("consecutiveGreen", r.consecutiveGreen());
             row.put("runs", r.runs());

@@ -26,6 +26,9 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     private boolean cutoffReconstructed;
 
+    /** Where the cut-off came from: stamped at the release, at a chosen instant, or recovered by the import. */
+    private String cutoffSource;
+
     private Date publishedAt;
 
     private String publishedBy;
@@ -346,4 +349,11 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
         this.followingPublicId = followingPublicId;
     }
 
+    public String getCutoffSource() {
+        return cutoffSource;
+    }
+
+    public void setCutoffSource(String cutoffSource) {
+        this.cutoffSource = cutoffSource;
+    }
 }
