@@ -67,7 +67,7 @@ public class IssueListWireTest {
         i.setStatus(IssueStatus.PUBLISHED);
         i.setCutoffStampedAt(cutoff);
         i.setIntervalTo(cutoff);
-        i.setIntervalToSource(IntervalBoundSource.STAMPED.name());
+        i.setIntervalToSource(IntervalBoundSource.STAMPED);
         return i;
     }
 
@@ -326,7 +326,7 @@ public class IssueListWireTest {
         open.setPublicId("open");
         open.setStatus(IssueStatus.OPEN);
         open.setIntervalTo(wed(51));
-        open.setIntervalToSource(IntervalBoundSource.NOMINAL.name());
+        open.setIntervalToSource(IntervalBoundSource.NOMINAL);
         assertNull(open.getCutoffStampedAt(), "the fixture is pointless if it has a stamp");
 
         IssueListResultVo result = IssueListService.build(active,

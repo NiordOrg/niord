@@ -224,7 +224,7 @@ public class IssueEditService extends BaseService {
             issue.setIntervalFromSource(from == null ? null : IntervalBoundSource.MANUAL);
         }
         if (toChanged) {
-            issue.setIntervalToSource(to == null ? null : IntervalBoundSource.MANUAL.name());
+            issue.setIntervalToSource(to == null ? null : IntervalBoundSource.MANUAL);
         }
 
         // The numbers and the suggested names follow the period they render: an

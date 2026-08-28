@@ -403,11 +403,8 @@ public class IssueDraftService extends BaseService {
 
     /** The issues of one series, newest effective cut-off first, as the list orders them. */
     private List<PublicationIssue> issuesNewestFirst(PublicationSeries series) {
-        return em.createQuery(
-                        "SELECT i FROM PublicationIssue i WHERE i.series = :s "
-                                + "ORDER BY COALESCE(i.cutoffStampedAt, i.intervalTo) DESC, i.publicId DESC",
-                        PublicationIssue.class)
-                .setParameter("s", series)
+        return em.createNamedQuery("PublicationIssue.findBySeriesNewestFirst", PublicationIssue.class)
+                .setParameter("series", series)
                 .getResultList();
     }
 

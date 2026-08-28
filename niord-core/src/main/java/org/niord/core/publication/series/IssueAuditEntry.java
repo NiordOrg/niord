@@ -82,6 +82,7 @@ public class IssueAuditEntry extends BaseEntity<Integer> {
     private AuditAction action;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private ActorKind actorKind;
 

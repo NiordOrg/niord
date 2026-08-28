@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * B5.7. The assertions that must hold before the cutover flip, and the audit
+ * The assertions that must hold before the cutover flip, and the audit
  * that must be READ before it.
  *
  * Run against the imported estate, not against a fixture. Everything here is
@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  * the ways this is looking for.
  *
  * The pass EXITS NON-ZERO on violation rather than warning, because the thing it
- * guards is one-way: after B7.1 flips publicAuthority, a wrong window or a
+ * guards is one-way: once the flip has moved publicAuthority, a wrong window or a
  * colliding id is serving the public, and the fix is a migration rather than an
  * edit.
  */
@@ -146,8 +146,8 @@ public class CutoverPreflightService extends BaseService {
      * checked. The reason code travels beside it so the sheet says which.
      */
     private Map<String, SeriesRow> describeSeries(Map<String, Integer> counts, Date now) {
-        List<PublicationSeries> all = em.createQuery(
-                        "SELECT s FROM PublicationSeries s ORDER BY s.seriesId", PublicationSeries.class)
+        List<PublicationSeries> all = em.createNamedQuery(
+                        "PublicationSeries.findAllOrdered", PublicationSeries.class)
                 .getResultList();
 
         // One query for every issue, grouped in memory, rather than one per
@@ -216,7 +216,7 @@ public class CutoverPreflightService extends BaseService {
     /**
      * One message is in one issue once, and one override names it once.
      *
-     * DATA-MODEL §8.3 specifies both as UNIQUE constraints and neither exists in
+     * The data model specifies both as UNIQUE constraints and neither exists in
      * the schema. Adding a unique constraint to a populated table is a claim about
      * the DATA, not the schema: one duplicate and the ALTER fails and takes the
      * deploy with it. So the claim is measured here first, over the whole estate,
@@ -384,7 +384,7 @@ public class CutoverPreflightService extends BaseService {
     }
 
     /**
-     * The trigger audit. A REPORT, not a rewrite -- closes G-12.
+     * The trigger audit. A REPORT, not a rewrite.
      *
      * SCANS EVERY FIELD A TRIGGER CAN EXPRESS ITSELF IN, not just messageQuery.
      * The first version read messageQuery alone -- and on the live estate TWELVE
@@ -393,13 +393,13 @@ public class CutoverPreflightService extends BaseService {
      * a fifth of the triggers, which is the failure mode this report exists to
      * prevent: silence that reads as success.
      *
-     * B4.4 cured `publication=` in mailing-list triggers. Nothing audits the
+     * The `publication=` filter in mailing-list triggers has been cured. Nothing audits the
      * triggers that name a TAG. After C8 no new nm-wNN-YYYY tag is minted, so a
      * mailing list keyed on the naming convention silently stops matching and
      * nobody is told: the failure is a mailing that does not go out, which
      * nobody notices until somebody asks why they stopped receiving it.
      *
-     * What to do with each hit is the user's call, made before B7.1. This only
+     * What to do with each hit is the user's call, made before the flip. This only
      * makes sure the question is asked.
      */
     public List<TriggerHit> auditTriggers() {

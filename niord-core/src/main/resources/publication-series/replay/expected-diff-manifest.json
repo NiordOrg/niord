@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "B6.1. The divergences the historical replay is allowed to find.",
+    "The divergences the historical replay is allowed to find.",
     "",
     "EMPTY IS THE HONEST STARTING STATE, not an oversight. Every entry has to name",
     "a real issue by publicId and list the exact uids that diverge, and those come",

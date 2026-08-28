@@ -104,7 +104,7 @@ public class IssueMemberDriftTest {
         i.setPublicId(UUID.randomUUID().toString());
         i.setRepoPath("publications/" + i.getPublicId());
         i.setStatus(status);
-        i.setSnapshotTimeRelation("PUBLISHED_IN_INTERVAL");
+        i.setSnapshotTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
         i.setIntervalFrom(new Date(1_700_000_000_000L));
         i.setIntervalTo(new Date(1_700_600_000_000L));
         if (status != IssueStatus.OPEN) {

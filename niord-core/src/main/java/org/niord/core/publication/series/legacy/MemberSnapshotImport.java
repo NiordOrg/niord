@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * B5.5. The frozen member snapshot, written from the locked tag.
+ * The frozen member snapshot, written from the locked tag.
  *
  * KEYED ON uid, NEVER ON shortId. A short id like NM-375-24 is a display label:
  * it is assigned per series per year and is neither globally unique nor stable
@@ -147,7 +147,7 @@ public final class MemberSnapshotImport {
 
                 // IMPORTED, not CRITERIA: nothing here was derived by running a
                 // query. Labelling these CRITERIA would tell the replay it may
-                // check them against one, which is the claim B5.5 is careful not
+                // check them against one, which is the claim the import is careful not
                 // to make.
                 m.setSource(MemberSource.IMPORTED);
                 rows.add(m);
@@ -176,7 +176,7 @@ public final class MemberSnapshotImport {
 
     /** True when the issue's provenance says nothing derives its contents. */
     public static boolean hasQueryProvenance(MembershipProvenance provenance) {
-        // I-12, as qualified by ruling B5-iv: criteriaSnapshot is required when
+        // I-12, as qualified for the hand-named annexes: criteriaSnapshot is required when
         // the provenance is a QUERY provenance, not merely when members exist.
         // An imported annex has one member and no criteria, and that is legal.
         return provenance == MembershipProvenance.EXACT

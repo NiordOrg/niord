@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * B5.4a2. The per-issue snapshot header, derived from the issue's OWN filter.
+ * The per-issue snapshot header, derived from the issue's OWN filter.
  *
  * WHY THIS IS NOT A COPY OF THE SERIES ROW. A series outlives its own filter.
  * Measured on the captured estate, template a8e661ee carries 111 issues from the
@@ -26,17 +26,17 @@ import java.util.stream.Collectors;
  * live series flag and 122 tag-carrying blank-era issues get the alive conjunct
  * they never had -- 116 of them the weekly EfS.
  *
- * WHY THAT MATTERS TWO PHASES LATER. B6.1 replays every imported issue with a
+ * WHY THAT MATTERS LATER. The historical replay re-resolves every imported issue with a
  * build gate of actualDiffs subset-of manifest. With the conjunct wrongly on,
  * the replay records spurious drops that those issues reproduce exactly with it
  * off. That divergence cannot honestly be added to the expected-diff manifest,
  * so the pressure at that point is to widen the manifest -- which converts a
  * known-correct result into a suppressed one. The defect is planted here, where
- * B5.4a's publicId assignment is one-way, and surfaces where it cannot be
+ * The publicId assignment is one-way, and surfaces where it cannot be
  * cheaply undone.
  *
  * As originally specified the importer left all nine of these columns NULL on
- * ~1,077 issues, a state DATA-MODEL section 8 reserves for NO_MEMBERSHIP, and no
+ * ~1,077 issues, a state the data model reserves for NO_MEMBERSHIP, and no
  * invariant bound it. All three external reviewers converged on it independently.
  */
 public final class IssueSnapshotDeriver {
@@ -61,7 +61,7 @@ public final class IssueSnapshotDeriver {
         // publication's filter and from nothing else -- in particular not from
         // series.getTimeRelation() or series.getAliveAtCutoff(), which is the
         // whole point and is asserted in the tests.
-        issue.setSnapshotTimeRelation(t.timeRelation().name());
+        issue.setSnapshotTimeRelation(t.timeRelation());
         issue.setSnapshotAliveAtCutoff(t.aliveAtCutoff());
 
         issue.setSnapshotIntervalFrom(issue.getIntervalFrom());

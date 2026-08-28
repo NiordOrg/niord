@@ -94,7 +94,7 @@ public class IssueEditTest {
         return u;
     }
 
-    private List<String> actions(PublicationIssue issue) {
+    private List<AuditAction> actions(PublicationIssue issue) {
         return audit.forIssue(issue).stream().map(IssueAuditEntry::getAction).toList();
     }
 
@@ -115,7 +115,7 @@ public class IssueEditTest {
         assertEquals("Skydeomraader 2026", desc.getName(), "the name was not trimmed");
         assertTrue(desc.isNameOverridden(),
                 "a typed name that does not mark itself as one is put back by the next interval edit");
-        assertTrue(actions(issue).contains("NAME_CHANGED"));
+        assertTrue(actions(issue).contains(AuditAction.NAME_CHANGED));
     }
 
     /**
@@ -163,7 +163,7 @@ public class IssueEditTest {
                 new IssueEditService.IssueEdit(Map.of("da", current), null, null, null), user());
         em.flush();
 
-        assertTrue(actions(issue).stream().noneMatch("NAME_CHANGED"::equals),
+        assertFalse(actions(issue).contains(AuditAction.NAME_CHANGED),
                 "a Historik panel listing edits that changed nothing buries the ones that did");
     }
 
@@ -192,7 +192,7 @@ public class IssueEditTest {
                 "the suggested name still renders the old period");
         assertEquals(IntervalBoundSource.MANUAL, issue.getIntervalFromSource(),
                 "a typed bound recorded as STAMPED claims somebody stamped it at release");
-        assertTrue(actions(issue).contains("INTERVAL_CHANGED"));
+        assertTrue(actions(issue).contains(AuditAction.INTERVAL_CHANGED));
     }
 
     /**
@@ -217,12 +217,12 @@ public class IssueEditTest {
 
         assertEquals(IntervalBoundSource.STAMPED, issue.getIntervalFromSource(),
                 "the start was re-attributed to a hand that never touched it");
-        assertEquals(IntervalBoundSource.MANUAL.name(), issue.getIntervalToSource(),
+        assertEquals(IntervalBoundSource.MANUAL, issue.getIntervalToSource(),
                 "the bound that actually moved does not say it was typed");
 
         // And now only the start.
         PublicationIssue other = anIssue();
-        String closeSourceBefore = other.getIntervalToSource();
+        IntervalBoundSource closeSourceBefore = other.getIntervalToSource();
         editService.update(other, new IssueEditService.IssueEdit(null,
                 new Date(1_699_000_000_000L - WEEK), null, null), user());
         em.flush();
@@ -362,7 +362,7 @@ public class IssueEditTest {
 
         assertEquals(from, issue.getIntervalFrom());
         assertEquals(to, issue.getIntervalTo());
-        assertTrue(actions(issue).stream().noneMatch("INTERVAL_CHANGED"::equals));
+        assertFalse(actions(issue).contains(AuditAction.INTERVAL_CHANGED));
     }
 
     // --------------------------------------------------------- criteria override
@@ -395,7 +395,7 @@ public class IssueEditTest {
 
         assertNotNull(issue.getCriteriaOverride());
         assertTrue(EffectiveCriteria.isOverridden(issue));
-        assertTrue(actions(issue).contains("CRITERIA_OVERRIDDEN"));
+        assertTrue(actions(issue).contains(AuditAction.CRITERIA_OVERRIDDEN));
     }
 
     /** And handed back to the series again. */
@@ -488,7 +488,7 @@ public class IssueEditTest {
         em.flush();
 
         assertNotNull(issue.getCriteriaOverride());
-        assertTrue(actions(issue).stream().noneMatch("CRITERIA_OVERRIDDEN"::equals));
+        assertFalse(actions(issue).contains(AuditAction.CRITERIA_OVERRIDDEN));
     }
 
     // ------------------------------------------------------------------- status

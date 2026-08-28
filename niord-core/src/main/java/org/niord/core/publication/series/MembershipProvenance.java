@@ -16,7 +16,7 @@ public enum MembershipProvenance {
     NO_MEMBERSHIP,
 
     /**
-     * Named by hand, never derived. Ruling B5-iv.
+     * Named by hand, never derived.
      *
      * The six tag-carrying annexes are the case: the locked tag holds exactly one
      * message, and no query of any shape could have selected it, because the only

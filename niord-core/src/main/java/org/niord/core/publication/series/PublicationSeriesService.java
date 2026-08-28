@@ -51,7 +51,7 @@ public class PublicationSeriesService extends BaseService {
     }
 
     public List<PublicationSeries> findAll() {
-        return em.createQuery("SELECT s FROM PublicationSeries s ORDER BY s.seriesId", PublicationSeries.class)
+        return em.createNamedQuery("PublicationSeries.findAllOrdered", PublicationSeries.class)
                 .getResultList();
     }
 
@@ -89,8 +89,12 @@ public class PublicationSeriesService extends BaseService {
      */
     public PublicationSeries create(PublicationSeries series) {
         removeBlankDescs(series);
-        em.persist(series);
-        return series;
+        // saveEntity, not persist: whether a write is an insert or a merge is
+        // decided in one place in the codebase, keyed off whether the entity has
+        // an id. Deciding it again here is a second answer to a question with one
+        // right one, and the case it gets wrong -- a detached-but-persisted entity
+        // -- is one persist rejects outright.
+        return saveEntity(series);
     }
 
     /**
@@ -105,11 +109,9 @@ public class PublicationSeriesService extends BaseService {
         if (series == null || series.getId() == null) {
             return false;
         }
-        Long n = em.createQuery(
-                        "SELECT COUNT(i) FROM PublicationIssue i WHERE i.series = :s "
-                                + "AND i.status <> org.niord.core.publication.series.IssueStatus.OPEN",
-                        Long.class)
-                .setParameter("s", series)
+        Long n = em.createNamedQuery("PublicationIssue.countReleasedBySeries", Long.class)
+                .setParameter("series", series)
+                .setParameter("openStatus", IssueStatus.OPEN)
                 .getSingleResult();
         return n != null && n > 0;
     }
@@ -135,10 +137,8 @@ public class PublicationSeriesService extends BaseService {
      */
     public Map<String, Integer> publishedIssueCounts() {
         Map<String, Integer> out = new LinkedHashMap<>();
-        List<Object[]> rows = em.createQuery(
-                        "SELECT i.series.seriesId, COUNT(i) FROM PublicationIssue i "
-                                + "WHERE i.status <> org.niord.core.publication.series.IssueStatus.OPEN "
-                                + "GROUP BY i.series.seriesId", Object[].class)
+        List<Object[]> rows = em.createNamedQuery("PublicationIssue.countReleasedPerSeries", Object[].class)
+                .setParameter("openStatus", IssueStatus.OPEN)
                 .getResultList();
         for (Object[] row : rows) {
             out.put((String) row[0], ((Number) row[1]).intValue());
@@ -157,11 +157,9 @@ public class PublicationSeriesService extends BaseService {
         if (series == null || series.getId() == null) {
             return 0;
         }
-        Long n = em.createQuery(
-                        "SELECT COUNT(i) FROM PublicationIssue i WHERE i.series = :s "
-                                + "AND i.status <> org.niord.core.publication.series.IssueStatus.OPEN",
-                        Long.class)
-                .setParameter("s", series)
+        Long n = em.createNamedQuery("PublicationIssue.countReleasedBySeries", Long.class)
+                .setParameter("series", series)
+                .setParameter("openStatus", IssueStatus.OPEN)
                 .getSingleResult();
         return n == null ? 0 : n.intValue();
     }
@@ -169,7 +167,7 @@ public class PublicationSeriesService extends BaseService {
     public PublicationSeries update(PublicationSeries series) {
         removeBlankDescs(series);
         checkMessagePublicationImmutable(series);
-        return em.merge(series);
+        return saveEntity(series);
     }
 
     /**

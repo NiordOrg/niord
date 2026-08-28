@@ -272,7 +272,7 @@ public class IssuePublishTest {
                 "snapshotIntervalFrom does not record the bound the resolve used; that divergence is "
                         + "exactly why the column exists");
         assertNotNull(after.getSnapshotFrozenAt());
-        assertEquals("PUBLISHED_IN_INTERVAL", after.getSnapshotTimeRelation());
+        assertEquals(TimeRelation.PUBLISHED_IN_INTERVAL, after.getSnapshotTimeRelation());
 
         List<IssueMember> members = em.createQuery(
                         "SELECT m FROM IssueMember m WHERE m.issue.id = :id ORDER BY m.sortIndex",

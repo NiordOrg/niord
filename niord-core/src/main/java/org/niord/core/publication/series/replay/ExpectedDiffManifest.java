@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * The divergences the replay is allowed to find.
  *
- * B6.1. The mass historical replay is a DIAGNOSTIC, not a green/red gate on the
+ * The mass historical replay is a DIAGNOSTIC, not a green/red gate on the
  * archive being reproducible -- three independent sweeps reached that
  * conclusion, and building it as a plain gate would be a design error. Roughly
  * 48 publications have no membership semantics at all, four annual issues are

@@ -39,7 +39,7 @@ public class ReplaySkipTest {
         i.setSeries(queryBackedSeries());
         i.setIntervalFrom(from);
         i.setCutoffStampedAt(cutoff);
-        i.setSnapshotTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL.name());
+        i.setSnapshotTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
         i.setSnapshotAliveAtCutoff(false);
         return i;
     }

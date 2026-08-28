@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * B5.4b. The four-stage cut-off recovery cascade.
+ * The four-stage cut-off recovery cascade.
  *
  * Legacy never stored a release instant. It stored publishDateFrom, which is the
  * start of the PUBLIC window, and updated, which is whenever the row was last

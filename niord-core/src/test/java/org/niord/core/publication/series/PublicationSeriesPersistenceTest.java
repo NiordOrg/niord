@@ -9,7 +9,9 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.core.publication.series.vo.PublicationSeriesVo;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
+import org.niord.model.DataFilter;
 
 import java.util.List;
 import java.util.UUID;
@@ -305,5 +307,79 @@ public class PublicationSeriesPersistenceTest {
         org.junit.jupiter.api.Assertions.assertNull(
                 seriesService.findBySeriesId(none.getSeriesId()).getCriteria(),
                 "a null criteria column came back as something other than null");
+    }
+
+    // ------------------------------------------------------- the language filter
+
+    /**
+     * A read for one language gets that language, and nothing else.
+     *
+     * The rule used to live in a private helper on the resource, where this
+     * module cannot reach it -- niord-web has no container tests, so the one
+     * thing every consumer of the series list depends on had no assertion behind
+     * it at all.
+     */
+    @Test
+    @Transactional
+    public void aLanguageFilterNarrowsTheDescRowsToThatLanguage() {
+        PublicationSeries saved = seriesService.create(aSeries("da", "en"));
+        em.flush();
+
+        PublicationSeriesVo vo = saved.toVo(PublicationSeriesVo.class, DataFilter.get().lang("en"));
+        assertEquals(1, vo.getDescs().size(), "both languages travelled where one was asked for");
+        assertEquals("en", vo.getDescs().get(0).getLang());
+    }
+
+    /**
+     * A language the series does not have falls back to one it does.
+     *
+     * Not a nicety: a one-language series is entirely legitimate, and answering a
+     * request for English with an empty descs array leaves every consumer
+     * rendering the raw seriesId in place of a name.
+     */
+    @Test
+    @Transactional
+    public void anAbsentLanguageFallsBackRatherThanEmptying() {
+        PublicationSeries saved = seriesService.create(aSeries("da", "en"));
+        em.flush();
+
+        PublicationSeriesVo vo = saved.toVo(PublicationSeriesVo.class, DataFilter.get().lang("de"));
+        assertEquals(1, vo.getDescs().size(),
+                "a language the series does not carry emptied the desc list instead of falling back");
+        assertNotNull(vo.getDescs().get(0).getName());
+    }
+
+    /** No language asked for is every language, and a single-language series is never narrowed. */
+    @Test
+    @Transactional
+    public void noLanguageAskedForKeepsThemAll() {
+        PublicationSeries two = seriesService.create(aSeries("da", "en"));
+        PublicationSeries one = seriesService.create(aSeries("da"));
+        em.flush();
+
+        assertEquals(2, two.toVo(PublicationSeriesVo.class, null).getDescs().size());
+        assertEquals(2, two.toVo(PublicationSeriesVo.class, DataFilter.get()).getDescs().size());
+        assertEquals(1, one.toVo(PublicationSeriesVo.class, DataFilter.get().lang("en")).getDescs().size(),
+                "a one-language series was narrowed away from the only language it has");
+    }
+
+    /**
+     * The patterns are AUTHORING and travel only on the system shape.
+     *
+     * The lean shape is what every logged-in caller gets; handing it the file-name
+     * and link patterns publishes the naming and repository layout of every future
+     * issue to an audience with no use for either.
+     */
+    @Test
+    @Transactional
+    public void thePatternsTravelOnlyOnTheSystemShape() {
+        PublicationSeries saved = seriesService.create(aSeries("da"));
+        em.flush();
+
+        assertNotNull(saved.toVo(SystemPublicationSeriesVo.class).getDescs().get(0)
+                .getNameSuggestionPattern(), "the system shape lost the pattern");
+        org.junit.jupiter.api.Assertions.assertNull(
+                saved.toVo(PublicationSeriesVo.class).getDescs().get(0).getNameSuggestionPattern(),
+                "the lean shape carried an authoring pattern");
     }
 }

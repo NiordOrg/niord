@@ -9,16 +9,16 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * B5.5. How far a legacy tag can be trusted as an oracle for one issue.
+ * How far a legacy tag can be trusted as an oracle for one issue.
  *
  * The importer copies a locked tag's contents into IssueMember rows. Whether
- * those rows can later be used to CHECK the resolver -- which is what B6.1's
+ * those rows can later be used to CHECK the resolver -- which is what the historical replay's
  * replay does -- depends on whether the tag is evidence of one instant or of
  * something else. This decides that, and records why in a note.
  *
  * NEVER EXACT BY DEFAULT. EXACT is a claim that a replay of the criteria at the
  * cut-off reproduces this set. Anything that weakens the claim has to be caught
- * HERE, because B6.1 reads the provenance to decide which issues it may hold to
+ * HERE, because the replay reads the provenance to decide which issues it may hold to
  * that standard, and an over-confident label there turns a genuine divergence
  * into a manifest entry.
  */
@@ -35,7 +35,7 @@ public final class MemberProvenanceRules {
      * Keyed on tag name rather than on publicationId: the plan names them by
      * title and edition ("Skydeomraader 2020-ed1"), and the tag name is the one
      * identifier that says the same thing unambiguously. Keying on the title is
-     * exactly what B5.4a forbids -- two of these were released with a literal
+     * exactly what the keying rule forbids -- two of these were released with a literal
      * ${year} in the title.
      */
     public static final Set<String> IRREPRODUCIBLE_ANNUAL_TAGS = Set.of(
@@ -44,7 +44,7 @@ public final class MemberProvenanceRules {
             "firing-areas-2022-v1",
             "nm-almanac-2020-v1");
 
-    /** A tag whose name marks it as one of the hand-named annexes (B5-iv). */
+    /** A tag whose name marks it as one of the hand-named annexes. */
     public static boolean isAnnexTag(String tagName) {
         return tagName != null && tagName.startsWith("nm-annex-");
     }
@@ -126,7 +126,7 @@ public final class MemberProvenanceRules {
     /**
      * True when the provenance claims a replay reproduces the set.
      *
-     * B6.1 uses this to decide which issues it may hold to the reproduce-exactly
+     * The replay uses this to decide which issues it may hold to the reproduce-exactly
      * standard. Written as one predicate rather than as a comparison at each call
      * site, so that adding a provenance later cannot quietly widen what counts as
      * an oracle.

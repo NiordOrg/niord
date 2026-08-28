@@ -293,7 +293,7 @@ public class IssueMemberListService {
         if (m.getSource() == MemberSource.IMPORTED) {
             return "IMPORTED";
         }
-        return "IN_FORCE_AT_CUTOFF".equals(issue.getSnapshotTimeRelation())
+        return TimeRelation.IN_FORCE_AT_CUTOFF == issue.getSnapshotTimeRelation()
                 ? "IN_FORCE_AT_CUTOFF" : "IN_INTERVAL";
     }
 

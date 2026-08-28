@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * B5.4a. A legacy publication becomes an issue, frozen.
+ * A legacy publication becomes an issue, frozen.
  *
  * ID-SPACE CONTINUITY IS THE ONE-WAY PART. The legacy publicationId becomes the
  * issue's publicId verbatim, and legacyPublicationId records the same string.
@@ -87,14 +87,14 @@ public final class LegacyIssueTranslation {
         issue.setCreated(legacy.getCreated());
         issue.setUpdated(legacy.getUpdated());
 
-        // The public window, verbatim. B5.4b recovers the cut-off stamp
+        // The public window, verbatim. The recovery cascade recovers the cut-off stamp
         // afterwards; nothing here invents one.
         issue.setPublicFrom(legacy.getPublishDateFrom());
         issue.setPublicTo(legacy.getPublishDateTo());
 
         applyContentInterval(issue, legacy, series, previousCutoff);
 
-        // B5.4c / R8. DERIVED for anything with a cadence, MANUAL only for a
+        // Rule R8. DERIVED for anything with a cadence, MANUAL only for a
         // genuinely open-ended one-off.
         //
         // Read from the SERIES where there is one and from the publication's own
@@ -102,7 +102,7 @@ public final class LegacyIssueTranslation {
         // template-less WEEKLY publications MANUAL -- they are the double-week
         // issues (NtM Week 15-16, EfS 51-52) that were created ad hoc rather than
         // from the template, and they are as cadenced as any other. Marking a
-        // cadenced issue MANUAL is exactly what B2.3b step 13 skips by design,
+        // cadenced issue MANUAL is exactly what the publish transaction skips by design,
         // and the first native publish would then leave two current EfS issues
         // on the public site at once.
         issue.setPublicWindowSource(isCadenced(legacy, series)
@@ -118,7 +118,7 @@ public final class LegacyIssueTranslation {
 
         attachDescs(legacy, issue);
 
-        // B5.4a2. Derived from THIS publication's own filter, never from the
+        // Derived from THIS publication's own filter, never from the
         // series row -- see IssueSnapshotDeriver for why that distinction is
         // worth a task of its own.
         IssueSnapshotDeriver.derive(issue, legacy, series, frozenAt);
@@ -157,7 +157,7 @@ public final class LegacyIssueTranslation {
             issue.setIntervalFrom(null);
             issue.setIntervalFromSource(null);
             issue.setIntervalTo(released);
-            issue.setIntervalToSource(released == null ? null : IntervalBoundSource.RECOVERED.name());
+            issue.setIntervalToSource(released == null ? null : IntervalBoundSource.RECOVERED);
             return;
         }
 
@@ -179,7 +179,7 @@ public final class LegacyIssueTranslation {
             // and says so -- an admin reading "31 December 23:59:59" should be
             // able to tell which of the two it is.
             issue.setIntervalToSource(to == null ? null
-                    : (endGiven ? IntervalBoundSource.NOMINAL : IntervalBoundSource.RECOVERED).name());
+                    : (endGiven ? IntervalBoundSource.NOMINAL : IntervalBoundSource.RECOVERED));
             return;
         }
 
@@ -191,7 +191,7 @@ public final class LegacyIssueTranslation {
             issue.setIntervalTo(legacy.getPublishDateTo());
             issue.setIntervalFromSource(released == null ? null : IntervalBoundSource.RECOVERED);
             issue.setIntervalToSource(legacy.getPublishDateTo() == null
-                    ? null : IntervalBoundSource.RECOVERED.name());
+                    ? null : IntervalBoundSource.RECOVERED);
             return;
         }
 
@@ -210,7 +210,7 @@ public final class LegacyIssueTranslation {
         issue.setIntervalFrom(opened);
         issue.setIntervalFromSource(opened == null ? null : IntervalBoundSource.RECOVERED);
         issue.setIntervalTo(released);
-        issue.setIntervalToSource(released == null ? null : IntervalBoundSource.RECOVERED.name());
+        issue.setIntervalToSource(released == null ? null : IntervalBoundSource.RECOVERED);
         // The head of a chain keeps a null lower bound. Nothing records when the
         // oldest imported issue began collecting, and inventing a bound there is
         // the same move that produced this defect.
@@ -263,7 +263,7 @@ public final class LegacyIssueTranslation {
      * The stored file path, verbatim, revision segment included.
      *
      * Kept as a function rather than inlined because the containment rule that
-     * B1.7b asserts -- filePath startsWith issue.repoPath -- is only meaningful
+     * the containment invariant asserts -- filePath startsWith issue.repoPath -- is only meaningful
      * if both sides are built the same way.
      */
     public static String filePath(Publication legacy, String fileName) {

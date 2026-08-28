@@ -32,13 +32,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * B6.2. After each legacy release, would the new engine have produced the same
+ * After each legacy release, would the new engine have produced the same
  * member list?
  *
- * This is the verification loop productized. B6.1's replay answers the question
+ * This is the verification loop productized. The historical replay answers the question
  * once, backwards, over the imported archive; this answers it forwards, one
- * release at a time, and that is what accumulates the evidence B6.3 reports and
- * B7.1 waits on: TWO CONSECUTIVE GREEN WEEKS PER SERIES.
+ * release at a time, and that is what accumulates the evidence the diagnostic report renders and
+ * the cutover flip waits on: TWO CONSECUTIVE GREEN WEEKS PER SERIES.
  *
  * <h2>Why the results are stored rather than recomputed</h2>
  *
@@ -172,7 +172,7 @@ public class ShadowDiffService {
      * the sweep never advanced. Resetting and then sweeping composes the two
      * operations that each already work.
      *
-     * It DISCARDS the accumulated green-week evidence B7.1 counts, which is why it
+     * It DISCARDS the accumulated green-week evidence the cutover counts, which is why it
      * is explicit, never automatic, and named for what it does.
      *
      * Joins the caller's transaction rather than opening its own. The only caller
@@ -390,7 +390,7 @@ public class ShadowDiffService {
         if (skip != null) {
             // A skipped release is still green: nothing diverged, because
             // nothing was comparable. The skipReason is what stops that being
-            // read as evidence -- B6.3 counts green weeks, and a week nobody
+            // read as evidence -- the report counts green weeks, and a week nobody
             // could compare is not one of them.
             run.setSkipReason(skip);
             em.persist(run);
@@ -624,7 +624,7 @@ public class ShadowDiffService {
      * The criteria to resolve with.
      *
      * timeRelation and aliveAtCutoff come from THIS RELEASE'S OWN legacy filter,
-     * not from the series row -- the same rule B5.4a2 established for imported
+     * not from the series row -- the same rule the per-issue header established for imported
      * issues. A series that spans both the blank/sticky era and the phase era
      * carries one setting on the series and needs the other on 122 of its
      * issues, and a live release is simply the newest of those.

@@ -1,5 +1,6 @@
 package org.niord.core.publication.series.replay;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
@@ -21,7 +22,7 @@ import java.util.Set;
 /**
  * One shadow-diff: what the new engine would have produced for a legacy release.
  *
- * B6.2. Persisted rather than computed on demand because B6.3's cutover
+ * Persisted rather than computed on demand because the cutover
  * precondition is "two consecutive green weeks per series" -- a claim about
  * history. Recomputing it later would answer a different question, since the
  * message estate has moved on: type is mutable and unversioned, so re-resolving
@@ -54,6 +55,7 @@ import java.util.Set;
 @SuppressWarnings("unused")
 public class ShadowDiffRun extends VersionedEntity<Integer> {
 
+    @NotNull
     @Column(length = 36, nullable = false)
     private String legacyPublicationId;
 
@@ -72,6 +74,7 @@ public class ShadowDiffRun extends VersionedEntity<Integer> {
     private String seriesId;
 
     @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
     @Column(nullable = false)
     private Date comparedAt;
 

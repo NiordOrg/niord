@@ -6,14 +6,14 @@ import org.niord.core.publication.PublicationDesc;
 import java.util.List;
 
 /**
- * Where each template-less publication belongs. Ruling B5-v, revised.
+ * Where each template-less publication belongs.
  *
  * The first version gave all 39 their own one-off series, because nothing in the
  * plan said which of them were really the same publication and inventing an
  * answer would have been a guess dressed as a migration. Rasmus has now supplied
  * the answer, so the guess is replaced by a ruling and 39 series become 9.
  *
- * CLASSIFYING BY TITLE HERE IS NOT WHAT B5.4a FORBIDS. That rule is about
+ * CLASSIFYING BY TITLE HERE IS NOT WHAT THE KEYING RULE FORBIDS. That rule is about
  * IDENTITY -- never key an issue on its title, because three publications carry a
  * literal ${year} in title, fileName and tag name, and two were released with it.
  * Identity is untouched: every issue still takes its publicId from the legacy
@@ -74,11 +74,11 @@ public final class LegacyOrphanGrouping {
 
         if (matches(title, "NCAGS")) {
             return new Placement(Destination.SHARED_SERIES, "nm-annex-ncags", ANNEX_CATEGORY,
-                    "one of the 11 NCAGS annexes, which are one series (B5-v)");
+                    "one of the 11 NCAGS annexes, which are one series");
         }
         if (matches(title, "istjeneste") || matches(title, "Marinestaben")) {
             return new Placement(Destination.SHARED_SERIES, "nm-annex-ice-service", ANNEX_CATEGORY,
-                    "one of the 8 ice-service annexes, which are one series (B5-v)");
+                    "one of the 8 ice-service annexes, which are one series");
         }
 
         // The double weeks. "EfS 51-52 2016" is the Danish naming of the same
@@ -86,17 +86,17 @@ public final class LegacyOrphanGrouping {
         if (startsWith(title, "Active P&T Week")) {
             return new Placement(Destination.EXISTING_SERIES, WEEKLY_PT_TEMPLATE, null,
                     "a double week of the weekly P&T series, assembled by hand because the old model "
-                            + "could not express it (B5-v)");
+                            + "could not express it");
         }
         if (startsWith(title, "NtM Week") || startsWith(title, "EfS ")) {
             return new Placement(Destination.EXISTING_SERIES, WEEKLY_NTM_TEMPLATE, null,
                     "a double week of the weekly NtM series, assembled by hand because the old model "
-                            + "could not express it (B5-v)");
+                            + "could not express it");
         }
 
         if (matches(title, "Danish List of Lights")) {
             return new Placement(Destination.SHARED_SERIES, "danish-list-of-lights", null,
-                    "one of the four Danish List of Lights editions, which are one series (B5-v)");
+                    "one of the four Danish List of Lights editions, which are one series");
         }
 
         // The 2016 annex, from before the report template existed. Its series
@@ -110,10 +110,10 @@ public final class LegacyOrphanGrouping {
         if (matches(title, "Firing Practice Areas")) {
             return new Placement(Destination.EXISTING_SERIES, FIRING_PRACTICE_TEMPLATE, null,
                     "the 2016 edition of the Firing Practice Areas annex, which predates the report "
-                            + "template its later issues are generated from (B5-v)");
+                            + "template its later issues are generated from");
         }
 
-        return new Placement(Destination.OWN_SERIES, null, null, "genuinely standalone (B5-v)");
+        return new Placement(Destination.OWN_SERIES, null, null, "genuinely standalone");
     }
 
     /**
@@ -124,7 +124,7 @@ public final class LegacyOrphanGrouping {
      * Ties break on publicationId so the choice is total -- an unstable pick would
      * make the imported series' cadence depend on the order rows came back in.
      *
-     * The per-issue snapshot is unaffected either way: B5.4a2 derives each
+     * The per-issue snapshot is unaffected either way: the deriver takes each
      * issue's own timeRelation and aliveAtCutoff from its own filter, which is
      * exactly why a series-level default can be chosen this simply.
      */

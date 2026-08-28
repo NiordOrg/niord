@@ -274,7 +274,7 @@ public class PublicationPublicAdapter extends BaseService {
         // Sorting by date alone -- which is what this did while the adapter was
         // not yet wired to the endpoint -- reshuffles every section on the page.
         //
-        // The id tiebreak is the addition (OQ-17). Without it the EfS and P&T
+        // The id tiebreak is the addition. Without it the EfS and P&T
         // twins, which share a window to the millisecond, come back in whatever
         // order the database chose and two calls disagree.
         out.sort(Comparator

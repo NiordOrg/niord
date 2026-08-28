@@ -1,5 +1,6 @@
 package org.niord.core.publication.series;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -22,6 +23,7 @@ import org.niord.model.ILocalizedDesc;
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 public class PublicationSeriesDesc extends DescEntity<PublicationSeries> {
 
+    @NotNull
     @Column(length = 255, nullable = false)
     private String name;
 

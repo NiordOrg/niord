@@ -4,8 +4,8 @@ The niord repository contains the common code-base for the NW + NM T&P editing a
 
 ## Building
 
-The build is pinned to **Java 21 (Temurin)** and driven through the checked-in Maven wrapper, so it does
-not depend on a Maven installed on PATH or bundled with an IDE:
+The build is pinned to **Java 21 (Temurin)**. Locally it is driven through the checked-in Maven
+wrapper, so it does not depend on a Maven installed on PATH or bundled with an IDE:
 
 ```bash
 JAVA_HOME=<path to a Temurin 21 JDK>
@@ -17,6 +17,12 @@ JAVA_HOME=<path to a Temurin 21 JDK>
 container described below and skip themselves silently without it, so a run that finishes
 suspiciously fast is a run that tested a fraction of what it looks like it did -- start the
 container first and compare the totals if a number matters to you.
+
+**CI does not use the wrapper.** Both pipelines provide their own Maven -- the Azure pipeline
+unpacks a pinned distribution, the GitHub workflow uses the runner's. So the version in
+`.mvn/wrapper/maven-wrapper.properties` governs local builds only, and a Maven-version difference
+between a developer's machine and CI is possible rather than excluded. It has not caused a problem;
+it is written down here so that "but the wrapper pins it" is not relied on when one appears.
 
 Two notes on those flags, so they are not copied around without reason:
 

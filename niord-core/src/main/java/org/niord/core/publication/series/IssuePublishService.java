@@ -470,7 +470,7 @@ public class IssuePublishService extends BaseService {
 
         // --- 7. FREEZE the snapshot header --------------------------------
         issue.setSnapshotFrozenAt(frozenAt);
-        issue.setSnapshotTimeRelation(series.getTimeRelation() == null ? null : series.getTimeRelation().name());
+        issue.setSnapshotTimeRelation(series.getTimeRelation());
         issue.setSnapshotAliveAtCutoff(series.getAliveAtCutoff());
         // The interval the resolve ACTUALLY used. It exists because a later
         // retro-creation moves the live intervalFrom, and the frozen membership
@@ -571,8 +571,8 @@ public class IssuePublishService extends BaseService {
     private void freezeMembers(PublicationIssue issue, List<IssueOrdering.Orderable> ordered,
                                Map<String, Integer> sortIndex,
                                MemberResolutionService.Resolution resolution) {
-        em.createQuery("DELETE FROM IssueMember m WHERE m.issue = :i")
-                .setParameter("i", issue).executeUpdate();
+        em.createNamedQuery("IssueMember.deleteByIssue")
+                .setParameter("issue", issue).executeUpdate();
 
         Map<String, org.niord.core.message.Message> byUid = new LinkedHashMap<>();
         if (!sortIndex.isEmpty()) {

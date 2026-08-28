@@ -9,8 +9,10 @@ import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.service.BaseService;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Issues, findable by the same search the publication picker already uses.
@@ -63,8 +65,19 @@ public class PublicationSearchAdapter extends BaseService {
         StringBuilder jpql = new StringBuilder(
                 "SELECT i FROM PublicationIssue i JOIN i.series s LEFT JOIN s.domain d WHERE 1 = 1");
 
+        // EVERY FILTER CONTRIBUTES ITS CLAUSE AND ITS BINDING IN ONE PLACE.
+        //
+        // The two used to be separate chains -- append here, bind thirty lines
+        // down -- and they had drifted: four clauses against three bindings,
+        // because the status filter inlined a fully-qualified enum constant into
+        // the query text instead of binding it. A clause without its binding is a
+        // request-time failure, not a compile-time one, and the pairing is what
+        // makes it impossible rather than merely unlikely.
+        Map<String, Object> bindings = new LinkedHashMap<>();
+
         if (params.getMessagePublication() != null) {
             jpql.append(" AND s.messagePublication = :messagePublication");
+            bindings.put("messagePublication", params.getMessagePublication());
         }
         if (params.getDomain() != null && !params.getDomain().isBlank()) {
             // A series with NO domain matches every domain, which is what legacy
@@ -79,12 +92,16 @@ public class PublicationSearchAdapter extends BaseService {
             // either, so this was most of the catalogue disappearing from every
             // domain-scoped search.
             jpql.append(" AND (d IS NULL OR d.domainId = :domain)");
+            bindings.put("domain", params.getDomain());
         }
         if (params.getCategory() != null && !params.getCategory().isBlank()) {
             jpql.append(" AND s.category.categoryId = :category");
+            bindings.put("category", params.getCategory());
         }
-        if (statusPredicate(params) != null) {
-            jpql.append(statusPredicate(params));
+        String statusClause = statusPredicate(params);
+        if (statusClause != null) {
+            jpql.append(statusClause);
+            bindings.put("issueStatus", IssueStatus.PUBLISHED);
         }
 
         // Newest first, matching the order every issue list in the product uses.
@@ -92,15 +109,7 @@ public class PublicationSearchAdapter extends BaseService {
         jpql.append(" ORDER BY i.intervalFrom DESC");
 
         var query = em.createQuery(jpql.toString(), PublicationIssue.class);
-        if (params.getMessagePublication() != null) {
-            query.setParameter("messagePublication", params.getMessagePublication());
-        }
-        if (params.getDomain() != null && !params.getDomain().isBlank()) {
-            query.setParameter("domain", params.getDomain());
-        }
-        if (params.getCategory() != null && !params.getCategory().isBlank()) {
-            query.setParameter("category", params.getCategory());
-        }
+        bindings.forEach(query::setParameter);
 
         List<PublicationIssue> hits = query.getResultList();
 
@@ -132,6 +141,10 @@ public class PublicationSearchAdapter extends BaseService {
      * Translated from the PROJECTED publication status rather than applied to the
      * issue status directly: a caller asking for ACTIVE means what the mapping
      * emits as ACTIVE, which is a PUBLISHED issue.
+     *
+     * The constant is a bound parameter named issueStatus, not a literal spelled
+     * into the query text. A caller adding a clause here has to add its binding
+     * at the call site, which is the whole point of the pairing there.
      */
     private static String statusPredicate(PublicationSearchParams params) {
         if (params.getStatuses() == null || params.getStatuses().isEmpty()) {
@@ -145,8 +158,8 @@ public class PublicationSearchAdapter extends BaseService {
             return null;
         }
         return wantsActive
-                ? " AND i.status = org.niord.core.publication.series.IssueStatus.PUBLISHED"
-                : " AND i.status <> org.niord.core.publication.series.IssueStatus.PUBLISHED";
+                ? " AND i.status = :issueStatus"
+                : " AND i.status <> :issueStatus";
     }
 
     /** Case-insensitive substring over every language, as the legacy title filter is. */

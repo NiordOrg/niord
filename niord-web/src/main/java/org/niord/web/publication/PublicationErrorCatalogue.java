@@ -29,7 +29,7 @@ public final class PublicationErrorCatalogue {
         put("UNRESOLVABLE_OPERAND", 400);
         put("OVERRIDE_REASON_REQUIRED", 400);
 
-        // B1.7b. Three guards that had no code until the invariant gate ran, so
+        // Three guards that had no code until the invariant gate ran, so
         // they had no catalogue entry either -- and an uncatalogued code returns
         // 500 from an endpoint, which is the failure this catalogue exists to
         // prevent.

@@ -25,7 +25,7 @@ import java.util.List;
  *
  * ORDER IS PART OF THE ANSWER. messageTypes is a List because the values are
  * written into a stored criteria document and compared byte-for-byte by the
- * export round trip and by B5.6's byte-identical dry run. Set.of randomises its
+ * export round trip and by the importer's byte-identical dry run. Set.of randomises its
  * iteration order per JVM run, so a set here made two imports of one estate
  * produce two different documents. The order is the legacy filter's own.
  *

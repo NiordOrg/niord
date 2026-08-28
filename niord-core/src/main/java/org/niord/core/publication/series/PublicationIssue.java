@@ -1,5 +1,6 @@
 package org.niord.core.publication.series;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -8,11 +9,15 @@ import org.niord.core.publication.series.vo.PublicationIssueDescVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueDescVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.util.ArrayList;
@@ -24,6 +29,7 @@ import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.JpaCriteriaAttributeConverter;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.user.User;
 import org.niord.model.ILocalizable;
 
@@ -37,8 +43,43 @@ import org.niord.model.ILocalizable;
  * table alone. EntityContractTest.noEntityBringsItsOwnIdGenerator() enforces it.
  */
 @Entity
+// NAMED ONLY WHERE THE SAME QUESTION IS ASKED TWICE.
+//
+// A named query is parsed and validated when the persistence unit boots, so a
+// typo fails the deploy rather than the request -- but that is not why these
+// three are here. They are here because each was written out verbatim in two
+// unrelated classes, and two copies of an ORDER BY are two answers waiting to
+// disagree: "the newest issue of this series" decides which issue the draft
+// builder chains from AND which one the shape derivation reads its predecessor
+// from, and a divergence there produces an overlapping interval nobody sees
+// until publish. Queries asked from one place stay where they are read.
+@NamedQueries({
+        @NamedQuery(name = "PublicationIssue.findBySeriesNewestFirst",
+                query = "SELECT i FROM PublicationIssue i WHERE i.series = :series "
+                        + "ORDER BY COALESCE(i.cutoffStampedAt, i.intervalTo) DESC, i.publicId DESC"),
+        // "Has anything of this series ever been released" -- RETIRED counts,
+        // because it was published and the citations it wrote are still out there.
+        @NamedQuery(name = "PublicationIssue.countReleasedBySeries",
+                query = "SELECT COUNT(i) FROM PublicationIssue i WHERE i.series = :series "
+                        + "AND i.status <> :openStatus"),
+        @NamedQuery(name = "PublicationIssue.countReleasedPerSeries",
+                query = "SELECT i.series.seriesId, COUNT(i) FROM PublicationIssue i "
+                        + "WHERE i.status <> :openStatus GROUP BY i.series.seriesId")
+})
+// The indexes are DECLARED here because the schema has them, not to make the
+// schema have them -- Flyway owns the DDL and V12 creates these two. Naming them
+// on the entity is what lets a reader see the access paths this table is tuned
+// for without opening the migrations; leaving them off would make the mapping
+// describe a database nobody has, which is the same defect in the other
+// direction. The sizing rationale, and why PublicationSeries gets none, is in
+// V12.
+@Table(indexes = {
+        @Index(name = "publication_issue_series_status_k", columnList = "series_id, status"),
+        @Index(name = "publication_issue_status_public_from_k", columnList = "status, publicFrom")
+})
 public class PublicationIssue extends VersionedEntity<Integer> implements ILocalizable<PublicationIssueDesc> {
 
+    @NotNull
     @Column(length = 36, nullable = false, unique = true)
     private String publicId;
 
@@ -46,9 +87,11 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     private String legacyPublicationId;
 
     @ManyToOne(optional = false)
+    @NotNull
     @JoinColumn(nullable = false)
     private PublicationSeries series;
 
+    @NotNull
     @Column(length = 128, nullable = false)
     private String repoPath;
 
@@ -61,8 +104,23 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     @Enumerated(EnumType.STRING)
     private IntervalBoundSource intervalFromSource;
 
-    @Column(length = 255)
-    private String intervalToSource;
+    /**
+     * Where the CLOSE of the content period came from -- the twin of
+     * intervalFromSource, and the same vocabulary.
+     *
+     * Typed, not a free string. Every writer already stored an
+     * IntervalBoundSource name and every reader parsed one back out, so the
+     * String only ever meant that a typo would survive the write and fail at the
+     * read instead. The column stays varchar and the enum is persisted by name,
+     * so the stored values are byte-identical and no migration is involved; the
+     * columnDefinition pins that, because the schema-generation default for an
+     * enum-typed field on MySQL is a native ENUM column, which this column is not
+     * and must not become -- a native enum needs an ALTER TABLE before a
+     * constant can be added.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 255, columnDefinition = "varchar(255)")
+    private IntervalBoundSource intervalToSource;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date cutoffStampedAt;
@@ -80,10 +138,12 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     private Date publicTo;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private PublicWindowSource publicWindowSource = PublicWindowSource.DERIVED;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private IssueStatus status = IssueStatus.OPEN;
 
@@ -111,11 +171,22 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     @Temporal(TemporalType.TIMESTAMP)
     private Date snapshotFrozenAt;
 
+    @NotNull
     @Column(nullable = false)
     private Integer memberCount = 0;
 
-    @Column(length = 255)
-    private String snapshotTimeRelation;
+    /**
+     * The time relation this issue's membership was frozen under.
+     *
+     * Typed for the same reason as intervalToSource, and stored the same way:
+     * varchar holding the constant's name, pinned by columnDefinition so schema
+     * generation does not turn it into a native ENUM. It is a SNAPSHOT of what
+     * the series said at publish, deliberately not read back off the series --
+     * which is why it is a column here at all.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 255, columnDefinition = "varchar(255)")
+    private TimeRelation snapshotTimeRelation;
 
     private Boolean snapshotAliveAtCutoff;
 
@@ -237,11 +308,11 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         this.intervalFromSource = intervalFromSource;
     }
 
-    public String getIntervalToSource() {
+    public IntervalBoundSource getIntervalToSource() {
         return intervalToSource;
     }
 
-    public void setIntervalToSource(String intervalToSource) {
+    public void setIntervalToSource(IntervalBoundSource intervalToSource) {
         this.intervalToSource = intervalToSource;
     }
 
@@ -373,11 +444,11 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         this.memberCount = memberCount;
     }
 
-    public String getSnapshotTimeRelation() {
+    public TimeRelation getSnapshotTimeRelation() {
         return snapshotTimeRelation;
     }
 
-    public void setSnapshotTimeRelation(String snapshotTimeRelation) {
+    public void setSnapshotTimeRelation(TimeRelation snapshotTimeRelation) {
         this.snapshotTimeRelation = snapshotTimeRelation;
     }
 
@@ -604,7 +675,7 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             sys.setIntervalFrom(intervalFrom);
             sys.setIntervalTo(intervalTo);
             sys.setIntervalFromSource(intervalFromSource == null ? null : intervalFromSource.name());
-            sys.setIntervalToSource(intervalToSource);
+            sys.setIntervalToSource(intervalToSource == null ? null : intervalToSource.name());
             sys.setCutoffStampedAt(cutoffStampedAt);
 
             // The coalesce is emitted rather than left to each client to repeat.
@@ -634,7 +705,7 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
                     ? null : memberCount);
             sys.setMembershipProvenance(membershipProvenance == null ? null : membershipProvenance.name());
             sys.setSnapshotIntervalFrom(snapshotIntervalFrom);
-            sys.setSnapshotTimeRelation(snapshotTimeRelation);
+            sys.setSnapshotTimeRelation(snapshotTimeRelation == null ? null : snapshotTimeRelation.name());
             sys.setSupersedesPublicId(supersedes == null ? null : supersedes.getPublicId());
             sys.setLegacyPublicationId(legacyPublicationId);
             sys.setRepoPath(repoPath);

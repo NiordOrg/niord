@@ -268,7 +268,7 @@ public class IssueCurationService extends BaseService {
         // the new row reaches the database while the old one is still there --
         // which is a silent no-op until UNIQUE (issue_id, messageUid) exists, and
         // a constraint violation the moment it does. The invariant was specified
-        // in DATA-MODEL §8.3 and asserted here all along ("two overrides for one
+        // as a data-model rule and asserted here all along ("two overrides for one
         // message were kept" is the failure message); only the ordering that makes
         // it survivable at the database level was missing.
         em.flush();

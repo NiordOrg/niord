@@ -97,7 +97,7 @@ public class AnnualCutoffTest {
         assertEquals(new Date(1041379200000L), acc2003.getIntervalFrom(), "1 January 2003");
         assertEquals(new Date(1072911540000L), acc2003.getIntervalTo(), "the legacy end, 31 December 2003");
         assertEquals(IntervalBoundSource.NOMINAL, acc2003.getIntervalFromSource());
-        assertEquals(IntervalBoundSource.NOMINAL.name(), acc2003.getIntervalToSource());
+        assertEquals(IntervalBoundSource.NOMINAL, acc2003.getIntervalToSource());
         assertEquals(acc2003.getIntervalTo(), acc2003.getCutoffStampedAt());
         assertEquals(CutoffRecovery.PUBLIC_WINDOW, acc2003.getCutoffSource());
         assertNull(acc2003.getPublishedAt(), "loaded in December 2016, thirteen years after: not a release moment");
@@ -114,7 +114,7 @@ public class AnnualCutoffTest {
         assertEquals(31, end.getDayOfMonth());
         assertEquals(23, end.getHour());
         assertEquals(59, end.getMinute());
-        assertEquals(IntervalBoundSource.RECOVERED.name(), acc2018.getIntervalToSource(),
+        assertEquals(IntervalBoundSource.RECOVERED, acc2018.getIntervalToSource(),
                 "an invented year-end is flagged as reconstructed, unlike one the archive recorded");
         assertEquals(acc2018.getIntervalTo(), acc2018.getCutoffStampedAt());
         assertNull(acc2018.getPublishedAt(), "edited in 2021: not a release moment");

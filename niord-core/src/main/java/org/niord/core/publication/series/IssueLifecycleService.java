@@ -276,7 +276,7 @@ public class IssueLifecycleService extends BaseService {
         issue.setIntervalFrom(intervalFrom);
         issue.setIntervalFromSource(source);
         issue.setIntervalTo(intervalTo);
-        issue.setIntervalToSource(toSource == null ? null : toSource.name());
+        issue.setIntervalToSource(toSource);
 
         // One desc row per CONFIGURED language, from the moment of create.
         //
@@ -379,7 +379,7 @@ public class IssueLifecycleService extends BaseService {
     /**
      * T5. An issue may be deleted only while nothing has depended on it.
      *
-     * DM-Q3 restated: C7's literal "no publicId" can never be true, because
+     * C7's literal "no publicId" can never be true, because
      * publicId is minted at create. The real test is that it was never stamped
      * and never published -- which preserves C7's intent exactly.
      */
@@ -391,7 +391,7 @@ public class IssueLifecycleService extends BaseService {
             throw new TransitionRefusedException("ISSUE_NOT_DELETABLE",
                     "an issue that has been stamped or published cannot be deleted; retire it instead");
         }
-        em.createQuery("DELETE FROM IssueMember m WHERE m.issue = :i").setParameter("i", issue).executeUpdate();
+        em.createNamedQuery("IssueMember.deleteByIssue").setParameter("issue", issue).executeUpdate();
         em.createQuery("DELETE FROM IssueOverride o WHERE o.issue = :i").setParameter("i", issue).executeUpdate();
         em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.issue = :i").setParameter("i", issue).executeUpdate();
         em.remove(em.contains(issue) ? issue : em.merge(issue));

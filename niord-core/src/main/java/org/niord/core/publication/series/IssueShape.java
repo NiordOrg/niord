@@ -166,7 +166,7 @@ public class IssueShape extends BaseService {
             // inventing one would put a cut-off on the row that nothing decided.
             if (close != null) {
                 issue.setIntervalTo(close);
-                issue.setIntervalToSource(IntervalBoundSource.NOMINAL.name());
+                issue.setIntervalToSource(IntervalBoundSource.NOMINAL);
             }
         }
 
@@ -177,7 +177,7 @@ public class IssueShape extends BaseService {
         if (issue.getIntervalTo() == null) {
             issue.setIntervalToSource(null);
         } else if (issue.getIntervalToSource() == null) {
-            issue.setIntervalToSource(IntervalBoundSource.NOMINAL.name());
+            issue.setIntervalToSource(IntervalBoundSource.NOMINAL);
         }
         if (issue.getIntervalFrom() == null) {
             issue.setIntervalFromSource(null);
@@ -294,11 +294,8 @@ public class IssueShape extends BaseService {
         if (series == null || series.getId() == null) {
             return List.of();
         }
-        return em.createQuery(
-                        "SELECT i FROM PublicationIssue i WHERE i.series = :s "
-                                + "ORDER BY COALESCE(i.cutoffStampedAt, i.intervalTo) DESC, i.publicId DESC",
-                        PublicationIssue.class)
-                .setParameter("s", series)
+        return em.createNamedQuery("PublicationIssue.findBySeriesNewestFirst", PublicationIssue.class)
+                .setParameter("series", series)
                 .getResultList()
                 .stream()
                 .filter(other -> other != issue

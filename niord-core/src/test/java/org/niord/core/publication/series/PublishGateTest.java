@@ -345,7 +345,7 @@ public class PublishGateTest {
         assertNotNull(i.getIntervalTo(), "T0 derived no nominal close, so the issue has no cut-off at all");
         assertEquals(opens.getTime() + 7 * 24 * 3600_000L, i.getIntervalTo().getTime(),
                 "the nominal close is one cadence period after the open");
-        assertEquals(IntervalBoundSource.NOMINAL.name(), i.getIntervalToSource(),
+        assertEquals(IntervalBoundSource.NOMINAL, i.getIntervalToSource(),
                 "a bound with no source loses the stamped-versus-nominal marker the list shows");
         assertNotNull(i.getWeek(), "no week was derived, so the report header prints 'Uge , '");
         assertNotNull(i.getYear());

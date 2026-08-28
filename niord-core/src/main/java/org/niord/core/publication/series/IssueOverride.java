@@ -1,5 +1,6 @@
 package org.niord.core.publication.series;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
@@ -30,9 +31,11 @@ import org.niord.core.user.User;
 public class IssueOverride extends VersionedEntity<Integer> {
 
     @ManyToOne(optional = false)
+    @NotNull
     @JoinColumn(nullable = false)
     private PublicationIssue issue;
 
+    @NotNull
     @Column(length = 36, nullable = false)
     private String messageUid;
 
@@ -40,13 +43,16 @@ public class IssueOverride extends VersionedEntity<Integer> {
     private Message message;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private OverrideKind kind;
 
     @ManyToOne(optional = false)
+    @NotNull
     @JoinColumn(nullable = false)
     private User author;
 
+    @NotNull
     @Column(length = 512, nullable = false)
     private String reason;
 

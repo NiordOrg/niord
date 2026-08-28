@@ -246,7 +246,7 @@ public class ContentIntervalTest {
                 release(at(2026, 8, 19), at(2026, 8, 26)), weekly, FROZEN, at(2026, 8, 12));
 
         assertSame(IntervalBoundSource.RECOVERED, issue.getIntervalFromSource());
-        assertEquals(IntervalBoundSource.RECOVERED.name(), issue.getIntervalToSource());
+        assertEquals(IntervalBoundSource.RECOVERED, issue.getIntervalToSource());
     }
 
     /**

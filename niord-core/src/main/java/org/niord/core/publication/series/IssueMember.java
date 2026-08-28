@@ -1,8 +1,10 @@
 package org.niord.core.publication.series;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.EnumType;
@@ -25,6 +27,12 @@ import org.niord.core.model.BaseEntity;
  * table alone. EntityContractTest.noEntityBringsItsOwnIdGenerator() enforces it.
  */
 @Entity
+// Named because the same statement is issued from two places: the delete of an
+// unpublished issue, and step 6 of publish clearing the previous freeze before
+// writing the new one. Two copies of a bulk DELETE are two chances for one of
+// them to widen.
+@NamedQuery(name = "IssueMember.deleteByIssue",
+        query = "DELETE FROM IssueMember m WHERE m.issue = :issue")
 @Table(
         uniqueConstraints = @UniqueConstraint(
                 name = "UK_issue_member_issue_uid",
@@ -36,27 +44,33 @@ import org.niord.core.model.BaseEntity;
 public class IssueMember extends BaseEntity<Integer> {
 
     @ManyToOne(optional = false)
+    @NotNull
     @JoinColumn(nullable = false)
     private PublicationIssue issue;
 
+    @NotNull
     @Column(length = 36, nullable = false)
     private String messageUid;
 
     @ManyToOne
     private Message message;
 
+    @NotNull
     @Column(nullable = false)
     private Integer sortIndex;
 
     @Column(length = 255)
     private String frozenShortId;
 
+    @NotNull
     @Column(length = 255, nullable = false)
     private String frozenMainType;
 
+    @NotNull
     @Column(length = 255, nullable = false)
     private String frozenType;
 
+    @NotNull
     @Column(length = 255, nullable = false)
     private String frozenStatus;
 
@@ -67,6 +81,7 @@ public class IssueMember extends BaseEntity<Integer> {
     private Date frozenPublishDateTo;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private MemberSource source;
 

@@ -59,7 +59,7 @@ public final class IssueNaming {
      * without them a file-name pattern that wants "uge 07" cannot be expressed at
      * all.
      *
-     * The day tokens are in for a related reason (DM-Q15). Without them a series
+     * The day tokens are in for a related reason. Without them a series
      * with cadence = DAILY has no way to name its issues, and shipping a cadence
      * that cannot produce a name is worse than either alternative. Adding tokens
      * is additive and costs nothing; removing DAILY from the cadence enum would

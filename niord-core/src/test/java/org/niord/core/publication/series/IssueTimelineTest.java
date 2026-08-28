@@ -67,7 +67,7 @@ public class IssueTimelineTest {
         i.setStatus(IssueStatus.PUBLISHED);
         i.setCutoffStampedAt(cutoff);
         i.setIntervalTo(cutoff);
-        i.setIntervalToSource(IntervalBoundSource.STAMPED.name());
+        i.setIntervalToSource(IntervalBoundSource.STAMPED);
         i.setMemberCount(7);
         i.createDesc("en").setName("NtM Week " + publicId);
         return i;

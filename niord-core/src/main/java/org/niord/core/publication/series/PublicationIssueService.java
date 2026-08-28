@@ -27,15 +27,25 @@ public class PublicationIssueService extends BaseService {
                 .getResultList();
     }
 
+    /**
+     * Writes an issue, new or existing.
+     *
+     * Both entry points go through saveEntity rather than choosing persist or
+     * merge here. That choice lives in exactly one place in the codebase, keyed
+     * off whether the entity has an id, and a service that decides it again is a
+     * second answer to a question with one right one -- the failure being a
+     * detached-but-persisted entity handed to create, which persist rejects and
+     * the shared helper simply merges. The two methods stay separate because
+     * each carries its own rule; the persistence call is not that rule.
+     */
     public PublicationIssue create(PublicationIssue issue) {
         removeBlankDescs(issue);
-        em.persist(issue);
-        return issue;
+        return saveEntity(issue);
     }
 
     public PublicationIssue update(PublicationIssue issue) {
         removeBlankDescs(issue);
-        return em.merge(issue);
+        return saveEntity(issue);
     }
 
     private void removeBlankDescs(PublicationIssue issue) {

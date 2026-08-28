@@ -1208,7 +1208,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * should warn the reader.
      *
      * Returns 409 with every reason when it refuses -- an imported series that is
-     * no longer DRAFT, or one whose publicAuthority has been flipped. After B7.1
+     * no longer DRAFT, or one whose publicAuthority has been flipped. After the cutover
      * those rows ARE the public list and undoing would withdraw published
      * editions from under their readers.
      */
@@ -1226,7 +1226,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     /**
-     * B6.3. The diagnostic report, as markdown.
+     * The diagnostic report, as markdown.
      *
      * Markdown rather than JSON because the decision it supports is made by
      * people reading it and arguing about it. The same numbers are available
@@ -1234,7 +1234,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * a meeting, and it says in words what a table of counts does not: that a
      * skipped week is not a green one, and what was never examined.
      *
-     * historical=true also runs B6.1's full replay. Off by default because it
+     * historical=true also runs the full historical replay. Off by default because it
      * re-resolves every imported issue, which is minutes of work and not
      * something to trigger on a page refresh.
      */
@@ -1365,11 +1365,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     /**
-     * B5.7. The cutover pre-flight, and the mailing-list trigger audit.
+     * The cutover pre-flight, and the mailing-list trigger audit.
      *
      * Read-only, and safe to run as often as you like. Exposed because the pass
      * was previously reachable only from a test -- which meant the one person who
-     * has to act on the trigger audit before B7.1 had no way to see it.
+     * has to act on the trigger audit before the flip had no way to see it.
      *
      * Returns 200 with the report either way: an admin running a pre-flight is
      * asking what the state IS, and a non-2xx would bury the answer in an error

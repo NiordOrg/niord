@@ -400,14 +400,7 @@ public class IssueListService {
         if (issue.getCutoffStampedAt() != null) {
             return IntervalBoundSource.STAMPED;
         }
-        if (issue.getIntervalToSource() == null || issue.getIntervalToSource().isBlank()) {
-            return IntervalBoundSource.NOMINAL;
-        }
-        try {
-            return IntervalBoundSource.valueOf(issue.getIntervalToSource());
-        } catch (IllegalArgumentException e) {
-            return IntervalBoundSource.NOMINAL;
-        }
+        return issue.getIntervalToSource() == null ? IntervalBoundSource.NOMINAL : issue.getIntervalToSource();
     }
 
     /** The naming patterns per language the series declares. */

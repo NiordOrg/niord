@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * B6.1's build gate: {@code actualDiffs subset-of manifest}.
+ * The historical replay's build gate: {@code actualDiffs subset-of manifest}.
  *
  * Deliberately NOT "no diffs". The archive is not fully reproducible and three
  * independent sweeps said so -- four annual issues are the answer to no query at

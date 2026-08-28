@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 /**
- * B6.3. The report the UAT and cutover decisions are made from.
+ * The report the UAT and cutover decisions are made from.
  *
  * Markdown, because the decision it supports is made by people reading it and
  * arguing about it, and JSON is a shape for programs. The same numbers are
@@ -43,7 +43,7 @@ public class DiagnosticReportService {
     /**
      * The ongoing half: per series, the green streak and what is outstanding.
      *
-     * @param includeHistorical also run B6.1's full replay and check it against
+     * @param includeHistorical also run the full historical replay and check it against
      *                          the manifest. Off by default because the replay
      *                          re-resolves every imported issue -- minutes of
      *                          work, and nobody wants it on a page refresh.

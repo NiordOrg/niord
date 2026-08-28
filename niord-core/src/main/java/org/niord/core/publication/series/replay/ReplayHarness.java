@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * B6.1. Re-resolves every imported issue and diffs against what it froze.
+ * Re-resolves every imported issue and diffs against what it froze.
  *
  * The frozen {@link IssueMember} rows are the legacy tag, captured verbatim at
  * import. Re-resolving asks: would the new engine, given this issue's own
@@ -33,7 +33,7 @@ import java.util.Set;
  *
  * <b>It does not read the series' timeRelation or aliveAtCutoff.</b> It reads
  * the issue's own {@code snapshotTimeRelation} and {@code snapshotAliveAtCutoff}
- * -- which is the entire reason B5.4a2 recorded them per issue. At least one
+ * -- which is the entire reason the header is recorded per issue. At least one
  * series spans both the blank/sticky era and the phase era, and 122 of its
  * issues need the opposite setting from the series row. Resolving those from
  * the series would produce a diff on every one of them and attribute it to the
@@ -63,7 +63,7 @@ public class ReplayHarness {
                 .getResultList());
     }
 
-    /** Replays one series, for the per-series view B6.3 reports. */
+    /** Replays one series, for the per-series view the diagnostic report renders. */
     @Transactional
     public ReplayReport replaySeries(String seriesId) {
         return replay(em.createQuery(
@@ -165,7 +165,7 @@ public class ReplayHarness {
      * The issue's OWN criteria resolution -- see the class comment.
      *
      * Falls back to the series only where the issue carries no snapshot, which
-     * means a row written before B5.4a2 or by something other than the importer.
+     * means a row written before the per-issue header existed, or by something other than the importer.
      * Falling back rather than skipping keeps those comparable; the snapshot is
      * a correction to the series value, not a precondition for having one.
      */
@@ -184,7 +184,7 @@ public class ReplayHarness {
                     + " carries no snapshot header (timeRelation / aliveAtCutoff); the replay reads the "
                     + "issue's own header and never the series' row");
         }
-        TimeRelation relation = TimeRelation.valueOf(issue.getSnapshotTimeRelation());
+        TimeRelation relation = issue.getSnapshotTimeRelation();
         boolean aliveAtCutoff = issue.getSnapshotAliveAtCutoff();
 
         // The SERIES' document, deliberately -- not EffectiveCriteria. A replay
@@ -200,7 +200,7 @@ public class ReplayHarness {
      * The window's end.
      *
      * The stamped cut-off where there is one, and the recovered cut-off
-     * otherwise -- B5.4b's cascade put a value there for all 1,077 imported
+     * otherwise -- the recovery cascade put a value there for all 1,077 imported
      * issues, 994 from the legacy updated stamp and 83 from the next tag.
      */
     static Date cutoffOf(PublicationIssue issue) {

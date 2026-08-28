@@ -1,5 +1,6 @@
 package org.niord.core.publication.series;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -13,6 +14,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Temporal;
@@ -44,8 +46,20 @@ import org.niord.model.search.PagedSearchParamsVo;
  * table alone. EntityContractTest.noEntityBringsItsOwnIdGenerator() enforces it.
  */
 @Entity
+// Named because two unrelated callers ask for it: the admin list and the cutover
+// pre-flight, which has to walk the estate in the same order the sheet a human
+// checks it against is printed in.
+//
+// NO INDEXES ARE DECLARED, and that is a decision rather than an omission. The
+// reads here filter on status and publicAuthority and would look like index
+// candidates from the annotations alone, but the table holds one row per
+// publication the authority produces and is not on a growth curve. V12 records
+// the sizing and what to index if that ever stops being true.
+@NamedQuery(name = "PublicationSeries.findAllOrdered",
+        query = "SELECT s FROM PublicationSeries s ORDER BY s.seriesId")
 public class PublicationSeries extends VersionedEntity<Integer> implements ILocalizable<PublicationSeriesDesc> {
 
+    @NotNull
     @Column(length = 64, nullable = false, unique = true)
     private String seriesId;
 
@@ -56,14 +70,17 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     private String importSource;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private SeriesStatus status = SeriesStatus.DRAFT;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private ContentMode contentMode = ContentMode.GENERATED_FROM_QUERY;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private SeriesCadence cadence = SeriesCadence.NONE;
 
@@ -76,6 +93,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
      * import decides the kind for everything it writes.
      */
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private SeriesKind kind = SeriesKind.SCHEDULED;
 
@@ -93,6 +111,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     private String nominalCutoffTimeZone;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private NumberingScheme numberingScheme = NumberingScheme.NONE;
 
@@ -109,6 +128,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     private IssueCriteriaVo criteria;
 
     @ManyToOne(optional = false)
+    @NotNull
     @JoinColumn(nullable = false)
     private PublicationCategory category;
 
@@ -116,6 +136,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     private Domain domain;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private MessagePublication messagePublication = MessagePublication.NONE;
 
@@ -148,6 +169,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     private Map<String, Object> reportParams = new LinkedHashMap<>();
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private ReleaseMode releaseMode = ReleaseMode.MANUAL_GATE;
 
@@ -158,14 +180,17 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
      * them from cadence and time relation.
      */
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private CutoffDefault cutoffDefault = CutoffDefault.RELEASE_MOMENT;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private NextIssueCreation nextIssueCreation = NextIssueCreation.AUTO_ON_PUBLISH;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private PublicAuthority publicAuthority = PublicAuthority.LEGACY;
 

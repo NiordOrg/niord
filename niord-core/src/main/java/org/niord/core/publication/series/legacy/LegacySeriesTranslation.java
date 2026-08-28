@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * B5.3. A legacy template becomes a series, and lands as a reviewable DRAFT.
+ * A legacy template becomes a series, and lands as a reviewable DRAFT.
  *
  * WHY DRAFT. A series is a configuration row and this import is a TRANSLATION,
  * not a fact. A DRAFT series is invisible to the new-issue picker and has to
@@ -117,7 +117,7 @@ public final class LegacySeriesTranslation {
 
     /**
      * Authors seriesIds for the template-less publications, which become one
-     * one-off series each (ruling B5-v).
+     * one-off series each.
      *
      * Escalates only as far as it has to, so the common case stays readable:
      *
@@ -267,7 +267,7 @@ public final class LegacySeriesTranslation {
         series.setMessagePublication(template.getMessagePublication());
         series.setLanguageSpecific(template.isLanguageSpecific());
 
-        // Imported series stay on the legacy public path until B7.1 flips them
+        // Imported series stay on the legacy public path until the cutover flips them
         // deliberately. Importing as NEW would move the whole archive onto the
         // new adapter in the same change that created it.
         series.setPublicAuthority(PublicAuthority.LEGACY);

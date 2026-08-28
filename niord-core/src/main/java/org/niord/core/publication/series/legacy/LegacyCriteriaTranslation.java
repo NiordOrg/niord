@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 /**
- * B5.3. The criteria document for an imported series.
+ * The criteria document for an imported series.
  *
  * Without one an imported series is unusable: S-1 refuses to activate a
  * query-backed series with a null criteria, so the series stays DRAFT, the

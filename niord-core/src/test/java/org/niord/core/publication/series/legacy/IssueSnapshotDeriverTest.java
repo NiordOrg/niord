@@ -164,7 +164,7 @@ public class IssueSnapshotDeriverTest {
 
             PublicationIssue issue = issueFor(filter, series);
             if (!Boolean.FALSE.equals(issue.getSnapshotAliveAtCutoff())
-                    || !TimeRelation.PUBLISHED_IN_INTERVAL.name().equals(issue.getSnapshotTimeRelation())) {
+                    || TimeRelation.PUBLISHED_IN_INTERVAL != issue.getSnapshotTimeRelation()) {
                 leaked.add(p.get("publicationId").asText());
             }
         }

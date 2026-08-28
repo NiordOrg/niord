@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * B5.6. The legacy importer: plan it all, then write it all, or write none of it.
+ * The legacy importer: plan it all, then write it all, or write none of it.
  *
  * TWO PHASES, NOT ONE PASS. plan() reads every legacy row, translates it, and
  * collects every problem it finds without touching the database. apply() writes
@@ -245,7 +245,7 @@ public class LegacyImportService extends BaseService {
      * created. A series an admin authored by hand has no importSource and is
      * invisible to this.
      *
-     * REFUSED once the archive is public. Before B7.1 an imported series is DRAFT
+     * REFUSED once the archive is public. Before the cutover flip an imported series is DRAFT
      * with publicAuthority = LEGACY and nobody can see it, so deleting it costs
      * nothing. After the flip, those same rows ARE the public list, and undoing
      * the import would withdraw published editions from under their readers. The
@@ -541,7 +541,7 @@ public class LegacyImportService extends BaseService {
     }
 
     /**
-     * B5.2. Categories are upserted by categoryId, and a missing one is created.
+     * Categories are upserted by categoryId, and a missing one is created.
      *
      * priority and publish travel verbatim: two of the five live categories carry
      * publish = false, and their publications must stay off /public/v1.
@@ -754,7 +754,7 @@ public class LegacyImportService extends BaseService {
     }
 
     /**
-     * Files the template-less publications, per ruling B5-v as revised.
+     * Files the template-less publications: they are eight series, not thirty-nine.
      *
      * 39 rows, and they are NOT 39 series. 11 NCAGS annexes are one series, 8
      * ice-service annexes are another, the 4 Danish List of Lights editions a
@@ -883,7 +883,7 @@ public class LegacyImportService extends BaseService {
     }
 
     /**
-     * B5.3. Give every query-backed series a criteria document.
+     * Give every query-backed series a criteria document.
      *
      * Without one the series cannot be activated (S-1), so the shadow diff skips
      * all of its releases and no green week can ever be recorded. The document is
@@ -1026,7 +1026,7 @@ public class LegacyImportService extends BaseService {
 
                     if (series == null) {
                         // A template-less publication is its own one-off series
-                        // (ruling B5-v). PublicationIssue.series is NOT NULL, so
+                        // (the template-less publications are eight series). PublicationIssue.series is NOT NULL, so
                         // it must belong to something, and one series per orphan
                         // infers nothing about which of them are really the same
                         // publication -- that is a judgement for the DRAFT review.
@@ -1702,7 +1702,7 @@ public class LegacyImportService extends BaseService {
                 code, legacy.getPublicationId(), titleOf(legacy), detail));
     }
 
-    /** The title, for the report only. Never used as a key -- see B5.4a. */
+    /** The title, for the report only. Never used as a key: titles are not stable, and an issue keyed on one is an issue that moves when somebody edits a heading. */
     private static String titleOf(Publication p) {
         if (p.getDescs() == null) {
             return null;
