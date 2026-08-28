@@ -52,8 +52,15 @@ const BASE = args.includes('--base') ? args[args.indexOf('--base') + 1] : 'https
 const PUBLISH = !args.includes('--no-publish');
 const KEYCLOAK = (process.env.NIORD_KEYCLOAK
     || 'https://login.t-dma.dk/auth/realms/niord/protocol/openid-connect/token');
-const USER = process.env.NIORD_USER || 'test-sysadmin';
-const PASS = process.env.NIORD_PASS || 'test1234';
+// No default login. A run that can publish -- which cannot be undone -- must
+// be one somebody deliberately authenticated, and a password in a file is a
+// password in every clone.
+const USER = process.env.NIORD_USER;
+const PASS = process.env.NIORD_PASS;
+if (!USER || !PASS) {
+  console.error('set NIORD_USER and NIORD_PASS in the environment');
+  process.exit(2);
+}
 
 // A recognisable id, unique per run.
 //

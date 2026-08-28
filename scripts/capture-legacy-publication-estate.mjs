@@ -49,10 +49,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-const API = 'https://niord.t-dma.dk/rest';
-const KEYCLOAK = 'https://login.t-dma.dk/auth/realms/niord/protocol/openid-connect/token';
-const USER = process.env.NIORD_USER || 'test-sysadmin';
-const PASS = process.env.NIORD_PASS || 'test1234';
+// No defaults for the target or the login. A script that can authenticate and
+// write against a live system with no arguments at all is one accident away
+// from doing so, and a password in a file is a password in every clone.
+const API = process.env.NIORD_API;
+const KEYCLOAK = process.env.NIORD_KEYCLOAK;
+const USER = process.env.NIORD_USER;
+const PASS = process.env.NIORD_PASS;
+if (!API || !KEYCLOAK || !USER || !PASS) {
+  console.error('set NIORD_API, NIORD_KEYCLOAK, NIORD_USER and NIORD_PASS in the environment');
+  process.exit(2);
+}
 
 const args = process.argv.slice(2);
 const outDir = args.includes('--out')
