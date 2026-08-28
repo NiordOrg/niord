@@ -61,6 +61,62 @@ public class SeriesVoRoundTripTest {
             // a way round all three.
             "publicAuthority");
 
+    /**
+     * Fields the VALUE OBJECT declares that no entity field backs.
+     *
+     * The probe above walks the ENTITY and catches a setting an admin cannot
+     * reach. This set is the mirror image: a field the wire carries and the
+     * database does not, which is fine when it is derived and a bug when it is a
+     * setting somebody meant to persist. Each is named with its reason, so the
+     * next one has to be argued for rather than added.
+     */
+    private static final Map<String, String> DERIVED_ON_THE_VO = Map.of(
+            // The id form of the entity reference the REST layer resolves. The
+            // round-trip probe already excludes the entity side for the same reason.
+            "domainId", "the id of the domain reference, resolved by the REST layer",
+            // An observation about the calendar. Stored, it would go stale the
+            // moment the calendar moved on -- which is why RETIRED is a column and
+            // dormancy is not.
+            "dormant", "derived from the calendar, never stored",
+            // A COUNT OF OTHER ROWS, read-only. S-18 locks the citation channel off
+            // it, and a value arriving in a save is ignored: updateFromVo does not
+            // read it, and nothing could be written to if it did.
+            "publishedIssueCount", "read-only, derived: PUBLISHED plus RETIRED issues of the series");
+
+    /**
+     * Every field on the wire is either a stored setting or a declared derivation.
+     *
+     * The failure this catches is the opposite one to the probe above: a field
+     * added to the VO, wired into a form, saved by an admin, and silently
+     * discarded because nothing on the entity ever receives it. The admin sees
+     * their change accepted and gone on the next load.
+     */
+    @Test
+    public void everyWireFieldIsBackedByTheEntityOrDeclaredDerived() {
+        Set<String> entityFields = new java.util.LinkedHashSet<>();
+        for (Field f : PublicationSeries.class.getDeclaredFields()) {
+            entityFields.add(f.getName());
+        }
+
+        List<String> unexplained = new ArrayList<>();
+        for (Field f : SystemPublicationSeriesVo.class.getDeclaredFields()) {
+            if (Modifier.isStatic(f.getModifiers()) || f.isSynthetic()
+                    || entityFields.contains(f.getName())
+                    || DERIVED_ON_THE_VO.containsKey(f.getName())) {
+                continue;
+            }
+            unexplained.add("  " + f.getName());
+        }
+
+        if (!unexplained.isEmpty()) {
+            fail(unexplained.size() + " field(s) are on the wire with no entity field behind them:"
+                    + System.lineSeparator() + String.join(System.lineSeparator(), unexplained)
+                    + System.lineSeparator()
+                    + "Either updateFromVo/toVo is missing a field an admin can edit and lose, or the "
+                    + "field is derived -- in which case add it to DERIVED_ON_THE_VO with the reason.");
+        }
+    }
+
     @Test
     public void everySettableFieldSurvivesTheVoRoundTrip() throws Exception {
         PublicationSeries source = new PublicationSeries();

@@ -90,6 +90,58 @@ public class PublicationSeriesService extends BaseService {
         return n != null && n > 0;
     }
 
+    /**
+     * How many issues each series has released, for a whole list, in ONE query.
+     *
+     * The admin list shows every series at once and each row needs the number, so
+     * asking per row is a query per series on a screen that already renders in a
+     * single pass. Keyed on seriesId rather than on the surrogate id because that
+     * is what the value object carries out to the client.
+     *
+     * The predicate is the same one {@link #hasPublishedIssue} uses -- anything
+     * that is not OPEN, which today is PUBLISHED and RETIRED. Written as one
+     * expression in two places rather than two expressions, because a count that
+     * disagreed with the boolean would show an editor a locked control beside a
+     * count of zero.
+     *
+     * A series with no released issue is absent from the result of a GROUP BY, so
+     * callers read it through {@link #publishedIssueCountOf} and get 0 rather than
+     * null: the editor distinguishes "none yet" from "not asked", and a missing
+     * key must not be able to read as the latter.
+     */
+    public Map<String, Integer> publishedIssueCounts() {
+        Map<String, Integer> out = new LinkedHashMap<>();
+        List<Object[]> rows = em.createQuery(
+                        "SELECT i.series.seriesId, COUNT(i) FROM PublicationIssue i "
+                                + "WHERE i.status <> org.niord.core.publication.series.IssueStatus.OPEN "
+                                + "GROUP BY i.series.seriesId", Object[].class)
+                .getResultList();
+        for (Object[] row : rows) {
+            out.put((String) row[0], ((Number) row[1]).intValue());
+        }
+        return out;
+    }
+
+    /** One series' released-issue count, 0 where the grouped query returned no row. */
+    public static int publishedIssueCountOf(Map<String, Integer> counts, String seriesId) {
+        Integer n = counts == null ? null : counts.get(seriesId);
+        return n == null ? 0 : n;
+    }
+
+    /** The same count for a single series, for the one-series reads. */
+    public int publishedIssueCount(PublicationSeries series) {
+        if (series == null || series.getId() == null) {
+            return 0;
+        }
+        Long n = em.createQuery(
+                        "SELECT COUNT(i) FROM PublicationIssue i WHERE i.series = :s "
+                                + "AND i.status <> org.niord.core.publication.series.IssueStatus.OPEN",
+                        Long.class)
+                .setParameter("s", series)
+                .getSingleResult();
+        return n == null ? 0 : n.intValue();
+    }
+
     public PublicationSeries update(PublicationSeries series) {
         removeBlankDescs(series);
         checkMessagePublicationImmutable(series);

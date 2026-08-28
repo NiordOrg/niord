@@ -100,6 +100,19 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     private boolean dormant;
 
+    /**
+     * How many issues of this series have been released -- PUBLISHED plus RETIRED.
+     *
+     * READ-ONLY and DERIVED: it is a count of other rows, not a column, and a
+     * value arriving in a save is ignored. It is on the wire because S-18 turns on
+     * it: once an issue is out, the citation channel is fixed for the life of the
+     * series, and the editor has to disable the control rather than let an admin
+     * type a change the save will refuse. Zero and absent must not look alike to
+     * that screen, so it is populated on every series read rather than only where
+     * it is non-zero.
+     */
+    private Integer publishedIssueCount;
+
     public String getStatus() {
         return status;
     }
@@ -347,6 +360,14 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setDormant(boolean dormant) {
         this.dormant = dormant;
+    }
+
+    public Integer getPublishedIssueCount() {
+        return publishedIssueCount;
+    }
+
+    public void setPublishedIssueCount(Integer publishedIssueCount) {
+        this.publishedIssueCount = publishedIssueCount;
     }
 
 }

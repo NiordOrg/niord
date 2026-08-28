@@ -26,10 +26,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestSuiteGuardTest {
 
     /**
-     * The JUnit 4 suite as it stood when the platform provider was introduced.
-     * Raise this as real tests are added; never lower it to make a build pass.
+     * A floor under the discovered suite, held a little below the real count.
+     *
+     * 617 tests are discovered as this is written. The margin is deliberately
+     * small: a floor far below the truth would let the suite lose a hundred tests
+     * and still pass, which is a slower version of the failure this exists to
+     * catch. It is loose enough only to absorb tests being consolidated.
+     *
+     * Raise it as real tests are added; NEVER lower it to make a build pass. A
+     * drop here is either the vintage engine gone -- discovery collapses to
+     * almost nothing and the build still reports success -- or a whole class that
+     * stopped being found, and both look identical to a green build.
      */
-    private static final int FLOOR = 30;
+    private static final int FLOOR = 590;
 
     @Test
     public void testSuiteIsStillDiscovered() {

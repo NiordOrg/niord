@@ -12,8 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -54,6 +56,73 @@ public class CutoverPreflightTest {
             assertTrue(result.counts().containsKey(key),
                     "the pre-flight must report " + key + "; a check that runs and says nothing is "
                             + "indistinguishable from one that did not run");
+        }
+    }
+
+    /**
+     * The per-series sheet: the diff's verdict, the missing periods, the kind.
+     *
+     * Steps 4 and 5 of the rehearsal read these, and before they were here they
+     * were answerable only by calling two other endpoints and counting rows in a
+     * third. A checklist ticked from three moments can be ticked against three
+     * different states of the estate, which is precisely what a cutover window
+     * cannot afford.
+     */
+    @Test
+    @Transactional
+    public void thePreflightDescribesEverySeries() {
+        CutoverPreflightService.Preflight result = preflight.run();
+
+        assertNotNull(result.series());
+        for (String key : List.of("series", "uncoveredPeriods")) {
+            assertTrue(result.counts().containsKey(key),
+                    "the pre-flight must report " + key);
+        }
+        // Every kind is named whether or not the estate has one: an absent kind
+        // and a kind with no series read alike on a sheet, and step 5 is ticked by
+        // comparing the three numbers against expected ones.
+        for (org.niord.core.publication.series.SeriesKind kind
+                : org.niord.core.publication.series.SeriesKind.values()) {
+            assertTrue(result.counts().containsKey("seriesOfKind" + kind.name()),
+                    "step 5 compares SCHEDULED / UNSCHEDULED / ONE_OFF against expected counts, so "
+                            + "every kind is reported even at zero: " + result.counts().keySet());
+        }
+
+        result.series().forEach((seriesId, row) -> {
+            assertEquals(seriesId, row.seriesId());
+            assertNotNull(row.status(), "a row with no status cannot be judged");
+            assertNotNull(row.kind());
+            assertTrue(row.consecutiveGreen() >= 0);
+            // Absent, not zero, where gap detection did not run. A closed gate is
+            // the absence of a finding; "0 gaps" claims something nobody checked.
+            if (!row.gapDetectionEnabled()) {
+                assertNull(row.gapCount(),
+                        "'" + seriesId + "' has gap detection off and still reported a count");
+                assertNotNull(row.gapReasonCode(),
+                        "'" + seriesId + "' reports no gaps and does not say why");
+            }
+        });
+    }
+
+    /**
+     * Neither a gap nor an unproven series makes the pre-flight dirty.
+     *
+     * A gap is a fact about an archive that predates this system -- the estate has
+     * had them since 2017 -- and readiness is the FLIP's own precondition,
+     * refused at the flip with its own code. Folding either into `clear` would
+     * stop the pre-flight ever passing on an estate in exactly the state
+     * everybody expects, and a check that can never come back clean is a check
+     * people learn to ignore.
+     */
+    @Test
+    @Transactional
+    public void gapsAndReadinessAreReportedButDoNotMakeThePreflightDirty() {
+        CutoverPreflightService.Preflight result = preflight.run();
+
+        for (CutoverPreflightService.Violation v : result.violations()) {
+            assertFalse(v.code().contains("GAP") || v.code().contains("READINESS"),
+                    "the pre-flight raised " + v.code() + " as a violation; gaps and readiness are "
+                            + "reported per series and judged elsewhere");
         }
     }
 

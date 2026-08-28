@@ -22,7 +22,9 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.user.Roles;
 import org.niord.core.publication.series.IssueAuditService;
+import org.niord.core.publication.series.IssueDraftService;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.vo.IssueDraftVo;
 import org.niord.core.user.UserService;
 import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.series.replay.DiagnosticReportService;
@@ -115,6 +117,9 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     IssueLifecycleService lifecycle;
 
     @Inject
+    IssueDraftService drafts;
+
+    @Inject
     IssueAuditService audit;
 
     @Inject
@@ -135,7 +140,15 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         return out;
     }
 
-    /** S2. The editor list, with everything the public shape omits. */
+    /**
+     * S2. The editor list, with everything the public shape omits.
+     *
+     * The released-issue count travels with every row, from ONE grouped query
+     * rather than one per series. It is what S-18 turns on: the citation channel
+     * is fixed for the life of a series once an issue is out, so the editor has to
+     * DISABLE that control rather than let an admin type a change the save will
+     * refuse -- and a list screen cannot ask per row without a query per row.
+     */
     @GET
     @Path("/search-details")
     @Produces(MediaType.APPLICATION_JSON)
@@ -145,9 +158,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                 ? seriesService.findAll()
                 : seriesService.findByStatus(seriesStatusOf(status));
 
+        Map<String, Integer> released = seriesService.publishedIssueCounts();
         List<SystemPublicationSeriesVo> out = new ArrayList<>();
         for (PublicationSeries s : found) {
-            out.add(s.toVo(SystemPublicationSeriesVo.class));
+            SystemPublicationSeriesVo vo = s.toVo(SystemPublicationSeriesVo.class);
+            vo.setPublishedIssueCount(
+                    PublicationSeriesService.publishedIssueCountOf(released, s.getSeriesId()));
+            out.add(vo);
         }
         return out;
     }
@@ -167,7 +184,14 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
     public SystemPublicationSeriesVo getEditable(@PathParam("seriesId") String seriesId) {
-        return required(seriesId).toVo(SystemPublicationSeriesVo.class);
+        PublicationSeries series = required(seriesId);
+        SystemPublicationSeriesVo vo = series.toVo(SystemPublicationSeriesVo.class);
+        // The settings form locks the citation channel off this (S-18), so the
+        // single read carries it as well as the list does. A form that had to
+        // consult the list to know whether to disable a control would show the
+        // control enabled on a deep link.
+        vo.setPublishedIssueCount(seriesService.publishedIssueCount(series));
+        return vo;
     }
 
     /** S5. Several at once, for a picker. */
@@ -338,6 +362,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // series claiming NEW would assert that the public site already serves it.
         vo.setPublicAuthority(PublicAuthority.LEGACY.name());
 
+        // Zero, and stated. The form disables the citation channel once a series
+        // has released an issue (S-18), and a missing count on a series that has
+        // never had one would disable it on the create screen.
+        vo.setPublishedIssueCount(0);
+
         // One desc row per configured language, so the form has a row to type into
         // for each -- C5: a payload narrowed to one language is uneditable.
         //
@@ -353,6 +382,71 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
             vo.getLanguages().add(lang);
         }
         return vo;
+    }
+
+    /**
+     * S7. An existing series as the starting point for a new one, unsaved.
+     *
+     * The reason this is a server endpoint and not a client-side object copy is
+     * WHAT IT CLEARS. A copy carries the settings that took an admin an afternoon
+     * -- the criteria document, the per-language patterns, the report and its
+     * parameters -- and must not carry the four fields that are claims about the
+     * ORIGINAL row. Each of them causes a distinct, quiet failure if it travels:
+     *
+     *  - `seriesId` is unique and is the citation handle. Carried, the save is
+     *    refused as taken; worse, an admin who edits it to something plausible has
+     *    renamed nothing and created a second series under a name that reads like
+     *    the first.
+     *  - `legacyTemplateId` is unique too, and it is what says "this row IS that
+     *    legacy publication". A second row claiming it makes the import's own
+     *    already-imported check ambiguous.
+     *  - `importSource` says where the row came from. A hand-made series carrying
+     *    it would be undone by an import undo.
+     *  - `publicAuthority` decides who serves the public. A copy of a flipped
+     *    series would arrive already answering for a publication that has never
+     *    published anything.
+     *
+     * `firstIssueStartsAt` is cleared for the same reason, and it is the one that
+     * is easy to argue about: it is not a setting but a fact about when the
+     * ORIGINAL series began, and a 2017 date on a series created today would put
+     * every gap since then on its first screen. S-4 makes the admin state it.
+     *
+     * DRAFT, always -- ACTIVE is what puts a series in the picker, and activation
+     * validates. Nothing is persisted; the copy exists only in the response.
+     */
+    @GET
+    @Path("/copy-series-template/{seriesId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public SystemPublicationSeriesVo copySeriesTemplate(@PathParam("seriesId") String seriesId) {
+        return copyOf(required(seriesId).toVo(SystemPublicationSeriesVo.class));
+    }
+
+    /**
+     * The copy, without the container.
+     *
+     * Package-private and static for the same reason newSeriesTemplate is: what
+     * the template CONTAINS is the whole behaviour, and asserting it must not
+     * require a server.
+     */
+    static SystemPublicationSeriesVo copyOf(SystemPublicationSeriesVo source) {
+        source.setSeriesId(null);
+        source.setStatus(SeriesStatus.DRAFT.name());
+        source.setLegacyTemplateId(null);
+        source.setImportSource(null);
+        source.setPublicAuthority(PublicAuthority.LEGACY.name());
+        source.setFirstIssueStartsAt(null);
+
+        // Timestamps of the row this was copied FROM. Left in place they would
+        // date a series that does not exist yet.
+        source.setCreated(null);
+        source.setUpdated(null);
+
+        // Zero rather than absent: the copy has released nothing, and the settings
+        // form reads this to decide whether the citation channel is still editable
+        // (S-18). Absent would leave that control disabled on a brand-new series.
+        source.setPublishedIssueCount(0);
+        return source;
     }
 
     /**
@@ -637,6 +731,44 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         boolean force = body != null && Boolean.TRUE.equals(body.get("force"));
         String reason = body == null ? null : String.valueOf(body.getOrDefault("reason", ""));
         return seriesService.setPublicAuthority(series, target, force, reason, userService.currentUser());
+    }
+
+    /**
+     * S12. The issue that does not exist yet.
+     *
+     * ONE endpoint for three screens -- "＋ Ny udgave", the retro-create prefill,
+     * and the live preview on a gap row -- because all three ask the same
+     * question. Built separately, the interval one screen prefills and the
+     * interval another one displays are two derivations of one bound, and the day
+     * they disagree an admin creates a week that overlaps the one before it and
+     * finds out at publish.
+     *
+     * Three ways to say which interval, and they are not alternatives so much as
+     * three amounts of knowledge the caller has:
+     *
+     *  - `afterPublicId` -- chain off that issue's close. This is "the next one
+     *    after this", and it is the only form that needs no dates at all.
+     *  - `intervalFrom` / `intervalTo` -- the caller already has the period: the
+     *    gap row hands its own bounds back to ask what would land in them.
+     *  - neither -- the newest issue plus one cadence period, and at the head of
+     *    the chain the series' own declared first start.
+     *
+     * WRITES NOTHING, which is what makes it safe to call while somebody drags a
+     * date around. A GET for the same reason: it is a question, it is idempotent,
+     * and it is bookmarkable from the row that asked it.
+     */
+    @GET
+    @Path("/series/{seriesId}/issue-draft")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
+    public IssueDraftVo issueDraft(@PathParam("seriesId") String seriesId,
+                                   @QueryParam("afterPublicId") String afterPublicId,
+                                   @QueryParam("intervalFrom") Long intervalFrom,
+                                   @QueryParam("intervalTo") Long intervalTo) {
+        return drafts.draft(required(seriesId), afterPublicId,
+                intervalFrom == null ? null : new Date(intervalFrom),
+                intervalTo == null ? null : new Date(intervalTo),
+                new Date());
     }
 
     /** S11. Delete, guarded on having no issues. */
@@ -977,6 +1109,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * Returns 200 with the report either way: an admin running a pre-flight is
      * asking what the state IS, and a non-2xx would bury the answer in an error
      * handler. Read "clear": false means do not flip publicAuthority yet.
+     *
+     * `series` is the per-series sheet -- the shadow diff's verdict, how many
+     * periods the archive leaves uncovered, and what kind of publication it is.
+     * NONE of it moves `clear`: a gap is a fact about an archive that predates
+     * this system, and readiness is the flip's own precondition, refused at the
+     * flip. Folding either in would stop the pre-flight ever passing on an estate
+     * that is in exactly the state everybody expects.
      */
     @GET
     @Path("/cutover-preflight")
@@ -990,6 +1129,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         out.put("counts", result.counts());
         out.put("violations", result.violations());
         out.put("triggerAudit", result.triggerAudit());
+        out.put("series", result.series());
         return out;
     }
 
@@ -1021,9 +1161,18 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @RolesAllowed("admin")
     @NoCache
     public List<SystemPublicationSeriesVo> exportSeries() {
+        // The same grouped count the admin list carries, so a round trip through
+        // the file does not lose a field one side knows about. It is read-only on
+        // the way back in -- the importer writes series, not issues -- and is here
+        // because an export that omitted it would not be the same shape as
+        // /search-details, which is the one property this format has.
+        Map<String, Integer> released = seriesService.publishedIssueCounts();
         List<SystemPublicationSeriesVo> out = new ArrayList<>();
         for (PublicationSeries s : seriesService.findAll()) {
-            out.add(s.toVo(SystemPublicationSeriesVo.class));
+            SystemPublicationSeriesVo vo = s.toVo(SystemPublicationSeriesVo.class);
+            vo.setPublishedIssueCount(
+                    PublicationSeriesService.publishedIssueCountOf(released, s.getSeriesId()));
+            out.add(vo);
         }
         return out;
     }
