@@ -9,7 +9,6 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import jakarta.transaction.Transactional;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
 import org.niord.core.category.Category;
@@ -77,7 +76,6 @@ import java.util.function.Function;
  * a mass historical replay deterministic; adding free text later reopens it.
  */
 @ApplicationScoped
-@Transactional
 public class MemberResolutionService extends BaseService {
 
     @Inject

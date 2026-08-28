@@ -178,7 +178,7 @@ public class AmendAndOverlapTest {
         em.flush();
 
         List<IssueAuditEntry> amended = auditService.forIssue(issue).stream()
-                .filter(a -> "AMENDED".equals(a.getAction())).toList();
+                .filter(a -> AuditAction.AMENDED == a.getAction()).toList();
         assertEquals(1, amended.size(), "one amend, one entry");
         assertEquals("the wrong week was printed on the cover", amended.get(0).getReason());
     }
@@ -329,10 +329,10 @@ public class AmendAndOverlapTest {
         em.flush();
 
         assertTrue(auditService.forIssue(first).stream()
-                        .anyMatch(a -> "SUPERSEDED_BY".equals(a.getAction())),
+                        .anyMatch(a -> AuditAction.SUPERSEDED_BY == a.getAction()),
                 "the replaced edition records what replaced it");
         assertTrue(auditService.forIssue(second).stream()
-                        .anyMatch(a -> "CREATED_NEW_EDITION".equals(a.getAction())),
+                        .anyMatch(a -> AuditAction.CREATED_NEW_EDITION == a.getAction()),
                 "and the new one records what it is");
     }
 
@@ -372,7 +372,7 @@ public class AmendAndOverlapTest {
                                 new IssuePublishService.AmendRequest(false, Set.of(), user(),
                                         "the archive had the wrong cover")));
         assertEquals("ISSUE_IMPORTED", e.code());
-        assertTrue(auditService.forIssue(issue).stream().noneMatch(a -> "AMENDED".equals(a.getAction())),
+        assertTrue(auditService.forIssue(issue).stream().noneMatch(a -> AuditAction.AMENDED == a.getAction()),
                 "a refusal records nothing");
     }
 

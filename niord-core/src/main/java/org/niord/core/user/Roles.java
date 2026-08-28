@@ -38,6 +38,14 @@ public interface Roles {
      * Not part of the composite ladder above: it is a Keycloak client role granted
      * per domain, and it is named here so the endpoints that gate on it spell it
      * once rather than repeating the literal at every annotation.
+     * <p>
+     * The endpoints that require it accept ADMIN alongside it. That pairing is a
+     * transitional fallback added on 2026-08-22, because the realm does not carry
+     * this role yet and that change is outside this repository: without the
+     * fallback the curation endpoints would be callable by nobody. It is to be
+     * removed one release after the realm gains the role, by dropping ADMIN from
+     * the annotations that name both. Which endpoints those are, and who each one
+     * admits, is asserted in full by the tier-matrix test.
      */
     String PUBLICATION_CURATE = "publication-curate";
 }

@@ -30,6 +30,7 @@ import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.JpaCriteriaAttributeConverter;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
+import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.search.PagedSearchParamsVo;
 
@@ -613,15 +614,10 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
         if (vo.getDescs() != null) {
             for (PublicationSeriesDescVo dv : vo.getDescs()) {
-                PublicationSeriesDesc d = descs.stream()
-                        .filter(x -> x.getLang().equals(dv.getLang()))
-                        .findFirst()
-                        .orElseGet(() -> createDesc(dv.getLang()));
-                d.setName(dv.getName());
-                d.setNameSuggestionPattern(dv.getNameSuggestionPattern());
-                d.setFileNamePattern(dv.getFileNamePattern());
-                d.setMessageReferenceFormat(dv.getMessageReferenceFormat());
-                d.setLinkPattern(dv.getLinkPattern());
+                // checkCreateDesc rather than a hand-rolled search: it matches the
+                // language case-insensitively and tolerates a null one, where an
+                // equals() over the list throws on a desc row that has no lang.
+                checkCreateDesc(dv.getLang()).updateFromVo(dv);
             }
         }
     }
@@ -664,12 +660,23 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     }
 
     public <V extends PublicationSeriesVo> V toVo(Class<V> clz) {
-        V vo;
-        try {
-            vo = clz.getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalArgumentException("cannot instantiate " + clz, e);
-        }
+        return toVo(clz, null);
+    }
+
+    /**
+     * The same conversion, narrowed to one language.
+     *
+     * The overload exists because narrowing is a rule about the data and belongs
+     * with it: a caller that asked for a language this series does not carry is
+     * better served the name that exists than an empty desc list it has to invent
+     * a label for. A one-language series is entirely legitimate, and every other
+     * localized read in the product falls back the same way. Done in the resource
+     * instead, it would be a rule this module has no way to assert.
+     *
+     * A null filter, or one carrying no language, keeps every language.
+     */
+    public <V extends PublicationSeriesVo> V toVo(Class<V> clz, DataFilter filter) {
+        V vo = newInstance(clz);
 
         vo.setSeriesId(seriesId);
         vo.setCreated(getCreated());
@@ -677,27 +684,11 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         vo.setCategoryId(category == null ? null : category.getCategoryId());
         vo.setSortOrder(sortOrder);
 
-        // THE PATTERNS ARE AUTHORING, and they travel only on the system shape.
-        //
-        // A pattern is the recipe an admin writes -- the file name every issue of
-        // this series will be published under, the link every citation will point
-        // at, the wording of the citation itself. An editor reads the EXPANDED
-        // values off the issue, which is what a citation dialog actually consumes;
-        // the recipe is a setting on the admin screens, and handing it to every
-        // logged-in caller publishes the naming and the repository layout of every
-        // future issue to an audience that has no use for either.
+        // The patterns travel only on the system shape; PublicationSeriesDesc.toVo
+        // says why.
         boolean system = vo instanceof SystemPublicationSeriesVo;
-        for (PublicationSeriesDesc d : getDescs()) {
-            PublicationSeriesDescVo dv = new PublicationSeriesDescVo();
-            dv.setLang(d.getLang());
-            dv.setName(d.getName());
-            if (system) {
-                dv.setNameSuggestionPattern(d.getNameSuggestionPattern());
-                dv.setFileNamePattern(d.getFileNamePattern());
-                dv.setMessageReferenceFormat(d.getMessageReferenceFormat());
-                dv.setLinkPattern(d.getLinkPattern());
-            }
-            vo.getDescs().add(dv);
+        for (PublicationSeriesDesc d : descsFor(filter)) {
+            vo.getDescs().add(d.toVo(system));
         }
 
         if (system) {
@@ -762,6 +753,25 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
      */
     public ZoneId cutoffZone() {
         return domain == null ? ZoneId.of("UTC") : domain.timeZone().toZoneId();
+    }
+
+    /**
+     * The desc rows a conversion should carry, given the requested language.
+     *
+     * Everything, unless a language was asked for and this series has more than
+     * one -- narrowing a single-language series is a no-op that only risks
+     * emptying it. When the requested language is one this series does not have,
+     * the FIRST row stands in, rather than nothing.
+     */
+    private List<PublicationSeriesDesc> descsFor(DataFilter filter) {
+        String lang = filter == null ? null : filter.getLang();
+        if (lang == null || lang.isBlank() || getDescs().size() < 2) {
+            return getDescs();
+        }
+        List<PublicationSeriesDesc> wanted = getDescs().stream()
+                .filter(d -> lang.equalsIgnoreCase(d.getLang()))
+                .toList();
+        return wanted.isEmpty() ? List.of(getDescs().get(0)) : wanted;
     }
 
 }

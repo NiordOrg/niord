@@ -346,18 +346,6 @@ public class IssueLifecycleTest {
         assertEquals("ISSUE_NOT_OPEN", e.code());
     }
 
-    /** OQ-1: the transitional fallback accepts ADMIN, and says so. */
-    @Test
-    public void theCuratePermissionAcceptsTheDatedFallback() {
-        assertTrue(PublicationPermissions.mayCurate(r -> r.equals("publication-curate")));
-        assertTrue(PublicationPermissions.mayCurate(r -> r.equals("admin")),
-                "the dated fallback should accept admin until the realm carries the role");
-        assertFalse(PublicationPermissions.mayCurate(r -> r.equals("editor")));
-        assertFalse(PublicationPermissions.mayCurate(null));
-        assertNotNull(PublicationPermissions.FALLBACK_ADDED,
-                "the fallback must carry a date so it does not quietly become permanent");
-    }
-
     // ================================================================= checklist
 
     /** All fifteen rail codes are emitted, every time. */

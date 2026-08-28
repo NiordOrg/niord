@@ -112,8 +112,8 @@ public class CurationDecisionTest {
         return m.getUid();
     }
 
-    private List<IssueAuditEntry> entries(PublicationIssue issue, String action) {
-        return auditService.forIssue(issue).stream().filter(a -> action.equals(a.getAction())).toList();
+    private List<IssueAuditEntry> entries(PublicationIssue issue, AuditAction action) {
+        return auditService.forIssue(issue).stream().filter(a -> action == a.getAction()).toList();
     }
 
     // ================================================================== curate
@@ -131,7 +131,7 @@ public class CurationDecisionTest {
 
         assertEquals(3, written.size());
         assertEquals(3, curation.forIssue(issue).size());
-        List<IssueAuditEntry> excluded = entries(issue, "OVERRIDE_EXCLUDED");
+        List<IssueAuditEntry> excluded = entries(issue, AuditAction.OVERRIDE_EXCLUDED);
         assertEquals(3, excluded.size());
         assertTrue(excluded.stream().allMatch(a -> "cancelled before the week closed".equals(a.getReason())));
     }
@@ -199,7 +199,7 @@ public class CurationDecisionTest {
         em.flush();
 
         assertTrue(curation.forIssue(issue).isEmpty());
-        List<IssueAuditEntry> removed = entries(issue, "OVERRIDE_REMOVED");
+        List<IssueAuditEntry> removed = entries(issue, AuditAction.OVERRIDE_REMOVED);
         assertEquals(1, removed.size());
         assertEquals("it was reinstated after all", removed.get(0).getReason(), "trimmed, and kept");
     }

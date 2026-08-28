@@ -113,8 +113,8 @@ public class SeriesTransitionTest {
         return u;
     }
 
-    private List<IssueAuditEntry> entries(PublicationSeries s, String action) {
-        return auditService.forSeries(s).stream().filter(a -> action.equals(a.getAction())).toList();
+    private List<IssueAuditEntry> entries(PublicationSeries s, AuditAction action) {
+        return auditService.forSeries(s).stream().filter(a -> action == a.getAction()).toList();
     }
 
     // ============================================================== transition
@@ -129,7 +129,7 @@ public class SeriesTransitionTest {
         em.flush();
 
         assertEquals(SeriesStatus.ACTIVE, saved.getStatus());
-        List<IssueAuditEntry> activated = entries(saved, "SERIES_ACTIVATED");
+        List<IssueAuditEntry> activated = entries(saved, AuditAction.SERIES_ACTIVATED);
         assertEquals(1, activated.size(), "one activation, one entry");
         assertNull(activated.get(0).getReason(), "no reason was given and none is invented");
     }
@@ -157,7 +157,7 @@ public class SeriesTransitionTest {
         em.flush();
 
         assertEquals(SeriesStatus.RETIRED, saved.getStatus());
-        List<IssueAuditEntry> retired = entries(saved, "SERIES_RETIRED");
+        List<IssueAuditEntry> retired = entries(saved, AuditAction.SERIES_RETIRED);
         assertEquals(1, retired.size());
         assertEquals("replaced by the combined list", retired.get(0).getReason(), "trimmed, as typed");
     }
@@ -171,7 +171,7 @@ public class SeriesTransitionTest {
         PublicationSeries saved = seriesService.transition(s, SeriesStatus.ACTIVE, null, user());
 
         assertEquals(SeriesStatus.ACTIVE, saved.getStatus());
-        assertEquals(1, entries(saved, "SERIES_ACTIVATED").size());
+        assertEquals(1, entries(saved, AuditAction.SERIES_ACTIVATED).size());
     }
 
     /** DRAFT means "not finished yet"; a series that has been active is past that. */
@@ -212,7 +212,7 @@ public class SeriesTransitionTest {
 
         seriesService.transition(s, SeriesStatus.ACTIVE, null, user());
 
-        assertTrue(entries(s, "SERIES_ACTIVATED").isEmpty(), "nothing happened, so nothing is recorded");
+        assertTrue(entries(s, AuditAction.SERIES_ACTIVATED).isEmpty(), "nothing happened, so nothing is recorded");
     }
 
     // ==================================================================== flip
@@ -257,7 +257,7 @@ public class SeriesTransitionTest {
         em.flush();
 
         assertEquals(PublicAuthority.NEW, saved.getPublicAuthority());
-        List<IssueAuditEntry> flipped = entries(saved, "SERIES_AUTHORITY_CHANGED");
+        List<IssueAuditEntry> flipped = entries(saved, AuditAction.SERIES_AUTHORITY_CHANGED);
         assertEquals(1, flipped.size());
         assertEquals("go-live window, diff exempt by ruling", flipped.get(0).getReason());
         String detail = String.valueOf(flipped.get(0).getDetail());
@@ -290,7 +290,7 @@ public class SeriesTransitionTest {
         em.flush();
 
         assertEquals(PublicAuthority.LEGACY, saved.getPublicAuthority());
-        List<IssueAuditEntry> flipped = entries(saved, "SERIES_AUTHORITY_CHANGED");
+        List<IssueAuditEntry> flipped = entries(saved, AuditAction.SERIES_AUTHORITY_CHANGED);
         assertEquals(1, flipped.size());
         assertNotNull(flipped.get(0).getDetail());
         assertTrue(String.valueOf(flipped.get(0).getDetail()).contains("false"),

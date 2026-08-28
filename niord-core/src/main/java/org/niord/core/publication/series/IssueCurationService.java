@@ -58,7 +58,7 @@ public class IssueCurationService extends BaseService {
                             + "INCLUDE on top of it records a decision nobody made, and would keep "
                             + "the message if the criteria later narrowed.");
         }
-        return addOverride(issue, messageUid, OverrideKind.INCLUDE, author, reason, "OVERRIDE_INCLUDED");
+        return addOverride(issue, messageUid, OverrideKind.INCLUDE, author, reason, AuditAction.OVERRIDE_INCLUDED);
     }
 
     /**
@@ -104,7 +104,7 @@ public class IssueCurationService extends BaseService {
 
     @Transactional
     public IssueOverride exclude(PublicationIssue issue, String messageUid, User author, String reason) {
-        return addOverride(issue, messageUid, OverrideKind.EXCLUDE, author, reason, "OVERRIDE_EXCLUDED");
+        return addOverride(issue, messageUid, OverrideKind.EXCLUDE, author, reason, AuditAction.OVERRIDE_EXCLUDED);
     }
 
     /**
@@ -225,7 +225,7 @@ public class IssueCurationService extends BaseService {
         // both loaded the issue at revision 7 would both commit at revision 7 and
         // the second decision would silently replace the first.
         StaleVersionGuard.forceIncrement(em, issue);
-        audit.override(issue, actor, "OVERRIDE_REMOVED", uid, reason);
+        audit.override(issue, actor, AuditAction.OVERRIDE_REMOVED, uid, reason);
     }
 
     public List<IssueOverride> forIssue(PublicationIssue issue) {
@@ -235,7 +235,7 @@ public class IssueCurationService extends BaseService {
     }
 
     private IssueOverride addOverride(PublicationIssue issue, String messageUid, OverrideKind kind,
-                                      User author, String reason, String action) {
+                                      User author, String reason, AuditAction action) {
         assertOpen(issue);
         assertReason(reason);
 

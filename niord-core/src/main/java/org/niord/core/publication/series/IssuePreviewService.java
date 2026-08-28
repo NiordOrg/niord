@@ -57,7 +57,7 @@ public class IssuePreviewService extends BaseService {
         } catch (IOException e) {
             throw new IssueRenderService.RenderFailedException("could not write the preview to " + target, e);
         }
-        audit.created(issue, null, "PREVIEW_GENERATED");
+        audit.created(issue, null, AuditAction.PREVIEW_GENERATED);
         return new Preview(lang, target, generation, new Date(generation));
     }
 

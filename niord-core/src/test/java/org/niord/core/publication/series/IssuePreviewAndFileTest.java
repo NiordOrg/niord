@@ -523,7 +523,7 @@ public class IssuePreviewAndFileTest {
         em.flush();
 
         IssueAuditEntry replacement = audit.forIssue(published).stream()
-                .filter(a -> "FILE_REPLACED_MANUALLY".equals(a.getAction()))
+                .filter(a -> AuditAction.FILE_REPLACED_MANUALLY == a.getAction())
                 .reduce((first, second) -> second)
                 .orElseThrow(() -> new AssertionError(
                         "the replacement was not audited as one; the trail shows an upload, which "
@@ -531,8 +531,8 @@ public class IssuePreviewAndFileTest {
                                 + "overwritten"));
         assertNotNull(replacement.getArchivePath(),
                 "the entry carries no archive path, so nothing can reach the superseded bytes");
-        assertTrue(IssueAuditService.ACTIONS.contains("FILE_REPLACED_MANUALLY"),
-                "an action outside the vocabulary is refused at write time");
+        assertEquals("FILE_REPLACED_MANUALLY", replacement.toVo().getAction(),
+                "the trail has to name the replacement as one on the wire too, not just in memory");
     }
     @jakarta.inject.Inject
     org.niord.core.publication.series.IssuePreviewService previewService;

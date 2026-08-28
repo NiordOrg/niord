@@ -1,24 +1,25 @@
 package org.niord.core.publication.series;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.transaction.Transactional;
+import jakarta.inject.Inject;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
+import org.slf4j.Logger;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The audit trail. Append-only: never updated, never deleted while its owner
  * exists.
  *
- * The actions are a closed vocabulary, declared here once. An action spelled
- * differently at two call sites is two actions as far as any reader is
- * concerned, and the Historik panel would show one of them as an unknown event.
+ * The actions are a closed vocabulary, enumerated once in {@link AuditAction}.
+ * An action spelled differently at two call sites is two actions as far as any
+ * reader is concerned, and the history panel would show one of them as an
+ * unknown event; typing the column and the signatures makes that a compile
+ * error instead of something the trail has to be policed for at runtime.
  *
  * actorKind exists because not every audited action has a user. An AUTO_RELEASE
  * publish has no human at all, and the importer writes entries for things that
@@ -26,62 +27,10 @@ import java.util.Set;
  * than recording none: it makes an unattended event look signed off.
  */
 @ApplicationScoped
-@Transactional
 public class IssueAuditService extends BaseService {
 
-    /** Every action that may appear in the trail. */
-    public static final Set<String> ACTIONS = new LinkedHashSet<>(List.of(
-            "CREATED",
-            "CREATED_FROM_PREVIOUS_PUBLISH",
-            "CREATED_RETROACTIVELY",
-            "CREATED_NEW_EDITION",
-            "PUBLISHED",
-            "AMENDED",
-            "RETIRED",
-            "REACTIVATED",
-            "SUPERSEDED_BY",
-            "DELETED",
-            // Specific, never a generic UPDATE: a Historik panel cannot render
-            // "something changed", and each of these carries the before and after
-            // that makes the line answer the question it was opened for.
-            "INTERVAL_CHANGED",
-            "NAME_CHANGED",
-            "CRITERIA_OVERRIDDEN",
-            "OVERRIDE_INCLUDED",
-            "OVERRIDE_EXCLUDED",
-            "OVERRIDE_REMOVED",
-            "FILE_UPLOADED",
-            // A document that was already released, overwritten by hand. Distinct
-            // from an upload because the trail has to say whether a file appeared
-            // or a cited one was replaced -- the archive path on this entry is
-            // the only route back to what the public was reading before.
-            "FILE_REPLACED_MANUALLY",
-            "FILE_CLEARED",
-            // A link is the published artefact for an external publication, exactly
-            // as a file is for a hosted one, so changing one is as much a change to
-            // what the public sees as replacing the other.
-            "LINK_SET",
-            "LINK_CLEARED",
-            "PREVIEW_GENERATED",
-            "WINDOW_ADJUSTED",
-            // The public window closed by a NEIGHBOUR's publish -- the predecessor
-            // capped at this stamp, or this issue capped at a successor that had
-            // already published. Written on the issue whose window moved, because
-            // that is where somebody looks when a publication left the site.
-            "VISIBILITY_CAPPED",
-            "IMPORTED",
-            "SERIES_ACTIVATED",
-            "SERIES_RETIRED",
-            // Which model answers the public for this series. Visible to every
-            // anonymous reader the moment it changes, so it is its own action.
-            "SERIES_AUTHORITY_CHANGED"));
-
-    /** An action outside the vocabulary. */
-    public static class UnknownAuditActionException extends RuntimeException {
-        public UnknownAuditActionException(String action) {
-            super("unknown audit action '" + action + "'; the vocabulary is " + ACTIONS);
-        }
-    }
+    @Inject
+    Logger log;
 
     // ------------------------------------------------------------------ writes
 
@@ -97,7 +46,7 @@ public class IssueAuditService extends BaseService {
         detail.put("unacknowledgedWarnings", unacknowledgedWarnings);
         detail.put("releaseMode", releaseMode == null ? null : releaseMode.name());
 
-        IssueAuditEntry entry = write(issue, "PUBLISHED",
+        IssueAuditEntry entry = write(issue, AuditAction.PUBLISHED,
                 releaseMode == ReleaseMode.AUTO_RELEASE ? ActorKind.SYSTEM : ActorKind.USER,
                 releaseMode == ReleaseMode.AUTO_RELEASE ? null : actor,
                 null, detail);
@@ -115,7 +64,7 @@ public class IssueAuditService extends BaseService {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("fromIssueId", from.getId());
         detail.put("fromPublicId", from.getPublicId());
-        return write(successor, "CREATED_FROM_PREVIOUS_PUBLISH", ActorKind.SYSTEM, null, null, detail);
+        return write(successor, AuditAction.CREATED_FROM_PREVIOUS_PUBLISH, ActorKind.SYSTEM, null, null, detail);
     }
 
     /** The new-edition action, which is what gives supersedes a write path at all. */
@@ -123,7 +72,7 @@ public class IssueAuditService extends BaseService {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("supersededByIssueId", successor.getId());
         detail.put("supersededByPublicId", successor.getPublicId());
-        return write(predecessor, "SUPERSEDED_BY", ActorKind.USER, actor, null, detail);
+        return write(predecessor, AuditAction.SUPERSEDED_BY, ActorKind.USER, actor, null, detail);
     }
 
     /** Steps 12 and 13: a window closed by a neighbour's publish, on the issue whose window moved. */
@@ -133,31 +82,31 @@ public class IssueAuditService extends BaseService {
         detail.put("publicTo", cappedAt == null ? null : cappedAt.getTime());
         detail.put("byIssueId", byIssue == null ? null : byIssue.getId());
         detail.put("byPublicId", byIssue == null ? null : byIssue.getPublicId());
-        return write(capped, "VISIBILITY_CAPPED", actor == null ? ActorKind.SYSTEM : ActorKind.USER,
+        return write(capped, AuditAction.VISIBILITY_CAPPED, actor == null ? ActorKind.SYSTEM : ActorKind.USER,
                 actor, null, detail);
     }
 
     public IssueAuditEntry retired(PublicationIssue issue, User actor, String reason) {
-        return write(issue, "RETIRED", ActorKind.USER, actor, reason, Map.of());
+        return write(issue, AuditAction.RETIRED, ActorKind.USER, actor, reason, Map.of());
     }
 
     public IssueAuditEntry reactivated(PublicationIssue issue, User actor, String reason) {
-        return write(issue, "REACTIVATED", ActorKind.USER, actor, reason, Map.of());
+        return write(issue, AuditAction.REACTIVATED, ActorKind.USER, actor, reason, Map.of());
     }
 
     public IssueAuditEntry amended(PublicationIssue issue, User actor, String reason, List<String> archivePaths) {
-        IssueAuditEntry entry = write(issue, "AMENDED", ActorKind.USER, actor, reason, Map.of());
+        IssueAuditEntry entry = write(issue, AuditAction.AMENDED, ActorKind.USER, actor, reason, Map.of());
         if (archivePaths != null && !archivePaths.isEmpty()) {
             entry.setArchivePath(String.join(",", archivePaths));
         }
         return entry;
     }
 
-    public IssueAuditEntry created(PublicationIssue issue, User actor, String action) {
+    public IssueAuditEntry created(PublicationIssue issue, User actor, AuditAction action) {
         return write(issue, action, actor == null ? ActorKind.SYSTEM : ActorKind.USER, actor, null, Map.of());
     }
 
-    public IssueAuditEntry override(PublicationIssue issue, User actor, String action,
+    public IssueAuditEntry override(PublicationIssue issue, User actor, AuditAction action,
                                     String messageUid, String reason) {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("messageUid", messageUid);
@@ -173,54 +122,39 @@ public class IssueAuditService extends BaseService {
      * interval changed FROM. That is also why there is no generic UPDATE action:
      * a panel cannot render "something changed".
      */
-    public IssueAuditEntry edited(PublicationIssue issue, User actor, String action,
+    public IssueAuditEntry edited(PublicationIssue issue, User actor, AuditAction action,
                                   Map<String, Object> detail) {
         return write(issue, action, actor == null ? ActorKind.SYSTEM : ActorKind.USER, actor, null,
                 detail == null ? Map.of() : detail);
     }
 
-    /** A series-level event. DM-Q2: the audit is generalised, so this has no issue. */
     /**
      * Which model serves this series to the public, changed.
      *
-     * Its own entry rather than a SERIES_ACTIVATED with a note, because this is
-     * the one change an anonymous reader can see happen: before it, the public
-     * list comes from one place and after it from another. The detail carries
-     * both ends and whether the readiness precondition was overridden, so the
-     * question "who flipped this, and did they know it was not ready" has an
-     * answer that does not depend on anyone remembering.
+     * A series-level event: the audit is generalised, so this row belongs to a
+     * series and carries no issue. Its own action rather than a SERIES_ACTIVATED
+     * with a note, because this is the one change an anonymous reader can see
+     * happen: before it, the public list comes from one place and after it from
+     * another. The detail carries both ends and whether the readiness
+     * precondition was overridden, so the question "who flipped this, and did
+     * they know it was not ready" has an answer that does not depend on anyone
+     * remembering.
      */
     public IssueAuditEntry seriesAuthority(PublicationSeries series, User actor,
                                            Map<String, Object> detail, String reason) {
-        assertKnown("SERIES_AUTHORITY_CHANGED");
-        IssueAuditEntry entry = new IssueAuditEntry();
-        entry.setSeries(series);
-        entry.setAction("SERIES_AUTHORITY_CHANGED");
-        entry.setActorKind(actor == null ? ActorKind.SYSTEM : ActorKind.USER);
-        entry.setUser(actor);
-        entry.setReason(reason);
-        entry.setDetail(detail);
-        em.persist(entry);
-        return entry;
+        return writeSeries(series, AuditAction.SERIES_AUTHORITY_CHANGED, actor, reason, detail);
     }
 
-    public IssueAuditEntry series(PublicationSeries series, User actor, String action, String reason) {
-        assertKnown(action);
-        IssueAuditEntry entry = new IssueAuditEntry();
-        entry.setSeries(series);
-        entry.setAction(action);
-        entry.setActorKind(actor == null ? ActorKind.SYSTEM : ActorKind.USER);
-        entry.setUser(actor);
-        entry.setReason(reason);
-        em.persist(entry);
-        return entry;
+    /** Any other series-level event: the row belongs to a series and carries no issue. */
+    public IssueAuditEntry series(PublicationSeries series, User actor, AuditAction action, String reason) {
+        return writeSeries(series, action, actor, reason, null);
     }
 
     /** The importer's entries: real events, but nobody's action. */
     public IssueAuditEntry imported(PublicationIssue issue, String note) {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("note", note);
-        return write(issue, "IMPORTED", ActorKind.IMPORT, null, note, detail);
+        return write(issue, AuditAction.IMPORTED, ActorKind.IMPORT, null, note, detail);
     }
 
     // ------------------------------------------------------------------ reads
@@ -254,9 +188,8 @@ public class IssueAuditService extends BaseService {
 
     // ------------------------------------------------------------------ internals
 
-    private IssueAuditEntry write(PublicationIssue issue, String action, ActorKind actorKind,
+    private IssueAuditEntry write(PublicationIssue issue, AuditAction action, ActorKind actorKind,
                                   User user, String reason, Map<String, Object> detail) {
-        assertKnown(action);
         IssueAuditEntry entry = new IssueAuditEntry();
         entry.setIssue(issue);
         entry.setAction(action);
@@ -264,13 +197,40 @@ public class IssueAuditService extends BaseService {
         entry.setUser(user);
         entry.setReason(reason);
         entry.setDetail(detail);
-        em.persist(entry);
-        return entry;
+        return persist(entry, action, "issue " + (issue == null ? null : issue.getPublicId()));
     }
 
-    private static void assertKnown(String action) {
-        if (!ACTIONS.contains(action)) {
-            throw new UnknownAuditActionException(action);
+    private IssueAuditEntry writeSeries(PublicationSeries series, AuditAction action, User actor,
+                                        String reason, Map<String, Object> detail) {
+        IssueAuditEntry entry = new IssueAuditEntry();
+        entry.setSeries(series);
+        entry.setAction(action);
+        entry.setActorKind(actor == null ? ActorKind.SYSTEM : ActorKind.USER);
+        entry.setUser(actor);
+        entry.setReason(reason);
+        entry.setDetail(detail);
+        return persist(entry, action, "series " + (series == null ? null : series.getSeriesId()));
+    }
+
+    /**
+     * The one place an audit row reaches the database, and the one place a
+     * failure to write one is reported.
+     *
+     * The exception is rethrown, never swallowed: an action that happened with no
+     * trail is worse than an action that was refused, so the business transaction
+     * has to roll back with it. But it is logged first. Without that, the only
+     * evidence of a lost trail is the caller's own failure -- a publish that
+     * aborts for no visible reason, with nothing written anywhere that says the
+     * audit was what broke.
+     */
+    private IssueAuditEntry persist(IssueAuditEntry entry, AuditAction action, String owner) {
+        try {
+            em.persist(entry);
+        } catch (RuntimeException e) {
+            log.error("Failed to write audit entry {} for {}", action, owner, e);
+            throw e;
         }
+        log.debug("Audit {} for {}", action, owner);
+        return entry;
     }
 }

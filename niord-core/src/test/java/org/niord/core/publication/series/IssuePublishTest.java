@@ -693,28 +693,39 @@ public class IssuePublishTest {
                 ((List<?>) detail.get("unacknowledgedWarnings")).size());
     }
 
-    /** The audit vocabulary is closed: an unknown action is refused. */
+    /**
+     * The audit vocabulary is closed, and it stays the size the translations cover.
+     *
+     * An action outside the vocabulary can no longer be written at all -- the
+     * column, the service signatures and the call sites are all typed on the enum,
+     * so a misspelling is a compile error rather than something the trail has to
+     * be policed for. What still needs an assertion is the size: every action
+     * needs a translation key, and one added without one renders in the history
+     * panel as its own raw key. Bumping this number is the moment to add it.
+     */
+    @Test
+    public void theAuditVocabularyIsClosedAndSpecific() {
+        assertEquals(28, AuditAction.values().length, "the audit vocabulary changed size");
+        assertTrue(List.of(AuditAction.values()).containsAll(
+                        List.of(AuditAction.LINK_SET, AuditAction.LINK_CLEARED,
+                                AuditAction.INTERVAL_CHANGED, AuditAction.NAME_CHANGED,
+                                AuditAction.CRITERIA_OVERRIDDEN, AuditAction.FILE_REPLACED_MANUALLY)),
+                "the vocabulary is specific by design: a history panel cannot render "
+                        + "'something changed', so every mutation an admin can make has its own value");
+    }
+
+    /** The wire spelling is the constant name, so the stored vocabulary is unchanged by the typing. */
     @Test
     @Transactional
-    public void anUnknownAuditActionIsRefused() {
+    public void anAuditEntryRendersItsActionByName() {
         PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
         PublicationIssue i = issue(s, new Date());
         em.flush();
 
-        assertThrows(IssueAuditService.UnknownAuditActionException.class,
-                () -> auditService.created(i, null, "PUBLISHED_MAYBE"),
-                "an action outside the vocabulary was accepted; the Historik panel would show it as unknown");
-
-        // The count is a tripwire, not a rule: every action needs a translation
-        // key, and one added without one renders in the Historik panel as its own
-        // raw key. Bumping this number is the moment to add it.
-        assertEquals(28, IssueAuditService.ACTIONS.size(), "the audit vocabulary changed size");
-        assertTrue(IssueAuditService.ACTIONS.containsAll(
-                        List.of("LINK_SET", "LINK_CLEARED", "INTERVAL_CHANGED", "NAME_CHANGED",
-                                "CRITERIA_OVERRIDDEN", "FILE_REPLACED_MANUALLY")),
-                "the vocabulary is specific by design: a Historik panel cannot render "
-                        + "'something changed', so every mutation an admin can make has its own value");
+        IssueAuditEntry entry = auditService.created(i, null, AuditAction.CREATED);
+        assertEquals("CREATED", entry.toVo().getAction(),
+                "the wire carries the action as a string, and the string is the constant's name");
     }
 
     /** Double publish returns the already-published signal, carrying the winner's stamp. */
@@ -785,7 +796,7 @@ public class IssuePublishTest {
         assertEquals(IssueStatus.OPEN, i.getStatus(), "the status flipped despite the refusal");
         assertEquals(0L, em.createQuery("SELECT COUNT(m) FROM IssueMember m WHERE m.issue = :i", Long.class)
                 .setParameter("i", i).getSingleResult(), "member rows were frozen despite the refusal");
-        assertTrue(auditService.forIssue(i).stream().noneMatch(a -> "PUBLISHED".equals(a.getAction())),
+        assertTrue(auditService.forIssue(i).stream().noneMatch(a -> AuditAction.PUBLISHED == a.getAction()),
                 "a PUBLISHED entry was written despite the refusal");
 
         // Acknowledging exactly those codes is what lets the same publish through.

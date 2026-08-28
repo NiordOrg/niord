@@ -13,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.ManyToOne;
 import org.niord.core.db.JpaJsonAttributeConverter;
 import org.niord.core.model.BaseEntity;
+import org.niord.core.publication.series.vo.IssueAuditEntryVo;
 import org.niord.core.user.User;
 
 /**
@@ -60,7 +61,7 @@ public class IssueAuditEntry extends BaseEntity<Integer> {
     /**
      * The series this entry belongs to, when it is a series-level event.
      *
-     * DM-Q2: the audit is generalised rather than given three fixed columns on
+     * The audit is generalised rather than given three fixed columns on
      * PublicationSeries. A lifecycle event that overwrites its own predecessor is
      * not an audit trail -- three columns cannot record a series that was
      * activated, flagged dormant and then reactivated. Exactly one of issue and
@@ -69,8 +70,16 @@ public class IssueAuditEntry extends BaseEntity<Integer> {
     @ManyToOne
     private PublicationSeries series;
 
+    /**
+     * What happened.
+     *
+     * Stored by name in a varchar column rather than as a native database enum,
+     * so a new action needs no schema change -- see {@link AuditAction}.
+     */
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(length = 255, nullable = false)
-    private String action;
+    private AuditAction action;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -108,11 +117,11 @@ public class IssueAuditEntry extends BaseEntity<Integer> {
         this.issue = issue;
     }
 
-    public String getAction() {
+    public AuditAction getAction() {
         return action;
     }
 
-    public void setAction(String action) {
+    public void setAction(AuditAction action) {
         this.action = action;
     }
 
@@ -162,6 +171,34 @@ public class IssueAuditEntry extends BaseEntity<Integer> {
 
     public void setDetail(Object detail) {
         this.detail = detail;
+    }
+
+    /**
+     * One line of the history panel.
+     *
+     * The actor rule lives here rather than in the resource that renders it,
+     * because which of two fields answers "who did this" is a rule about the
+     * data and not about the transport: the entry carries a user for anything a
+     * person did, and a free-text label for the events -- an import, an unattended
+     * release -- that had no person behind them.
+     *
+     * The label is the person's NAME, not their login. User.getName() is first
+     * plus last name and already falls back to the username when both are blank,
+     * so it can never render emptier than the login would -- and the panel is
+     * read by people asking who did something, for whom a login id is not an
+     * answer.
+     */
+    public IssueAuditEntryVo toVo() {
+        IssueAuditEntryVo vo = new IssueAuditEntryVo();
+        vo.setId(getId());
+        vo.setAction(action == null ? null : action.name());
+        vo.setActorKind(actorKind == null ? null : actorKind.name());
+        vo.setActorLabel(user == null ? actorLabel : user.getName());
+        vo.setCreated(created);
+        vo.setReason(reason);
+        vo.setArchivePath(archivePath);
+        vo.setDetail(detail);
+        return vo;
     }
 
 }

@@ -179,7 +179,7 @@ public class IssueEditService extends BaseService {
         detail.put("to", wanted);
 
         issue.setCriteriaOverride(wanted);
-        audit.edited(issue, actor, "CRITERIA_OVERRIDDEN", detail);
+        audit.edited(issue, actor, AuditAction.CRITERIA_OVERRIDDEN, detail);
     }
 
     // ------------------------------------------------------------------ interval
@@ -233,7 +233,7 @@ public class IssueEditService extends BaseService {
         // rendering, and keeps its own value.
         shape.renumber(issue, issue.getSeries());
 
-        audit.edited(issue, actor, "INTERVAL_CHANGED", detail);
+        audit.edited(issue, actor, AuditAction.INTERVAL_CHANGED, detail);
     }
 
     // --------------------------------------------------------------------- names
@@ -267,7 +267,7 @@ public class IssueEditService extends BaseService {
             // interval edit would quietly put the suggested name back.
             desc.setNameOverridden(true);
 
-            audit.edited(issue, actor, "NAME_CHANGED", detail);
+            audit.edited(issue, actor, AuditAction.NAME_CHANGED, detail);
         }
     }
 

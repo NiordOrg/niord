@@ -115,7 +115,7 @@ public class IssueLifecycleService extends BaseService {
         PublicationIssue issue = newIssue(series, intervalFrom, fromSource, intervalTo,
                 intervalTo == null ? null : IntervalBoundSource.MANUAL);
         em.persist(issue);
-        audit.created(issue, actor, "CREATED");
+        audit.created(issue, actor, AuditAction.CREATED);
         return issue;
     }
 
@@ -193,7 +193,7 @@ public class IssueLifecycleService extends BaseService {
                 intervalTo, intervalTo == null ? null : IntervalBoundSource.RECOVERED);
         issue.setCutoffReconstructed(true);
         em.persist(issue);
-        audit.created(issue, actor, "CREATED_RETROACTIVELY");
+        audit.created(issue, actor, AuditAction.CREATED_RETROACTIVELY);
         return issue;
     }
 
@@ -226,7 +226,7 @@ public class IssueLifecycleService extends BaseService {
         // -- the publish transaction caps the predecessor at the new stamp minus
         // one millisecond, for every series and both time relations, so the two
         // windows meet exactly and neither overlaps nor gaps.
-        audit.created(edition, actor, "CREATED_NEW_EDITION");
+        audit.created(edition, actor, AuditAction.CREATED_NEW_EDITION);
         audit.supersededBy(predecessor, edition, actor);
         return edition;
     }

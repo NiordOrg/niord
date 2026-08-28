@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.slf4j.Logger;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.user.Roles;
 import org.niord.core.publication.series.IssueAuditService;
@@ -53,6 +54,7 @@ import org.niord.core.publication.series.resolve.Interval;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.PublicationSeriesDescVo;
+import org.niord.model.DataFilter;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.SeriesValidator;
 import org.niord.core.publication.series.StaleVersionGuard;
@@ -87,12 +89,34 @@ import java.util.Set;
  * rows to an unauthenticated caller is an enumeration of the whole catalogue in
  * every state. The public site reads publications through the public adapter,
  * which serves released issues only.
+ *
+ * TRANSACTIONS. The class is @Transactional, which is right for every endpoint
+ * here but the three legacy-import ones. Those open their OWN transaction with a
+ * budget sized for the whole estate, so they are marked NOT_SUPPORTED to keep the
+ * class annotation from wrapping them in a second, ambient transaction on the
+ * DEFAULT timeout. That combination was found failing in the worst possible way:
+ * the reaper aborted the ambient transaction long before the work finished, so a
+ * COMPLETED import returned 500 with "the transaction is not active" while its
+ * rows sat committed in the database -- and an operator reading that would re-run
+ * a cutover that had worked. The rationale is stated here once; the endpoints
+ * carry the annotation and a one-line pointer back.
  */
 @Path("/publication-series")
 @RequestScoped
 @Transactional
 @SuppressWarnings("unused")
 public class PublicationSeriesRestService extends AbstractBatchableRestService {
+
+    /**
+     * The server-side trace of the estate-wide changes.
+     *
+     * The audit table records the same events, but it is reachable only through
+     * the application and only while the row it hangs off still exists. The
+     * cutover flip and a series deletion are exactly the two things somebody has
+     * to reconstruct afterwards, from an incident rather than from the admin UI.
+     */
+    @Inject
+    Logger log;
 
     @Inject
     PublicationSeriesService seriesService;
@@ -169,34 +193,19 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/search")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.USER)
     public List<PublicationSeriesVo> search(@QueryParam("lang") String lang) {
+        // The narrowing itself, and the fallback when the series does not carry
+        // the language asked for, live on the entity: they are rules about the
+        // data, and this module has no container tests to assert them in.
+        DataFilter filter = DataFilter.get().lang(lang);
         List<PublicationSeriesVo> out = new ArrayList<>();
         for (PublicationSeries s : seriesService.findByStatus(SeriesStatus.ACTIVE)) {
-            out.add(narrowToLang(s.toVo(PublicationSeriesVo.class), lang));
+            out.add(s.toVo(PublicationSeriesVo.class, filter));
         }
         return out;
-    }
-
-    /**
-     * Keeps the desc row for one language, or the first one when it has none.
-     *
-     * The fallback is the behaviour every other localized read in the product
-     * has: a caller that asked for a language it cannot have is better served the
-     * name that exists than an empty list it has to invent a label for.
-     */
-    private static <V extends PublicationSeriesVo> V narrowToLang(V vo, String lang) {
-        if (lang == null || lang.isBlank() || vo.getDescs().size() < 2) {
-            return vo;
-        }
-        List<PublicationSeriesDescVo> wanted = vo.getDescs().stream()
-                .filter(d -> lang.equals(d.getLang()))
-                .toList();
-        List<PublicationSeriesDescVo> kept = wanted.isEmpty()
-                ? List.of(vo.getDescs().get(0))
-                : wanted;
-        vo.getDescs().retainAll(kept);
-        return vo;
     }
 
     /**
@@ -211,6 +220,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/search-details")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public List<SystemPublicationSeriesVo> searchDetails(@QueryParam("status") String status) {
         List<PublicationSeries> found = status == null
@@ -232,6 +243,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/series/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.USER)
     public PublicationSeriesVo get(@PathParam("seriesId") String seriesId) {
         return required(seriesId).toVo(PublicationSeriesVo.class);
@@ -241,6 +254,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/editable-series/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo getEditable(@PathParam("seriesId") String seriesId) {
         PublicationSeries series = required(seriesId);
@@ -257,6 +272,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/series-by-ids/{seriesIds}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.USER)
     public List<PublicationSeriesVo> byIds(@PathParam("seriesIds") String seriesIds) {
         List<PublicationSeriesVo> out = new ArrayList<>();
@@ -417,6 +434,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/new-series-template")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo newSeriesTemplate() {
         return newSeriesTemplate(app.getLanguages());
@@ -504,6 +523,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/copy-series-template/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public SystemPublicationSeriesVo copySeriesTemplate(@PathParam("seriesId") String seriesId) {
         return copyOf(required(seriesId).toVo(SystemPublicationSeriesVo.class));
@@ -780,8 +801,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // answers that with a coded 400 rather than a NullPointerException the
         // caller reads as a server failure.
         SeriesStatus target = seriesStatusOf(status == null ? null : status.replace("\"", "").trim());
-        return seriesService.transition(series, target, reason, userService.currentUser())
+        SeriesStatus from = series.getStatus();
+        SystemPublicationSeriesVo vo = seriesService.transition(series, target, reason, userService.currentUser())
                 .toVo(SystemPublicationSeriesVo.class);
+        log.info("Series {} status {} -> {}, reason '{}'", seriesId, from, target, reason);
+        return vo;
     }
 
     static final int MIN_REASON = IssueLifecycleService.MIN_REASON;
@@ -940,7 +964,16 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                                    Map<String, Object> body) {
         boolean force = body != null && Boolean.TRUE.equals(body.get("force"));
         String reason = body == null ? null : String.valueOf(body.getOrDefault("reason", ""));
-        return seriesService.setPublicAuthority(series, target, force, reason, userService.currentUser());
+        PublicAuthority from = series.getPublicAuthority();
+        PublicationSeries flipped =
+                seriesService.setPublicAuthority(series, target, force, reason, userService.currentUser());
+        // WARN, not INFO: this is the one change an anonymous reader sees happen,
+        // and a forced one crossed a readiness precondition somebody chose to
+        // override. Whoever reads the log after a cutover is looking for exactly
+        // these lines.
+        log.warn("Public authority for series {} flipped {} -> {}{}, reason '{}'",
+                series.getSeriesId(), from, target, force ? " (FORCED)" : "", reason);
+        return flipped;
     }
 
     /**
@@ -970,6 +1003,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/series/{seriesId}/issue-draft")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public IssueDraftVo issueDraft(@PathParam("seriesId") String seriesId,
                                    @QueryParam("afterPublicId") String afterPublicId,
@@ -997,6 +1032,9 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // change the caller has not seen.
         StaleVersionGuard.check(series, version);
         lifecycle.deleteSeries(series);
+        // The audit rows go with the series, so this line is the only thing left
+        // that says it was ever there.
+        log.info("Deleted series {}", seriesId);
     }
 
     // ------------------------------------------------------------------ tools
@@ -1015,6 +1053,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/name-tokens")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.USER)
     public List<String> nameTokens() {
         return new ArrayList<>(IssueNaming.TOKENS);
@@ -1124,12 +1164,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * happen, and a 422 with a body they have to dig out of an error handler is a
      * worse way to tell them.
      */
-    // NOT_SUPPORTED: this operation opens its OWN transaction with a budget sized
-    // for the whole estate. The class-level @Transactional otherwise wrapped it in
-    // a second, ambient transaction on the DEFAULT timeout -- which the reaper
-    // aborted long before the work finished, so a completed import returned 500
-    // with "the transaction is not active" while its rows sat committed in the
-    // database. An operator reading that would re-run a cutover that had worked.
+    // Opens its own transaction; see the class comment on transactions.
     @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @POST
     @Path("/import-legacy/validate")
@@ -1148,12 +1183,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * worse than none: the rows that landed look correct and nothing marks them as
      * partial.
      */
-    // NOT_SUPPORTED: this operation opens its OWN transaction with a budget sized
-    // for the whole estate. The class-level @Transactional otherwise wrapped it in
-    // a second, ambient transaction on the DEFAULT timeout -- which the reaper
-    // aborted long before the work finished, so a completed import returned 500
-    // with "the transaction is not active" while its rows sat committed in the
-    // database. An operator reading that would re-run a cutover that had worked.
+    // Opens its own transaction; see the class comment on transactions.
     @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @POST
     @Path("/import-legacy")
@@ -1182,12 +1212,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * those rows ARE the public list and undoing would withdraw published
      * editions from under their readers.
      */
-    // NOT_SUPPORTED: this operation opens its OWN transaction with a budget sized
-    // for the whole estate. The class-level @Transactional otherwise wrapped it in
-    // a second, ambient transaction on the DEFAULT timeout -- which the reaper
-    // aborted long before the work finished, so a completed import returned 500
-    // with "the transaction is not active" while its rows sat committed in the
-    // database. An operator reading that would re-run a cutover that had worked.
+    // Opens its own transaction; see the class comment on transactions.
     @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @DELETE
     @Path("/import-legacy")
@@ -1216,6 +1241,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/diagnostic-report")
     @Produces(MediaType.TEXT_PLAIN)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public String diagnosticReport(@QueryParam("historical") boolean historical) {
         return diagnostics.render(historical);
@@ -1287,6 +1314,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/shadow-diff")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> shadowDiff(@QueryParam("seriesId") String seriesId) {
         List<ShadowDiffRun> runs = seriesId == null || seriesId.isBlank()
@@ -1356,6 +1385,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GET
     @Path("/cutover-preflight")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> cutoverPreflight() {
         CutoverPreflightService.Preflight result = preflight.run();

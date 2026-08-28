@@ -1,7 +1,6 @@
 package org.niord.core.publication;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.transaction.Transactional;
 import org.niord.core.domain.Domain;
 import org.niord.core.message.MemberSetDesignation;
 import org.niord.core.message.PublicationMemberSetSource;
@@ -62,7 +61,6 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      * {@inheritDoc}
      */
     @Override
-    @Transactional
     public MemberSetDesignation designate(Collection<String> publicationIds, Audience audience) {
 
         // Blanks are dropped BEFORE the emptiness test, not skipped inside the
@@ -138,7 +136,6 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      * Public so the citation endpoints share this resolution rather than each
      * writing their own.
      */
-    @Transactional
     public PublicationIssue findIssue(String publicationId) {
         List<PublicationIssue> found = em.createQuery(
                         "SELECT i FROM PublicationIssue i WHERE i.publicId = :id", PublicationIssue.class)
@@ -149,7 +146,6 @@ public class PublicationResolver extends BaseService implements PublicationMembe
     }
 
     /** Resolves one id to a legacy publication, or null. */
-    @Transactional
     public Publication findLegacy(String publicationId) {
         List<Publication> found = em.createNamedQuery("Publication.findByPublicationId", Publication.class)
                 .setParameter("publicationId", publicationId)
@@ -169,7 +165,6 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      * unknown id, and turning that into a 400 would change a shape clients have
      * relied on since before the redesign.
      */
-    @Transactional
     public PublicationVo publicVo(String publicationId, String lang, Audience audience) {
         if (publicationId == null || publicationId.isBlank()) {
             return null;
@@ -218,7 +213,6 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      * citing an issue that is still OPEN is the ordinary case -- the citation is
      * written while the issue is being prepared.
      */
-    @Transactional
     public SystemPublicationVo systemVo(String publicationId, String lang) {
         if (publicationId == null || publicationId.isBlank()) {
             return null;
@@ -247,7 +241,6 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      * transition answer here, so a cut-over series sorts the way its legacy rows
      * did.
      */
-    @Transactional
     public Domain sortDomain(Collection<String> publicationIds) {
         if (publicationIds == null || publicationIds.isEmpty()) {
             return null;

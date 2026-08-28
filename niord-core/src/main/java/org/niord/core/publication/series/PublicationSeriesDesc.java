@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import org.niord.core.model.DescEntity;
+import org.niord.core.publication.series.vo.PublicationSeriesDescVo;
 import org.niord.model.ILocalizedDesc;
 
 /**
@@ -93,6 +94,44 @@ public class PublicationSeriesDesc extends DescEntity<PublicationSeries> {
         this.fileNamePattern = desc.getFileNamePattern();
         this.messageReferenceFormat = desc.getMessageReferenceFormat();
         this.linkPattern = desc.getLinkPattern();
+    }
+
+    /**
+     * This row as a value object.
+     *
+     * The five fields are listed here rather than in the owning entity so that
+     * adding a sixth is one edit in the class that declares it, instead of a
+     * column that persists correctly and then silently never reaches the wire.
+     *
+     * THE PATTERNS ARE AUTHORING, and the caller decides whether they travel. A
+     * pattern is the recipe an admin writes -- the file name every issue of this
+     * series will be published under, the link every citation will point at, the
+     * wording of the citation itself. An editor reads the EXPANDED values off the
+     * issue, which is what a citation dialog actually consumes; the recipe is a
+     * setting on the admin screens, and handing it to every logged-in caller
+     * publishes the naming and the repository layout of every future issue to an
+     * audience that has no use for either.
+     */
+    public PublicationSeriesDescVo toVo(boolean includePatterns) {
+        PublicationSeriesDescVo vo = new PublicationSeriesDescVo();
+        vo.setLang(getLang());
+        vo.setName(name);
+        if (includePatterns) {
+            vo.setNameSuggestionPattern(nameSuggestionPattern);
+            vo.setFileNamePattern(fileNamePattern);
+            vo.setMessageReferenceFormat(messageReferenceFormat);
+            vo.setLinkPattern(linkPattern);
+        }
+        return vo;
+    }
+
+    /** The inverse: a value object onto this row, patterns included. */
+    public void updateFromVo(PublicationSeriesDescVo vo) {
+        this.name = vo.getName();
+        this.nameSuggestionPattern = vo.getNameSuggestionPattern();
+        this.fileNamePattern = vo.getFileNamePattern();
+        this.messageReferenceFormat = vo.getMessageReferenceFormat();
+        this.linkPattern = vo.getLinkPattern();
     }
 
 }

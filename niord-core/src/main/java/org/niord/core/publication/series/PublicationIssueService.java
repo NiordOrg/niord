@@ -1,14 +1,12 @@
 package org.niord.core.publication.series;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.transaction.Transactional;
 import org.niord.core.service.BaseService;
 
 import java.util.List;
 
 /** Persistence for publication issues. Kept as thin as the series service, and for the same reason. */
 @ApplicationScoped
-@Transactional
 @SuppressWarnings("unused")
 public class PublicationIssueService extends BaseService {
 

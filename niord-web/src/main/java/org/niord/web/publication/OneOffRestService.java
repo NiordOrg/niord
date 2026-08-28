@@ -14,6 +14,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.publication.PublicationCategory;
@@ -175,6 +177,8 @@ public class OneOffRestService {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public List<OneOffVo> list() {
         return seriesService.findAll().stream()

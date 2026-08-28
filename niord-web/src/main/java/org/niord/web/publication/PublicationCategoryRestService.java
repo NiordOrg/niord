@@ -5,7 +5,6 @@ import jakarta.annotation.security.RolesAllowed;
 import org.niord.core.user.Roles;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -20,8 +19,12 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryDesc;
+import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -43,7 +46,10 @@ import java.util.Map;
 public class PublicationCategoryRestService extends org.niord.core.batch.AbstractBatchableRestService {
 
     @Inject
-    EntityManager em;
+    Logger log;
+
+    @Inject
+    PublicationCategoryService categoryService;
 
     /** The bound an anonymous read falls back to when none is given. */
     public static final int DEFAULT_LIMIT = 1000;
@@ -52,12 +58,11 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
     @GET
     @Path("/all")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @PermitAll
     public List<Map<String, Object>> all(@QueryParam("lang") String lang,
                                          @QueryParam("limit") @DefaultValue("1000") int limit) {
-        var query = em.createQuery(
-                "SELECT c FROM PublicationCategory c ORDER BY c.priority ASC, c.categoryId ASC",
-                PublicationCategory.class);
         // The limit is a real bound, not a page, and it is ALWAYS applied. This
         // endpoint is anonymous and externally consumed -- the admin "Export…"
         // link is a bare href with no role and no ticket -- so an absent or zero
@@ -65,9 +70,8 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
         // table. The default is the one the shipped contract carries; the
         // parameter name is that contract too, and the asymmetry with
         // /publications/all's maxSize is deliberate and must not be "fixed".
-        query.setMaxResults(limit > 0 ? limit : DEFAULT_LIMIT);
         List<Map<String, Object>> out = new ArrayList<>();
-        for (PublicationCategory c : query.getResultList()) {
+        for (PublicationCategory c : categoryService.listByPriority(limit > 0 ? limit : DEFAULT_LIMIT)) {
             out.add(toMap(c, lang));
         }
         return out;
@@ -77,10 +81,12 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
     @GET
     @Path("/publication-category/{categoryId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @PermitAll
     public Map<String, Object> get(@PathParam("categoryId") String categoryId,
                                    @QueryParam("lang") String lang) {
-        return toMap(required(categoryId), lang);
+        return toMap(categoryService.requireByCategoryId(categoryId), lang);
     }
 
     /**
@@ -141,14 +147,6 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
             throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_INVALID",
                     "categoryId is required; it is the stable key a series stores");
         }
-        boolean taken = !em.createQuery(
-                        "SELECT c FROM PublicationCategory c WHERE c.categoryId = :id",
-                        PublicationCategory.class)
-                .setParameter("id", categoryId).getResultList().isEmpty();
-        if (taken) {
-            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_ID_TAKEN",
-                    "a category with id '" + categoryId + "' already exists");
-        }
 
         PublicationCategory c = new PublicationCategory();
         c.setCategoryId(categoryId);
@@ -158,9 +156,9 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
                 ? n.intValue() : DEFAULT_PRIORITY);
         c.setPublish(Boolean.TRUE.equals(body.get("publish")));
         applyDescs(c, body);
-        em.persist(c);
-        em.flush();
-        return toMap(c, null);
+        PublicationCategory saved = categoryService.createUnderNewId(c);
+        log.info("Created publication category {}", categoryId);
+        return toMap(saved, null);
     }
 
     /** Where a category lands in the public page's order when nobody says. */
@@ -190,7 +188,7 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
                             + "The path says '" + categoryId + "' and the body says '" + bodyId + "'");
         }
 
-        PublicationCategory c = required(categoryId);
+        PublicationCategory c = categoryService.requireByCategoryId(categoryId);
         // The same instanceof guard create uses two methods up. A blind cast made
         // {"priority": null} -- and {"priority": "100"} -- a 500 out of an
         // ordinary form save.
@@ -206,7 +204,9 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
         // The NAMES, which this could not previously change -- so a category could be
         // created with a typo and never corrected, and the public page carries these.
         applyDescs(c, body);
-        return toMap(em.merge(c), null);
+        Map<String, Object> out = toMap(categoryService.save(c), null);
+        log.info("Updated publication category {}", categoryId);
+        return out;
     }
 
     /** C6. Delete, refused while anything still points at it. */
@@ -214,24 +214,8 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
     @Path("/publication-category/{categoryId}")
     @RolesAllowed(Roles.ADMIN)
     public void delete(@PathParam("categoryId") String categoryId) {
-        PublicationCategory c = required(categoryId);
-
-        // BOTH models, because both still store this row. Counting only the new
-        // side would let a category be deleted out from under the publications
-        // the legacy list is still serving, and the failure would surface as a
-        // missing section on the public page rather than as a refusal here.
-        Long series = em.createQuery(
-                        "SELECT COUNT(s) FROM PublicationSeries s WHERE s.category = :c", Long.class)
-                .setParameter("c", c).getSingleResult();
-        Long publications = em.createQuery(
-                        "SELECT COUNT(p) FROM Publication p WHERE p.category = :c", Long.class)
-                .setParameter("c", c).getSingleResult();
-        if (series + publications > 0) {
-            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_IN_USE",
-                    series + " series and " + publications + " publication(s) still belong to '"
-                            + categoryId + "'. Move them to another category first.");
-        }
-        em.remove(c);
+        categoryService.deleteUnreferenced(categoryId);
+        log.info("Deleted publication category {}", categoryId);
     }
 
     /**
@@ -291,17 +275,5 @@ public class PublicationCategoryRestService extends org.niord.core.batch.Abstrac
         }
         out.put("descs", descs);
         return out;
-    }
-
-    private PublicationCategory required(String categoryId) {
-        List<PublicationCategory> found = em.createQuery(
-                        "SELECT c FROM PublicationCategory c WHERE c.categoryId = :id",
-                        PublicationCategory.class)
-                .setParameter("id", categoryId).getResultList();
-        if (found.isEmpty()) {
-            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_NOT_FOUND",
-                    "no category with id " + categoryId);
-        }
-        return found.get(0);
     }
 }

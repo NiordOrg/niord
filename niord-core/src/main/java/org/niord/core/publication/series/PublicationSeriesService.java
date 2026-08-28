@@ -3,7 +3,6 @@ package org.niord.core.publication.series;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.FlushModeType;
-import jakarta.transaction.Transactional;
 import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.service.BaseService;
@@ -21,9 +20,17 @@ import java.util.Objects;
  * criteria validation, criteria resolution -- lives outside any service and is
  * tested without a database. What is left here is the part that genuinely needs
  * one.
+ *
+ * TRANSACTION DEMARCATION, FOR EVERY SERVICE IN THIS PACKAGE. It comes from
+ * BaseService, which carries a class-level @Transactional; that annotation is
+ * @Inherited, so every service extending it is demarcated without saying so
+ * again. Repeating it on the subclass changes nothing and only invites a reader
+ * to conclude that the classes without it are somehow different. Say something
+ * about transactions here ONLY where the demarcation departs from that default
+ * -- a method that must run outside a transaction, or one that opens its own --
+ * and say why at that method.
  */
 @ApplicationScoped
-@Transactional
 @SuppressWarnings("unused")
 public class PublicationSeriesService extends BaseService {
 
@@ -215,7 +222,7 @@ public class PublicationSeriesService extends BaseService {
         }
 
         PublicationSeries saved = update(series);
-        audit.series(saved, actor, target == SeriesStatus.ACTIVE ? "SERIES_ACTIVATED" : "SERIES_RETIRED",
+        audit.series(saved, actor, target == SeriesStatus.ACTIVE ? AuditAction.SERIES_ACTIVATED : AuditAction.SERIES_RETIRED,
                 trimmed);
         return saved;
     }

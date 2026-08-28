@@ -17,7 +17,10 @@ import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.slf4j.Logger;
 
 import java.io.InputStream;
 import org.niord.core.publication.series.IssueAuditEntry;
@@ -86,6 +89,18 @@ import java.util.Set;
 @Transactional
 @SuppressWarnings("unused")
 public class PublicationIssueRestService {
+
+    /**
+     * The server-side trace of what was done to the public archive.
+     *
+     * The audit table records the same events, but it is reachable only through
+     * the application and only while the row it hangs off still exists. A release
+     * or a deletion that has to be reconstructed afterwards -- from an incident,
+     * not from the admin UI -- needs a line in the ordinary server log, next to
+     * the request that caused it.
+     */
+    @Inject
+    Logger log;
 
     @Inject
     PublicationIssueService issueService;
@@ -215,6 +230,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/issue/{publicId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.USER)
     public PublicationIssueVo get(@PathParam("publicId") String publicId) {
         return required(publicId).toVo(PublicationIssueVo.class);
@@ -249,6 +266,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/series/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public IssueListResultVo bySeries(@PathParam("seriesId") String seriesId,
                                       @QueryParam("page") @DefaultValue("0") int page,
@@ -286,6 +305,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/picker")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.USER)
     public PagedSearchResultVo<PublicationIssuePickerVo> pickerSearch(
             @QueryParam("lang") String lang,
@@ -335,6 +356,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/by-ids")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @PermitAll
     public List<PublicationIssuePickerVo> byIds(@QueryParam("ids") String ids,
                                                 @QueryParam("lang") String lang) {
@@ -361,6 +384,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/recent")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.USER)
     public List<IssueTimelineVo> recent(@QueryParam("publicationSeriesId") String publicationSeriesId,
                                         @QueryParam("periods") @DefaultValue("8") int periods,
@@ -443,6 +468,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/editable-issue/{publicId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public SystemPublicationIssueVo getEditable(@PathParam("publicId") String publicId) {
         return required(publicId).toVo(SystemPublicationIssueVo.class);
@@ -470,6 +497,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/by-message/{messageUid}")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.USER)
     public List<MessageIssueRefVo> forMessage(@PathParam("messageUid") String messageUid) {
         return group(messageIssues.forMessage(messageUid, new Date()));
@@ -600,6 +629,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/issue/{publicId}/members")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public List<IssueMemberVo> members(@PathParam("publicId") String publicId) {
         return memberList.members(required(publicId));
@@ -615,27 +646,14 @@ public class PublicationIssueRestService {
     @GET
     @Path("/issue/{publicId}/audit")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public List<IssueAuditEntryVo> auditTrail(@PathParam("publicId") String publicId) {
-        List<IssueAuditEntryVo> out = new ArrayList<>();
-        for (IssueAuditEntry e : audit.forIssue(required(publicId))) {
-            IssueAuditEntryVo vo = new IssueAuditEntryVo();
-            vo.setId(e.getId());
-            vo.setAction(e.getAction());
-            vo.setActorKind(e.getActorKind() == null ? null : e.getActorKind().name());
-            // The person's NAME, not their login. User.getName() is first plus
-            // last name and already falls back to the username when both are
-            // blank, so this can never render emptier than the login did -- and
-            // the Historik panel is read by people asking who did something,
-            // for whom "hlp" is not an answer.
-            vo.setActorLabel(e.getUser() == null ? e.getActorLabel() : e.getUser().getName());
-            vo.setCreated(e.getCreated());
-            vo.setReason(e.getReason());
-            vo.setArchivePath(e.getArchivePath());
-            vo.setDetail(e.getDetail());
-            out.add(vo);
-        }
-        return out;
+        // The line-by-line mapping, the actor rule included, belongs to the entity:
+        // this module has no container tests, so anything decided here cannot be
+        // asserted anywhere.
+        return audit.forIssue(required(publicId)).stream().map(IssueAuditEntry::toVo).toList();
     }
 
     @jakarta.inject.Inject
@@ -723,6 +741,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/issue/{publicId}/publish-checklist")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed(Roles.ADMIN)
     public Map<String, Object> publishChecklist(@PathParam("publicId") String publicId,
                                                 @QueryParam("allowFuture") boolean allowFuture,
@@ -802,6 +822,10 @@ public class PublicationIssueRestService {
                 new IssuePublishService.PublishRequest(regenerate, Set.copyOf(acknowledged),
                         userService.currentUser(), cutoff));
 
+        log.info("Published issue {} of series {}: cut-off {}, {} members, {} unacknowledged warning(s)",
+                publicId, issue.getSeries() == null ? null : issue.getSeries().getSeriesId(),
+                result.stampedAt(), result.memberCount(), result.unacknowledgedWarnings().size());
+
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("publicId", publicId);
         out.put("stampedAt", result.stampedAt().getTime());
@@ -840,6 +864,10 @@ public class PublicationIssueRestService {
         IssuePublishService.AmendResult result = publishService.amend(issue.getId(),
                 new IssuePublishService.AmendRequest(regenerate, Set.copyOf(acknowledged),
                         userService.currentUser(), reason));
+
+        log.info("Amended issue {}: {} members, {} document(s) archived, reason '{}'",
+                publicId, result.memberCount(),
+                result.archivePaths() == null ? 0 : result.archivePaths().size(), reason);
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("publicId", publicId);
@@ -885,6 +913,7 @@ public class PublicationIssueRestService {
 
         PublicationIssue edition = lifecycle.newEdition(predecessor, intervalFrom, userService.currentUser());
         em.flush();
+        log.info("Created new edition {} superseding issue {}", edition.getPublicId(), publicId);
         return required(edition.getPublicId()).toVo(SystemPublicationIssueVo.class);
     }
 
@@ -902,8 +931,10 @@ public class PublicationIssueRestService {
         domainGuard.assertWritable(issue);
         // Alongside the reason, which already travels this way for want of a body.
         StaleVersionGuard.check(issue, version);
-        return lifecycle.retire(issue, userService.currentUser(), reason)
+        SystemPublicationIssueVo vo = lifecycle.retire(issue, userService.currentUser(), reason)
                 .toVo(SystemPublicationIssueVo.class);
+        log.info("Retired issue {}, reason '{}'", publicId, reason);
+        return vo;
     }
 
     @PUT
@@ -918,8 +949,10 @@ public class PublicationIssueRestService {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
         StaleVersionGuard.check(issue, version);
-        return lifecycle.reactivate(issue, userService.currentUser(), reason)
+        SystemPublicationIssueVo vo = lifecycle.reactivate(issue, userService.currentUser(), reason)
                 .toVo(SystemPublicationIssueVo.class);
+        log.info("Reactivated issue {}, reason '{}'", publicId, reason);
+        return vo;
     }
 
     /** I9. Delete, guarded. */
@@ -933,7 +966,12 @@ public class PublicationIssueRestService {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
         StaleVersionGuard.check(issue, version);
+        String seriesId = issue.getSeries() == null ? null : issue.getSeries().getSeriesId();
         lifecycle.deleteIssue(issue, null);
+        // Logged AFTER the guarded delete succeeded, and with the series named:
+        // the audit row goes with the issue, so this line is the only thing left
+        // that says the issue was ever there.
+        log.info("Deleted issue {} of series {}", publicId, seriesId);
     }
 
     /**
@@ -1182,6 +1220,8 @@ public class PublicationIssueRestService {
     @GET
     @Path("/issue/{publicId}/overrides")
     @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public List<IssueOverrideVo> overrides(@PathParam("publicId") String publicId) {
         return memberList.standingDecisions(required(publicId));

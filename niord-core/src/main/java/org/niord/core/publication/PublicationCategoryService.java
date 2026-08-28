@@ -16,6 +16,7 @@
 
 package org.niord.core.publication;
 
+import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -139,6 +140,99 @@ public class PublicationCategoryService extends BaseService {
             return true;
         }
         return false;
+    }
+
+
+    // -------------------------------------------------- the admin CRUD surface
+
+    /**
+     * The categories in the order the public page shows them, bounded.
+     *
+     * The bound is always applied, never treated as optional: the endpoint this
+     * serves is anonymous, so a missing or zero limit meaning "everything" hands
+     * anybody an unbounded read of the table.
+     */
+    public List<PublicationCategory> listByPriority(int limit) {
+        return em.createQuery(
+                        "SELECT c FROM PublicationCategory c ORDER BY c.priority ASC, c.categoryId ASC",
+                        PublicationCategory.class)
+                .setMaxResults(limit)
+                .getResultList();
+    }
+
+
+    /**
+     * The category with this id, refusing rather than returning null.
+     *
+     * The counterpart to findByCategoryId, for the callers that cannot proceed
+     * without one. They would otherwise each turn the null into their own
+     * refusal, and a not-found reported four different ways is four things a
+     * client has to recognise.
+     */
+    public PublicationCategory requireByCategoryId(String categoryId) {
+        PublicationCategory category = findByCategoryId(categoryId);
+        if (category == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_NOT_FOUND",
+                    "no category with id " + categoryId);
+        }
+        return category;
+    }
+
+
+    /**
+     * Creates a category under a new id, refusing a duplicate.
+     *
+     * categoryId is what a series stores and what an import upserts on, so two
+     * rows sharing one is not a near-miss: whichever the next lookup happens to
+     * return decides which section of the public page a publication lands in.
+     */
+    @Transactional
+    public PublicationCategory createUnderNewId(PublicationCategory category) {
+        if (findByCategoryId(category.getCategoryId()) != null) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_ID_TAKEN",
+                    "a category with id '" + category.getCategoryId() + "' already exists");
+        }
+        PublicationCategory saved = saveEntity(category);
+        // Flushed here so a constraint the entity violates surfaces as this
+        // call's failure, rather than at the end of the request where it can no
+        // longer be attributed to the save that caused it.
+        em.flush();
+        return saved;
+    }
+
+
+    /** Persists an edited category. */
+    @Transactional
+    public PublicationCategory save(PublicationCategory category) {
+        return saveEntity(category);
+    }
+
+
+    /**
+     * Deletes a category, refused while anything still points at it.
+     *
+     * BOTH publication models are counted, because both still store this row.
+     * Counting only the newer side would let a category be deleted out from
+     * under the publications the legacy list is still serving, and the failure
+     * would surface as a missing section on the public page rather than as a
+     * refusal here.
+     */
+    @Transactional
+    public void deleteUnreferenced(String categoryId) {
+        PublicationCategory category = requireByCategoryId(categoryId);
+
+        Long series = em.createQuery(
+                        "SELECT COUNT(s) FROM PublicationSeries s WHERE s.category = :c", Long.class)
+                .setParameter("c", category).getSingleResult();
+        Long publications = em.createQuery(
+                        "SELECT COUNT(p) FROM Publication p WHERE p.category = :c", Long.class)
+                .setParameter("c", category).getSingleResult();
+        if (series + publications > 0) {
+            throw new IssueLifecycleService.TransitionRefusedException("CATEGORY_IN_USE",
+                    series + " series and " + publications + " publication(s) still belong to '"
+                            + categoryId + "'. Move them to another category first.");
+        }
+        remove(category);
     }
 
 }

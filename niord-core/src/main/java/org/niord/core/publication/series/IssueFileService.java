@@ -125,7 +125,7 @@ public class IssueFileService extends BaseService {
         // document appeared or a cited one was overwritten, and those are
         // different events to anyone reading the trail afterwards.
         IssueAuditEntry entry = audit.override(issue, actor,
-                inPlace ? "FILE_REPLACED_MANUALLY" : "FILE_UPLOADED", lang, desc.getFileName());
+                inPlace ? AuditAction.FILE_REPLACED_MANUALLY : AuditAction.FILE_UPLOADED, lang, desc.getFileName());
         if (archived != null) {
             entry.setArchivePath(archived);
         }
@@ -152,7 +152,7 @@ public class IssueFileService extends BaseService {
         desc.setFilePath(null);
         desc.setFileSource(null);
         desc.setFileSourceSticky(false);
-        audit.override(issue, actor, "FILE_CLEARED", lang, null);
+        audit.override(issue, actor, AuditAction.FILE_CLEARED, lang, null);
         return em.merge(desc);
     }
 
@@ -181,7 +181,7 @@ public class IssueFileService extends BaseService {
         String cleaned = link == null || link.isBlank() ? null : link.trim();
 
         desc.setLink(cleaned);
-        audit.override(issue, actor, cleaned == null ? "LINK_CLEARED" : "LINK_SET", lang, cleaned);
+        audit.override(issue, actor, cleaned == null ? AuditAction.LINK_CLEARED : AuditAction.LINK_SET, lang, cleaned);
         return em.merge(desc);
     }
 
