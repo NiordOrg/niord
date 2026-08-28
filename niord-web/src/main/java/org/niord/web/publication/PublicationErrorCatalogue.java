@@ -145,6 +145,12 @@ public final class PublicationErrorCatalogue {
         put("SERIES_NOT_ACTIVE", 409);
         put("CATEGORY_INVALID", 400);
         put("CATEGORY_ID_TAKEN", 409);
+        // An authority token that is not NEW or LEGACY: a client error, not a
+        // server failure.
+        put("INVALID_AUTHORITY", 400);
+        // An imported issue is a historical record; re-deciding it is not an
+        // action that exists.
+        put("ISSUE_IMPORTED", 409);
 
         // 500 -- the server could not do what it was asked, and the caller did
         // nothing wrong. ARCHIVE_FAILED is here deliberately: it aborts a publish,

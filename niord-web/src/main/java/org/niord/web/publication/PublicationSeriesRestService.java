@@ -227,6 +227,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // so activation is the status transition, which validates. Letting create
         // set ACTIVE would route around that check.
         series.setStatus(SeriesStatus.DRAFT);
+        refuseHardRules(series);
 
         return seriesService.create(series).toVo(SystemPublicationSeriesVo.class);
     }
@@ -241,6 +242,21 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * page, and inventing one silently would put a series in a category nobody
      * configured.
      */
+    /**
+     * A draft may be incomplete; it may not be wrong. Asking for a release mode
+     * the system cannot honour, or typing a report parameter the issue supplies,
+     * is refused on the save that carries it -- as field errors, so the form can
+     * put the message beside the control -- rather than stored and discovered at
+     * activation.
+     */
+    private static void refuseHardRules(PublicationSeries series) {
+        List<SeriesValidator.FieldError> hard = SeriesValidator.hardRules(series);
+        if (!hard.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    hard.size() + " rule(s) fail: " + hard, hard);
+        }
+    }
+
     private void resolveReferences(PublicationSeries series, SystemPublicationSeriesVo vo) {
         if (vo.getCategoryId() != null && !vo.getCategoryId().isBlank()) {
             PublicationCategory category = categoryService.findByCategoryId(vo.getCategoryId());
@@ -485,6 +501,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                             + "re-applying appends a duplicate rather than replacing");
         }
 
+        refuseHardRules(series);
         List<SeriesValidator.FieldError> errors =
                 SeriesValidator.validateForActivation(series, null);
         if (status == SeriesStatus.ACTIVE && !errors.isEmpty()) {
@@ -505,9 +522,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * series -- the domain its cut-offs are read in, the report it renders --
      * would stop applying to something the public is still reading.
      *
-     * Leaving ACTIVE, or returning to it, asks for a reason. Both change what
-     * editors can cite and what the site lists, and "who turned this off, and
-     * why" is the question asked months later when somebody notices.
+     * Leaving ACTIVE asks for a reason: it changes what editors can cite and
+     * what the site lists, and "who turned this off, and why" is the question
+     * asked months later when somebody notices. Entering it -- the first
+     * activation, or a reinstatement -- is confirmed and audited, but restores a
+     * state the series was already in, and asks for none.
      */
     @PUT
     @Path("/series/{seriesId}/status")
@@ -518,54 +537,18 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                                                @QueryParam("reason") String reason,
                                                String status) {
         PublicationSeries series = required(seriesId);
-        SeriesStatus from = series.getStatus();
         SeriesStatus target = seriesStatusOf(status.replace("\"", "").trim());
-
-        if (from == target) {
-            return series.toVo(SystemPublicationSeriesVo.class);
-        }
-        if (target == SeriesStatus.DRAFT) {
-            throw new IssueLifecycleService.TransitionRefusedException("INVALID_STATUS_TRANSITION",
-                    "'" + seriesId + "' is " + from + " and cannot go back to DRAFT: a series that has "
-                            + "been active has issues and citations behind it, and DRAFT means the "
-                            + "opposite. Retire it instead -- that is the state for a publication that "
-                            + "has stopped.");
-        }
-        boolean needsReason = from == SeriesStatus.ACTIVE || target == SeriesStatus.ACTIVE;
-        String trimmed = reason == null ? "" : reason.trim();
-        if (needsReason && (trimmed.length() < MIN_REASON || trimmed.length() > MAX_REASON)) {
-            throw new IssueLifecycleService.TransitionRefusedException("REASON_REQUIRED",
-                    "moving '" + seriesId + "' from " + from + " to " + target + " changes what editors "
-                            + "may cite and what the site lists; it must say why, in between "
-                            + MIN_REASON + " and " + MAX_REASON + " characters");
-        }
-
-        series.setStatus(target);
-
-        // S-17: ACTIVE is what puts a series in the picker, so it may not be
-        // incomplete. A DRAFT is allowed to be.
-        List<SeriesValidator.FieldError> errors =
-                SeriesValidator.validateForActivation(series, null);
-        if (target == SeriesStatus.ACTIVE && !errors.isEmpty()) {
-            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                    errors.size() + " rule(s) fail: " + errors, errors);
-        }
-
-        PublicationSeries saved = seriesService.update(series);
-        audit.series(saved, userService.currentUser(),
-                target == SeriesStatus.ACTIVE ? "SERIES_ACTIVATED" : "SERIES_RETIRED",
-                trimmed.isEmpty() ? null : trimmed);
-        return saved.toVo(SystemPublicationSeriesVo.class);
+        return seriesService.transition(series, target, reason, userService.currentUser())
+                .toVo(SystemPublicationSeriesVo.class);
     }
 
-    /** A reason somebody can read, on the transitions that change what the public sees. */
-    static final int MIN_REASON = 3;
-    static final int MAX_REASON = 512;
+    static final int MIN_REASON = IssueLifecycleService.MIN_REASON;
+    static final int MAX_REASON = IssueLifecycleService.MAX_REASON;
 
     /**
      * A series status by either vocabulary.
      *
-     * The shipped frontend and the legacy one speak different words for the same
+     * The two frontends still in service speak different words for the same
      * three states, and an unknown one is a client error rather than a server
      * failure -- SeriesStatus.valueOf raised IllegalArgumentException, which
      * reaches the caller as a 500 that says nothing.
@@ -586,7 +569,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     /**
-     * B7.1. Which model serves this series to the public.
+     * Which model serves this series to the public.
      *
      * The single irreversible-feeling step of the cutover, and the reason it is
      * its own endpoint rather than a field on a save: flipping authority changes
@@ -643,45 +626,17 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     private PublicationSeries flip(PublicationSeries series, Map<String, Object> body) {
-        PublicAuthority target = PublicAuthority.valueOf(
-                String.valueOf(body == null ? "" : body.getOrDefault("authority", "")).trim().toUpperCase());
+        String token = String.valueOf(body == null ? "" : body.getOrDefault("authority", "")).trim().toUpperCase();
+        PublicAuthority target;
+        try {
+            target = PublicAuthority.valueOf(token);
+        } catch (IllegalArgumentException e) {
+            throw new IssueLifecycleService.TransitionRefusedException("INVALID_AUTHORITY",
+                    "'" + token + "' is not a public authority; it is NEW or LEGACY");
+        }
         boolean force = body != null && Boolean.TRUE.equals(body.get("force"));
-        String reason = body == null ? "" : String.valueOf(body.getOrDefault("reason", "")).trim();
-
-        if (reason.length() < MIN_REASON || reason.length() > MAX_REASON) {
-            throw new IssueLifecycleService.TransitionRefusedException("REASON_REQUIRED",
-                    "changing which model serves '" + series.getSeriesId() + "' to the public must say "
-                            + "why, in between " + MIN_REASON + " and " + MAX_REASON + " characters");
-        }
-
-        PublicAuthority from = series.getPublicAuthority();
-        if (target == PublicAuthority.NEW && from != PublicAuthority.NEW) {
-            if (series.getStatus() != SeriesStatus.ACTIVE) {
-                throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_ACTIVE",
-                        "'" + series.getSeriesId() + "' is " + series.getStatus() + ". A series serves "
-                                + "the public only once it is active.");
-            }
-            ShadowDiffService.Readiness readiness =
-                    ShadowDiffService.readinessOf(shadowDiff.forSeries(series.getSeriesId()));
-            if (!readiness.ready() && !force) {
-                throw new IssueLifecycleService.TransitionRefusedException("NOT_READY_FOR_CUTOVER",
-                        "'" + series.getSeriesId() + "' has " + readiness.consecutiveGreen()
-                                + " consecutive green comparison(s) of " + readiness.runs() + " run(s), "
-                                + readiness.skipped() + " skipped. The precondition is "
-                                + ShadowDiffService.REQUIRED_GREEN_RELEASES + ", or a series with no "
-                                + "membership to compare. Pass force with a reason to flip anyway.");
-            }
-        }
-
-        series.setPublicAuthority(target);
-        PublicationSeries saved = seriesService.update(series);
-
-        Map<String, Object> detail = new LinkedHashMap<>();
-        detail.put("from", from == null ? null : from.name());
-        detail.put("to", target.name());
-        detail.put("forced", force);
-        audit.seriesAuthority(saved, userService.currentUser(), detail, reason);
-        return saved;
+        String reason = body == null ? null : String.valueOf(body.getOrDefault("reason", ""));
+        return seriesService.setPublicAuthority(series, target, force, reason, userService.currentUser());
     }
 
     /** S11. Delete, guarded on having no issues. */

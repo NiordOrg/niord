@@ -114,6 +114,8 @@ public class AnnualCutoffTest {
         assertEquals(31, end.getDayOfMonth());
         assertEquals(23, end.getHour());
         assertEquals(59, end.getMinute());
+        assertEquals(IntervalBoundSource.RECOVERED.name(), acc2018.getIntervalToSource(),
+                "an invented year-end is flagged as reconstructed, unlike one the archive recorded");
         assertEquals(acc2018.getIntervalTo(), acc2018.getCutoffStampedAt());
         assertNull(acc2018.getPublishedAt(), "edited in 2021: not a release moment");
     }

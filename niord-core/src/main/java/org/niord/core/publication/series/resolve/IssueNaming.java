@@ -117,7 +117,10 @@ public final class IssueNaming {
             // than one cadence PERIOD, and it is named for the weeks it closed:
             // the cut-off week and the ones before it that no issue closed.
             long days = (cutoff.getTime() - intervalFrom.getTime()) / 86_400_000L;
-            long periods = Math.round(days / 7.0);
+            // A quarter-period of tolerance, not rounding: a single week released up
+            // to five days late is still one period, and only a window that has
+            // genuinely swallowed most of a second one is named for two.
+            long periods = (long) Math.floor(days / 7.0 + 0.25);
             if (periods >= 2) {
                 ZonedDateTime firstClosed = end.minusWeeks(periods - 1);
                 weekTo = week;

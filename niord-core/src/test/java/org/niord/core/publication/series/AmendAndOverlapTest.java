@@ -327,4 +327,64 @@ public class AmendAndOverlapTest {
                 "and the new one records what it is");
     }
 
+    /** A reason of one keystroke is not a reason. */
+    @Test
+    @Transactional
+    public void anAmendWithAnUnreadableReasonIsRefused() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationIssue issue = publishedIssue(s, new Date(1_699_000_000_000L),
+                new Date(1_700_000_000_000L));
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> publishService.amend(issue.getId(),
+                                new IssuePublishService.AmendRequest(false, Set.of(), user(), " x ")));
+        assertEquals("REASON_REQUIRED", e.code());
+    }
+
+    /**
+     * An imported issue is a historical record. Its members were frozen from the
+     * archive and its document is the one people cited; re-deciding either is not
+     * a correction but a different publication under the old name.
+     */
+    @Test
+    @Transactional
+    public void anImportedIssueCannotBeAmended() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationIssue issue = publishedIssue(s, new Date(1_699_000_000_000L),
+                new Date(1_700_000_000_000L));
+        issue.setLegacyPublicationId(UUID.randomUUID().toString());
+        issue.setMembershipProvenance(MembershipProvenance.IMPORTED);
+        em.flush();
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> publishService.amend(issue.getId(),
+                                new IssuePublishService.AmendRequest(false, Set.of(), user(),
+                                        "the archive had the wrong cover")));
+        assertEquals("ISSUE_IMPORTED", e.code());
+        assertTrue(auditService.forIssue(issue).stream().noneMatch(a -> "AMENDED".equals(a.getAction())),
+                "a refusal records nothing");
+    }
+
+    /** Retiring takes a document off the public list; it says why, in words. */
+    @Test
+    @Transactional
+    public void retiringWithoutAReadableReasonIsRefused() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationIssue issue = publishedIssue(s, new Date(1_699_000_000_000L),
+                new Date(1_700_000_000_000L));
+
+        for (String reason : new String[] {null, "", "  ", "x"}) {
+            IssueLifecycleService.TransitionRefusedException e =
+                    assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                            () -> lifecycle.retire(issue, user(), reason), "reason: '" + reason + "'");
+            assertEquals("REASON_REQUIRED", e.code());
+        }
+        assertEquals(IssueStatus.PUBLISHED, issue.getStatus(), "a refusal changes nothing");
+
+        lifecycle.retire(issue, user(), "superseded by a corrected edition");
+        assertEquals(IssueStatus.RETIRED, issue.getStatus());
+    }
+
 }

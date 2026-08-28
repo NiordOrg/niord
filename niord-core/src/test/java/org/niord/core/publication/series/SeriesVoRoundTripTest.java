@@ -54,7 +54,12 @@ public class SeriesVoRoundTripTest {
      * disagree with the one that counts. cutoffZone() reads the domain and nothing
      * else; the column stays only because dropping it is a migration.
      */
-    private static final Set<String> NOT_ON_THE_WIRE = Set.of("nominalCutoffTimeZone");
+    private static final Set<String> NOT_ON_THE_WIRE = Set.of("nominalCutoffTimeZone",
+            // Read on the wire, never written through it. Which model serves a
+            // series to the public is the cutover flip -- its own action, with a
+            // reason and an audit entry -- and a save that could carry it would be
+            // a way round all three.
+            "publicAuthority");
 
     @Test
     public void everySettableFieldSurvivesTheVoRoundTrip() throws Exception {

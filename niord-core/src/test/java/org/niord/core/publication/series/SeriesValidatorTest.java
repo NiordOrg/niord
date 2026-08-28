@@ -429,4 +429,55 @@ public class SeriesValidatorTest {
         assertEquals(CutoffDefault.RELEASE_MOMENT,
                 CutoffDefault.forShape(SeriesCadence.NONE, null));
     }
+
+    // ------------------------------------------------------- the hard rules
+
+    /** Automatic release is modelled and not built; a series asking for it is refused. */
+    @Test
+    public void automaticReleaseIsRefusedUntilItExists() {
+        PublicationSeries s = valid();
+        assertDoesNotFire("S-22", s);
+
+        s.setReleaseMode(ReleaseMode.AUTO_RELEASE);
+        assertFires("S-22", s);
+    }
+
+    /** The four report parameters the issue supplies cannot be typed, in any spelling. */
+    @Test
+    public void reservedReportParametersAreRefusedInAnySpelling() {
+        PublicationSeries s = valid();
+        s.getReportParams().put("landscape", "true");
+        assertDoesNotFire("S-23", s);
+
+        for (String key : List.of("week", "weekTo", "WEEKTO", " year ", "Edition")) {
+            PublicationSeries t = valid();
+            t.getReportParams().put(key, "1");
+            assertFires("S-23", t);
+            assertTrue(SeriesValidator.validate(t, LANGS).stream()
+                            .anyMatch(e -> "S-23".equals(e.rule()) && e.field().startsWith("reportParams.")),
+                    "named against the row, so the form can show it there: " + key);
+        }
+    }
+
+    /**
+     * The hard rules are the ones a DRAFT may not break either: a draft may be
+     * incomplete, but not wrong. Everything else waits for activation.
+     */
+    @Test
+    public void theHardRulesAreExactlyTheTwoADraftMayNotBreak() {
+        assertEquals(Set.of("S-22", "S-23"), SeriesValidator.HARD_RULES);
+
+        PublicationSeries incomplete = valid();
+        incomplete.setNominalCutoffDay(null);
+        incomplete.setReportId(null);
+        assertTrue(SeriesValidator.hardRules(incomplete).isEmpty(),
+                "an incomplete draft breaks no hard rule");
+
+        PublicationSeries wrong = valid();
+        wrong.setReleaseMode(ReleaseMode.AUTO_RELEASE);
+        wrong.getReportParams().put("week", "12");
+        assertEquals(List.of("S-22", "S-23"),
+                SeriesValidator.hardRules(wrong).stream().map(SeriesValidator.FieldError::rule).toList());
+    }
+
 }

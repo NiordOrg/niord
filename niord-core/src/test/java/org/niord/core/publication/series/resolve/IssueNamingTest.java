@@ -235,4 +235,25 @@ public class IssueNamingTest {
         assertEquals("EfS 33/2017 ${parameters}",
                 IssueNaming.expandCitation("EfS ${week}/${year} ${parameters}", n));
     }
+
+    /**
+     * A single week released LATE is still one week. Production released several
+     * weeks two to five days after their nominal close -- a window of ten or
+     * twelve days -- and each is one issue named for the week it closed. Only a
+     * window that swallowed most of a second period is a double week.
+     */
+    @Test
+    public void aSingleWeekReleasedLateIsNotADoubleWeek() {
+        Date from = at(2026, 7, 8, 9, 0);     // Wednesday, week 28 opened
+        Date lateClose = at(2026, 7, 20, 9, 0); // released the Monday after next: twelve days
+        IssueNaming.Numbers late = IssueNaming.derive(lateClose, from, DK, null);
+        assertEquals(30, late.week(), "named for the week it closed in");
+        assertNull(late.weekTo(), "twelve days is one late week, not two");
+
+        Date doubleClose = at(2026, 7, 22, 9, 0); // a full second period: fourteen days
+        IssueNaming.Numbers two = IssueNaming.derive(doubleClose, from, DK, null);
+        assertEquals(29, two.week(), "the first week no other issue closed");
+        assertEquals(30, two.weekTo());
+    }
+
 }

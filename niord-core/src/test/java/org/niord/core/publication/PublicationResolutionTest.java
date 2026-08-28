@@ -13,6 +13,7 @@ import org.niord.core.message.MessageService;
 import org.niord.core.message.PublicationMemberSetSource.Audience;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.IssueMember;
+import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.IssueLifecycleService.TransitionRefusedException;
 import org.niord.core.publication.series.MemberSource;
@@ -69,6 +70,9 @@ public class PublicationResolutionTest {
 
     @Inject
     org.niord.core.publication.series.IssueLifecycleService lifecycle;
+
+    @Inject
+    org.niord.core.publication.series.IssuePublishService publishService;
 
     @Inject
     org.niord.core.publication.series.PublicationSeriesService seriesService;
@@ -326,7 +330,8 @@ public class PublicationResolutionTest {
         PublicationIssue issue = publishedIssueWith(someMessageUids(1));
         String citedId = issue.getPublicId();
 
-        lifecycle.amend(issue, null, "typo in the heading", List.of());
+        publishService.amend(issue.getId(),
+                new org.niord.core.publication.series.IssuePublishService.AmendRequest(false, org.niord.core.publication.series.IssuePublishService.PublishRequest.ALL_WARNINGS, null, "typo in the heading"));
         assertEquals(citedId, issue.getPublicId(), "amend changed the id");
         assertNotNull(resolver.findIssue(citedId), "the citation stopped resolving after amend");
 

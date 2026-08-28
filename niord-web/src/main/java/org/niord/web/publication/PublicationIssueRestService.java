@@ -595,10 +595,11 @@ public class PublicationIssueRestService {
      * The new-edition action, which is what gives supersedes a write path.
      *
      * A mid-year re-issue is not an edit of the edition it replaces: the old one
-     * stays exactly as it was published, and the new one takes over the window
-     * from the instant it is created. Doing that in two steps is where the cap
-     * gets forgotten, and a forgotten cap puts two current editions on the
-     * public download site at once.
+     * stays exactly as it was published, and the new one is LINKED to it here,
+     * where the link cannot be forgotten. The old edition stays current until
+     * the new one is published -- that publish closes the old window at its own
+     * stamp, so the two meet exactly and the site never shows two current
+     * editions, nor none.
      */
     @POST
     @Path("/issue/{publicId}/new-edition")

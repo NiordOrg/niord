@@ -187,7 +187,8 @@ public class IssueInvariantsTest {
         PublicationIssue after = em.find(PublicationIssue.class, issue.getId());
         assertEquals(minted, after.getPublicId(), "publish changed publicId");
 
-        lifecycle.amend(after, null, "typo", List.of());
+        publishService.amend(after.getId(),
+                new IssuePublishService.AmendRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, "typo"));
         assertEquals(minted, after.getPublicId(), "amend changed publicId");
         lifecycle.retire(after, null, "withdrawn in error");
         assertEquals(minted, after.getPublicId(), "retire changed publicId");

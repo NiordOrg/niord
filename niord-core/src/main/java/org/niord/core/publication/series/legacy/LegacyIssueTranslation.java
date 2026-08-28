@@ -169,13 +169,17 @@ public final class LegacyIssueTranslation {
         // (every yearly row in the estate carries 1 January to 31 December), and
         // an open end closes at the end of the window's own year.
         if (isYearly(legacy, series)) {
-            Date to = legacy.getPublishDateTo() != null
-                    ? legacy.getPublishDateTo()
-                    : endOfYear(released, series);
+            boolean endGiven = legacy.getPublishDateTo() != null;
+            Date to = endGiven ? legacy.getPublishDateTo() : endOfYear(released, series);
             issue.setIntervalFrom(released);
             issue.setIntervalFromSource(released == null ? null : IntervalBoundSource.NOMINAL);
             issue.setIntervalTo(to);
-            issue.setIntervalToSource(to == null ? null : IntervalBoundSource.NOMINAL.name());
+            // A year-end the archive recorded is nominal; one this import had to
+            // invent because the archive left the year open is a reconstruction,
+            // and says so -- an admin reading "31 December 23:59:59" should be
+            // able to tell which of the two it is.
+            issue.setIntervalToSource(to == null ? null
+                    : (endGiven ? IntervalBoundSource.NOMINAL : IntervalBoundSource.RECOVERED).name());
             return;
         }
 

@@ -321,6 +321,23 @@ public final class SeriesValidator {
     }
 
     /**
+     * The rules a DRAFT may not break either.
+     *
+     * A draft is allowed to be incomplete -- a missing report, an empty
+     * criteria document -- because it is not in the picker yet. It is not
+     * allowed to ask for something the system cannot do, or to type a value the
+     * issue supplies: those are not gaps to fill in later but mistakes to correct
+     * now, and a save that accepted them would store a series whose activation
+     * is already known to fail.
+     */
+    public static final Set<String> HARD_RULES = Set.of("S-22", "S-23");
+
+    /** The hard-rule failures alone, for a save in any status. */
+    public static List<FieldError> hardRules(PublicationSeries s) {
+        return validate(s, null).stream().filter(e -> HARD_RULES.contains(e.rule())).toList();
+    }
+
+    /**
      * S-17. ACTIVE requires every other rule green.
      *
      * A series is allowed to be an incomplete DRAFT; it is not allowed to be an

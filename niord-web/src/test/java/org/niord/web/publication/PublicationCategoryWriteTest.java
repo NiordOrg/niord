@@ -18,20 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The category names this resource writes, which it previously could not.
+ * The category names this resource writes.
  *
- * TWO RESOURCES ANSWER /publication-categories: this one and the legacy
- * org.niord.web.PublicationCategoryRestService, which has owned full CRUD for
- * years. For GET, PUT and DELETE both declare the same sub-paths and this one
- * wins -- verified against the deployed API by its response shape and ordering --
- * so its PUT is the one that runs, and its PUT ignored the descs entirely. A
- * category created with a typo could not be renamed through the endpoint actually
- * being served, and those names are what the public page shows.
- *
- * CREATE is NOT here, deliberately. The legacy resource already declares POST on
- * this path and nothing else does, so it wins outright and creating a category has
- * always worked. Adding a second POST made a deterministic route ambiguous and
- * bought nothing.
+ * ONE resource answers /publication-categories. Its PUT used to ignore the descs
+ * entirely, so a category created with a typo could not be renamed through the
+ * endpoint being served -- and those names are what the public page shows.
+ * Create lives beside update now, with the priority defaulting to the back of
+ * the page rather than silently ahead of everything.
  */
 public class PublicationCategoryWriteTest {
 

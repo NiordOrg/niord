@@ -546,7 +546,10 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         releaseMode = enumOf(ReleaseMode.class, vo.getReleaseMode(), "releaseMode");
         nextIssueCreation = enumOf(NextIssueCreation.class, vo.getNextIssueCreation(),
                 "nextIssueCreation");
-        publicAuthority = enumOf(PublicAuthority.class, vo.getPublicAuthority(), "publicAuthority");
+        // publicAuthority is deliberately NOT read here. Which model serves a
+        // series to the public is a cutover decision with its own endpoint, a
+        // reason and an audit entry; a value arriving in a save -- from the form,
+        // the one-off editor or a series import -- must not be able to flip it.
         // Absent means "unchanged": an older client that does not send it must not
         // silently flip a series to one file for every language.
         if (vo.getLanguageSpecific() != null) {

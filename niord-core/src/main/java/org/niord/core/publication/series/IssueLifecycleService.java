@@ -69,6 +69,26 @@ public class IssueLifecycleService extends BaseService {
         }
     }
 
+    /** The one reason rule, for every action that changes what the public reads. */
+    public static final int MIN_REASON = 3;
+    public static final int MAX_REASON = 512;
+
+    /**
+     * A reason somebody can read, or a refusal.
+     *
+     * The floor is what separates a reason from a keystroke: "x" records that
+     * somebody typed something, which is worse than nothing because it looks
+     * like a decision was explained. The ceiling keeps a trail readable.
+     */
+    public static String requireReason(String reason, String why) {
+        String trimmed = reason == null ? "" : reason.trim();
+        if (trimmed.length() < MIN_REASON || trimmed.length() > MAX_REASON) {
+            throw new TransitionRefusedException("REASON_REQUIRED",
+                    why + " -- in between " + MIN_REASON + " and " + MAX_REASON + " characters");
+        }
+        return trimmed;
+    }
+
     // ================================================================= create
 
     /** T0. A new issue. publicId is minted at CREATE and immutable for life. */
@@ -155,9 +175,10 @@ public class IssueLifecycleService extends BaseService {
     /**
      * A new edition of an in-force publication, superseding an existing one.
      *
-     * OQ-10. One transaction: the link and the cap together. Skydeomraader has
-     * two editions in 2020 and three in 2022, so this fires predictably rather
-     * than exceptionally.
+     * The LINK is made here, where it cannot be forgotten; the WINDOW changes
+     * hands in the publish that takes over, where the successor becomes
+     * readable. Skydeomraader has two editions in 2020 and three in 2022, so
+     * this fires predictably rather than exceptionally.
      */
     @Transactional
     public PublicationIssue newEdition(PublicationIssue predecessor, Date intervalFrom, User actor) {
@@ -270,25 +291,6 @@ public class IssueLifecycleService extends BaseService {
         return series.getSeriesId();
     }
 
-    // ================================================================= amend
-
-    /**
-     * T2. Re-render a published issue in place.
-     *
-     * The public window and publishedAt are untouched: an amendment corrects the
-     * document, it does not republish it. What changes is the file, and the old
-     * bytes are archived first.
-     */
-    @Transactional
-    public PublicationIssue amend(PublicationIssue issue, User actor, String reason,
-                                  List<String> archivePaths) {
-        if (issue.getStatus() != IssueStatus.PUBLISHED) {
-            throw new TransitionRefusedException("ISSUE_NOT_PUBLISHED",
-                    "only a published issue can be amended");
-        }
-        audit.amended(issue, actor, reason, archivePaths);
-        return em.merge(issue);
-    }
 
     // ============================================================ retire / reactivate
 
@@ -305,6 +307,10 @@ public class IssueLifecycleService extends BaseService {
             throw new TransitionRefusedException("ISSUE_NOT_PUBLISHED",
                     "only a published issue can be retired");
         }
+        // Retiring takes a document off the public list that people may be
+        // reading; the trail must say why, in words. Reactivating restores the
+        // state it was already published in and asks for none.
+        requireReason(reason, "retiring removes this issue from the public list; it must say why");
         Date fileBefore = issue.getPublicTo();
 
         issue.setStatus(IssueStatus.RETIRED);

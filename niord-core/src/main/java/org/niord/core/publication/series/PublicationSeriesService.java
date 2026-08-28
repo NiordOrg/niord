@@ -1,12 +1,17 @@
 package org.niord.core.publication.series;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.persistence.FlushModeType;
 import jakarta.transaction.Transactional;
+import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.User;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -21,6 +26,12 @@ import java.util.Objects;
 @Transactional
 @SuppressWarnings("unused")
 public class PublicationSeriesService extends BaseService {
+
+    @Inject
+    IssueAuditService audit;
+
+    @Inject
+    ShadowDiffService shadowDiff;
 
     /** Looks a series up by its human-authored, stable id. */
     public PublicationSeries findBySeriesId(String seriesId) {
@@ -83,6 +94,112 @@ public class PublicationSeriesService extends BaseService {
         removeBlankDescs(series);
         checkMessagePublicationImmutable(series);
         return em.merge(series);
+    }
+
+    /**
+     * The status transition, validated and audited.
+     *
+     * DRAFT is where a series is assembled, and it is reachable only before the
+     * series has ever been active. Going back to it afterwards would put a
+     * publication that has issues, citations and readers into the state whose
+     * whole meaning is "not finished yet", and every rule that guards an ACTIVE
+     * series -- the domain its cut-offs are read in, the report it renders --
+     * would stop applying to something the public is still reading.
+     *
+     * Leaving ACTIVE takes a publication away from editors and readers and asks
+     * why. Entering it -- the first activation, or a reinstatement -- restores
+     * the state it was already in, and a confirm is enough.
+     */
+    public PublicationSeries transition(PublicationSeries series, SeriesStatus target, String reason,
+                                        User actor) {
+        SeriesStatus from = series.getStatus();
+        if (from == target) {
+            return series;
+        }
+        if (target == SeriesStatus.DRAFT) {
+            throw new IssueLifecycleService.TransitionRefusedException("INVALID_STATUS_TRANSITION",
+                    "'" + series.getSeriesId() + "' is " + from + " and cannot go back to DRAFT: a series "
+                            + "that has been active has issues and citations behind it, and DRAFT means "
+                            + "the opposite. Retire it instead -- that is the state for a publication "
+                            + "that has stopped.");
+        }
+        String trimmed = null;
+        if (from == SeriesStatus.ACTIVE) {
+            trimmed = IssueLifecycleService.requireReason(reason,
+                    "moving '" + series.getSeriesId() + "' from " + from + " to " + target
+                            + " changes what editors may cite and what the site lists; it must say why");
+        } else if (reason != null && !reason.isBlank()) {
+            trimmed = reason.trim();
+        }
+
+        series.setStatus(target);
+
+        // S-17: ACTIVE is what puts a series in the picker, so it may not be
+        // incomplete. A DRAFT is allowed to be.
+        List<SeriesValidator.FieldError> errors = SeriesValidator.validateForActivation(series, null);
+        if (target == SeriesStatus.ACTIVE && !errors.isEmpty()) {
+            // The entity is managed: a refusal that left ACTIVE on it would be
+            // flushed by whatever the caller does next.
+            series.setStatus(from);
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    errors.size() + " rule(s) fail: " + errors, errors);
+        }
+
+        PublicationSeries saved = update(series);
+        audit.series(saved, actor, target == SeriesStatus.ACTIVE ? "SERIES_ACTIVATED" : "SERIES_RETIRED",
+                trimmed);
+        return saved;
+    }
+
+    /**
+     * Which model serves this series to the public.
+     *
+     * The single irreversible-feeling step of the cutover, and the reason it is
+     * an action of its own rather than a field on a save: flipping authority
+     * changes what every anonymous reader sees, and it must not be reachable by
+     * an admin editing a name. Both directions are audited, and flipping BACK is
+     * a first-class action -- a rollback nobody has rehearsed is not a rollback.
+     *
+     * The precondition is the shadow diff's own answer: two consecutive green
+     * comparisons by release order, or a series that cannot be compared at all
+     * and is exempt by rule. `force` exists because a precondition that cannot
+     * be overridden gets worked around in the database instead, where nothing is
+     * recorded -- so it is allowed, it demands a reason, and the audit entry says
+     * it was forced.
+     */
+    public PublicationSeries setPublicAuthority(PublicationSeries series, PublicAuthority target,
+                                                boolean force, String reason, User actor) {
+        String trimmed = IssueLifecycleService.requireReason(reason,
+                "changing which model serves '" + series.getSeriesId() + "' to the public must say why");
+
+        PublicAuthority from = series.getPublicAuthority();
+        if (target == PublicAuthority.NEW && from != PublicAuthority.NEW) {
+            if (series.getStatus() != SeriesStatus.ACTIVE) {
+                throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_ACTIVE",
+                        "'" + series.getSeriesId() + "' is " + series.getStatus() + ". A series serves "
+                                + "the public only once it is active.");
+            }
+            ShadowDiffService.Readiness readiness =
+                    ShadowDiffService.readinessOf(shadowDiff.forSeries(series.getSeriesId()));
+            if (!readiness.ready() && !force) {
+                throw new IssueLifecycleService.TransitionRefusedException("NOT_READY_FOR_CUTOVER",
+                        "'" + series.getSeriesId() + "' has " + readiness.consecutiveGreen()
+                                + " consecutive green comparison(s) of " + readiness.runs() + " run(s), "
+                                + readiness.skipped() + " skipped. The precondition is "
+                                + ShadowDiffService.REQUIRED_GREEN_RELEASES + ", or a series with no "
+                                + "membership to compare. Pass force with a reason to flip anyway.");
+            }
+        }
+
+        series.setPublicAuthority(target);
+        PublicationSeries saved = update(series);
+
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("from", from == null ? null : from.name());
+        detail.put("to", target.name());
+        detail.put("forced", force);
+        audit.seriesAuthority(saved, actor, detail, trimmed);
+        return saved;
     }
 
     /**

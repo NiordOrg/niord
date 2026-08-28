@@ -129,7 +129,7 @@ public class IssueCurationService extends BaseService {
                     "no curation decision on this issue names message '" + messageUid + "'");
         }
         for (IssueOverride override : existing) {
-            remove(override, actor);
+            remove(override, actor, reason.trim());
         }
     }
 
@@ -162,6 +162,12 @@ public class IssueCurationService extends BaseService {
 
     @Transactional
     public void remove(IssueOverride override, User actor) {
+        remove(override, actor, null);
+    }
+
+    /** Withdraw one override, recording why where a reason was given. */
+    @Transactional
+    public void remove(IssueOverride override, User actor, String reason) {
         assertOpen(override.getIssue());
         PublicationIssue issue = override.getIssue();
         String uid = override.getMessageUid();
@@ -170,7 +176,7 @@ public class IssueCurationService extends BaseService {
         // the preview's freshness is read against it.
         issue.setUpdated(new Date());
         em.merge(issue);
-        audit.override(issue, actor, "OVERRIDE_REMOVED", uid, null);
+        audit.override(issue, actor, "OVERRIDE_REMOVED", uid, reason);
     }
 
     public List<IssueOverride> forIssue(PublicationIssue issue) {

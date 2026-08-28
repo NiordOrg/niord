@@ -195,10 +195,19 @@ public class IssuePreviewAndFileTest {
 
         PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
         assertEquals(IssueStatus.PUBLISHED, published.getStatus());
+        PublicationIssueDesc da = published.getDescs().stream()
+                .filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow();
+        assertNull(da.getReplacedBy(), "a first upload replaces nothing, and records no corrector");
+        assertNull(da.getReplacedAt());
 
         // The correction. Legal on a published issue by design.
-        files.upload(published, "da", "first.pdf", "corrected".getBytes(StandardCharsets.UTF_8), user());
+        User corrector = user();
+        files.upload(published, "da", "first.pdf", "corrected".getBytes(StandardCharsets.UTF_8), corrector);
         em.flush();
+
+        // The issue itself says its file is not the one that was published.
+        assertEquals(corrector.getId(), da.getReplacedBy().getId());
+        assertNotNull(da.getReplacedAt());
 
         Path archiveDir = paths.archiveRoot().resolve(published.getPublicId()).resolve("da");
         assertTrue(Files.isDirectory(archiveDir), "nothing was archived before the replacement was written");

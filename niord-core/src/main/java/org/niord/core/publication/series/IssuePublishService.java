@@ -232,7 +232,11 @@ public class IssuePublishService extends BaseService {
 
         // --- 11. STATUS FLIP ----------------------------------------------
         issue.setStatus(IssueStatus.PUBLISHED);
-        issue.setPublishedAt(stamp);
+        // The publication MOMENT, which is when this action ran -- never the
+        // cut-off. A week published late with a chosen past cut-off was decided
+        // at that instant and released now, and those are the two facts the
+        // header shows side by side.
+        issue.setPublishedAt(new Date());
         // NULL under AUTO_RELEASE. A fabricated actor is worse than a null one:
         // it makes an unattended release look like somebody signed it off.
         issue.setPublishedBy(series.getReleaseMode() == ReleaseMode.AUTO_RELEASE ? null : request.actor());
@@ -286,10 +290,18 @@ public class IssuePublishService extends BaseService {
                     "only a published issue can be amended; an open one is still being worked on "
                             + "and a retired one is no longer the public version");
         }
-        if (request.reason() == null || request.reason().isBlank()) {
-            throw new IssueLifecycleService.TransitionRefusedException("REASON_REQUIRED",
-                    "an amend replaces a document people have already read; it must say why");
+        // An imported issue's members were frozen from the archive and are never
+        // re-resolved: the query that would produce them today is not the query
+        // that produced them then, and the file at its address is the one people
+        // cited. Correcting one of those is a different action, not this one.
+        if (issue.getLegacyPublicationId() != null
+                || issue.getMembershipProvenance() == MembershipProvenance.IMPORTED) {
+            throw new IssueLifecycleService.TransitionRefusedException("ISSUE_IMPORTED",
+                    "'" + issue.getPublicId() + "' was imported from the archive; its members and its "
+                            + "document are a historical record and cannot be re-decided");
         }
+        IssueLifecycleService.requireReason(request.reason(),
+                "an amend replaces a document people have already read; it must say why");
 
         PublicationSeries series = issue.getSeries();
         // The cut-off is NOT re-taken. It is the instant this issue's content was
@@ -656,7 +668,10 @@ public class IssuePublishService extends BaseService {
         for (PublicationIssueDesc desc : issue.getDescs()) {
             String lang = desc.getLang();
             byte[] bytes = renderService.render(renderRequest(issue, series, ordered, lang));
-            out.add(previews.record(issue, lang, fileNameFor(issue, series, desc, now), bytes));
+            // Named from the cut-off the publish would use, not from the clock: a
+            // preview of last year's accumulated list generated in January carries
+            // last year's tokens, exactly as the published file will.
+            out.add(previews.record(issue, lang, fileNameFor(issue, series, desc, defaultCutoff(issue, series, now)), bytes));
         }
         return out;
     }
@@ -795,6 +810,21 @@ public class IssuePublishService extends BaseService {
                     ? desc.getFileName() : issue.getPublicId() + ".pdf";
         }
         return name.toLowerCase().endsWith(".pdf") ? name : name + ".pdf";
+    }
+
+    /**
+     * Where this series' cut-off falls by default: the release moment, or the
+     * boundary of the period the issue describes.
+     */
+    static Date defaultCutoff(PublicationIssue issue, PublicationSeries series, Date now) {
+        CutoffDefault d = series.getCutoffDefault();
+        if (d == CutoffDefault.PERIOD_START && issue.getIntervalFrom() != null) {
+            return issue.getIntervalFrom();
+        }
+        if (d == CutoffDefault.PERIOD_END && issue.getIntervalTo() != null) {
+            return issue.getIntervalTo();
+        }
+        return now;
     }
 
     private void openWindow(PublicationIssue issue, Date stamp) {

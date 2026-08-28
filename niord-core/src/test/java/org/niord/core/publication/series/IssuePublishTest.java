@@ -388,8 +388,10 @@ public class IssuePublishTest {
 
         PublicationIssue after = em.find(PublicationIssue.class, i.getId());
         assertNotNull(after.getPublishedAt());
-        assertEquals(after.getCutoffStampedAt(), after.getPublishedAt(),
-                "publishedAt must equal the stamp");
+        assertEquals(new Date(1_700_000_000_000L), after.getCutoffStampedAt(),
+                "the cut-off is the instant that was chosen");
+        assertTrue(after.getPublishedAt().getTime() > 1_700_000_000_000L,
+                "the publication moment is when the release ran, not the cut-off it chose");
         assertNull(after.getPublishedBy(),
                 "an unattended release recorded an actor; that makes it look signed off");
     }
