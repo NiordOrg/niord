@@ -39,6 +39,7 @@ import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.SeriesValidator;
+import org.niord.core.publication.series.StaleVersionGuard;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 import org.niord.core.publication.vo.MessagePublication;
 
@@ -110,6 +111,12 @@ public class OneOffRestService {
 
     @Inject
     EntityManager em;
+
+    // A one-off may be query-backed like any other series, so its criteria get the
+    // same C-4 treatment: an operand naming nothing is refused on the save rather
+    // than discovered at the resolve.
+    @Inject
+    org.niord.core.publication.series.criteria.PublicationOperandResolver operands;
 
     // ------------------------------------------------------------- wire shapes
 
@@ -212,6 +219,7 @@ public class OneOffRestService {
         resolveReferences(series, vo);
         forceOneOffShape(series);
         requireCategory(series);
+        refuseDanglingOperands(series);
 
         PublicationSeries saved = seriesService.create(series);
         PublicationIssue issue = lifecycle.create(saved, new Date(), IntervalBoundSource.MANUAL, null);
@@ -256,6 +264,7 @@ public class OneOffRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public OneOffVo update(@PathParam("seriesId") String seriesId, OneOffVo request) {
         PublicationSeries series = required(seriesId);
         SystemPublicationSeriesVo vo = seriesOf(request);
@@ -266,6 +275,16 @@ public class OneOffRestService {
         // one-off surface and not only a save.
         domainGuard.assertWritable(series);
         domainGuard.assertMayAssign(vo.getDomainId(), "The one-off publication '" + seriesId + "'");
+
+        // Then whose revision this is -- after the domain refusal, which is the
+        // more useful answer for a caller at the wrong desk.
+        //
+        // The SERIES' revision, and one token for both rows. A one-off is a series
+        // and its single issue edited through one form: they are only ever written
+        // together, from here, so a second token for the issue would be a second
+        // thing to get wrong with nothing to gain -- and this endpoint's own save
+        // is what moves the series revision on either way.
+        StaleVersionGuard.check(series, vo.getVersion());
 
         // S-16, REFUSED rather than silently corrected, matching the series
         // endpoint. The id is the import/export key and the citation handle, so a
@@ -289,6 +308,7 @@ public class OneOffRestService {
         resolveReferences(series, vo);
         forceOneOffShape(series);
         requireCategory(series);
+        refuseDanglingOperands(series);
 
         PublicationSeries saved = seriesService.update(series);
 
@@ -473,8 +493,24 @@ public class OneOffRestService {
         return issue.createDesc(lang);
     }
 
+    /**
+     * An operand that names nothing is refused on the save, active or not.
+     *
+     * The same rule the full series editor applies, and it has to be the same one:
+     * a document this form accepted and that one refused would be two definitions
+     * of a valid series, differing only by which screen it was typed on.
+     */
+    private void refuseDanglingOperands(PublicationSeries series) {
+        List<SeriesValidator.FieldError> dangling = SeriesValidator.danglingOperands(series, operands);
+        if (!dangling.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    dangling.size() + " criteria operand(s) name nothing: " + dangling, dangling);
+        }
+    }
+
     private void activate(PublicationSeries series) {
-        List<SeriesValidator.FieldError> errors = SeriesValidator.validateForActivation(series, null);
+        List<SeriesValidator.FieldError> errors =
+                SeriesValidator.validateForActivation(series, null, operands);
         if (!errors.isEmpty()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
                     errors.size() + " rule(s) fail: " + errors);

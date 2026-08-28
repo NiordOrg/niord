@@ -597,6 +597,9 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         }
 
         if (vo instanceof SystemPublicationIssueVo sys) {
+            // See the series' toVo: the revision travels with the read so the
+            // write that follows can say which one it was composed against.
+            sys.setVersion(getVersion());
             sys.setStatus(status == null ? null : status.name());
             sys.setIntervalFrom(intervalFrom);
             sys.setIntervalTo(intervalTo);

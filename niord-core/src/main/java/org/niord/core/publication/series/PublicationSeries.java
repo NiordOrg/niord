@@ -506,6 +506,11 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
      * which sends whoever is debugging it to the wrong place entirely.
      */
     public void updateFromVo(SystemPublicationSeriesVo vo) {
+        // vo.getVersion() IS DELIBERATELY NOT READ HERE. The revision is compared
+        // before this method runs and then dropped; assigning it would let a
+        // client name any revision it liked -- including the one it is about to
+        // overwrite -- which turns the concurrency guard into a field the caller
+        // controls, and a guard the caller controls is not a guard.
         seriesId = vo.getSeriesId();
         sortOrder = vo.getSortOrder();
 
@@ -697,6 +702,11 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
         if (system) {
             SystemPublicationSeriesVo sys = (SystemPublicationSeriesVo) vo;
+            // The revision this read is of, so the save it feeds can name it and
+            // be refused when somebody else got there first. Admin-tier only:
+            // nothing on the lean shape may be saved back, so a revision on it
+            // would be a token with no write to present it to.
+            sys.setVersion(getVersion());
             sys.setStatus(status == null ? null : status.name());
             sys.setContentMode(contentMode == null ? null : contentMode.name());
             sys.setCadence(cadence == null ? null : cadence.name());

@@ -45,6 +45,7 @@ import org.niord.core.publication.series.IntervalBoundSource;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.StaleVersionGuard;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueEditService;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
@@ -764,10 +765,16 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public Map<String, Object> publish(@PathParam("publicId") String publicId,
                                        Map<String, Object> params) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        // Before the cut-off is stamped. A release is the one action here that
+        // cannot be taken back, and an admin pressing it against a checklist drawn
+        // before somebody else curated the member set would freeze a different
+        // publication from the one they reviewed.
+        StaleVersionGuard.check(issue, StaleVersionGuard.versionOf(params));
 
         @SuppressWarnings("unchecked")
         List<String> acknowledged = params == null ? List.of()
@@ -817,10 +824,12 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public Map<String, Object> amend(@PathParam("publicId") String publicId,
                                      Map<String, Object> params) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        StaleVersionGuard.check(issue, StaleVersionGuard.versionOf(params));
 
         @SuppressWarnings("unchecked")
         List<String> acknowledged = params == null ? List.of()
@@ -857,10 +866,14 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationIssueVo newEdition(@PathParam("publicId") String publicId,
                                                Map<String, Object> params) {
         PublicationIssue predecessor = required(publicId);
         domainGuard.assertWritable(predecessor);
+        // The revision named is the PREDECESSOR's: it is the row this action reads
+        // and caps, and the successor does not exist yet to have one.
+        StaleVersionGuard.check(predecessor, StaleVersionGuard.versionOf(params));
 
         Date intervalFrom = null;
         Object raw = params == null ? null : params.get("intervalFrom");
@@ -881,10 +894,14 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationIssueVo retire(@PathParam("publicId") String publicId,
-                                           @QueryParam("reason") String reason) {
+                                           @QueryParam("reason") String reason,
+                                           @QueryParam("version") Integer version) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        // Alongside the reason, which already travels this way for want of a body.
+        StaleVersionGuard.check(issue, version);
         return lifecycle.retire(issue, userService.currentUser(), reason)
                 .toVo(SystemPublicationIssueVo.class);
     }
@@ -894,10 +911,13 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationIssueVo reactivate(@PathParam("publicId") String publicId,
-                                               @QueryParam("reason") String reason) {
+                                               @QueryParam("reason") String reason,
+                                               @QueryParam("version") Integer version) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        StaleVersionGuard.check(issue, version);
         return lifecycle.reactivate(issue, userService.currentUser(), reason)
                 .toVo(SystemPublicationIssueVo.class);
     }
@@ -907,9 +927,12 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}")
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
-    public void delete(@PathParam("publicId") String publicId) {
+    @VersionChecked
+    public void delete(@PathParam("publicId") String publicId,
+                       @QueryParam("version") Integer version) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        StaleVersionGuard.check(issue, version);
         lifecycle.deleteIssue(issue, null);
     }
 
@@ -933,10 +956,12 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationIssueVo update(@PathParam("publicId") String publicId,
                                            UpdateIssueRequest request) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        StaleVersionGuard.check(issue, request == null ? null : request.version());
         editService.update(issue, editOf(request), userService.currentUser());
         em.flush();
         return required(publicId).toVo(SystemPublicationIssueVo.class);
@@ -949,13 +974,19 @@ public class PublicationIssueRestService {
      * renaming an issue does not have to send the interval back correctly. A form
      * that round-trips a field in order to change a different one will eventually
      * round-trip a stale value.
+     *
+     * `version` is the revision the caller composed this edit against. Optional,
+     * because the older administration client sends none and a hard requirement
+     * would take every one of its edits down at once; sending it is how a client
+     * asks to be told when somebody else got there first.
      */
     public record UpdateIssueRequest(Map<String, String> names,
                                      Long intervalFrom,
                                      Long intervalTo,
                                      Map<String, Object> reportParams,
                                      IssueCriteriaVo criteriaOverride,
-                                     Boolean clearCriteriaOverride) {
+                                     Boolean clearCriteriaOverride,
+                                     Integer version) {
     }
 
     /**
@@ -1000,13 +1031,20 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationIssueVo uploadFile(@PathParam("publicId") String publicId,
                                                @PathParam("lang") String lang,
+                                               @QueryParam("version") Integer version,
                                                MultipartFormDataInput input) throws Exception {
         PublicationIssue issue = required(publicId);
         // Before a byte is read: an upload onto a released issue replaces the
         // document the public is downloading.
         domainGuard.assertWritable(issue);
+        // A multipart body carries no place for a revision, so it travels as a
+        // parameter. Worth asking for here more than anywhere: the upload archives
+        // whatever it replaces, and replacing a file somebody else already
+        // corrected buries their correction in the archive.
+        StaleVersionGuard.check(issue, version);
 
         Map<String, InputStream> files = WebUtils.getMultipartInputFiles(input);
         if (files.isEmpty()) {
@@ -1065,10 +1103,13 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationIssueVo clearFile(@PathParam("publicId") String publicId,
-                                              @PathParam("lang") String lang) {
+                                              @PathParam("lang") String lang,
+                                              @QueryParam("version") Integer version) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        StaleVersionGuard.check(issue, version);
         fileService.clear(issue, lang, userService.currentUser());
         em.flush();
         return required(publicId).toVo(SystemPublicationIssueVo.class);
@@ -1087,11 +1128,13 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationIssueVo setLink(@PathParam("publicId") String publicId,
                                             @PathParam("lang") String lang,
                                             Map<String, String> body) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        StaleVersionGuard.check(issue, StaleVersionGuard.versionOf(body));
         fileService.setLink(issue, lang,
                 body == null ? null : body.get("link"), userService.currentUser());
         em.flush();
@@ -1107,6 +1150,7 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     @DomainScoped
+    @VersionChecked
     public void includeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
         curate(publicId, body, OverrideKind.INCLUDE);
     }
@@ -1117,6 +1161,7 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     @DomainScoped
+    @VersionChecked
     public void excludeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
         curate(publicId, body, OverrideKind.EXCLUDE);
     }
@@ -1154,11 +1199,19 @@ public class PublicationIssueRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     @DomainScoped
+    @VersionChecked
     public void clearOverride(@PathParam("publicId") String publicId,
                               @PathParam("messageUid") String messageUid,
-                              @QueryParam("reason") String reason) {
+                              @QueryParam("reason") String reason,
+                              @QueryParam("version") Integer version) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        // The ISSUE's revision, not the override's. A curation is a decision about
+        // the member set, and the member set belongs to the issue -- which is also
+        // the row whose revision a curation forces on, so two curators who both
+        // loaded the same open issue collide here rather than overwriting each
+        // other silently.
+        StaleVersionGuard.check(issue, version);
         curation.clear(issue, messageUid, userService.currentUser(), reason);
     }
 
@@ -1177,6 +1230,13 @@ public class PublicationIssueRestService {
     private void curate(String publicId, Map<String, Object> body, OverrideKind kind) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
+        // The ISSUE's revision, for the same reason the domain check lives here:
+        // this is where the issue is resolved, and a copy of the comparison in
+        // each of the two endpoints above is how one of them ends up missing.
+        // A curation forces the issue's revision on, so two curators who both
+        // loaded it at the same revision collide instead of one of them silently
+        // replacing the other's decision in a member list neither will re-read.
+        StaleVersionGuard.check(issue, StaleVersionGuard.versionOf(body));
         String reason = body == null ? null : String.valueOf(body.getOrDefault("reason", ""));
 
         List<String> uids = new ArrayList<>();

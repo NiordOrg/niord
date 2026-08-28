@@ -220,6 +220,11 @@ public class IssueCurationService extends BaseService {
         // the preview's freshness is read against it.
         issue.setUpdated(new Date());
         em.merge(issue);
+        // And its revision moves with it. A child row coming or going does not
+        // touch the parent's counter on its own, so without this two curators who
+        // both loaded the issue at revision 7 would both commit at revision 7 and
+        // the second decision would silently replace the first.
+        StaleVersionGuard.forceIncrement(em, issue);
         audit.override(issue, actor, "OVERRIDE_REMOVED", uid, reason);
     }
 
@@ -278,6 +283,7 @@ public class IssueCurationService extends BaseService {
         // The member set changed; see remove().
         issue.setUpdated(new Date());
         em.merge(issue);
+        StaleVersionGuard.forceIncrement(em, issue);
 
         audit.override(issue, author, action, messageUid, reason);
         return override;

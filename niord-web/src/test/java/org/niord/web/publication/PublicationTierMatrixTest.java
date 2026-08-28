@@ -569,7 +569,7 @@ public class PublicationTierMatrixTest {
      * every occurrence is tried and the first one that opens a body wins, which
      * means a method called before it is declared still resolves.
      */
-    private static String bodyOf(String src, String name) {
+    static String bodyOf(String src, String name) {
         Matcher at = Pattern.compile("\\b" + Pattern.quote(name) + "\\s*\\(").matcher(src);
         while (at.find()) {
             int i = src.indexOf('(', at.start());
@@ -621,7 +621,7 @@ public class PublicationTierMatrixTest {
         return null;
     }
 
-    private static String sourceOf(Class<?> resource) throws IOException {
+    static String sourceOf(Class<?> resource) throws IOException {
         java.nio.file.Path file = java.nio.file.Paths.get("src/main/java",
                 resource.getName().replace('.', '/') + ".java");
         assertTrue(java.nio.file.Files.isRegularFile(file),

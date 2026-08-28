@@ -14,6 +14,18 @@ import java.util.List;
  */
 public class SystemPublicationIssueVo extends PublicationIssueVo {
 
+    /**
+     * The row's revision, so a write can say which revision it was composed
+     * against.
+     *
+     * Filled by the read and COMPARED by the write, never assigned from a body.
+     * It also moves when something changes ABOUT the issue that is not stored on
+     * it -- a curation writes child rows, and the revision is forced on so two
+     * curators working the same open issue collide instead of silently overwriting
+     * each other's decisions.
+     */
+    private Integer version;
+
     private String status;
 
     private Date intervalFrom;
@@ -355,5 +367,13 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     public void setCutoffSource(String cutoffSource) {
         this.cutoffSource = cutoffSource;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }

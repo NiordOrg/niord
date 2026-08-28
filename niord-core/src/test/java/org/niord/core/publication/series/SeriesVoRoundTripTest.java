@@ -81,7 +81,13 @@ public class SeriesVoRoundTripTest {
             // A COUNT OF OTHER ROWS, read-only. S-18 locks the citation channel off
             // it, and a value arriving in a save is ignored: updateFromVo does not
             // read it, and nothing could be written to if it did.
-            "publishedIssueCount", "read-only, derived: PUBLISHED plus RETIRED issues of the series");
+            "publishedIssueCount", "read-only, derived: PUBLISHED plus RETIRED issues of the series",
+            // A REAL COLUMN, but it is declared on VersionedEntity rather than on
+            // this class, so the scan above cannot see it. It is also the one
+            // field that must never be written from a body: updateFromVo drops it
+            // deliberately, because the optimistic-lock guard compares it and a
+            // client that could assign it would control its own guard.
+            "version", "the optimistic-lock counter, on VersionedEntity; compared, never assigned");
 
     /**
      * Every field on the wire is either a stored setting or a declared derivation.

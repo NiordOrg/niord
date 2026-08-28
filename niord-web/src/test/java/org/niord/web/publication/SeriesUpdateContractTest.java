@@ -121,7 +121,10 @@ public class SeriesUpdateContractTest {
         assertNotNull(endpoint("update", String.class, SystemPublicationSeriesVo.class), "S9 update");
         // The reason travels beside the status: leaving ACTIVE, or returning to
         // it, changes what editors may cite and what the site lists.
-        assertNotNull(endpoint("setStatus", String.class, String.class, String.class), "S10 status");
+        // The revision travels beside them, so a status change composed against a
+        // series somebody else has since edited is refused rather than applied.
+        assertNotNull(endpoint("setStatus", String.class, String.class, Integer.class, String.class),
+                "S10 status");
         // And which model answers the public, which is a different decision from
         // whether the series is active at all -- one endpoint each, so neither
         // can be reached by a save of the other.
@@ -129,6 +132,6 @@ public class SeriesUpdateContractTest {
                 "the cutover flip, per series");
         assertNotNull(endpoint("setPublicAuthorityForAll", java.util.Map.class),
                 "the cutover flip, whole estate, all or nothing");
-        assertNotNull(endpoint("delete", String.class), "S11 delete");
+        assertNotNull(endpoint("delete", String.class, Integer.class), "S11 delete");
     }
 }

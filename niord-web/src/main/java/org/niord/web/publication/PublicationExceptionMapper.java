@@ -7,6 +7,7 @@ import jakarta.ws.rs.ext.Provider;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.PublicationException;
 import org.niord.core.publication.series.SeriesValidator;
+import org.niord.core.publication.series.StaleVersionGuard;
 import org.niord.core.publication.series.resolve.IssueNaming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,13 @@ public class PublicationExceptionMapper implements ExceptionMapper<PublicationEx
         }
         if (e instanceof IssueNaming.UnknownTokenException unknown) {
             body.put("token", unknown.token());
+        }
+        // Both revisions, so the client can say "you are three saves behind"
+        // rather than "somebody changed something" -- and so it knows which
+        // revision to re-read against without guessing.
+        if (e instanceof StaleVersionGuard.StaleVersionException stale) {
+            body.put("storedVersion", stale.stored());
+            body.put("submittedVersion", stale.submitted());
         }
         // The codes the admin has to acknowledge, so the dialog can list them
         // rather than send the admin back to the checklist to find out.

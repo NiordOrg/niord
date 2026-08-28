@@ -1,6 +1,7 @@
 package org.niord.web.publication;
 
 import org.niord.core.publication.series.PublicationDomainGuard;
+import org.niord.core.publication.series.StaleVersionGuard;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -179,6 +180,15 @@ public final class PublicationErrorCatalogue {
         // An imported issue is a historical record; re-deciding it is not an
         // action that exists.
         put("ISSUE_IMPORTED", 409);
+
+        // 409: the row moved under the caller between the read that filled their
+        // form and the write. The same request never succeeds again -- the version
+        // it names is gone for good -- but the ACTION does, once the caller has
+        // re-read and re-applied it, which is the "may succeed later" the 409 group
+        // means. Deliberately not 412: the version travels in the body rather than
+        // in a conditional header, so there is no precondition to have failed, and
+        // a client branching on 412 would look for an ETag that was never sent.
+        put(StaleVersionGuard.STALE_VERSION, 409);
 
         // The release rail, enforced. Every BLOCK row an admin can be shown has a
         // code here, because a refusal the screen can render as a sentence and the

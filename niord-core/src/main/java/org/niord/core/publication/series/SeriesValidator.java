@@ -35,8 +35,28 @@ public final class SeriesValidator {
     private SeriesValidator() {
     }
 
-    /** Validates a series. An empty list means it may be saved. */
+    /**
+     * Validates a series without looking any criteria operand up.
+     *
+     * The signature every caller that has no persistence context uses -- and this
+     * class deliberately has none, which is what makes the whole rule set testable
+     * without a database. A caller that CAN resolve an operand passes a resolver
+     * to the overload below; the difference between the two is exactly rule C-4.
+     */
     public static List<FieldError> validate(PublicationSeries s, Set<String> installationLanguages) {
+        return validate(s, installationLanguages, CriteriaValidator.ACCEPT_ALL);
+    }
+
+    /**
+     * Validates a series, resolving every criteria operand through the caller's
+     * resolver.
+     *
+     * @param resolver answers whether an operand names something that exists. The
+     *                 resolver is passed IN rather than looked up, so this class
+     *                 stays pure and a test can hand it a set.
+     */
+    public static List<FieldError> validate(PublicationSeries s, Set<String> installationLanguages,
+                                            CriteriaValidator.OperandResolver resolver) {
         List<FieldError> e = new ArrayList<>();
         if (s == null) {
             return e;
@@ -357,11 +377,43 @@ public final class SeriesValidator {
         }
 
         // C-1 to C-10, on the criteria document itself.
-        for (CriteriaValidator.Violation v : CriteriaValidator.validate(s.getCriteria(), CriteriaValidator.ACCEPT_ALL)) {
-            e.add(new FieldError(v.rule(), "criteria" + v.pointer(), v.message()));
-        }
+        e.addAll(criteriaRules(s, resolver));
 
         return e;
+    }
+
+    /**
+     * The criteria rules alone, as field errors against the criteria control.
+     *
+     * Separated so a save can ask the one question that must be answered while the
+     * form is still open -- does every operand name something -- without also
+     * demanding the completeness a draft is allowed to lack.
+     */
+    public static List<FieldError> criteriaRules(PublicationSeries s,
+                                                 CriteriaValidator.OperandResolver resolver) {
+        List<FieldError> e = new ArrayList<>();
+        for (CriteriaValidator.Violation v : CriteriaValidator.validate(
+                s == null ? null : s.getCriteria(),
+                resolver == null ? CriteriaValidator.ACCEPT_ALL : resolver)) {
+            e.add(new FieldError(v.rule(), "criteria" + v.pointer(), v.message()));
+        }
+        return e;
+    }
+
+    /**
+     * C-4 alone: the operands that name nothing.
+     *
+     * REFUSED ON EVERY SAVE, draft included, and that is the point of separating
+     * it from the rest. A draft is allowed to be incomplete -- a missing report, a
+     * criteria document with no scope yet -- because those are gaps somebody will
+     * fill in. An operand that names an area, a chart or a message series which
+     * does not exist is not a gap: it is wrong now and it will still be wrong at
+     * activation, and left until then it is discovered inside the publish
+     * transaction with the cut-off already stamped.
+     */
+    public static List<FieldError> danglingOperands(PublicationSeries s,
+                                                    CriteriaValidator.OperandResolver resolver) {
+        return criteriaRules(s, resolver).stream().filter(e -> "C-4".equals(e.rule())).toList();
     }
 
     /**
@@ -388,7 +440,13 @@ public final class SeriesValidator {
      * incomplete ACTIVE one, because ACTIVE is what puts it in the picker.
      */
     public static List<FieldError> validateForActivation(PublicationSeries s, Set<String> installationLanguages) {
-        List<FieldError> e = new ArrayList<>(validate(s, installationLanguages));
+        return validateForActivation(s, installationLanguages, CriteriaValidator.ACCEPT_ALL);
+    }
+
+    /** S-17, with every criteria operand resolved through the caller's resolver. */
+    public static List<FieldError> validateForActivation(PublicationSeries s, Set<String> installationLanguages,
+                                                         CriteriaValidator.OperandResolver resolver) {
+        List<FieldError> e = new ArrayList<>(validate(s, installationLanguages, resolver));
         if (s != null && s.getStatus() == SeriesStatus.ACTIVE && !e.isEmpty()) {
             e.add(0, new FieldError("S-17", "status",
                     "a series cannot be ACTIVE while " + e.size() + " rule(s) fail; ACTIVE is what puts it "

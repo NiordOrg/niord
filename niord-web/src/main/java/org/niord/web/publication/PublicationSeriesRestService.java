@@ -55,6 +55,7 @@ import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.PublicationSeriesDescVo;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.SeriesValidator;
+import org.niord.core.publication.series.StaleVersionGuard;
 import org.niord.core.publication.series.resolve.IssueNaming;
 import org.niord.core.publication.series.vo.PublicationSeriesVo;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
@@ -116,6 +117,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     // whose issues then select plenty.
     @Inject
     org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+
+    // C-4 with real lookups behind it, so a criteria document naming an area, a
+    // chart or a message series that does not exist is refused on the save that
+    // carries it -- rather than at the resolve, which for a query-backed series
+    // happens inside the publish transaction with the cut-off already stamped.
+    @Inject
+    org.niord.core.publication.series.criteria.PublicationOperandResolver operands;
 
     @Inject
     DiagnosticReportService diagnostics;
@@ -311,6 +319,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // set ACTIVE would route around that check.
         series.setStatus(SeriesStatus.DRAFT);
         refuseHardRules(series);
+        refuseDanglingOperands(series);
 
         return seriesService.create(series).toVo(SystemPublicationSeriesVo.class);
     }
@@ -327,6 +336,25 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         if (!hard.isEmpty()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
                     hard.size() + " rule(s) fail: " + hard, hard);
+        }
+    }
+
+    /**
+     * An operand that names nothing is refused on the save, draft or not.
+     *
+     * The rest of the criteria rules are activation's business, because a draft is
+     * allowed to be half-authored. This one is not the same kind of thing: an area
+     * MRN or a message-series id that resolves to no row is wrong the moment it is
+     * typed and stays wrong, and the alternative to catching it here is catching it
+     * at the resolve -- which for a query-backed series is inside the publish
+     * transaction, after the cut-off is stamped, leaving an admin with a series
+     * that cannot be released and no form open to fix it in.
+     */
+    private void refuseDanglingOperands(PublicationSeries series) {
+        List<SeriesValidator.FieldError> dangling = SeriesValidator.danglingOperands(series, operands);
+        if (!dangling.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    dangling.size() + " criteria operand(s) name nothing: " + dangling, dangling);
         }
     }
 
@@ -642,6 +670,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationSeriesVo update(@PathParam("seriesId") String seriesId,
                                            SystemPublicationSeriesVo vo) {
         if (vo == null) {
@@ -665,6 +694,17 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // domain they are not in and never get it back.
         domainGuard.assertWritable(series);
         domainGuard.assertMayAssign(vo.getDomainId(), "The series '" + seriesId + "'");
+
+        // And only then whose revision this is. The domain refusal comes first
+        // because it is the more useful answer: a caller at the wrong desk fixes
+        // it by switching domain, and telling them to re-read a series they may
+        // never write would send them round a loop with no exit.
+        //
+        // BEFORE anything is read off the body onto the entity. A save sends every
+        // field, so one composed against an older revision carries that revision's
+        // values for the fields it did not mean to change -- and applying it would
+        // silently revert whatever somebody else corrected in between.
+        StaleVersionGuard.check(series, vo.getVersion());
 
         // Captured BEFORE the update, because updateFromVo overwrites the entity in
         // place and there is nothing left to compare against afterwards.
@@ -692,8 +732,9 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         }
 
         refuseHardRules(series);
+        refuseDanglingOperands(series);
         List<SeriesValidator.FieldError> errors =
-                SeriesValidator.validateForActivation(series, null);
+                SeriesValidator.validateForActivation(series, null, operands);
         if (status == SeriesStatus.ACTIVE && !errors.isEmpty()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
                     errors.size() + " rule(s) fail: " + errors, errors);
@@ -724,11 +765,17 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationSeriesVo setStatus(@PathParam("seriesId") String seriesId,
                                                @QueryParam("reason") String reason,
+                                               @QueryParam("version") Integer version,
                                                String status) {
         PublicationSeries series = required(seriesId);
         domainGuard.assertWritable(series);
+        // The revision travels as a query parameter here because the body is the
+        // status token itself and has nowhere to put it -- the same place the
+        // reason already travels, for the same reason.
+        StaleVersionGuard.check(series, version);
         // Null-safe: an empty body reaches here as null, and seriesStatusOf
         // answers that with a coded 400 rather than a NullPointerException the
         // caller reads as a server failure.
@@ -785,10 +832,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
+    @VersionChecked
     public SystemPublicationSeriesVo setPublicAuthority(@PathParam("seriesId") String seriesId,
                                                         Map<String, Object> body) {
         PublicationSeries series = required(seriesId);
         domainGuard.assertWritable(series);
+        StaleVersionGuard.check(series, StaleVersionGuard.versionOf(body));
         return flip(series, authorityOf(body), body).toVo(SystemPublicationSeriesVo.class);
     }
 
@@ -937,9 +986,16 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Path("/series/{seriesId}")
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
-    public void delete(@PathParam("seriesId") String seriesId) {
+    @VersionChecked
+    public void delete(@PathParam("seriesId") String seriesId,
+                       @QueryParam("version") Integer version) {
         PublicationSeries series = required(seriesId);
         domainGuard.assertWritable(series);
+        // A DELETE carries no body, so the revision arrives as a parameter. It is
+        // worth asking for: the delete is guarded on the series having no issues,
+        // and a series that gained one since the screen was drawn is exactly the
+        // change the caller has not seen.
+        StaleVersionGuard.check(series, version);
         lifecycle.deleteSeries(series);
     }
 
@@ -985,7 +1041,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     public List<Map<String, String>> validate(SystemPublicationSeriesVo vo) {
         String[] languages = app.getLanguages();
         return validationReport(vo,
-                languages == null ? Set.of() : new LinkedHashSet<>(List.of(languages)));
+                languages == null ? Set.of() : new LinkedHashSet<>(List.of(languages)),
+                operands);
     }
 
     /**
@@ -997,6 +1054,21 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      */
     static List<Map<String, String>> validationReport(SystemPublicationSeriesVo vo,
                                                       Set<String> installationLanguages) {
+        return validationReport(vo, installationLanguages,
+                org.niord.core.publication.series.criteria.CriteriaValidator.ACCEPT_ALL);
+    }
+
+    /**
+     * The same report, with a resolver that can look an operand up.
+     *
+     * The endpoint passes the real one; the two-argument form above stays for
+     * callers with no persistence context, which is the same split SeriesValidator
+     * itself carries and for the same reason.
+     */
+    static List<Map<String, String>> validationReport(
+            SystemPublicationSeriesVo vo,
+            Set<String> installationLanguages,
+            org.niord.core.publication.series.criteria.CriteriaValidator.OperandResolver resolver) {
         List<Map<String, String>> out = new ArrayList<>();
         if (vo == null) {
             return out;
@@ -1024,8 +1096,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         if (vo.getDomainId() != null && !vo.getDomainId().isBlank()) {
             candidate.setDomain(new Domain());
         }
+        // The dry run resolves operands for real, so "Check rules" answers the same
+        // question the save will. A report that passed on a dangling operand and a
+        // save that refused it would be two definitions of a valid series, and the
+        // one the admin is looking at would be the wrong one.
         for (SeriesValidator.FieldError e
-                : SeriesValidator.validateForActivation(candidate, installationLanguages)) {
+                : SeriesValidator.validateForActivation(candidate, installationLanguages, resolver)) {
             Map<String, String> row = new LinkedHashMap<>();
             row.put("rule", e.rule());
             row.put("field", e.field());

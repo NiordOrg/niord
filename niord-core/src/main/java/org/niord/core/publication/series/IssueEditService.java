@@ -5,9 +5,8 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import org.niord.core.publication.series.criteria.CriteriaValidator;
-import org.niord.core.publication.series.criteria.CriterionKind;
-import org.niord.core.publication.series.criteria.DomainSeriesExpander;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
+import org.niord.core.publication.series.criteria.PublicationOperandResolver;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 
@@ -52,7 +51,7 @@ public class IssueEditService extends BaseService {
     IssueShape shape;
 
     @Inject
-    DomainSeriesExpander domains;
+    PublicationOperandResolver operands;
 
     /**
      * What an edit may change.
@@ -155,16 +154,19 @@ public class IssueEditService extends BaseService {
                         "only a query-backed series selects by criteria, so an override on this "
                                 + "issue would decide nothing");
             }
-            // The same validator the series form runs, with the one operand this
-            // service can actually look up. A domain node is a MACRO: it stands for
-            // the message series that domain publishes, so a domain that names
-            // nothing resolves to an empty scope, and an empty scope narrows the
-            // query to nothing -- the issue would publish EMPTY rather than fail.
-            // The remaining kinds are accepted here as they are on the series form;
-            // a document accepted in one place and refused in the other would be
-            // two definitions of a valid document.
-            List<CriteriaValidator.Violation> violations = CriteriaValidator.validate(wanted,
-                    (kind, value) -> kind != CriterionKind.DOMAIN || domains.exists(value));
+            // The same validator the series form runs, with the same resolver
+            // behind it. Every operand is looked up: an area, a chart or a message
+            // series that names no row narrows the query silently, and a domain
+            // node is worse still -- it is a MACRO for the message series that
+            // domain publishes, so one that expands to nothing narrows the query to
+            // NOTHING and the issue publishes EMPTY rather than failing.
+            //
+            // One resolver in both places on purpose. A document accepted on the
+            // series form and refused here, or the reverse, would be two
+            // definitions of a valid document differing only by which screen it was
+            // typed on.
+            List<CriteriaValidator.Violation> violations =
+                    CriteriaValidator.validate(wanted, operands);
             if (!violations.isEmpty()) {
                 throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
                         "the override would not resolve, and an issue that cannot resolve publishes "

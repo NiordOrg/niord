@@ -17,6 +17,17 @@ import org.niord.model.IJsonSerializable;
  */
 public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
+    /**
+     * The row's revision, so a save can say which revision it was composed against.
+     *
+     * Read-only in the sense that matters: it is filled by the read and COMPARED by
+     * the write, never assigned from a body. A client that echoes what it read is
+     * told when somebody else has changed the series underneath it; a client that
+     * omits it keeps the older last-write-wins behaviour, which is what the
+     * administration screens written before this field existed rely on.
+     */
+    private Integer version;
+
     private String status;
 
     private String contentMode;
@@ -360,6 +371,14 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setDormant(boolean dormant) {
         this.dormant = dormant;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public Integer getPublishedIssueCount() {
