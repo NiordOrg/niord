@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.niord.core.user.Roles;
 import org.niord.web.PublicationRestService;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -25,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -381,6 +384,250 @@ public class PublicationTierMatrixTest {
                                 + "the drafts and the withdrawn ones.");
             }
         }
+    }
+
+    // -------------------------------------------------- the domain scope of writes
+
+    /**
+     * The writes that legitimately ask no domain, and why each one does not.
+     *
+     * A list rather than a rule, for the same reason the tier table is a table:
+     * "does this write belong to one domain" is a decision about what the
+     * endpoint IS, and every rule general enough to derive it would be this list
+     * with the reasons deleted. Writing them down is also what makes adding an
+     * unscoped endpoint a deliberate act -- the test below fails until somebody
+     * says here why the new one needs no domain.
+     */
+    private static Map<String, String> unscopedWrites() {
+        Map<String, String> t = new LinkedHashMap<>();
+
+        // Persist nothing. A POST because the input is a document too big for a
+        // query string, not because anything changes; there is no row to own.
+        t.put("POST /publication-series/resolve-preview", "persists nothing -- a dry run");
+        t.put("POST /publication-series/validate", "persists nothing -- a dry run");
+        t.put("POST /publication-series/import-legacy/validate", "persists nothing -- a dry run");
+
+        // Estate operations. Each one sweeps or rebuilds the WHOLE catalogue
+        // across every domain by definition, so there is no single domain to
+        // scope them to -- scoping them to the caller's would silently import or
+        // compare a fraction of the file and report success.
+        t.put("POST /publication-series/import-legacy", "estate-wide import: the file IS every domain");
+        t.put("DELETE /publication-series/import-legacy", "undoes that import, so it has the same reach");
+        t.put("POST /publication-series/upload-series",
+                "the interchange import; it upserts whatever the file names, and an admin who can "
+                        + "author every series in it by hand gains nothing from a narrower gate");
+        t.put("POST /publication-series/shadow-diff/run",
+                "a cutover diagnostic over the estate; it writes comparison runs, not publications");
+        t.put("POST /publication-series/shadow-diff/reset", "discards those comparison runs");
+
+        // Categories carry no domain AT ALL -- there is no column to compare
+        // against. A category is a section heading on the public page, shared by
+        // every domain's series, and inventing an owner for one would make the
+        // heading uneditable from every domain but that one.
+        String noDomainColumn = "a publication category has no domain: it is a shared section heading";
+        t.put("POST /publication-categories/publication-category/", noDomainColumn);
+        t.put("PUT /publication-categories/publication-category/{categoryId}", noDomainColumn);
+        t.put("DELETE /publication-categories/publication-category/{categoryId}", noDomainColumn);
+        t.put("POST /publication-categories/upload-publication-categories", noDomainColumn);
+
+        return t;
+    }
+
+    /**
+     * Every write on the publication surface is scoped to a domain, or says why not.
+     *
+     * A missing guard call looks exactly like a method that never needed one, so
+     * without this the endpoint somebody adds next year ships unscoped: the write
+     * succeeds, from the wrong domain, and the only evidence is in the audit
+     * trail afterwards. The declaration is what turns "forgot" into a red test.
+     *
+     * Both directions, like the tier table. A stale entry on the unscoped list is
+     * as bad as a missing one -- it is a standing exemption for a route that no
+     * longer exists, and it would silently cover a future endpoint that reuses
+     * the path.
+     */
+    @Test
+    public void everyWriteIsDomainScopedOrDeclaredExempt() {
+        Map<String, String> exempt = unscopedWrites();
+        List<String> offenders = new ArrayList<>();
+        Set<String> seenExempt = new TreeSet<>();
+
+        for (Class<?> resource : NEW_RESOURCES) {
+            for (Endpoint e : endpointsOf(resource)) {
+                if (e.key.startsWith("GET ")) {
+                    continue; // reads are not scoped -- see PublicationDomainGuard
+                }
+                boolean scoped = e.method.isAnnotationPresent(DomainScoped.class);
+                boolean declaredExempt = exempt.containsKey(e.key);
+
+                if (declaredExempt) {
+                    seenExempt.add(e.key);
+                }
+                if (!scoped && !declaredExempt) {
+                    offenders.add(e.key + " changes something and neither carries @DomainScoped "
+                            + "nor appears on the unscoped list");
+                }
+                if (scoped && declaredExempt) {
+                    offenders.add(e.key + " is both @DomainScoped and declared exempt; one of the "
+                            + "two is a leftover and a reader cannot tell which");
+                }
+            }
+        }
+
+        Set<String> phantom = new TreeSet<>(exempt.keySet());
+        phantom.removeAll(seenExempt);
+        for (String gone : phantom) {
+            offenders.add(gone + " is on the unscoped list but is not a write on these resources");
+        }
+
+        if (!offenders.isEmpty()) {
+            offenders.sort(Comparator.naturalOrder());
+            fail("the domain scope of the publication writes is not declared:\n  "
+                    + String.join("\n  ", offenders));
+        }
+    }
+
+    /**
+     * And a method that DECLARES the scope actually asks the guard.
+     *
+     * The annotation does nothing at runtime, so on its own it is a comment that
+     * can be true on Monday and false on Friday. This reads the source of the
+     * body it is attached to, which is the only thing that cannot drift from what
+     * the code does.
+     *
+     * ONE level of delegation is followed, because two of these endpoints are a
+     * single line handing off to a shared private body -- and putting a copy of
+     * the check in each of them instead is how one copy ends up missing.
+     */
+    @Test
+    public void everyDomainScopedMethodAsksTheGuard() throws IOException {
+        List<String> offenders = new ArrayList<>();
+        int checked = 0;
+
+        for (Class<?> resource : NEW_RESOURCES) {
+            String src = sourceOf(resource);
+            for (Method m : resource.getDeclaredMethods()) {
+                if (!m.isAnnotationPresent(DomainScoped.class)) {
+                    continue;
+                }
+                checked++;
+                String body = bodyOf(src, m.getName());
+                if (body == null) {
+                    offenders.add(resource.getSimpleName() + "#" + m.getName()
+                            + ": the source scan could not find the method body, so it cannot say "
+                            + "whether the guard is called");
+                    continue;
+                }
+                if (!asksTheGuard(src, body, 1)) {
+                    offenders.add(resource.getSimpleName() + "#" + m.getName()
+                            + " is annotated @DomainScoped but never calls domainGuard");
+                }
+            }
+        }
+
+        assertTrue(checked >= 20,
+                "only " + checked + " methods carry @DomainScoped; the reflection scan looks broken, "
+                        + "and a broken scan passes over nothing rather than failing");
+
+        if (!offenders.isEmpty()) {
+            fail("a declared domain scope is not enforced:\n  " + String.join("\n  ", offenders));
+        }
+    }
+
+    /** Whether a body calls the guard, or calls something in the same file that does. */
+    private static boolean asksTheGuard(String src, String body, int depth) {
+        if (body.contains("domainGuard.")) {
+            return true;
+        }
+        if (depth <= 0) {
+            return false;
+        }
+        Matcher calls = Pattern.compile("\\b([a-z][A-Za-z0-9]*)\\s*\\(").matcher(body);
+        while (calls.find()) {
+            // UNQUALIFIED calls only -- a method of this same class. Following
+            // `seriesService.update(...)` would resolve to the resource's own
+            // `update`, which is guarded, and hand back a pass to a method that
+            // asks nothing.
+            if (calls.start() > 0 && body.charAt(calls.start() - 1) == '.') {
+                continue;
+            }
+            String callee = calls.group(1);
+            String calleeBody = bodyOf(src, callee);
+            if (calleeBody != null && !calleeBody.equals(body)
+                    && asksTheGuard(src, calleeBody, depth - 1)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The source text of one method's body, braces balanced.
+     *
+     * A declaration and a call site look the same up to the closing parenthesis;
+     * what separates them is that only a declaration is followed by a brace. So
+     * every occurrence is tried and the first one that opens a body wins, which
+     * means a method called before it is declared still resolves.
+     */
+    private static String bodyOf(String src, String name) {
+        Matcher at = Pattern.compile("\\b" + Pattern.quote(name) + "\\s*\\(").matcher(src);
+        while (at.find()) {
+            int i = src.indexOf('(', at.start());
+            int depth = 0;
+            while (i < src.length()) {
+                char c = src.charAt(i);
+                if (c == '(') {
+                    depth++;
+                } else if (c == ')') {
+                    depth--;
+                    if (depth == 0) {
+                        break;
+                    }
+                }
+                i++;
+            }
+            // Between the parameter list and the body there may be a throws
+            // clause and nothing else; anything else means this was a call.
+            int brace = i;
+            while (++brace < src.length()) {
+                char c = src.charAt(brace);
+                if (c == '{') {
+                    break;
+                }
+                if (!Character.isWhitespace(c) && !Character.isLetterOrDigit(c)
+                        && c != ',' && c != '.' && c != '_') {
+                    brace = -1;
+                    break;
+                }
+            }
+            if (brace <= 0 || brace >= src.length()) {
+                continue;
+            }
+            int end = brace;
+            int braces = 0;
+            while (end < src.length()) {
+                char c = src.charAt(end);
+                if (c == '{') {
+                    braces++;
+                } else if (c == '}') {
+                    braces--;
+                    if (braces == 0) {
+                        return src.substring(brace, end + 1);
+                    }
+                }
+                end++;
+            }
+        }
+        return null;
+    }
+
+    private static String sourceOf(Class<?> resource) throws IOException {
+        java.nio.file.Path file = java.nio.file.Paths.get("src/main/java",
+                resource.getName().replace('.', '/') + ".java");
+        assertTrue(java.nio.file.Files.isRegularFile(file),
+                "missing source file " + file + " -- this test reads sources, so a move would "
+                        + "otherwise turn it green over nothing");
+        return java.nio.file.Files.readString(file, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     // ------------------------------------------------------- what EDITOR sees

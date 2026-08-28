@@ -43,6 +43,7 @@ import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.vo.MessageIssueRefVo;
 import org.niord.core.publication.series.IntervalBoundSource;
 import org.niord.core.publication.series.PublicationSeriesService;
+import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueEditService;
@@ -130,6 +131,9 @@ public class PublicationIssueRestService {
     @Inject
     EntityManager em;
 
+    @Inject
+    PublicationDomainGuard domainGuard;
+
     // ----------------------------------------------------------------- writes
 
     /**
@@ -150,6 +154,7 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationIssueVo create(CreateIssueRequest request) {
         if (request == null || request.seriesId() == null || request.seriesId().isBlank()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
@@ -161,6 +166,9 @@ public class PublicationIssueRestService {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
                     "no series '" + request.seriesId() + "'");
         }
+        // The issue inherits the series' domain, so this is the only place the
+        // question is asked -- an issue has no domain of its own to disagree with.
+        domainGuard.assertWritable(series);
 
         // A PUBLISHED_IN_INTERVAL series chains: intervalFrom is the previous
         // issue's stamped cut-off, and the caller supplying it is how a recovered
@@ -667,8 +675,12 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/preview")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public List<Map<String, Object>> generatePreview(@PathParam("publicId") String publicId) {
         PublicationIssue issue = required(publicId);
+        // Scoped although nothing is published: it renders a document into the
+        // issue's repository folder and overwrites what was there.
+        domainGuard.assertWritable(issue);
         List<Map<String, Object>> out = new ArrayList<>();
         for (org.niord.core.publication.series.IssuePreviewService.Preview p : publishService.preview(issue.getId())) {
             Map<String, Object> row = new LinkedHashMap<>();
@@ -751,9 +763,11 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public Map<String, Object> publish(@PathParam("publicId") String publicId,
                                        Map<String, Object> params) {
         PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
 
         @SuppressWarnings("unchecked")
         List<String> acknowledged = params == null ? List.of()
@@ -802,9 +816,11 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public Map<String, Object> amend(@PathParam("publicId") String publicId,
                                      Map<String, Object> params) {
         PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
 
         @SuppressWarnings("unchecked")
         List<String> acknowledged = params == null ? List.of()
@@ -840,9 +856,11 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationIssueVo newEdition(@PathParam("publicId") String publicId,
                                                Map<String, Object> params) {
         PublicationIssue predecessor = required(publicId);
+        domainGuard.assertWritable(predecessor);
 
         Date intervalFrom = null;
         Object raw = params == null ? null : params.get("intervalFrom");
@@ -862,9 +880,12 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/retire")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationIssueVo retire(@PathParam("publicId") String publicId,
                                            @QueryParam("reason") String reason) {
-        return lifecycle.retire(required(publicId), userService.currentUser(), reason)
+        PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
+        return lifecycle.retire(issue, userService.currentUser(), reason)
                 .toVo(SystemPublicationIssueVo.class);
     }
 
@@ -872,9 +893,12 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/reactivate")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationIssueVo reactivate(@PathParam("publicId") String publicId,
                                                @QueryParam("reason") String reason) {
-        return lifecycle.reactivate(required(publicId), userService.currentUser(), reason)
+        PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
+        return lifecycle.reactivate(issue, userService.currentUser(), reason)
                 .toVo(SystemPublicationIssueVo.class);
     }
 
@@ -882,8 +906,11 @@ public class PublicationIssueRestService {
     @DELETE
     @Path("/issue/{publicId}")
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public void delete(@PathParam("publicId") String publicId) {
-        lifecycle.deleteIssue(required(publicId), null);
+        PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
+        lifecycle.deleteIssue(issue, null);
     }
 
     /**
@@ -905,9 +932,11 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationIssueVo update(@PathParam("publicId") String publicId,
                                            UpdateIssueRequest request) {
         PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
         editService.update(issue, editOf(request), userService.currentUser());
         em.flush();
         return required(publicId).toVo(SystemPublicationIssueVo.class);
@@ -970,10 +999,14 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationIssueVo uploadFile(@PathParam("publicId") String publicId,
                                                @PathParam("lang") String lang,
                                                MultipartFormDataInput input) throws Exception {
         PublicationIssue issue = required(publicId);
+        // Before a byte is read: an upload onto a released issue replaces the
+        // document the public is downloading.
+        domainGuard.assertWritable(issue);
 
         Map<String, InputStream> files = WebUtils.getMultipartInputFiles(input);
         if (files.isEmpty()) {
@@ -1031,9 +1064,12 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/file/{lang}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationIssueVo clearFile(@PathParam("publicId") String publicId,
                                               @PathParam("lang") String lang) {
-        fileService.clear(required(publicId), lang, userService.currentUser());
+        PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
+        fileService.clear(issue, lang, userService.currentUser());
         em.flush();
         return required(publicId).toVo(SystemPublicationIssueVo.class);
     }
@@ -1050,10 +1086,13 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationIssueVo setLink(@PathParam("publicId") String publicId,
                                             @PathParam("lang") String lang,
                                             Map<String, String> body) {
-        fileService.setLink(required(publicId), lang,
+        PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
+        fileService.setLink(issue, lang,
                 body == null ? null : body.get("link"), userService.currentUser());
         em.flush();
         return required(publicId).toVo(SystemPublicationIssueVo.class);
@@ -1067,6 +1106,7 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
+    @DomainScoped
     public void includeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
         curate(publicId, body, OverrideKind.INCLUDE);
     }
@@ -1076,6 +1116,7 @@ public class PublicationIssueRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
+    @DomainScoped
     public void excludeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
         curate(publicId, body, OverrideKind.EXCLUDE);
     }
@@ -1112,10 +1153,13 @@ public class PublicationIssueRestService {
     @Path("/issue/{publicId}/overrides/{messageUid}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
+    @DomainScoped
     public void clearOverride(@PathParam("publicId") String publicId,
                               @PathParam("messageUid") String messageUid,
                               @QueryParam("reason") String reason) {
-        curation.clear(required(publicId), messageUid, userService.currentUser(), reason);
+        PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
+        curation.clear(issue, messageUid, userService.currentUser(), reason);
     }
 
     /**
@@ -1124,9 +1168,15 @@ public class PublicationIssueRestService {
      * Both shapes are accepted -- `messageUid` for a single row's button and
      * `messageUids` for a selection -- and both take the same all-or-nothing
      * path, so a caller cannot get partial application by choosing a shape.
+     *
+     * The domain check lives HERE rather than in the two endpoints above it,
+     * because this is where the issue is resolved and both of them are one line
+     * that delegates. Two copies of the same check either side of a shared body
+     * is how one of them ends up missing.
      */
     private void curate(String publicId, Map<String, Object> body, OverrideKind kind) {
         PublicationIssue issue = required(publicId);
+        domainGuard.assertWritable(issue);
         String reason = body == null ? null : String.valueOf(body.getOrDefault("reason", ""));
 
         List<String> uids = new ArrayList<>();

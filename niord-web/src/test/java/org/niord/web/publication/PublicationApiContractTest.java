@@ -5,6 +5,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.PublicationResolver;
+import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.vo.PublicationIssueVo;
 import org.niord.core.publication.series.vo.PublicationSeriesVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
@@ -184,7 +185,8 @@ public class PublicationApiContractTest {
 
         for (var entry : all.entrySet()) {
             int status = entry.getValue();
-            assertTrue(status == 400 || status == 404 || status == 409 || status == 500,
+            assertTrue(status == 400 || status == 403 || status == 404 || status == 409
+                            || status == 500,
                     entry.getKey() + " maps to an unexpected status " + status);
             assertEquals(status, PublicationErrorCatalogue.statusOf(entry.getKey()),
                     entry.getKey() + " does not resolve to its own mapping");
@@ -208,6 +210,31 @@ public class PublicationApiContractTest {
         // And the archive failure is a 500, because the caller did nothing wrong
         // and retrying the same request would fail the same way.
         assertEquals(500, PublicationErrorCatalogue.statusOf("ARCHIVE_FAILED"));
+    }
+
+    /**
+     * Writing another domain's publication is a 403, and it is CATALOGUED.
+     *
+     * Named on its own because of what each near-miss would cost. Uncatalogued it
+     * falls through to 500, and an admin who merely has the wrong domain selected
+     * would be told the server broke. As a 404 it would contradict the screen the
+     * caller is looking at, which is listing the series. As a 409 a client would
+     * retry it forever: no change of state makes the request right, only a change
+     * of domain.
+     */
+    @Test
+    public void writingOutsideTheCallersDomainIsAForbidden() {
+        assertTrue(PublicationErrorCatalogue.knows(PublicationDomainGuard.NOT_IN_DOMAIN),
+                "NOT_IN_DOMAIN is not in the catalogue, so a write aimed at another domain "
+                        + "would come back as a 500");
+        assertEquals(403, PublicationErrorCatalogue.statusOf(PublicationDomainGuard.NOT_IN_DOMAIN));
+
+        // The mapper reads the code off the exception, so the refusal the guard
+        // raises has to be one it recognises -- a refusal outside the base type
+        // is not mapped at all.
+        assertEquals(PublicationDomainGuard.NOT_IN_DOMAIN,
+                PublicationExceptionMapper.codeOf(
+                        new PublicationDomainGuard.NotInDomainException("not yours")));
     }
 
     /**

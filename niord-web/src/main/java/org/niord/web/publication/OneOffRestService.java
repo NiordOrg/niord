@@ -27,6 +27,7 @@ import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.PublicationIssue;
+import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublicationIssueDesc;
 import org.niord.core.publication.series.SeriesIdSlug;
 import org.niord.core.publication.series.PublicationIssueService;
@@ -97,6 +98,9 @@ public class OneOffRestService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    PublicationDomainGuard domainGuard;
 
     @Inject
     IssueLifecycleService lifecycle;
@@ -186,8 +190,12 @@ public class OneOffRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public OneOffVo create(OneOffVo request) {
         SystemPublicationSeriesVo vo = seriesOf(request);
+        // Checked on the body: there is no stored series to compare against on a
+        // create, so what is refused is authoring straight into another domain.
+        domainGuard.assertMayAssign(vo.getDomainId(), "The new one-off publication");
 
         PublicationSeries series = new PublicationSeries();
         series.updateFromVo(vo);
@@ -247,9 +255,17 @@ public class OneOffRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public OneOffVo update(@PathParam("seriesId") String seriesId, OneOffVo request) {
         PublicationSeries series = required(seriesId);
         SystemPublicationSeriesVo vo = seriesOf(request);
+
+        // Both ends: the stored domain says whether this one-off is the caller's,
+        // and the body's says where they are moving it. This endpoint also
+        // retires and reactivates the issue underneath, so it is the whole
+        // one-off surface and not only a save.
+        domainGuard.assertWritable(series);
+        domainGuard.assertMayAssign(vo.getDomainId(), "The one-off publication '" + seriesId + "'");
 
         // S-16, REFUSED rather than silently corrected, matching the series
         // endpoint. The id is the import/export key and the citation handle, so a

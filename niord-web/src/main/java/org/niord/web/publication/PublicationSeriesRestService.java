@@ -35,6 +35,7 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
+import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.NiordApp;
@@ -124,6 +125,9 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    PublicationDomainGuard domainGuard;
 
     @Inject
     IssueLifecycleService lifecycle;
@@ -259,13 +263,21 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
 
     // ------------------------------------------------------------------ writes
 
-    /** S8. Create. */
+    /**
+     * S8. Create.
+     *
+     * The domain check is on the BODY, because there is no stored series yet to
+     * compare against: an admin may author a series into the domain they are
+     * administering, or into none at all, and not into somebody else's.
+     */
     @POST
     @Path("/series/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationSeriesVo create(SystemPublicationSeriesVo vo) {
+        domainGuard.assertMayAssign(vo == null ? null : vo.getDomainId(), "The new series");
         if (vo == null || vo.getSeriesId() == null || vo.getSeriesId().isBlank()) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
                     "seriesId is required; it is the human-authored, stable identity of the series");
@@ -629,6 +641,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationSeriesVo update(@PathParam("seriesId") String seriesId,
                                            SystemPublicationSeriesVo vo) {
         if (vo == null) {
@@ -644,6 +657,14 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         }
 
         PublicationSeries series = required(seriesId);
+
+        // BOTH ends of the move are checked, and one without the other is an open
+        // door. The stored domain says whether this series is the caller's to
+        // touch at all; the body's domain says where they are putting it, and a
+        // caller who may write a series they own could otherwise hand it to a
+        // domain they are not in and never get it back.
+        domainGuard.assertWritable(series);
+        domainGuard.assertMayAssign(vo.getDomainId(), "The series '" + seriesId + "'");
 
         // Captured BEFORE the update, because updateFromVo overwrites the entity in
         // place and there is nothing left to compare against afterwards.
@@ -702,10 +723,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationSeriesVo setStatus(@PathParam("seriesId") String seriesId,
                                                @QueryParam("reason") String reason,
                                                String status) {
         PublicationSeries series = required(seriesId);
+        domainGuard.assertWritable(series);
         // Null-safe: an empty body reaches here as null, and seriesStatusOf
         // answers that with a coded 400 rather than a NullPointerException the
         // caller reads as a server failure.
@@ -761,10 +784,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public SystemPublicationSeriesVo setPublicAuthority(@PathParam("seriesId") String seriesId,
                                                         Map<String, Object> body) {
-        return flip(required(seriesId), authorityOf(body), body)
-                .toVo(SystemPublicationSeriesVo.class);
+        PublicationSeries series = required(seriesId);
+        domainGuard.assertWritable(series);
+        return flip(series, authorityOf(body), body).toVo(SystemPublicationSeriesVo.class);
     }
 
     /**
@@ -783,31 +808,65 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * looks at the series status, so a series retired after a cutover is still
      * being served from the new model. Leaving those behind would strand exactly
      * the rows nobody is watching.
+     *
+     * THE SWEEP IS NARROWED TO THE CALLER'S DOMAIN, and the two ways of naming a
+     * target are answered differently on purpose. An UNNAMED sweep means "the
+     * ones I am responsible for", so a series belonging to another domain is
+     * skipped and counted -- refusing the whole request because somebody else's
+     * series exists would make the endpoint unusable on any estate with more than
+     * one authority. A series named EXPLICITLY is refused instead: the caller
+     * asked for that row by id, and a silent skip would leave them believing a
+     * cutover happened that did not.
      */
     @PUT
     @Path("/public-authority")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
-    public List<SystemPublicationSeriesVo> setPublicAuthorityForAll(Map<String, Object> body) {
+    @DomainScoped
+    public BulkFlipResult setPublicAuthorityForAll(Map<String, Object> body) {
         PublicAuthority target = authorityOf(body);
         List<PublicationSeries> targets = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
         Object named = body == null ? null : body.get("seriesIds");
         if (named instanceof List<?> ids && !ids.isEmpty()) {
             for (Object id : ids) {
-                targets.add(required(String.valueOf(id)));
+                PublicationSeries series = required(String.valueOf(id));
+                domainGuard.assertWritable(series);
+                targets.add(series);
             }
-        } else if (target == PublicAuthority.LEGACY) {
-            targets.addAll(seriesService.findByPublicAuthority(PublicAuthority.NEW));
         } else {
-            targets.addAll(seriesService.findByStatus(SeriesStatus.ACTIVE));
+            List<PublicationSeries> sweep = target == PublicAuthority.LEGACY
+                    ? seriesService.findByPublicAuthority(PublicAuthority.NEW)
+                    : seriesService.findByStatus(SeriesStatus.ACTIVE);
+            for (PublicationSeries series : sweep) {
+                if (domainGuard.isWritable(series)) {
+                    targets.add(series);
+                } else {
+                    skipped.add(series.getSeriesId());
+                }
+            }
         }
 
         List<SystemPublicationSeriesVo> out = new ArrayList<>();
         for (PublicationSeries series : targets) {
             out.add(flip(series, target, body).toVo(SystemPublicationSeriesVo.class));
         }
-        return out;
+        return new BulkFlipResult(out, skipped.size(), skipped);
+    }
+
+    /**
+     * What a bulk flip did, and what it left alone.
+     *
+     * The skipped ids are IN the response rather than only in the log because the
+     * screen that runs a cutover has to be able to say "these eleven are not
+     * yours" -- a bare list of what was flipped looks identical whether the sweep
+     * found nothing else or quietly walked past another domain's estate, and the
+     * runbook step that follows a flip is a count check.
+     */
+    public record BulkFlipResult(List<SystemPublicationSeriesVo> flipped,
+                                 int skipped,
+                                 List<String> skippedSeriesIds) {
     }
 
     /**
@@ -877,8 +936,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @DELETE
     @Path("/series/{seriesId}")
     @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
     public void delete(@PathParam("seriesId") String seriesId) {
-        lifecycle.deleteSeries(required(seriesId));
+        PublicationSeries series = required(seriesId);
+        domainGuard.assertWritable(series);
+        lifecycle.deleteSeries(series);
     }
 
     // ------------------------------------------------------------------ tools

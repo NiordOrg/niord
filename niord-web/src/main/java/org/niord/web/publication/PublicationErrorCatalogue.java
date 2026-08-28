@@ -1,5 +1,7 @@
 package org.niord.web.publication;
 
+import org.niord.core.publication.series.PublicationDomainGuard;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -98,6 +100,20 @@ public final class PublicationErrorCatalogue {
         // inventing one would put a document on the public site under a name
         // nobody chose.
         put("BAD_FILE_NAME", 400);
+
+        // 403 -- the caller is an admin, and this is not theirs to write.
+        //
+        // The only 403 in the catalogue, and it is not the same refusal as the
+        // role gate above it. A missing role is answered by the container before
+        // any of this runs and cannot be fixed by the caller at all; THIS one
+        // says the caller is administering the wrong domain, which they fix by
+        // switching domain. Collapsing the two into one status would send an
+        // admin to ask for a role they already hold.
+        //
+        // Not 404: the series is readable, it is listed, and the screen the
+        // caller is looking at is showing it. Pretending it does not exist would
+        // contradict the response they just rendered.
+        put(PublicationDomainGuard.NOT_IN_DOMAIN, 403);
 
         // 404 -- nothing of that identity exists.
         put("SERIES_NOT_FOUND", 404);
