@@ -13,6 +13,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -24,6 +25,15 @@ import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueCurationService;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.IssueListService;
+import org.niord.core.publication.series.IssueMemberListService;
+import org.niord.core.publication.series.IssuePickerService;
+import org.niord.core.publication.series.IssueStatusTokens;
+import org.niord.core.publication.series.vo.IssueOverrideVo;
+import org.niord.core.publication.series.vo.IssueTimelineVo;
+import org.niord.core.publication.series.vo.PublicationIssuePickerVo;
+import org.niord.core.publication.vo.MessagePublication;
+import org.niord.model.publication.PublicationType;
+import org.niord.model.search.PagedSearchResultVo;
 import org.niord.core.user.Roles;
 import org.niord.core.util.WebUtils;
 import org.niord.core.user.UserService;
@@ -34,7 +44,6 @@ import org.niord.core.publication.series.vo.MessageIssueRefVo;
 import org.niord.core.publication.series.IntervalBoundSource;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.PublicationSeries;
-import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueEditService;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
@@ -105,6 +114,12 @@ public class PublicationIssueRestService {
 
     @Inject
     IssueListService issueList;
+
+    @Inject
+    IssueMemberListService memberList;
+
+    @Inject
+    IssuePickerService picker;
 
     @Inject
     IssueAuditService audit;
@@ -194,18 +209,196 @@ public class PublicationIssueRestService {
      * rows alone cannot be read safely: a series with no MISSING rows and a
      * series nobody examined for gaps produce the same array, and every
      * imported series is DRAFT, so today that is all twenty of them.
+     *
+     * Paging is `page` + `maxSize` and is OPT-IN: unbounded until a caller asks
+     * for a page. An archive is a set an admin scans, and one silently truncated
+     * at a default is the failure this redesign exists to remove -- a reader
+     * sees a complete-looking list and has no way to know it stops at twenty.
+     * `limit` is not accepted under any spelling; the parameter is `maxSize`.
      */
     @GET
     @Path("/series/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
-    public IssueListResultVo bySeries(@PathParam("seriesId") String seriesId) {
+    public IssueListResultVo bySeries(@PathParam("seriesId") String seriesId,
+                                      @QueryParam("page") @DefaultValue("0") int page,
+                                      @QueryParam("maxSize") Integer maxSize) {
         PublicationSeries series = seriesService.findBySeriesId(seriesId);
         if (series == null) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
                     "no series '" + seriesId + "'");
         }
-        return issueList.forSeries(series, new Date());
+        return maxSize == null
+                ? issueList.forSeries(series, new Date())
+                : issueList.forSeries(series, new Date(), page, maxSize);
+    }
+
+    /**
+     * I27. The publication picker.
+     *
+     * What an editor citing a publication is offered, and deliberately the
+     * thinnest payload on this resource: no criteria, no report configuration, no
+     * repository path, no member count. It duplicates the list endpoint in shape
+     * and not in content, which is what lets the admin list grow without changing
+     * anything the citation dialog reads.
+     *
+     * NOT anonymous. Its default status filter reaches OPEN issues, and an
+     * unauthenticated caller walking that would have the names and links of every
+     * unreleased publication in the estate -- precisely the enumeration the
+     * redesign removes. Hydration of an id somebody already holds is a different
+     * question with a different tier, and it lives at /by-ids.
+     *
+     * NOT domain-scoped either, matching the shipped pickers. Most of the
+     * catalogue has no domain, and scoping this would empty the citation dialog
+     * of exactly those rows. A caller that names a domain still sees them: a
+     * series with no domain belongs to every domain.
+     */
+    @GET
+    @Path("/picker")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(Roles.USER)
+    public PagedSearchResultVo<PublicationIssuePickerVo> pickerSearch(
+            @QueryParam("lang") String lang,
+            @QueryParam("title") String title,
+            @QueryParam("publicationSeriesId") String publicationSeriesId,
+            @QueryParam("status") List<String> status,
+            @QueryParam("messagePublication") String messagePublication,
+            @QueryParam("type") String type,
+            @QueryParam("domain") String domain,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("maxSize") @DefaultValue("100") int maxSize) {
+
+        return picker.search(new IssuePickerService.PickerQuery(
+                lang,
+                title,
+                publicationSeriesId,
+                // Published and open, not "all three". A picker exists to offer
+                // something citable, and a withdrawn publication in the same list
+                // as the current week's invites a citation into something nobody
+                // may read any more. An explicit status narrows within that.
+                IssueStatusTokens.parseAll(status, IssuePickerService.DEFAULT_STATUSES),
+                enumOf(MessagePublication.class, messagePublication, "messagePublication"),
+                enumOf(PublicationType.class, type, "type"),
+                domain,
+                page,
+                maxSize));
+    }
+
+    /**
+     * I28. Hydration of ids the caller already holds.
+     *
+     * Anonymous, and that is not enumeration: nothing here can be discovered,
+     * only resolved. A citation chip on the public site has to render the title
+     * of what it points at, and it points at ids that are already bytes inside
+     * published message HTML.
+     *
+     * NO status narrowing, for the same reason. A message citing an issue that
+     * was later retired must still show what it cited -- narrowing to published
+     * would blank precisely the chips that need explaining. Unknown ids are
+     * omitted silently and an empty list is 200: one dead citation must not fail
+     * the lookup for the four beside it.
+     *
+     * The ids travel as one comma-separated parameter rather than a path segment.
+     * `/issue/{publicIds}` would collide with the single-issue read at
+     * `/issue/{publicId}` and which one RESTEasy matched would be undefined.
+     */
+    @GET
+    @Path("/by-ids")
+    @Produces(MediaType.APPLICATION_JSON)
+    @PermitAll
+    public List<PublicationIssuePickerVo> byIds(@QueryParam("ids") String ids,
+                                                @QueryParam("lang") String lang) {
+        if (ids == null || ids.isBlank()) {
+            return List.of();
+        }
+        return picker.byIds(List.of(ids.split(",")), lang);
+    }
+
+    /**
+     * I29. The dashboard's per-series timeline strip, in one request.
+     *
+     * Built from the issue list this is a request per series -- roughly sixty on
+     * the production estate -- and it still could not render a missing period,
+     * because gap synthesis needs exactly one series named and a mixed-series page
+     * cannot name one. The cells come from the same synthesizer the issue list
+     * uses, so a week the list calls missing is a cell the strip shows as missing.
+     *
+     * Bounded by its arguments rather than paged: at most fifty series by at most
+     * fifty-two periods. The series ids are REQUIRED -- this endpoint never scans
+     * the estate, because a dashboard that renders what it was told to render
+     * cannot accidentally become an enumeration of everything.
+     */
+    @GET
+    @Path("/recent")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(Roles.USER)
+    public List<IssueTimelineVo> recent(@QueryParam("publicationSeriesId") String publicationSeriesId,
+                                        @QueryParam("periods") @DefaultValue("8") int periods,
+                                        @QueryParam("lang") String lang) {
+        List<String> seriesIds = new ArrayList<>();
+        for (String id : publicationSeriesId == null ? new String[0] : publicationSeriesId.split(",")) {
+            if (!id.isBlank()) {
+                seriesIds.add(id.trim());
+            }
+        }
+        if (seriesIds.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("NO_SERIES_IDS",
+                    "at least one publicationSeriesId is required; this endpoint never scans the estate");
+        }
+        if (seriesIds.size() > MAX_TIMELINE_SERIES) {
+            throw new IssueLifecycleService.TransitionRefusedException("TOO_MANY_SERIES_IDS",
+                    "at most " + MAX_TIMELINE_SERIES + " series can be asked for in one strip; "
+                            + seriesIds.size() + " were named");
+        }
+
+        // Clamped rather than refused. periods is a viewport width, not an
+        // assertion about the data -- a client asking for more cells than fit
+        // wants as many as it can have, and failing the whole dashboard over it
+        // would be a worse answer than a shorter strip.
+        int wanted = Math.min(Math.max(periods, 1), MAX_TIMELINE_PERIODS);
+
+        Date now = new Date();
+        List<IssueTimelineVo> out = new ArrayList<>();
+        for (String seriesId : seriesIds) {
+            PublicationSeries series = seriesService.findBySeriesId(seriesId);
+            if (series == null) {
+                // A series that has been deleted since the dashboard was
+                // configured leaves an EMPTY group rather than failing the strip:
+                // one stale id must not blank the other fifty-nine.
+                IssueTimelineVo empty = new IssueTimelineVo();
+                empty.setPublicationSeriesId(seriesId);
+                out.add(empty);
+                continue;
+            }
+            out.add(issueList.recent(series, wanted, now, lang));
+        }
+        return out;
+    }
+
+    /** One group per series, and the dashboard asks for the ones it renders. */
+    static final int MAX_TIMELINE_SERIES = 50;
+
+    /** A year of weekly cells. Beyond that the strip is an archive, and that is the issue list. */
+    static final int MAX_TIMELINE_PERIODS = 52;
+
+    /**
+     * An enum-valued query parameter, or a refusal naming the parameter.
+     *
+     * `valueOf` on client input raises IllegalArgumentException, which reaches a
+     * caller as a 500 saying nothing -- the exact pattern the error catalogue
+     * exists to stop. Blank means "do not narrow" rather than an error, because a
+     * form that submits an empty select is asking for everything.
+     */
+    private static <E extends Enum<E>> E enumOf(Class<E> type, String token, String param) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        try {
+            return Enum.valueOf(type, token.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IssueLifecycleService.TransitionRefusedException("INVALID_FILTER_VALUE",
+                    "'" + token + "' is not a value of " + param);
+        }
     }
 
     /** I4. Editor shape. */
@@ -352,48 +545,23 @@ public class PublicationIssueRestService {
      * Live while OPEN, frozen once PUBLISHED, and the caller does not get to
      * choose. Asking a published issue what it would contain today produces an
      * authoritative-looking answer about a document that does not exist.
+     *
+     * On a frozen list each row also carries what has MOVED under it since --
+     * which frozen fields no longer match the live message, and what they are now.
+     * Surfaced, never healed: the snapshot is the record of what was printed, and
+     * a row quietly updated to agree with today would disagree with the PDF that
+     * went out with nothing left to say they ever differed.
+     *
+     * The rules live in the core service. The endpoint is the address, not the
+     * behaviour -- the web layer has no container tests, so anything decided here
+     * is decided where nothing can pin it.
      */
     @GET
     @Path("/issue/{publicId}/members")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("admin")
     public List<IssueMemberVo> members(@PathParam("publicId") String publicId) {
-        PublicationIssue issue = required(publicId);
-
-        List<IssueMember> frozen = em.createQuery(
-                        "SELECT m FROM IssueMember m WHERE m.issue = :i ORDER BY m.sortIndex", IssueMember.class)
-                .setParameter("i", issue).getResultList();
-
-        List<IssueMemberVo> out = new ArrayList<>();
-        for (IssueMember m : frozen) {
-            IssueMemberVo vo = new IssueMemberVo();
-            vo.setMessageUid(m.getMessageUid());
-            vo.setSortIndex(m.getSortIndex());
-            vo.setFrozenShortId(m.getFrozenShortId());
-            vo.setFrozenType(m.getFrozenType());
-            vo.setFrozenStatus(m.getFrozenStatus());
-            vo.setFrozenPublishDateFrom(m.getFrozenPublishDateFrom());
-            vo.setFrozenPublishDateTo(m.getFrozenPublishDateTo());
-            vo.setSource(m.getSource() == null ? null : m.getSource().name());
-            // DERIVED from source and the snapshot relation, never a stored column:
-            // a stored derivable value is a second source of truth that can
-            // disagree with the first.
-            vo.setReasonCode(deriveReason(m, issue));
-            vo.setReasonNote(m.getReasonNote());
-            out.add(vo);
-        }
-        return out;
-    }
-
-    private static String deriveReason(IssueMember m, PublicationIssue issue) {
-        if (m.getSource() == org.niord.core.publication.series.MemberSource.OVERRIDE_INCLUDE) {
-            return "MANUAL_INCLUDE";
-        }
-        if (m.getSource() == org.niord.core.publication.series.MemberSource.IMPORTED) {
-            return "IMPORTED";
-        }
-        return "IN_FORCE_AT_CUTOFF".equals(issue.getSnapshotTimeRelation())
-                ? "IN_FORCE_AT_CUTOFF" : "IN_INTERVAL";
+        return memberList.members(required(publicId));
     }
 
     /** I11. The Historik panel. */
@@ -844,6 +1012,27 @@ public class PublicationIssueRestService {
     @RolesAllowed({"publication-curate", "admin"})
     public void excludeMember(@PathParam("publicId") String publicId, Map<String, Object> body) {
         curate(publicId, body, OverrideKind.EXCLUDE);
+    }
+
+    /**
+     * The curation decisions that STAND on this issue, include and exclude alike.
+     *
+     * The exclusions are why it exists. An excluded message is not a member, so
+     * nothing in the member list can carry a "withdraw this decision" button for
+     * it, and the only other record is the audit trail -- which says what
+     * happened rather than what stands. An exclude followed by a clear leaves two
+     * entries and no decision, and a screen reading the trail as a state shows a
+     * withdrawn exclusion as though it were still in force.
+     *
+     * Curator tier, matching the writes it describes: it carries the author and
+     * the reason, which is the admin-only half of a why-line.
+     */
+    @GET
+    @Path("/issue/{publicId}/overrides")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"publication-curate", "admin"})
+    public List<IssueOverrideVo> overrides(@PathParam("publicId") String publicId) {
+        return memberList.standingDecisions(required(publicId));
     }
 
     /**

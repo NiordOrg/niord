@@ -152,6 +152,25 @@ public final class PublicationErrorCatalogue {
         // action that exists.
         put("ISSUE_IMPORTED", 409);
 
+        // The three consumer endpoints. All 400: each names a bound on the
+        // REQUEST rather than a state of anything, so the same request never
+        // succeeds later and a client retrying it would loop.
+        //
+        // Hydration is by ids the caller already holds, which is a handful per
+        // message. An unbounded IN-list on an anonymous endpoint is a query
+        // anybody can make arbitrarily expensive.
+        put("TOO_MANY_IDS", 400);
+        // The timeline never scans the estate. Asking for no series is asking for
+        // nothing, and answering it with everything would turn a dashboard strip
+        // into an enumeration of the whole catalogue.
+        put("NO_SERIES_IDS", 400);
+        put("TOO_MANY_SERIES_IDS", 400);
+        // A filter value that is not a member of the enum it names. 400 rather
+        // than a 500 from valueOf, which is the pattern this catalogue exists to
+        // stop -- and a silently dropped filter would WIDEN a list rather than
+        // narrow it, so it cannot be ignored either.
+        put("INVALID_FILTER_VALUE", 400);
+
         // 500 -- the server could not do what it was asked, and the caller did
         // nothing wrong. ARCHIVE_FAILED is here deliberately: it aborts a publish,
         // and presenting it as a client error would invite a retry that fails the

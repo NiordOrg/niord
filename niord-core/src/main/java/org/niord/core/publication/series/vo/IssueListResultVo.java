@@ -48,6 +48,18 @@ public class IssueListResultVo implements IJsonSerializable {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer gapCount;
 
+    /**
+     * The page size, present only when the caller asked for a page.
+     *
+     * Absent means the whole archive came back, which is a different statement
+     * from "the page size happened to exceed the archive" -- a reader with a
+     * `size` in hand can page and one without has nothing to page through.
+     */
+    private Integer size;
+
+    /** Free text about the query, for a log or a diagnostic. */
+    private String description;
+
     public String getPublicationSeriesId() {
         return publicationSeriesId;
     }
@@ -86,6 +98,22 @@ public class IssueListResultVo implements IJsonSerializable {
 
     public void setGapCount(Integer gapCount) {
         this.gapCount = gapCount;
+    }
+
+    public Integer getSize() {
+        return size;
+    }
+
+    public void setSize(Integer size) {
+        this.size = size;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
 }
