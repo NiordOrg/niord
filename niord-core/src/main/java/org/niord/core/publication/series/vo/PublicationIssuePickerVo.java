@@ -6,7 +6,9 @@ import org.niord.model.publication.PublicationType;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * An issue as a publication PICKER sees it, and nothing else.
@@ -28,6 +30,22 @@ public class PublicationIssuePickerVo implements IJsonSerializable {
     private String publicId;
 
     private String publicationSeriesId;
+
+    /**
+     * What the series is CALLED, per language.
+     *
+     * The id beside it is a slug -- "dk-dma-nm-weekly" -- and a picker that groups
+     * its rows by publication was showing exactly that as the group heading. The
+     * names live on the series' desc rows, which the picker payload otherwise has
+     * no reason to carry, so they are lifted here rather than fetched: a second
+     * request per group, to render a heading, on a list that is already paged.
+     *
+     * A map rather than one resolved string, because the picker is opened in
+     * whichever language the editor is working in and the same rows serve both --
+     * resolving server-side would fix the heading to the request's language while
+     * the rows beside it can fall back to another.
+     */
+    private Map<String, String> seriesNames = new LinkedHashMap<>();
 
     /**
      * The legacy vocabulary, DERIVED from the series' content mode.
@@ -79,6 +97,14 @@ public class PublicationIssuePickerVo implements IJsonSerializable {
 
     public void setPublicationSeriesId(String publicationSeriesId) {
         this.publicationSeriesId = publicationSeriesId;
+    }
+
+    public Map<String, String> getSeriesNames() {
+        return seriesNames;
+    }
+
+    public void setSeriesNames(Map<String, String> seriesNames) {
+        this.seriesNames = seriesNames == null ? new LinkedHashMap<>() : seriesNames;
     }
 
     public PublicationType getType() {

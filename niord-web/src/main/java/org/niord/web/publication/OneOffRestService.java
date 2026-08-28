@@ -145,6 +145,15 @@ public class OneOffRestService {
         public List<LangText> fileNames = new ArrayList<>();
         /** False while the publication still needs its bytes before it can go live. */
         public boolean publishable;
+        /**
+         * Why the publication is being taken off the public list.
+         *
+         * Write-only, and required only when `active` turns false. Retiring
+         * withdraws a document people may be reading and may have cited, so the
+         * trail has to say why in words -- the same rule the issue's own retire
+         * carries, because it IS that action.
+         */
+        public String reason;
     }
 
     // -------------------------------------------------------------------- read
@@ -271,10 +280,29 @@ public class OneOffRestService {
             issueService.update(issue);
         }
 
-        if (request.active && saved.getStatus() != SeriesStatus.ACTIVE) {
-            activate(saved);
-            flushBeforePublish();
-            publishIfComplete(saved, issue);
+        // THE DOT IS A SWITCH, and it turns both ways.
+        //
+        // `active` folds the three states that decide visibility into one control,
+        // and the editor renders it as a toggle -- so turning it off has to mean
+        // something. It did not: the false branch simply did not exist, the save
+        // returned 200, and the publication stayed on the public site with the
+        // screen showing it as off. Off is the issue's own retire, with its own
+        // reason and its own audit entry; on again is its reactivate.
+        if (request.active) {
+            if (issue != null && issue.getStatus() == IssueStatus.RETIRED) {
+                lifecycle.reactivate(issue, userService.currentUser(), null);
+            } else if (saved.getStatus() != SeriesStatus.ACTIVE) {
+                activate(saved);
+                flushBeforePublish();
+                publishIfComplete(saved, issue);
+            }
+        } else if (issue != null && issue.getStatus() == IssueStatus.PUBLISHED) {
+            // The reason is demanded here rather than inside retire so the refusal
+            // names the field the form actually has. Same code, same bounds.
+            IssueLifecycleService.requireReason(request.reason,
+                    "taking this publication off the public list removes a document people may have "
+                            + "cited; it must say why");
+            lifecycle.retire(issue, userService.currentUser(), request.reason);
         }
         return toVo(saved);
     }

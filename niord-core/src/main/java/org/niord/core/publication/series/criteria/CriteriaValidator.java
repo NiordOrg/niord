@@ -163,7 +163,14 @@ public final class CriteriaValidator {
 
         // C-6: an unscoped query resolves across every message series in the
         // installation. That is the legacy foot-gun this rule exists to close.
-        if (!nodes.isEmpty() && !hasScope) {
+        //
+        // AND A DOCUMENT WITH NO NODES AT ALL IS THE UNSCOPED CASE, not an
+        // exemption from it. The empty-document carve-out read as "nothing has
+        // been authored yet", but the two states are already distinguishable: NO
+        // membership is a null document, which this method returns on immediately.
+        // A document that exists and selects on nothing is a query with no
+        // predicates, and it matches every message in the installation.
+        if (!hasScope) {
             out.add(new Violation("C-6", "/criteria",
                     "at least one messageSeries or domain node is required; without one the query resolves "
                             + "across every message series in the installation"));

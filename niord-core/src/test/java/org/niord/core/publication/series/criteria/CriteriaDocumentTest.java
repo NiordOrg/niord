@@ -289,9 +289,14 @@ public class CriteriaDocumentTest {
     // ----------------------------------------------------- the two nulls
 
     /**
-     * A null column means no query at all. An empty document is a legal query
-     * meaning everything in scope. Confusing them turns a link-only one-off into
-     * a series that resolves the entire corpus.
+     * A null column means no query at all. An empty document is a query with no
+     * predicates -- which matches every message in the installation -- and it is
+     * REFUSED, at the save and at the resolve alike.
+     *
+     * The two nulls are what has to stay apart: a link-only one-off carries no
+     * document, and reading that as "an empty query" would turn it into a series
+     * that resolves the entire corpus. An empty document is not the way to say
+     * "no membership"; the column being null is.
      */
     @Test
     public void aNullDocumentIsNotAnEmptyDocument() {
@@ -307,6 +312,16 @@ public class CriteriaDocumentTest {
 
         // Validation treats null as the no-membership case, not as invalid.
         assertTrue(CriteriaValidator.validate(null, CriteriaValidator.ACCEPT_ALL).isEmpty());
+
+        // An EMPTY one is invalid, and it is C-6 that says so: no node means no
+        // scope, and an unscoped query resolves across every message series.
+        assertRule("C-6", empty, "messageSeries or domain");
+
+        // And it never reaches the query, whether or not it passed a save.
+        assertThrows(IllegalArgumentException.class,
+                () -> CriteriaResolver.resolve(empty, TimeRelation.PUBLISHED_IN_INTERVAL, false,
+                        CriteriaResolver.NO_DOMAINS),
+                "an empty document resolved instead of refusing; it matches the whole corpus");
     }
 
     // --------------------------------------------------------- RI-6, RI-8

@@ -7,12 +7,17 @@ import jakarta.transaction.Transactional;
 import jakarta.transaction.UserTransaction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.message.Message;
+import org.niord.core.message.MessageSeries;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageMainTypeCriterionVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
+import org.niord.model.message.MainType;
+import org.niord.model.message.Status;
+import org.niord.model.message.Type;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -78,6 +83,7 @@ public class IssuePublishTest {
         s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
         s.setStatus(status);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setReportId("some-report");
         s.setCadence(cadence);
         s.setTimeRelation(relation);
         s.setAliveAtCutoff(relation == TimeRelation.IN_FORCE_AT_CUTOFF);
@@ -115,6 +121,42 @@ public class IssuePublishTest {
         return i;
     }
 
+    /**
+     * A message the criteria select, withdrawn, and still open at the cut-off.
+     *
+     * The three facts together are the only acknowledgeable warning there is. It
+     * belongs to the fixture rather than to the corpus because a guard that
+     * depends on what a shared database happens to hold in a fixed window is a
+     * guard that stops running without ever going red.
+     */
+    private Message cancelledButStillOpen(Date publishedAt, Date openUntil) {
+        Message m = new Message();
+        m.setUid(UUID.randomUUID().toString());
+        m.setMessageSeries(messageSeries("dma-nm"));
+        m.setMainType(MainType.NM);
+        m.setType(Type.TEMPORARY_NOTICE);
+        m.setStatus(Status.CANCELLED);
+        m.setPublishDateFrom(publishedAt);
+        m.setPublishDateTo(openUntil);
+        em.persist(m);
+        return m;
+    }
+
+    /** The message series the fixture's criteria name, reused where it exists. */
+    private MessageSeries messageSeries(String seriesId) {
+        List<MessageSeries> found = em.createQuery(
+                        "SELECT ms FROM MessageSeries ms WHERE ms.seriesId = :id", MessageSeries.class)
+                .setParameter("id", seriesId).setMaxResults(1).getResultList();
+        if (!found.isEmpty()) {
+            return found.get(0);
+        }
+        MessageSeries ms = new MessageSeries();
+        ms.setSeriesId(seriesId);
+        ms.setMainType(MainType.NM);
+        em.persist(ms);
+        return ms;
+    }
+
     /** A published neighbour, planted directly so the cap logic has something to act on. */
     private PublicationIssue publishedIssue(PublicationSeries s, Date stamp, Date publicTo,
                                             PublicWindowSource windowSource, IssueStatus status) {
@@ -138,7 +180,9 @@ public class IssuePublishTest {
         tx.begin();
         PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
-        issueId = issue(s, new Date(System.currentTimeMillis() - 3600_000L)).getId();
+        PublicationIssue contested = issue(s, new Date(System.currentTimeMillis() - 3600_000L));
+        previewFor(contested);
+        issueId = contested.getId();
         tx.commit();
 
         AtomicInteger winners = new AtomicInteger();
@@ -152,7 +196,7 @@ public class IssuePublishTest {
                 try {
                     go.await();
                     var result = publishService.publish(issueId,
-                            new IssuePublishService.PublishRequest(true, IssuePublishService.PublishRequest.ALL_WARNINGS, null, null));
+                            new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, null));
                     winners.incrementAndGet();
                     winningStamp.set(result.stampedAt());
                 } catch (IssuePublishService.AlreadyPublishedException e) {
@@ -190,6 +234,7 @@ public class IssuePublishTest {
         PublicationIssue i = issue(s, new Date(pastStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
+        previewFor(i);
         var result = publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, pastStamp));
 
@@ -214,6 +259,7 @@ public class IssuePublishTest {
         PublicationIssue i = issue(s, from);
         em.flush();
 
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -274,6 +320,7 @@ public class IssuePublishTest {
         i.setCriteriaOverride(override);
         em.flush();
 
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -320,6 +367,7 @@ public class IssuePublishTest {
         i.setCriteriaOverride(override);
         em.flush();
 
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
                         null, new Date(1_700_000_000_000L)));
@@ -359,6 +407,7 @@ public class IssuePublishTest {
         em.persist(ghost);
         em.flush();
 
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -381,6 +430,7 @@ public class IssuePublishTest {
         PublicationIssue i = issue(auto, new Date(1_699_000_000_000L));
         em.flush();
 
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -416,6 +466,7 @@ public class IssuePublishTest {
         PublicationIssue recovered = issue(s, new Date(recoveredStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
+        previewFor(recovered);
         publishService.publish(recovered.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, recoveredStamp));
         em.flush();
@@ -453,6 +504,7 @@ public class IssuePublishTest {
         PublicationIssue next = issue(s, new Date(1_700_000_000_000L));
         em.flush();
 
+        previewFor(next);
         publishService.publish(next.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
@@ -476,6 +528,7 @@ public class IssuePublishTest {
         PublicationIssue next = issue(s, new Date(1_700_000_000_000L));
         em.flush();
 
+        previewFor(next);
         publishService.publish(next.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
@@ -500,6 +553,7 @@ public class IssuePublishTest {
         PublicationIssue next = issue(s, new Date(1_700_000_000_000L));
         em.flush();
 
+        previewFor(next);
         publishService.publish(next.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
@@ -529,6 +583,7 @@ public class IssuePublishTest {
         PublicationIssue i = issue(all, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
+        previewFor(i);
         var result = publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNotNull(result.successorId());
@@ -558,6 +613,7 @@ public class IssuePublishTest {
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.ACTIVE);
         PublicationIssue i = issue(all, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
+        previewFor(i);
         var result = publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNotNull(result.successorId(), "no successor was created when every clause held");
@@ -573,8 +629,14 @@ public class IssuePublishTest {
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.ACTIVE), "cadence NONE");
         assertNoSuccessor(series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE), "MANUAL creation");
+        // RETIRED rather than DRAFT, and the difference is the point: publishing is
+        // allowed from a retired series -- an admin retiring a weekly on a Tuesday
+        // must still be able to release the issue already assembled for Wednesday
+        // -- while CREATING one is not. A draft series cannot publish at all, which
+        // the case below asserts on its own.
         assertNoSuccessor(series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
-                ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.DRAFT), "not ACTIVE");
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.RETIRED),
+                "is no longer ACTIVE");
         assertNoSuccessor(series(SeriesCadence.YEARLY, TimeRelation.IN_FORCE_AT_CUTOFF,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.ACTIVE),
                 "does not tile");
@@ -582,8 +644,14 @@ public class IssuePublishTest {
 
     private void assertNoSuccessor(PublicationSeries s, String why) {
         Date stamp = new Date(1_700_000_000_000L);
-        PublicationIssue i = issue(s, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
+        // An IN_FORCE_AT_CUTOFF issue has NO lower bound -- 531 production issues
+        // carry none -- and the rail refuses one that does, because a lower bound
+        // would make the resolver ask for messages published in a window this
+        // publication does not have.
+        boolean tiles = s.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
+        PublicationIssue i = issue(s, tiles ? new Date(stamp.getTime() - 7 * 24 * 3600_000L) : null);
         em.flush();
+        previewFor(i);
         var result = publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNull(result.successorId(), "a successor was created for a series that " + why);
@@ -598,6 +666,7 @@ public class IssuePublishTest {
         PublicationIssue i = issue(auto, new Date(1_699_000_000_000L));
         em.flush();
 
+        previewFor(i);
         var result = publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
         em.flush();
@@ -658,6 +727,7 @@ public class IssuePublishTest {
         em.flush();
 
         Date stamp = new Date(1_700_000_000_000L);
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         em.flush();
@@ -676,22 +746,41 @@ public class IssuePublishTest {
      * A warning nobody acknowledged refuses the publish BEFORE anything is frozen
      * or written. The issue stays OPEN with no member rows and no PUBLISHED entry;
      * the refusal names the codes so the dialog can list them.
+     *
+     * The warning is SEEDED rather than borrowed from the corpus. The only
+     * acknowledgeable code is "cancelled or expired, yet still open at the
+     * cut-off", and it needs a member in exactly that state -- so this test makes
+     * one. Reaching for whatever the shared database happened to hold made the
+     * sole guard for "a warning blocks the release" depend on a fixed window of a
+     * seeded corpus, which is a guard that goes quiet without failing.
      */
     @Test
     @Transactional
     public void anUnacknowledgedWarningRefusesBeforeAnythingIsFrozen() {
         PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
-        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        Date intervalFrom = new Date(1_699_000_000_000L);
+        Date stamp = new Date(1_700_000_000_000L);
+        PublicationIssue i = issue(s, intervalFrom);
+
+        // Published inside the window, so the criteria select it; CANCELLED, so it
+        // has been withdrawn; and open past the cut-off, so nothing about the dates
+        // says so. That combination is invisible in an exclusions panel -- the
+        // message IS a member -- which is why it is the one warning a human has to
+        // sign off rather than one they would notice unaided.
+        cancelledButStillOpen(new Date(intervalFrom.getTime() + 3600_000L),
+                new Date(stamp.getTime() + 86_400_000L));
+        previewFor(i);
         em.flush();
 
         IssuePublishService.WarningsNotAcknowledgedException e =
                 assertThrows(IssuePublishService.WarningsNotAcknowledgedException.class,
                         () -> publishService.publish(i.getId(),
-                                new IssuePublishService.PublishRequest(false, Set.of(), null,
-                                        new Date(1_700_000_000_000L))));
+                                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp)));
         assertEquals("WARNING_NOT_ACKNOWLEDGED", e.code());
-        assertFalse(e.codes().isEmpty(), "the refusal names no codes");
+        assertEquals(List.of("CANCELLED_BUT_DATE_ALIVE"), e.codes(),
+                "only an acknowledgeable warning may refuse a publish: a code with no control to "
+                        + "clear it would refuse the same request forever");
 
         assertEquals(IssueStatus.OPEN, i.getStatus(), "the status flipped despite the refusal");
         assertEquals(0L, em.createQuery("SELECT COUNT(m) FROM IssueMember m WHERE m.issue = :i", Long.class)
@@ -700,6 +789,7 @@ public class IssuePublishTest {
                 "a PUBLISHED entry was written despite the refusal");
 
         // Acknowledging exactly those codes is what lets the same publish through.
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, Set.copyOf(e.codes()), null,
                         new Date(1_700_000_000_000L)));
@@ -720,6 +810,7 @@ public class IssuePublishTest {
 
         previews.record(i, "da", "preview.pdf", "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
+        previewFor(i);
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
                         null, new Date(1_700_000_000_000L)));
@@ -759,4 +850,22 @@ public class IssuePublishTest {
                                 null, new Date(1_700_000_000_000L))));
         assertEquals(IssueStatus.OPEN, i.getStatus());
     }
+    @jakarta.inject.Inject
+    org.niord.core.publication.series.IssuePreviewService previewService;
+
+    /**
+     * Records a preview so the publish has bytes to promote.
+     *
+     * A query-backed series names a report and publish refuses to leave a
+     * language without a document, so these fixtures release the way an admin
+     * does after looking at the preview: regenerate = false, promoting exactly
+     * the bytes that were reviewed. The bytes themselves are irrelevant here.
+     */
+    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
+        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
+            previewService.record(issue, desc.getLang(), "preview.pdf",
+                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
 }

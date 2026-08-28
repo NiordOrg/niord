@@ -37,6 +37,9 @@ public class IssueLifecycleService extends BaseService {
     @Inject
     IssueAuditService audit;
 
+    @Inject
+    IssueShape shape;
+
     /** A transition was refused. Carries the wire code so callers do not invent one. */
     public static class TransitionRefusedException extends RuntimeException {
         private final String code;
@@ -96,8 +99,33 @@ public class IssueLifecycleService extends BaseService {
     @Transactional
     public PublicationIssue create(PublicationSeries series, Date intervalFrom,
                                    IntervalBoundSource fromSource, User actor) {
+        return create(series, intervalFrom, fromSource, null, actor);
+    }
+
+    /**
+     * T0, with the close the caller already reviewed.
+     *
+     * The draft shows both bounds and lets an admin move either, so the create has
+     * to be able to take both. Without this the interval that was on the screen
+     * had to be re-applied by a second call through the edit endpoint -- two
+     * writes, two audit entries, and a window in between where the issue carried a
+     * period nobody chose. A null close still means "derive the nominal one".
+     */
+    @Transactional
+    public PublicationIssue create(PublicationSeries series, Date intervalFrom,
+                                   IntervalBoundSource fromSource, Date intervalTo, User actor) {
+        // The same refusal the draft makes, in the same words: an interval that
+        // ends before it starts selects nothing, and the issue would publish EMPTY
+        // rather than fail.
+        if (intervalFrom != null && intervalTo != null && !intervalFrom.before(intervalTo)) {
+            throw new TransitionRefusedException("INTERVAL_INVERTED",
+                    "the period would close at " + intervalTo + ", at or before it opens at "
+                            + intervalFrom + ". An interval that ends before it starts selects "
+                            + "nothing, and the issue would publish empty rather than fail.");
+        }
         assertNoOverlap(series, intervalFrom, null);
-        PublicationIssue issue = newIssue(series, intervalFrom, fromSource);
+        PublicationIssue issue = newIssue(series, intervalFrom, fromSource, intervalTo,
+                intervalTo == null ? null : IntervalBoundSource.MANUAL);
         em.persist(issue);
         audit.created(issue, actor, "CREATED");
         return issue;
@@ -170,8 +198,11 @@ public class IssueLifecycleService extends BaseService {
                     "this series' issues overlap rather than tile, so there is no missing period to recover");
         }
         assertNoOverlap(series, intervalFrom, null);
-        PublicationIssue issue = newIssue(series, intervalFrom, IntervalBoundSource.RECOVERED);
-        issue.setIntervalTo(intervalTo);
+        // The close comes in with the request: a recovered period is one somebody
+        // worked out, and its end is RECOVERED for the same reason its start is --
+        // nothing stamped it and no cadence derived it.
+        PublicationIssue issue = newIssue(series, intervalFrom, IntervalBoundSource.RECOVERED,
+                intervalTo, intervalTo == null ? null : IntervalBoundSource.RECOVERED);
         issue.setCutoffReconstructed(true);
         em.persist(issue);
         audit.created(issue, actor, "CREATED_RETROACTIVELY");
@@ -213,6 +244,18 @@ public class IssueLifecycleService extends BaseService {
     }
 
     private PublicationIssue newIssue(PublicationSeries series, Date intervalFrom, IntervalBoundSource source) {
+        return newIssue(series, intervalFrom, source, null, null);
+    }
+
+    /**
+     * T0, in one place.
+     *
+     * @param intervalTo the close, where the caller already knows it; null lets the
+     *                   cadence derive the nominal one
+     */
+    private PublicationIssue newIssue(PublicationSeries series, Date intervalFrom,
+                                      IntervalBoundSource source,
+                                      Date intervalTo, IntervalBoundSource toSource) {
         // A one-off holds exactly one issue, and refusing the second is what
         // makes its kind a fact rather than a description of the current row
         // count. A publication that turns out to keep appearing is an
@@ -244,48 +287,27 @@ public class IssueLifecycleService extends BaseService {
         issue.setStatus(IssueStatus.OPEN);
         issue.setIntervalFrom(intervalFrom);
         issue.setIntervalFromSource(source);
+        issue.setIntervalTo(intervalTo);
+        issue.setIntervalToSource(toSource == null ? null : toSource.name());
 
-        // One desc row per CONFIGURED language, from the moment of create, each
-        // with a suggested name.
+        // One desc row per CONFIGURED language, from the moment of create.
         //
         // Creating them lazily on first write leaves an issue in a state where a
         // language the series declares has nowhere to put its file name or link,
         // and the failure then surfaces as "no such language" at upload time
         // rather than as a missing row at create time.
-        //
-        // The name is SUGGESTED, not final. It is derived from the provisional
-        // interval start because there is no stamped cut-off yet -- the real one
-        // arrives at publish, and an admin may override it before then. A blank
-        // name is not an option: the column is NOT NULL precisely because a
-        // nameless issue is unfindable in every list that shows it.
         for (String lang : series.getLanguages()) {
-            PublicationIssueDesc desc = issue.createDesc(lang);
-            desc.setName(suggestName(series, lang, intervalFrom));
+            issue.createDesc(lang);
         }
+
+        // The nominal close, the numbers and the per-language names, all from the
+        // one derivation the draft answers with. The name is SUGGESTED, not final:
+        // it renders the period the issue closes in, the real cut-off arrives at
+        // publish, and an admin may type over it before then.
+        shape.apply(issue, series, new Date());
         return issue;
     }
 
-
-    /**
-     * A provisional name for a new issue, derived from a single instant.
-     *
-     * The instant is treated as the issue's cut-off, and no interval start is
-     * passed -- so the name is the one week the cut-off falls in. A caller that
-     * knows the whole interval, and therefore whether the issue spans two weeks,
-     * derives the numbers itself and uses the overload below.
-     */
-    static String suggestName(PublicationSeries series, String lang, Date basis) {
-        IssueNaming.Numbers numbers = null;
-        if (basis != null) {
-            try {
-                numbers = IssueNaming.derive(basis, null, series.cutoffZone(), null);
-            } catch (RuntimeException e) {
-                // An instant that cannot be read as a cut-off leaves the name to
-                // the fallbacks below rather than failing the create.
-            }
-        }
-        return suggestName(series, lang, numbers);
-    }
 
     /**
      * A provisional name for a new issue.

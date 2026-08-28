@@ -23,10 +23,17 @@ import java.util.regex.Pattern;
  * window, not its start. Naming from the start produces "Uge 26+27, 2026" where
  * production says "EfS uge 27".
  *
- * And the year is the ISO WEEK-year, not the calendar year. Legacy pairs a
- * correct ISO week with a calendar year read in the JVM default zone, so a
- * cut-off on 31 December 2025 comes out as "EfS uge 1 - 2025" when it belongs to
- * week 1 of 2026. Everything here derives in the series' own timezone.
+ * And a week-numbered issue takes the ISO WEEK-year, not the calendar year.
+ * Legacy pairs a correct ISO week with a calendar year read in the JVM default
+ * zone, so a cut-off on 31 December 2025 comes out as "EfS uge 1 - 2025" when it
+ * belongs to week 1 of 2026. Everything here derives in the series' own
+ * timezone.
+ *
+ * The converse holds for a publication that is not numbered by week, and it is
+ * the reason {@link YearBasis} exists rather than a single rule. An annual
+ * edition closing at 31 December 23:59 names the year it CLOSES; answering with
+ * the ISO week-year would name it for the following January, and the year is
+ * part of its file name and therefore of its public download link.
  */
 public final class IssueNaming {
 
@@ -63,6 +70,21 @@ public final class IssueNaming {
     public record Numbers(int week, Integer weekTo, int year, int month, int day, Integer edition) {
     }
 
+    /**
+     * Which year ${year} means.
+     *
+     * Declared here, as a plain choice, rather than taken from the series'
+     * numbering scheme directly: this class knows about instants and patterns and
+     * deliberately not about series settings, and the mapping from a scheme to a
+     * basis is a publication rule that belongs beside the other publication rules.
+     */
+    public enum YearBasis {
+        /** The ISO week-based year, which is what pairs correctly with an ISO week. */
+        ISO_WEEK_YEAR,
+        /** The calendar year the cut-off falls in, which is what an annual edition is named for. */
+        CALENDAR_YEAR
+    }
+
     private IssueNaming() {
     }
 
@@ -94,6 +116,20 @@ public final class IssueNaming {
      * @param edition the edition number, where the scheme has one
      */
     public static Numbers derive(Date cutoff, Date intervalFrom, ZoneId zone, Integer edition) {
+        return derive(cutoff, intervalFrom, zone, edition, YearBasis.ISO_WEEK_YEAR);
+    }
+
+    /**
+     * Derives the numbers for an issue closing at the given cut-off.
+     *
+     * @param cutoff the EFFECTIVE cut-off -- the end of the window
+     * @param intervalFrom the start, used only to detect a multi-week issue
+     * @param zone the series' nominal cut-off timezone; never the JVM default
+     * @param edition the edition number, where the scheme has one
+     * @param yearBasis which year ${year} means for this publication
+     */
+    public static Numbers derive(Date cutoff, Date intervalFrom, ZoneId zone, Integer edition,
+                                 YearBasis yearBasis) {
         if (cutoff == null) {
             throw new IllegalArgumentException("an issue always has a cut-off to derive from");
         }
@@ -103,9 +139,16 @@ public final class IssueNaming {
         WeekFields iso = WeekFields.ISO;
         int week = end.get(iso.weekOfWeekBasedYear());
 
-        // The ISO week-BASED year. A cut-off on 31 December can belong to week 1
-        // of the following year, and the calendar year would name it wrongly.
-        int year = end.get(iso.weekBasedYear());
+        // Two answers, and which one is right depends on what the publication is
+        // numbered by. For a week-numbered issue it is the ISO week-BASED year: a
+        // cut-off on 31 December can belong to week 1 of the following year, and
+        // the calendar year would name it wrongly. For everything else it is the
+        // calendar year the cut-off falls in -- an annual edition closing at 31
+        // December 23:59 is the edition for THAT year, and the week-based answer
+        // would name it for the January after it.
+        int year = yearBasis == YearBasis.CALENDAR_YEAR
+                ? end.getYear()
+                : end.get(iso.weekBasedYear());
 
         Integer weekTo = null;
         if (intervalFrom != null) {

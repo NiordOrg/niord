@@ -256,4 +256,53 @@ public class IssueNamingTest {
         assertEquals(30, two.weekTo());
     }
 
+    // ------------------------------------------------------------- ${year}
+
+    /**
+     * A publication that is NOT numbered by week takes the calendar year.
+     *
+     * The ISO answer is right for a weekly issue and wrong for everything else,
+     * and the annual editions are where it bites. The accumulated list closes at
+     * 31 December 23:59 and is the edition FOR that year; the in-force edition
+     * opens at 1 January and is the edition FOR that year. Under the ISO
+     * week-year the first is named for the January after it, and the year is part
+     * of the file name and therefore of the public download link -- so the
+     * January-2027 edition would collide with the real 2026 one.
+     */
+    @Test
+    public void anAnnualEditionIsNamedForTheYearItCloses() {
+        Date newYearsEve = at(2025, 12, 31, 23, 59);
+        assertEquals(2026, IssueNaming.derive(newYearsEve, null, DK, null,
+                        IssueNaming.YearBasis.ISO_WEEK_YEAR).year(),
+                "a week-numbered issue closing on 31.12.2025 is in ISO week-year 2026");
+        assertEquals(2025, IssueNaming.derive(newYearsEve, null, DK, null,
+                        IssueNaming.YearBasis.CALENDAR_YEAR).year(),
+                "an annual edition closing on 31.12.2025 is the 2025 edition, not the 2026 one");
+
+        // And the mirror, which is the file-name collision the review found: a
+        // period-start cut-off on 1 January 2027 falls in ISO week 53 of 2026.
+        Date newYearsDay = at(2027, 1, 1, 0, 0);
+        assertEquals(2026, IssueNaming.derive(newYearsDay, null, DK, null,
+                        IssueNaming.YearBasis.ISO_WEEK_YEAR).year(),
+                "1.1.2027 falls in ISO week-year 2026");
+        assertEquals(2027, IssueNaming.derive(newYearsDay, null, DK, null,
+                        IssueNaming.YearBasis.CALENDAR_YEAR).year(),
+                "the edition in force from 1.1.2027 is the 2027 edition");
+    }
+
+    /** The week is the ISO week either way; only the year token moves. */
+    @Test
+    public void theYearBasisDoesNotMoveTheWeek() {
+        Date d = at(2025, 12, 31, 10, 0);
+        assertEquals(IssueNaming.derive(d, null, DK, null, IssueNaming.YearBasis.ISO_WEEK_YEAR).week(),
+                IssueNaming.derive(d, null, DK, null, IssueNaming.YearBasis.CALENDAR_YEAR).week());
+    }
+
+    /** The four-argument form keeps the ISO pairing, which is what a week needs. */
+    @Test
+    public void theDefaultBasisIsTheIsoWeekYear() {
+        Date d = at(2025, 12, 31, 10, 0);
+        assertEquals(IssueNaming.derive(d, null, DK, null, IssueNaming.YearBasis.ISO_WEEK_YEAR).year(),
+                IssueNaming.derive(d, null, DK, null).year());
+    }
 }

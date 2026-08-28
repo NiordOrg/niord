@@ -612,6 +612,7 @@ public class PublicationResolutionTest {
         s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setReportId("some-report");
         s.setCadence(SeriesCadence.WEEKLY);
         s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
         s.setAliveAtCutoff(false);

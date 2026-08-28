@@ -36,13 +36,32 @@ public class PublishChecklistService extends BaseService {
         OK, WARN, BLOCK
     }
 
-    /** One rail row. */
+    /**
+     * One rail row.
+     *
+     * `acknowledgeCode` is the resolution warning the publish gate compares
+     * against, and it is on the row because otherwise every client has to carry
+     * its own copy of the mapping. The rail names a CONDITION -- "cancelled
+     * members alive at the cut-off" -- while the acknowledgement travels as the
+     * warning code the resolver raised, and the two are deliberately not the same
+     * string. A frontend translating one into the other by hand is a second
+     * definition of the rule, and it goes wrong silently: the publish is refused
+     * for a code nobody ticked.
+     */
     public record CheckRow(String code, Severity severity, boolean passed,
-                           boolean acknowledgeable, String detail) {
+                           boolean acknowledgeable, String acknowledgeCode, String detail) {
     }
 
-    /** The whole rail, and whether it permits publishing. */
-    public record Checklist(List<CheckRow> rows, boolean canPublish, List<String> blockingCodes) {
+    /**
+     * The whole rail, whether it permits publishing, and the resolution it took.
+     *
+     * The resolution is carried out so that publish can freeze exactly what the
+     * rail counted. Re-resolving would cost a second full narrowing on every
+     * release AND leave open the outcome this class exists to close: the rail
+     * saying 214 members and the frozen snapshot holding a different set.
+     */
+    public record Checklist(List<CheckRow> rows, boolean canPublish, List<String> blockingCodes,
+                            MemberResolutionService.Resolution resolution) {
     }
 
     /** Every code the rail can emit, in the order it is rendered. */
@@ -65,6 +84,12 @@ public class PublishChecklistService extends BaseService {
 
     @Inject
     MemberResolutionService resolver;
+
+    @Inject
+    IssueCurationService curation;
+
+    @Inject
+    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
 
     private static final DateTimeFormatter CHECKLIST_STAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -114,7 +139,7 @@ public class PublishChecklistService extends BaseService {
                         + " under " + series.getTimeRelation()));
 
         // 3. A warning, not a block: a deliberate gap is legitimate.
-        PublicationIssue predecessor = neighbour(issue, series, true);
+        PublicationIssue predecessor = neighbour(issue, series, proposedCutoff, true);
         boolean chained = predecessor == null
                 || (issue.getIntervalFrom() != null && predecessor.getCutoffStampedAt() != null
                 && issue.getIntervalFrom().equals(predecessor.getCutoffStampedAt()));
@@ -165,7 +190,7 @@ public class PublishChecklistService extends BaseService {
                 citable ? "series is citable" : "not applicable: series is not citable"));
 
         // 7 and 8. The neighbour bracket.
-        PublicationIssue successor = neighbour(issue, series, false);
+        PublicationIssue successor = neighbour(issue, series, proposedCutoff, false);
         rows.add(row("CUTOFF_AFTER_PREVIOUS", Severity.BLOCK,
                 predecessor == null || predecessor.getCutoffStampedAt() == null
                         || proposedCutoff.after(predecessor.getCutoffStampedAt()),
@@ -190,17 +215,39 @@ public class PublishChecklistService extends BaseService {
         // publish", so resolving the series' document while publish resolves the
         // override would make the rail describe a different issue than the one it
         // is offering to release.
+        //
+        // AND WITH THE CURATION, which is the half that made two of these rows
+        // unfailable. Publish resolves through the includes and excludes; a rail
+        // that resolved without them reported the PRE-override count as the member
+        // count, and STALE_OVERRIDE -- the warning that only exists when there ARE
+        // excludes -- could never be raised, so NO_INEFFECTIVE_OVERRIDES answered
+        // "every override applies" on an issue whose overrides applied to nothing.
+        Set<String> includes = new LinkedHashSet<>();
+        Set<String> excludes = new LinkedHashSet<>();
+        for (IssueOverride override : curation.forIssue(issue)) {
+            (override.getKind() == OverrideKind.INCLUDE ? includes : excludes)
+                    .add(override.getMessageUid());
+        }
+
         MemberResolutionService.Resolution resolution = null;
         if (queryBacked && series.getTimeRelation() != null) {
             try {
-                ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue);
+                ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue, domains);
                 if (criteria != null) {
                     resolution = resolver.resolve(criteria,
-                            new Interval(issue.getIntervalFrom(), proposedCutoff));
+                            new Interval(issue.getIntervalFrom(), proposedCutoff), includes, excludes);
                 }
             } catch (RuntimeException e) {
                 resolution = null;
             }
+        } else if (!includes.isEmpty()) {
+            // Overrides constitute membership on their own. The annexes are a
+            // series holding two live messages a year with each issue naming one of
+            // them, where no query can select one and not the other -- and gating
+            // the count on queryBacked reported "0 members" for exactly those.
+            Set<String> curated = new LinkedHashSet<>(includes);
+            curated.removeAll(excludes);
+            resolution = MemberResolutionService.Resolution.curated(curated);
         }
 
         int memberCount = resolution == null ? 0 : resolution.members().size();
@@ -226,14 +273,23 @@ public class PublishChecklistService extends BaseService {
                 : resolution.warning(ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE);
         rows.add(new CheckRow("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", Severity.WARN,
                 aliveButWithdrawn.isEmpty(), true,
+                ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.name(),
                 aliveButWithdrawn.map(w -> w.count() + " member(s) cancelled or expired but still open at the cut-off")
                         .orElse("none")));
 
         // Purely informational for an in-force series: overlap is what they do.
-        boolean overlaps = resolution != null
-                && resolution.warning(ResolutionWarningCode.OVERLAPPING_ISSUE).isPresent();
-        rows.add(row("OVERLAPPING_ISSUE", Severity.WARN, !overlaps,
-                interval ? "issues of this series tile" : "in-force issues overlap by design"));
+        //
+        // The producer is wired here, on the predecessor the bracket already found.
+        // Left unwired, the row rendered "no other issue covers this period" as
+        // SATISFIED on every issue in the system -- a check that cannot fail is
+        // worse than an absent one, because the screen states an answer nobody
+        // computed.
+        var overlap = overlapWith(predecessor, resolution);
+        rows.add(row("OVERLAPPING_ISSUE", Severity.WARN, overlap.isEmpty(),
+                overlap.map(w -> w.count() + " member(s) also belong to '"
+                                + predecessor.getPublicId() + "'")
+                        .orElse(interval ? "issues of this series tile"
+                                : "in-force issues overlap by design")));
 
         List<String> blocking = new ArrayList<>();
         for (CheckRow r : rows) {
@@ -241,18 +297,64 @@ public class PublishChecklistService extends BaseService {
                 blocking.add(r.code());
             }
         }
-        return new Checklist(rows, blocking.isEmpty(), blocking);
+        return new Checklist(rows, blocking.isEmpty(), blocking, resolution);
+    }
+
+    /**
+     * Whether this issue and the one before it would print the same messages.
+     *
+     * Compared against the FROZEN member rows of the neighbour rather than
+     * re-resolving it: those rows are what that issue actually published, and a
+     * re-resolution would answer for a document that does not exist.
+     */
+    private java.util.Optional<org.niord.core.publication.series.resolve.ResolutionWarningVo> overlapWith(
+            PublicationIssue predecessor, MemberResolutionService.Resolution resolution) {
+        if (resolution == null || predecessor == null || predecessor.getId() == null) {
+            return java.util.Optional.empty();
+        }
+        Set<String> theirs = new LinkedHashSet<>(em.createQuery(
+                        "SELECT m.messageUid FROM IssueMember m WHERE m.issue = :i", String.class)
+                .setParameter("i", predecessor)
+                .getResultList());
+        if (theirs.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        return MemberResolutionService.overlappingIssue(resolution.members(), theirs);
     }
 
     private CheckRow row(String code, Severity severity, boolean passed, String detail) {
-        return new CheckRow(code, severity, passed, false, detail);
+        return new CheckRow(code, severity, passed, false, null, detail);
     }
 
-    /** The nearest neighbour in the bracket, using the same status filter as publish. */
-    private PublicationIssue neighbour(PublicationIssue issue, PublicationSeries series, boolean before) {
-        Date pivot = issue.getIntervalFrom() == null ? new Date() : issue.getIntervalFrom();
+    /**
+     * The bracket this issue sits in: the released issues either side of it.
+     *
+     * PIVOTED ON THE ISSUE'S PLACE IN THE CHAIN, and the place is where its period
+     * opens -- not the instant somebody is proposing to stamp. That distinction is
+     * the whole point of the bracket: the two cut-off rows ask whether the
+     * PROPOSED instant still falls between the neighbours, and a lookup that
+     * pivoted on the proposal itself can never find the neighbour the proposal has
+     * already stepped past. A cut-off a second below its predecessor would then
+     * find no predecessor at all, pass the check, and fail deeper in with an
+     * uncoded 500 from the empty interval it built.
+     *
+     * The predecessor comparison is INCLUSIVE, and that is the routine chain
+     * rather than an off-by-one: a successor opens exactly where its predecessor's
+     * stamped cut-off closed, so `intervalFrom == predecessor.cutoffStampedAt` for
+     * every ordinary issue. A strict comparison excluded the real predecessor and
+     * named the one before it, so every ordinary issue showed a broken
+     * INTERVAL_CHAINED against the wrong date -- and an admin "correcting" the
+     * interval on that advice really did break the chain.
+     *
+     * An issue with no lower bound has no place but the one being proposed, so it
+     * pivots there. Its issues do not tile, so there is no chain to misread.
+     */
+    private PublicationIssue neighbour(PublicationIssue issue, PublicationSeries series,
+                                       Date proposedCutoff, boolean before) {
+        Date pivot = issue.getIntervalFrom() != null ? issue.getIntervalFrom()
+                : proposedCutoff == null ? new Date() : proposedCutoff;
         String order = before ? "DESC" : "ASC";
-        String comparison = before ? "<" : ">";
+        String comparison = before ? "<=" : ">";
         List<PublicationIssue> found = em.createQuery(
                         "SELECT i FROM PublicationIssue i WHERE i.series = :s AND i.status IN :st "
                                 + "AND i.id <> :self AND i.cutoffStampedAt " + comparison + " :pivot "

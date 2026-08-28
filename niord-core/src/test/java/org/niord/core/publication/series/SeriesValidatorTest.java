@@ -44,6 +44,13 @@ public class SeriesValidatorTest {
         s.setNominalCutoffDay(CutoffDay.WEDNESDAY);
         s.setNominalCutoffTime("09:00");
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
+        // S-1's third leg: a query-backed series names the report it prints with,
+        // and S-9 wants the three print settings alongside it. The baseline
+        // carries all four so a case can break exactly one.
+        s.setReportId("fm-report");
+        s.setPageSize(PageSize.A4);
+        s.setPageOrientation(PageOrientation.PORTRAIT);
+        s.setMapThumbnails(Boolean.FALSE);
         s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
         s.setAliveAtCutoff(false);
         s.setFirstIssueStartsAt(new Date());
@@ -55,8 +62,10 @@ public class SeriesValidatorTest {
         // valid series -- it is one that fails at flush rather than at validation.
         s.setCategory(new PublicationCategory());
         // S-20: the domain carries the timezone the cut-offs are read in, so a
-        // baseline without one is a series whose schedule has no zone.
-        s.setDomain(new Domain());
+        // baseline without one is a series whose schedule has no zone -- and so is
+        // one whose domain carries no readable zone name, which is why the
+        // baseline sets a real one rather than a bare Domain.
+        s.setDomain(domainIn("Europe/Copenhagen"));
 
         IssueCriteriaVo doc = new IssueCriteriaVo();
         MessageSeriesCriterionVo node = new MessageSeriesCriterionVo();
@@ -166,6 +175,15 @@ public class SeriesValidatorTest {
         s1.setCriteria(null);
         assertFires("S-1", s1);
 
+        // S-1 again: query-backed but naming no report. It has something to select
+        // and nothing to print with, so its issues would publish with no file.
+        PublicationSeries s1b = valid();
+        s1b.setReportId(null);
+        s1b.setPageSize(null);
+        s1b.setPageOrientation(null);
+        s1b.setMapThumbnails(null);
+        assertFires("S-1", s1b);
+
         // S-2: query-backed with no liveness answer.
         PublicationSeries s2 = valid();
         s2.setAliveAtCutoff(null);
@@ -182,6 +200,21 @@ public class SeriesValidatorTest {
         PublicationSeries s4 = valid();
         s4.setFirstIssueStartsAt(null);
         assertFires("S-4", s4);
+
+        // S-4, the other way: a ONE-OFF is exempt. The field answers "where does
+        // the first of a sequence of periods open", and a publication that comes
+        // out once has one issue whose own interval is the whole answer. The
+        // one-off form nulls the field and never renders it, so demanding it here
+        // stranded a query-backed one-off in DRAFT forever.
+        PublicationSeries oneOff = valid();
+        oneOff.setKind(SeriesKind.ONE_OFF);
+        oneOff.setCadence(SeriesCadence.NONE);
+        oneOff.setNominalCutoffDay(null);
+        oneOff.setNominalCutoffTime(null);
+        oneOff.setNumberingScheme(NumberingScheme.NONE);
+        oneOff.setNextIssueCreation(NextIssueCreation.MANUAL);
+        oneOff.setFirstIssueStartsAt(null);
+        assertDoesNotFire("S-4", oneOff);
 
         // S-5: weekly with no weekday.
         PublicationSeries s5 = valid();
@@ -209,7 +242,7 @@ public class SeriesValidatorTest {
 
         // S-9: half the report settings.
         PublicationSeries s9 = valid();
-        s9.setReportId("fm-report");
+        s9.setPageSize(null);
         assertFires("S-9", s9);
 
         // S-10: a sort field with no direction.
@@ -371,9 +404,36 @@ public class SeriesValidatorTest {
     @Test
     public void acadencelessSeriesMayAlsoCarryADomain() {
         PublicationSeries s = cadenceless();
-        s.setDomain(new Domain());
+        s.setDomain(domainIn("Europe/Copenhagen"));
 
         assertDoesNotFire("S-20", s);
+    }
+
+    /**
+     * S-20's other half: a domain that names no zone, or names one nothing can
+     * read, is not a source of a timezone either.
+     *
+     * TimeZone.getTimeZone answers GMT for anything it does not recognise, so a
+     * misspelt zone does not fail anywhere -- it shifts every cut-off of the
+     * series by the offset nobody configured, and at the year boundary that is a
+     * different year printed on the cover.
+     */
+    @Test
+    public void aDomainWithNoReadableTimezoneIsNotASourceOfOne() {
+        PublicationSeries blank = valid();
+        blank.setDomain(domainIn(null));
+        assertFires("S-20", blank);
+
+        PublicationSeries misspelt = valid();
+        misspelt.setDomain(domainIn("Europe/Kopenhagen"));
+        assertFires("S-20", misspelt);
+    }
+
+    private static Domain domainIn(String zone) {
+        Domain d = new Domain();
+        d.setDomainId("dma-test");
+        d.setTimeZone(zone);
+        return d;
     }
 
     // ------------------------------------------------------------------- S-21

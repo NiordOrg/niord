@@ -52,6 +52,19 @@ public final class CriteriaResolver {
                             + "Callers must branch on contentMode before reaching here.");
         }
 
+        // C-6, at the last gate before the query. A document that exists and
+        // carries no node selects on nothing, and "select on nothing" is a query
+        // with no predicates -- every message in the installation. It is refused at
+        // save; refused here too because a document can reach a resolve without
+        // passing a save, and matching the whole corpus is not a failure anybody
+        // would notice from the outside.
+        if (doc.getCriteria() == null || doc.getCriteria().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "a criteria document with no nodes selects on nothing, which resolves across every "
+                            + "message series in the installation. NO membership is a null document; "
+                            + "this one is a query with no predicates.");
+        }
+
         Set<String> seriesIds = new LinkedHashSet<>();
         Set<Type> types = new LinkedHashSet<>();
         Set<MainType> mainTypes = new LinkedHashSet<>();

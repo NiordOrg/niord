@@ -82,6 +82,13 @@ public class SeriesTransitionTest {
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
+        // A query-backed series generates its document from a report and must name
+        // one -- S-1 -- so a fixture that means to ACTIVATE has to carry the full
+        // report configuration S-9 asks for alongside it.
+        s.setReportId("some-report");
+        s.setPageSize(PageSize.A4);
+        s.setPageOrientation(PageOrientation.PORTRAIT);
+        s.setMapThumbnails(Boolean.FALSE);
         s.setCategory(c);
         s.getLanguages().add("da");
 

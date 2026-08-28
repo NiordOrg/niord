@@ -56,6 +56,19 @@ public final class SeriesValidator {
                         "a query-backed series must carry a criteria document; a null one means NO query, "
                                 + "which is not the same as an empty one"));
             }
+            // THE THIRD LEG, and it was the missing one. "Generated from a query"
+            // names two things -- what to select and how to print it -- and a
+            // series carrying the first without the second has no document to
+            // produce at all. Nothing else supplies one either: publish writes the
+            // file, so there are no bytes to fall back on, and the issue would
+            // reach PUBLISHED with an empty link. That is the failure that looks
+            // like success, and by the time anybody sees it the cut-off is stamped.
+            if (s.getReportId() == null) {
+                e.add(new FieldError("S-1", "reportId",
+                        "a query-backed series generates its document from a report and must name one; "
+                                + "without it there is nothing to render and its issues would publish "
+                                + "with no file at all"));
+            }
         } else {
             if (s.getTimeRelation() != null) {
                 e.add(new FieldError("S-1", "timeRelation",
@@ -85,8 +98,16 @@ public final class SeriesValidator {
         }
 
         // S-4. Only an interval-based series has a first interval to start.
+        //
+        // AND A ONE-OFF IS EXEMPT, because it has no chain to anchor. The field
+        // answers "where does the FIRST of a sequence of periods open"; a
+        // publication that comes out once has one issue, and that issue's own
+        // interval is the whole answer. The one-off editor deliberately nulls the
+        // field and does not render it, so demanding it here failed activation for
+        // a control the form does not have -- a query-backed one-off could never
+        // leave DRAFT at all.
         boolean interval = s.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
-        if (interval && s.getFirstIssueStartsAt() == null) {
+        if (interval && !s.isOneOff() && s.getFirstIssueStartsAt() == null) {
             e.add(new FieldError("S-4", "firstIssueStartsAt",
                     "an interval-based series needs a start for its first interval"));
         }
@@ -284,11 +305,34 @@ public final class SeriesValidator {
         // domain. The publication picker matches "domain IS NULL OR domain = the
         // current one", so assigning a domain NARROWS where a publication can be
         // seen. Requiring one here hid four publications that every domain needs.
-        if (s.getDomain() == null && s.getCadence() != SeriesCadence.NONE) {
-            e.add(new FieldError("S-20", "domainId",
-                    "a series with a cadence must belong to a domain; the domain carries the "
-                            + "timezone its cut-offs are read in, and there is no other source "
-                            + "for one"));
+        if (s.getCadence() != SeriesCadence.NONE) {
+            if (s.getDomain() == null) {
+                e.add(new FieldError("S-20", "domainId",
+                        "a series with a cadence must belong to a domain; the domain carries the "
+                                + "timezone its cut-offs are read in, and there is no other source "
+                                + "for one"));
+            } else if (s.getDomain().getDomainId() != null
+                    && !isReadableZone(s.getDomain().getTimeZone())) {
+                // The domain is the only source of the zone, so a domain that
+                // carries none or carries a name nothing can parse leaves every
+                // cut-off of this series being read in whatever the server happens
+                // to be set to. The cut-off decides which ISO week the issue is
+                // named for and when the period closes -- an hour either way at the
+                // year boundary is a different year on the cover.
+                //
+                // Asked only of a domain that NAMES ITSELF, and that is the whole
+                // guard. Validation runs without a persistence context, so the
+                // dry-run report stands a bare placeholder in for a domain the body
+                // referred to by id -- it has no name and no zone because nothing
+                // looked it up. Reading the zone off that placeholder would fail
+                // every series that has a perfectly good domain, and since
+                // activation is gated on a clean report, nothing could be activated
+                // at all. This is the third id-backed rule to meet that trap.
+                e.add(new FieldError("S-20", "domainId",
+                        "domain '" + s.getDomain().getDomainId() + "' carries no readable timezone ("
+                                + s.getDomain().getTimeZone() + "), and it is the only source of the "
+                                + "zone this series' cut-offs are reckoned in"));
+            }
         }
 
         // S-22. Automatic release is modelled and not yet built. Saving a series
@@ -382,6 +426,25 @@ public final class SeriesValidator {
      */
     public static final Set<String> RESERVED_REPORT_PARAMS =
             Set.of("week", "weekto", "year", "edition");
+
+    /**
+     * Whether a stored zone name is one java.time can actually read.
+     *
+     * TimeZone.getTimeZone silently answers GMT for anything it does not
+     * recognise, so a misspelt zone does not fail -- it shifts every cut-off of
+     * the series by the offset nobody configured, and says nothing.
+     */
+    private static boolean isReadableZone(String zone) {
+        if (zone == null || zone.isBlank()) {
+            return false;
+        }
+        try {
+            java.time.ZoneId.of(zone.trim());
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
 
     /** Which reserved names a report-parameter map uses, in the order it uses them. */
     public static List<String> reservedReportParams(Map<String, Object> reportParams) {

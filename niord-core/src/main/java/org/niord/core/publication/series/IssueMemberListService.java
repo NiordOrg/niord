@@ -5,6 +5,10 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import org.niord.core.publication.series.resolve.Interval;
+import org.niord.core.publication.series.resolve.IssueOrdering;
+import org.niord.core.publication.series.resolve.ResolvedCriteria;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueMemberVo;
 import org.niord.core.publication.series.vo.LiveMessageStateVo;
 import org.niord.core.publication.series.vo.IssueOverrideVo;
@@ -13,11 +17,14 @@ import org.niord.core.user.User;
 import org.niord.model.message.Status;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * The member list of one issue, with what has moved under it since.
@@ -58,6 +65,12 @@ public class IssueMemberListService {
     @Inject
     IssueCurationService curation;
 
+    @Inject
+    MemberResolutionService resolver;
+
+    @Inject
+    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+
     /**
      * Every curation decision that STANDS on this issue, include and exclude alike.
      *
@@ -91,14 +104,19 @@ public class IssueMemberListService {
      * request parameter would let a caller ask a published issue what it would
      * contain today, and that answer looks authoritative while describing a
      * document nobody published.
+     *
+     * AN OPEN ISSUE HAS NO ROWS, and that is the point of the split. Member rows
+     * are written by the freeze, so before an issue is published there are none --
+     * and answering an empty list is the worst of the available answers, because
+     * "nothing is in this issue" and "this issue has not been frozen yet" look
+     * identical on the wire and only one of them is true. So an open issue is
+     * resolved live, exactly as the publish would resolve it: same document, same
+     * interval, same overrides, same order.
      */
     @Transactional
     public List<IssueMemberVo> members(PublicationIssue issue) {
-        List<IssueMember> frozen = em.createQuery(
-                        "SELECT m FROM IssueMember m WHERE m.issue = :i ORDER BY m.sortIndex",
-                        IssueMember.class)
-                .setParameter("i", issue)
-                .getResultList();
+        boolean frozenList = issue.getStatus() == IssueStatus.PUBLISHED
+                || issue.getStatus() == IssueStatus.RETIRED;
 
         // Every curation decision on this issue, in one query and indexed by uid.
         // The member's own foreign key answers for rows frozen after the override
@@ -114,9 +132,17 @@ public class IssueMemberListService {
             overrides.put(o.getMessageUid(), o);
         }
 
-        boolean frozenList = issue.getStatus() == IssueStatus.PUBLISHED
-                || issue.getStatus() == IssueStatus.RETIRED;
-        Map<String, LiveFacts> live = frozenList ? liveFacts(frozen) : Map.of();
+        if (!frozenList) {
+            return liveMembers(issue, overrides);
+        }
+
+        List<IssueMember> frozen = em.createQuery(
+                        "SELECT m FROM IssueMember m WHERE m.issue = :i ORDER BY m.sortIndex",
+                        IssueMember.class)
+                .setParameter("i", issue)
+                .getResultList();
+
+        Map<String, LiveFacts> live = liveFacts(frozen);
 
         List<IssueMemberVo> out = new ArrayList<>();
         for (IssueMember m : frozen) {
@@ -139,12 +165,118 @@ public class IssueMemberListService {
                     ? m.getOverride() : overrides.get(m.getMessageUid());
             vo.setCuration(curationOf(override));
 
-            if (frozenList) {
-                applyDrift(vo, m, live.get(m.getMessageUid()));
-            }
+            applyDrift(vo, m, live.get(m.getMessageUid()));
             out.add(vo);
         }
         return out;
+    }
+
+    /**
+     * What an OPEN issue would contain if it were published now.
+     *
+     * A PROBE, not a record. Nothing is written: no member row, no snapshot, no
+     * override. The interval closes at NOW rather than at any stamped instant,
+     * because an open issue has no cut-off yet -- that is what publishing it
+     * decides -- and the set therefore moves as messages are published into it,
+     * which is exactly what an admin watching the week fill up needs to see.
+     *
+     * There is no drift half. Drift is the distance between a frozen fact and the
+     * live one, and here there is only the live one.
+     */
+    private List<IssueMemberVo> liveMembers(PublicationIssue issue, Map<String, IssueOverride> overrides) {
+        Set<String> includes = new LinkedHashSet<>();
+        Set<String> excludes = new LinkedHashSet<>();
+        for (IssueOverride o : overrides.values()) {
+            (o.getKind() == OverrideKind.INCLUDE ? includes : excludes).add(o.getMessageUid());
+        }
+
+        MemberResolutionService.Resolution resolution = resolve(issue, includes, excludes);
+        if (resolution == null) {
+            return List.of();
+        }
+
+        PublicationSeries series = issue.getSeries();
+        IssueOrdering.SortSpec sort = IssueOrdering.resolveSort(
+                series == null ? null : series.getMessageSortBy(),
+                series == null || series.getMessageSortOrder() == null ? null
+                        : IssueOrdering.Direction.valueOf(series.getMessageSortOrder().name()),
+                series == null || series.getDomain() == null
+                        ? null : series.getDomain().getMessageSortOrder());
+        List<IssueOrdering.Orderable> ordered =
+                IssueOrdering.order(resolver.orderablesFor(resolution.members()), sort);
+        Map<String, Integer> sortIndex = IssueOrdering.assignSortIndex(ordered);
+
+        // The live facts for the rows, in one query, the same way the frozen half
+        // reads them. The columns are named "frozen" because that is what they
+        // carry on a published issue; on a live list they carry today's values,
+        // which is what the row is FOR.
+        Map<String, LiveFacts> facts = liveFactsOf(sortIndex.keySet());
+
+        List<IssueMemberVo> out = new ArrayList<>();
+        for (IssueOrdering.Orderable o : ordered) {
+            String uid = o.uid();
+            IssueOverride override = overrides.get(uid);
+            LiveFacts fact = facts.get(uid);
+
+            IssueMemberVo vo = new IssueMemberVo();
+            vo.setMessageUid(uid);
+            vo.setSortIndex(sortIndex.get(uid));
+            vo.setFrozenShortId(fact == null ? null : fact.shortId());
+            vo.setFrozenType(fact == null ? null : fact.type());
+            vo.setFrozenStatus(fact == null ? null : fact.status());
+            vo.setFrozenPublishDateFrom(fact == null ? null : fact.publishDateFrom());
+            vo.setFrozenPublishDateTo(fact == null ? null : fact.publishDateTo());
+
+            // A row is here because the query selected it, or because somebody put
+            // it here. The include overrides are the only ones that can produce a
+            // member; an exclude removes one, so it never has a row to be the
+            // reason for.
+            boolean manual = override != null && override.getKind() == OverrideKind.INCLUDE;
+            vo.setSource(manual ? MemberSource.OVERRIDE_INCLUDE.name() : MemberSource.CRITERIA.name());
+            vo.setReasonCode(manual ? "MANUAL_INCLUDE"
+                    : series != null && series.getTimeRelation() == TimeRelation.IN_FORCE_AT_CUTOFF
+                            ? "IN_FORCE_AT_CUTOFF" : "IN_INTERVAL");
+            vo.setCuration(curationOf(override));
+            out.add(vo);
+        }
+        return out;
+    }
+
+    /**
+     * The live resolution for an open issue, or null where the issue has no
+     * membership semantics at all.
+     *
+     * A null criteria document means NO QUERY, which is a different thing from an
+     * empty one -- resolving it would either raise or match the whole corpus. The
+     * curated branch is what the annexes need: a series with no criteria still has
+     * contents when somebody named them by hand.
+     */
+    private MemberResolutionService.Resolution resolve(PublicationIssue issue,
+                                                       Set<String> includes, Set<String> excludes) {
+        PublicationSeries series = issue.getSeries();
+        boolean queryBacked = series != null
+                && series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
+                && series.getTimeRelation() != null;
+        if (queryBacked) {
+            try {
+                ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue, domains);
+                if (criteria != null) {
+                    return resolver.resolve(criteria,
+                            new Interval(issue.getIntervalFrom(), new Date()), includes, excludes);
+                }
+            } catch (RuntimeException e) {
+                // A document that cannot resolve is a series-configuration problem
+                // and is reported as such by the criteria editor and the release
+                // rail. It is not a reason for this list to fail.
+                return null;
+            }
+        }
+        if (includes.isEmpty()) {
+            return null;
+        }
+        Set<String> curated = new LinkedHashSet<>(includes);
+        curated.removeAll(excludes);
+        return MemberResolutionService.Resolution.curated(curated);
     }
 
     /**
@@ -168,7 +300,8 @@ public class IssueMemberListService {
     // ------------------------------------------------------------------ drift
 
     /** The live values membership and the printed row depend on. */
-    private record LiveFacts(String type, String status, Date publishDateTo) {
+    private record LiveFacts(String shortId, String type, String status,
+                             Date publishDateFrom, Date publishDateTo) {
     }
 
     /**
@@ -187,18 +320,26 @@ public class IssueMemberListService {
                 uids.add(m.getMessageUid());
             }
         }
+        return liveFactsOf(uids);
+    }
+
+    /** The same projection, for a set of uids that has no member rows yet. */
+    private Map<String, LiveFacts> liveFactsOf(Collection<String> uids) {
+        List<String> all = new ArrayList<>(uids);
         Map<String, LiveFacts> out = new LinkedHashMap<>();
-        for (int from = 0; from < uids.size(); from += LOOKUP_CHUNK) {
-            List<String> chunk = uids.subList(from, Math.min(from + LOOKUP_CHUNK, uids.size()));
+        for (int from = 0; from < all.size(); from += LOOKUP_CHUNK) {
+            List<String> chunk = all.subList(from, Math.min(from + LOOKUP_CHUNK, all.size()));
             for (Object[] row : em.createQuery(
-                            "SELECT m.uid, m.type, m.status, m.publishDateTo FROM Message m"
-                                    + " WHERE m.uid IN (:uids)", Object[].class)
+                            "SELECT m.uid, m.shortId, m.type, m.status, m.publishDateFrom, m.publishDateTo "
+                                    + "FROM Message m WHERE m.uid IN (:uids)", Object[].class)
                     .setParameter("uids", chunk)
                     .getResultList()) {
                 out.put((String) row[0],
-                        new LiveFacts(row[1] == null ? null : row[1].toString(),
+                        new LiveFacts((String) row[1],
                                 row[2] == null ? null : row[2].toString(),
-                                (Date) row[3]));
+                                row[3] == null ? null : row[3].toString(),
+                                (Date) row[4],
+                                (Date) row[5]));
             }
         }
         return out;

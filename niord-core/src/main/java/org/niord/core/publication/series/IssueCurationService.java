@@ -3,6 +3,8 @@ package org.niord.core.publication.series;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.niord.core.publication.series.resolve.Interval;
+import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 
@@ -27,6 +29,12 @@ public class IssueCurationService extends BaseService {
     @Inject
     IssueAuditService audit;
 
+    @Inject
+    MemberResolutionService resolver;
+
+    @Inject
+    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+
     /**
      * O-4. Including a message the query already selects is refused.
      *
@@ -36,26 +44,62 @@ public class IssueCurationService extends BaseService {
      * query no longer selects -- a membership nobody chose, explained by a
      * decision nobody made.
      *
-     * Checked against the members already resolved onto the issue rather than by
-     * re-running the query: an OPEN issue's rows are the live resolution, and
-     * re-resolving here would double the cost of every curation click.
+     * ASKED OF THE LIVE RESOLUTION, because there is nothing else to ask. Member
+     * rows are written by the freeze and curation is only legal while the issue is
+     * OPEN, so the two conditions never hold at once: counting rows meant counting
+     * zero, every time, on every issue this rule could apply to. The rule was
+     * unenforceable in the shape it was written in, and read as enforced.
      */
     @Transactional
     public IssueOverride include(PublicationIssue issue, String messageUid, User author, String reason) {
-        Long alreadyAMember = em.createQuery(
-                        "SELECT COUNT(m) FROM IssueMember m WHERE m.issue = :i AND m.messageUid = :uid "
-                                + "AND m.source = :criteria", Long.class)
-                .setParameter("i", issue)
-                .setParameter("uid", messageUid)
-                .setParameter("criteria", MemberSource.CRITERIA)
-                .getSingleResult();
-        if (alreadyAMember > 0) {
+        if (selectedByCriteria(issue, messageUid)) {
             throw new IssueLifecycleService.TransitionRefusedException("OVERRIDE_ALREADY_A_MEMBER",
                     "message '" + messageUid + "' is already selected by this issue's criteria. An "
                             + "INCLUDE on top of it records a decision nobody made, and would keep "
                             + "the message if the criteria later narrowed.");
         }
         return addOverride(issue, messageUid, OverrideKind.INCLUDE, author, reason, "OVERRIDE_INCLUDED");
+    }
+
+    /**
+     * Whether the issue's own criteria already select this message.
+     *
+     * The frozen rows for an issue that has them, the live resolution for one that
+     * does not. A resolution that cannot be taken -- an unresolvable document, a
+     * series with no query -- answers "no": refusing a curation because the
+     * criteria could not be run would block the one action that still works on a
+     * misconfigured series.
+     */
+    private boolean selectedByCriteria(PublicationIssue issue, String messageUid) {
+        Long frozen = em.createQuery(
+                        "SELECT COUNT(m) FROM IssueMember m WHERE m.issue = :i AND m.messageUid = :uid "
+                                + "AND m.source = :criteria", Long.class)
+                .setParameter("i", issue)
+                .setParameter("uid", messageUid)
+                .setParameter("criteria", MemberSource.CRITERIA)
+                .getSingleResult();
+        if (frozen > 0) {
+            return true;
+        }
+
+        PublicationSeries series = issue.getSeries();
+        if (series == null || series.getContentMode() != ContentMode.GENERATED_FROM_QUERY
+                || series.getTimeRelation() == null) {
+            return false;
+        }
+        try {
+            ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue, domains);
+            if (criteria == null) {
+                return false;
+            }
+            // Resolved WITHOUT the curation: the question is what the query
+            // selects, and folding the existing overrides in would make an earlier
+            // include look like a criteria match.
+            return resolver.resolve(criteria, new Interval(issue.getIntervalFrom(), new Date()))
+                    .members().contains(messageUid);
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     @Transactional

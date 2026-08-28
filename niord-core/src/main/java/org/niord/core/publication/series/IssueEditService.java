@@ -5,8 +5,9 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import org.niord.core.publication.series.criteria.CriteriaValidator;
+import org.niord.core.publication.series.criteria.CriterionKind;
+import org.niord.core.publication.series.criteria.DomainSeriesExpander;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
-import org.niord.core.publication.series.resolve.IssueNaming;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 
@@ -43,6 +44,15 @@ public class IssueEditService extends BaseService {
 
     @Inject
     IssueAuditService audit;
+
+    @Inject
+    IssueLifecycleService lifecycle;
+
+    @Inject
+    IssueShape shape;
+
+    @Inject
+    DomainSeriesExpander domains;
 
     /**
      * What an edit may change.
@@ -145,13 +155,16 @@ public class IssueEditService extends BaseService {
                         "only a query-backed series selects by criteria, so an override on this "
                                 + "issue would decide nothing");
             }
-            // The same validator the series form runs, and ACCEPT_ALL for the same
-            // reason SeriesValidator uses it: operand EXISTENCE is C-4's job and
-            // needs a persistence context this pure check does not have. A document
-            // accepted here and refused on the series would be a second definition
-            // of a valid document.
-            List<CriteriaValidator.Violation> violations =
-                    CriteriaValidator.validate(wanted, CriteriaValidator.ACCEPT_ALL);
+            // The same validator the series form runs, with the one operand this
+            // service can actually look up. A domain node is a MACRO: it stands for
+            // the message series that domain publishes, so a domain that names
+            // nothing resolves to an empty scope, and an empty scope narrows the
+            // query to nothing -- the issue would publish EMPTY rather than fail.
+            // The remaining kinds are accepted here as they are on the series form;
+            // a document accepted in one place and refused in the other would be
+            // two definitions of a valid document.
+            List<CriteriaValidator.Violation> violations = CriteriaValidator.validate(wanted,
+                    (kind, value) -> kind != CriterionKind.DOMAIN || domains.exists(value));
             if (!violations.isEmpty()) {
                 throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
                         "the override would not resolve, and an issue that cannot resolve publishes "
@@ -173,7 +186,9 @@ public class IssueEditService extends BaseService {
         Date from = edit.intervalFrom() == null ? issue.getIntervalFrom() : edit.intervalFrom();
         Date to = edit.intervalTo() == null ? issue.getIntervalTo() : edit.intervalTo();
 
-        if (equal(from, issue.getIntervalFrom()) && equal(to, issue.getIntervalTo())) {
+        boolean fromChanged = !equal(from, issue.getIntervalFrom());
+        boolean toChanged = !equal(to, issue.getIntervalTo());
+        if (!fromChanged && !toChanged) {
             return;
         }
         if (from != null && to != null && !from.before(to)) {
@@ -182,70 +197,41 @@ public class IssueEditService extends BaseService {
                             + "publish empty rather than fail");
         }
 
+        // The same refusal the create makes, and it belongs here for the same
+        // reason: an edited interval that reaches back inside a released issue's
+        // period would republish that week's messages under a second name. The
+        // issue being edited is excluded from the test -- it is allowed to overlap
+        // where it already was.
+        if (fromChanged) {
+            lifecycle.assertNoOverlap(issue.getSeries(), from, issue);
+        }
+
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("from", bounds(issue.getIntervalFrom(), issue.getIntervalTo()));
         detail.put("to", bounds(from, to));
 
         issue.setIntervalFrom(from);
         issue.setIntervalTo(to);
-        // MANUAL, not STAMPED or RECOVERED. Nobody stamped this bound at release
-        // and nobody reconstructed it from the chain -- somebody typed it, and a
-        // later reader deciding whether to trust the period needs to know which.
-        issue.setIntervalFromSource(IntervalBoundSource.MANUAL);
+        // EACH BOUND SAYS WHERE IT CAME FROM, and only the bound that actually
+        // moved is re-attributed. MANUAL means somebody typed THIS bound: writing
+        // it on both because one of them changed would claim an admin authored a
+        // period start that was in fact stamped by the previous release, and the
+        // "(stemplet)/(nominel)" marker the issue list shows reads exactly these
+        // two columns. A bound that has been cleared has no source at all.
+        if (fromChanged) {
+            issue.setIntervalFromSource(from == null ? null : IntervalBoundSource.MANUAL);
+        }
+        if (toChanged) {
+            issue.setIntervalToSource(to == null ? null : IntervalBoundSource.MANUAL.name());
+        }
 
-        renumber(issue);
-        resuggestNames(issue);
+        // The numbers and the suggested names follow the period they render: an
+        // issue left labelled "uge 29" in week 30's window is what an interval edit
+        // produces without this. A name somebody typed is a decision rather than a
+        // rendering, and keeps its own value.
+        shape.renumber(issue, issue.getSeries());
 
         audit.edited(issue, actor, "INTERVAL_CHANGED", detail);
-    }
-
-    /**
-     * Re-derives week, weekTo and year from the moved interval.
-     *
-     * These are what every issue list and name pattern reads, so leaving them
-     * behind after an interval edit produces an issue labelled "uge 29" sitting in
-     * week 30's period. Derived in the SERIES' zone, never the JVM's: the domains
-     * differ, and a cut-off near midnight lands in a different ISO week depending
-     * on which one is used.
-     *
-     * Silent when there is no cut-off to derive from. An issue whose period has
-     * neither a stamped cut-off nor an end bound has no week yet, and inventing one
-     * from the interval start would name it after the wrong end of its own window.
-     */
-    private void renumber(PublicationIssue issue) {
-        Date cutoff = issue.effectiveCutoff();
-        if (cutoff == null) {
-            return;
-        }
-        IssueNaming.Numbers numbers = IssueNaming.derive(
-                cutoff, issue.getIntervalFrom(), zoneOf(issue), null);
-        issue.setWeek(numbers.week());
-        issue.setWeekTo(numbers.weekTo());
-        issue.setYear(numbers.year());
-    }
-
-    /**
-     * Re-suggests the names the series would have produced for the new interval.
-     *
-     * Only where nobody has overridden them. A suggested name is a rendering of
-     * the period rather than a decision, so it follows the period; a typed one is
-     * a decision, and re-deriving over it would discard it with no trace.
-     */
-    private void resuggestNames(PublicationIssue issue) {
-        PublicationSeries series = issue.getSeries();
-        if (series == null) {
-            return;
-        }
-        for (PublicationIssueDesc desc : issue.getDescs()) {
-            if (desc.isNameOverridden()) {
-                continue;
-            }
-            String suggested = IssueLifecycleService.suggestName(
-                    series, desc.getLang(), issue.getIntervalFrom());
-            if (suggested != null && !suggested.isBlank()) {
-                desc.setName(suggested);
-            }
-        }
     }
 
     // --------------------------------------------------------------------- names
@@ -294,12 +280,6 @@ public class IssueEditService extends BaseService {
 
     private static boolean equal(Date a, Date b) {
         return a == null ? b == null : a.equals(b);
-    }
-
-    private static java.time.ZoneId zoneOf(PublicationIssue issue) {
-        return issue.getSeries() == null
-                ? java.time.ZoneId.of("UTC")
-                : issue.getSeries().cutoffZone();
     }
 
     private static PublicationIssueDesc descFor(PublicationIssue issue, String lang) {

@@ -4,10 +4,17 @@ package org.niord.core.publication.series.resolve;
  * Something worth flagging about a resolution that is not, in itself, a miss.
  * The warnings list.
  *
- * Six codes, DISJOINT from CriteriaMissCode -- no value ever appears in both.
+ * Five codes, DISJOINT from CriteriaMissCode -- no value ever appears in both.
  * The older names CANCELLED_OR_EXPIRED_ALIVE_AT_CUTOFF, TYPE_MUTATED_SINCE_FREEZE
  * and PUBLISH_DATE_NULL are dropped rather than aliased: emitting one is a bug,
  * not a compatibility gesture.
+ *
+ * Type drift is deliberately NOT one of them, and used to be. It is not a fact
+ * about a resolution at all -- a resolution has no frozen snapshot to compare
+ * against -- and it is already answered where it can be: the member list computes
+ * it per row, against the live message, and shows what the value is now. A second
+ * answer as a whole-issue warning would be the same question with less
+ * information, computed from a different place.
  */
 public enum ResolutionWarningCode {
 
@@ -22,9 +29,6 @@ public enum ResolutionWarningCode {
      * across two annuals.
      */
     CANCELLED_BUT_DATE_ALIVE(true),
-
-    /** A frozen member's type no longer matches the live message. Type is mutable and unversioned. */
-    TYPE_DRIFT(false),
 
     /** Messages were dropped for having no publishDateFrom. Reported, never silent. */
     NULL_PUBLISH_FROM_DROPPED(false),

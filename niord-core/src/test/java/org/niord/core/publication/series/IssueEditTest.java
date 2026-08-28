@@ -196,6 +196,95 @@ public class IssueEditTest {
     }
 
     /**
+     * Each bound records where IT came from, not where the other one did.
+     *
+     * MANUAL means "somebody typed this bound". Writing it on both because one of
+     * them moved claims an admin authored a period start that was in fact stamped
+     * by the previous release -- and the "(stemplet)/(nominel)" marker the issue
+     * list puts on every interval reads exactly these two columns, so the screen
+     * then states something untrue about a bound nobody touched.
+     */
+    @Test
+    @Transactional
+    public void onlyTheBoundThatMovedIsReattributed() {
+        PublicationIssue issue = anIssue();
+        assertEquals(IntervalBoundSource.STAMPED, issue.getIntervalFromSource());
+
+        // Only the close moves.
+        editService.update(issue, new IssueEditService.IssueEdit(null, null,
+                new Date(1_699_000_000_000L + 3 * WEEK), null), user());
+        em.flush();
+
+        assertEquals(IntervalBoundSource.STAMPED, issue.getIntervalFromSource(),
+                "the start was re-attributed to a hand that never touched it");
+        assertEquals(IntervalBoundSource.MANUAL.name(), issue.getIntervalToSource(),
+                "the bound that actually moved does not say it was typed");
+
+        // And now only the start.
+        PublicationIssue other = anIssue();
+        String closeSourceBefore = other.getIntervalToSource();
+        editService.update(other, new IssueEditService.IssueEdit(null,
+                new Date(1_699_000_000_000L - WEEK), null, null), user());
+        em.flush();
+
+        assertEquals(IntervalBoundSource.MANUAL, other.getIntervalFromSource());
+        assertEquals(closeSourceBefore, other.getIntervalToSource(),
+                "the close was re-attributed although the edit never named it");
+    }
+
+    /**
+     * An interval edit may not reach back into a released issue's period.
+     *
+     * The same refusal the create makes, and it belongs here for the same reason:
+     * those messages have already gone out, and a second issue claiming them
+     * publishes them twice under two names. Only the create checked, so the edit
+     * was the way around the rule -- and the admin got a success toast for it.
+     */
+    @Test
+    @Transactional
+    public void anIntervalEditIntoAReleasedPeriodIsRefused() {
+        PublicationIssue issue = anIssue();
+        PublicationSeries s = issue.getSeries();
+
+        // A neighbour that covered the fortnight before this issue opened.
+        PublicationIssue released = new PublicationIssue();
+        released.setSeries(s);
+        released.setPublicId(UUID.randomUUID().toString());
+        released.setRepoPath("publications/" + released.getPublicId());
+        released.setStatus(IssueStatus.PUBLISHED);
+        released.setIntervalFrom(new Date(1_699_000_000_000L - 2 * WEEK));
+        released.setIntervalFromSource(IntervalBoundSource.STAMPED);
+        released.setCutoffStampedAt(new Date(1_699_000_000_000L));
+        released.setCutoffSource("STAMPED_AT_PUBLISH");
+        released.createDesc("da").setName("Neighbour");
+        em.persist(released);
+        em.flush();
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> editService.update(issue, new IssueEditService.IssueEdit(null,
+                                new Date(1_699_000_000_000L - WEEK), null, null), user()));
+        assertEquals("ISSUE_INTERVAL_OVERLAP", e.code());
+
+        // And the bound is untouched: a refusal that half-applied would leave the
+        // issue covering a period nobody asked for.
+        assertEquals(new Date(1_699_000_000_000L), issue.getIntervalFrom());
+    }
+
+    /** An issue may still be edited where it already is. */
+    @Test
+    @Transactional
+    public void anIntervalEditThatDoesNotMoveIntoANeighbourIsAllowed() {
+        PublicationIssue issue = anIssue();
+        editService.update(issue, new IssueEditService.IssueEdit(null,
+                new Date(1_699_000_000_000L + WEEK), new Date(1_699_000_000_000L + 2 * WEEK), null),
+                user());
+        em.flush();
+
+        assertEquals(new Date(1_699_000_000_000L + WEEK), issue.getIntervalFrom());
+    }
+
+    /**
      * A typed name survives an interval move.
      *
      * This is the whole reason nameOverridden exists. Without it the rename is

@@ -52,6 +52,9 @@ public class ChainAndCurationInvariantsTest {
     IssueCurationService curation;
 
     @Inject
+    IssuePreviewService previews;
+
+    @Inject
     EntityManager em;
 
     private User user() {
@@ -79,7 +82,12 @@ public class ChainAndCurationInvariantsTest {
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
-        // No report: these tests are about the chain and the curation, and a series with a report now renders a document at publish.
+        // A report, because a query-backed series that names none has no document
+        // to produce and is refused before it can stamp. These tests are about the
+        // chain and the curation rather than about rendering, so they publish by
+        // PROMOTING a recorded preview -- the same path an admin takes when they
+        // have already looked at the document -- which needs no real report to run.
+        s.setReportId("some-report");
         s.setCategory(c);
         s.getLanguages().add("da");
 
@@ -97,6 +105,12 @@ public class ChainAndCurationInvariantsTest {
     private PublicationIssue publishAt(PublicationSeries s, Date intervalFrom, Date stamp) {
         PublicationIssue i = lifecycle.create(s, intervalFrom, IntervalBoundSource.STAMPED, user());
         em.flush();
+        // Publish by promoting a preview rather than by rendering: step 10 refuses
+        // to leave a language without a document, and these tests have no report
+        // engine behind them. The bytes are irrelevant -- what is being asserted is
+        // the chain the publish writes.
+        previews.record(i, "da", "preview.pdf",
+                "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         publishService.publish(i.getId(),
                 new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         em.flush();
