@@ -240,7 +240,20 @@ public class PublicationRestService extends AbstractBatchableRestService {
             issueIds.add(issue.getPublicId());
             issueVos.add(asVo.apply(issue));
         }
-        return merge(issueVos, issueIds, legacy, page, maxSize);
+        // A TWINNED LEGACY ROW FOLLOWS ITS TWIN, and without this it does not.
+        //
+        // The legacy half carries the old nullable domain column and nothing else,
+        // so on its own it answers "domain is null or domain = X" -- the sharing
+        // rule the redesign replaced, still running beside the new one. That is
+        // invisible while the issue half returns the twin, because the two collide
+        // by id and the merge drops the legacy row; it becomes visible exactly when
+        // the new rule HIDES the twin, and then the legacy row is what shows the
+        // publication that was just hidden.
+        //
+        // A row with no twin keeps the old rule. It was never imported, so no
+        // series states who may cite it, and there is nothing else it could follow.
+        return merge(issueVos, issueIds, legacy, page, maxSize,
+                publicationSearchAdapter.legacyIdsHiddenFrom(params.getDomain()));
     }
 
     /**
@@ -256,11 +269,30 @@ public class PublicationRestService extends AbstractBatchableRestService {
     public static <V> PagedSearchResultVo<V> merge(List<V> issueVos, List<String> issueIds,
                                                    PagedSearchResultVo<V> legacy,
                                                    int page, int maxSize) {
+        return merge(issueVos, issueIds, legacy, page, maxSize, Set.of());
+    }
+
+    /**
+     * The same merge, with the legacy rows whose imported twin is out of scope.
+     *
+     * `hiddenLegacyIds` is what the visible-from rule decided about publications
+     * that have BOTH a legacy row and an imported issue. Dropping them here rather
+     * than in the legacy query is what keeps the frozen legacy resource frozen:
+     * that query has no availability to consult and nothing to consult it about.
+     */
+    public static <V> PagedSearchResultVo<V> merge(List<V> issueVos, List<String> issueIds,
+                                                   PagedSearchResultVo<V> legacy,
+                                                   int page, int maxSize,
+                                                   Set<String> hiddenLegacyIds) {
         Set<String> taken = new LinkedHashSet<>(issueIds);
         List<V> merged = new ArrayList<>(issueVos);
         for (V row : legacy.getData()) {
             String id = row instanceof PublicationVo p ? p.getPublicationId() : null;
-            if (!taken.contains(id)) {
+            // The null id is asked of `taken` and NOT of the hidden set. A row with
+            // no id has no twin to follow and survives; asking an immutable set
+            // whether it contains null throws, which would take a whole search down
+            // over a legacy row that was merely missing a field.
+            if (!taken.contains(id) && (id == null || !hiddenLegacyIds.contains(id))) {
                 merged.add(row);
             }
         }

@@ -26,9 +26,11 @@ import org.niord.core.service.BaseService;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Issues, findable by the same search the publication picker already uses.
@@ -72,12 +74,13 @@ public class PublicationSearchAdapter extends BaseService {
             return List.of();
         }
 
-        // LEFT JOIN on the domain, and it has to be explicit. A path expression
-        // like s.domain.domainId generates an INNER join, which eliminates every
-        // series whose domain is null BEFORE the where-clause is evaluated -- so
-        // writing "(s.domain IS NULL OR s.domain.domainId = :domain)" reads
-        // correctly and still returns nothing for the null case. Naming the join
-        // is the only way to make the null branch reachable.
+        // LEFT JOIN on the owner, and it has to be explicit. A path expression
+        // like s.domain.domainId generates an INNER join, which eliminates a
+        // series whose owner is missing BEFORE the where-clause is evaluated -- so
+        // a predicate written against the path reads correctly and still cannot
+        // return that row under any value. The column is NOT NULL where the
+        // migration could apply it, and this join is what keeps the query honest
+        // where it could not.
         StringBuilder jpql = new StringBuilder(
                 "SELECT i FROM PublicationIssue i JOIN i.series s LEFT JOIN s.domain d WHERE 1 = 1");
 
@@ -110,19 +113,13 @@ public class PublicationSearchAdapter extends BaseService {
             bindings.put("contentMode", ContentMode.ofPublicationType(params.getType()));
         }
         if (params.getDomain() != null && !params.getDomain().isBlank()) {
-            // A series with NO domain matches every domain, which is what legacy
-            // means by a null one: Publication.findRecordingPublications reads
-            // "p.domain is null or :series member of p.domain.messageSeries".
-            //
-            // Written as an explicit null branch because the bare comparison is an
-            // inner one -- s.domain.domainId = :domain silently drops a series
-            // whose domain is null, so it is not merely unmatched but unfindable.
-            // Thirteen of the twenty-three series in the estate have no domain,
-            // because the legacy templates they were imported from have none
-            // either, so this was most of the catalogue disappearing from every
-            // domain-scoped search.
-            jpql.append(" AND (d IS NULL OR d.domainId = :domain)");
-            bindings.put("domain", params.getDomain());
+            // VISIBLE FROM the named domain, by the same fragment the citation
+            // picker uses. The two halves of this search are read by the same
+            // screens, and a rule stated twice is a rule that drifts: the reason
+            // most of the catalogue once vanished from every domain-scoped search
+            // was that this clause and the picker's had been written separately.
+            jpql.append(" AND ").append(SeriesVisibility.clause("s", "d"));
+            SeriesVisibility.bind(bindings, params.getDomain());
         }
         if (params.getCategory() != null && !params.getCategory().isBlank()) {
             jpql.append(" AND s.category.categoryId = :category");
@@ -158,6 +155,40 @@ public class PublicationSearchAdapter extends BaseService {
             hits = filtered;
         }
         return hits;
+    }
+
+    /**
+     * The legacy publication ids the named domain may NOT see, through their twins.
+     *
+     * THE LEGACY HALF OF THE UNION HAS NO AVAILABILITY OF ITS OWN. Its rows carry
+     * the old nullable domain column and nothing else, so on its own it answers
+     * "domain is null or domain = X" -- which for a row that has since been
+     * imported is the OLD sharing rule, still running beside the new one. An
+     * imported issue borrows its legacy row's id, so the two collide by design and
+     * the merge drops the legacy row whenever the issue half returned it; when the
+     * issue half withheld the twin, the legacy row survived and showed the very
+     * publication the new rule had just hidden.
+     *
+     * So a twinned legacy row FOLLOWS ITS TWIN. This names the ids whose twin is
+     * not visible from the caller's domain, and the merge drops them. The opposite
+     * direction needs nothing: a legacy row whose twin IS visible is already in the
+     * union as the issue, under the same id.
+     *
+     * A row with NO twin keeps the old rule, applied by the legacy half itself.
+     * There is nothing else it could follow -- it was never imported, so no series
+     * states who may cite it.
+     */
+    @Transactional
+    public Set<String> legacyIdsHiddenFrom(String domainId) {
+        if (domainId == null || domainId.isBlank()) {
+            return Set.of();
+        }
+        var query = em.createQuery(
+                "SELECT i.legacyPublicationId FROM PublicationIssue i JOIN i.series s"
+                        + " LEFT JOIN s.domain d WHERE i.legacyPublicationId IS NOT NULL"
+                        + " AND NOT " + SeriesVisibility.clause("s", "d"), String.class);
+        SeriesVisibility.bind(query, domainId);
+        return new LinkedHashSet<>(query.getResultList());
     }
 
     /** An issue is a PUBLICATION; a search for anything else is not asking for one. */

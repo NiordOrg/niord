@@ -100,6 +100,35 @@ public class MigrationIdiomTest {
                 "V12 is missing; the indexes the entity declares would then describe a schema nobody has");
     }
 
+    /**
+     * And the owner / availability migration, which the entity mapping needs.
+     *
+     * PublicationSeries declares an availability column and a join table by name.
+     * Without the migration those describe a schema nobody has, and the failure is
+     * not a missing feature -- it is every read of the table answering with an
+     * unknown-column error at runtime.
+     */
+    @Test
+    public void theOwnerAndAvailabilityColumnsShipAsAMigration() throws Exception {
+        Path v13 = migrations().stream()
+                .filter(p -> p.getFileName().toString().startsWith("V13__"))
+                .findFirst().orElse(null);
+        assertNotNull(v13, "V13 is missing; the entity declares availability and "
+                + "PublicationSeries_AvailableDomain, and nothing would have created either");
+
+        String sql = Files.readString(v13, StandardCharsets.UTF_8);
+        assertTrue(sql.contains("PublicationSeries_AvailableDomain"),
+                "V13 does not create the availability join table the mapping names");
+        assertTrue(sql.contains("ON DELETE CASCADE"),
+                "the domain side of the join table must cascade: deleting a domain has to remove it "
+                        + "from every list that named it, or the delete fails against a publication "
+                        + "in another domain entirely");
+        assertTrue(sql.contains("domain_id IS NULL"),
+                "the NOT NULL on the owner must be conditional on the backfill having left no NULL "
+                        + "rows; unconditional, it fails the boot on a database whose ownerless rows "
+                        + "could not be filed");
+    }
+
     private static List<Path> migrations() throws Exception {
         URL dir = MigrationIdiomTest.class.getResource("/db/migration");
         assertNotNull(dir, "db/migration is not on the test classpath");

@@ -161,6 +161,22 @@ public class IssueAuditService extends BaseService {
         return writeSeries(series, AuditAction.SERIES_AUTHORITY_CHANGED, actor, reason, detail);
     }
 
+    /**
+     * The series changed hands.
+     *
+     * A series-level event like the authority flip, and recorded the same way: the
+     * detail carries both ends so the entry answers "where did this come from"
+     * without anybody having to remember, and the reason is the sentence the
+     * receiving desk reads months later when they wonder why they own it.
+     */
+    public IssueAuditEntry ownerTransferred(PublicationSeries series, User actor,
+                                            String fromDomainId, String toDomainId, String reason) {
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("from", fromDomainId);
+        detail.put("to", toDomainId);
+        return writeSeries(series, AuditAction.OWNER_TRANSFERRED, actor, reason, detail);
+    }
+
     /** Any other series-level event: the row belongs to a series and carries no issue. */
     public IssueAuditEntry series(PublicationSeries series, User actor, AuditAction action, String reason) {
         return writeSeries(series, action, actor, reason, null);

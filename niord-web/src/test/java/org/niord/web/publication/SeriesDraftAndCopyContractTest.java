@@ -186,7 +186,19 @@ public class SeriesDraftAndCopyContractTest {
         assertEquals("1397-6656", copy.getReportParams().get("issn"));
         assertEquals(List.of("da", "en"), copy.getLanguages());
         assertEquals("cat-nm", copy.getCategoryId());
-        assertEquals("dma-nm", copy.getDomainId());
+
+        // THE SHARING SETTINGS TRAVEL AND THE OWNER DOES NOT, and both halves are
+        // deliberate. "Another annex, shared with the same desks" is a reason to
+        // copy a publication; carrying the OWNER across is not -- it is a claim
+        // about the original row, and copying somebody else's publication would
+        // author a new one straight into their domain, which the write guard then
+        // refuses on save naming a domain the admin never chose. The form seeds it
+        // from the session domain instead.
+        assertNull(copy.getDomainId(),
+                "the copy carried the original's owner; the save would then be refused for a "
+                        + "domain the admin never chose");
+        assertEquals("SELECTED_DOMAINS", copy.getAvailability());
+        assertEquals(List.of("dma-fa"), copy.getAvailableDomainIds());
 
         assertEquals(2, copy.getDescs().size(), "one row per configured language, as C5 requires");
         PublicationSeriesDescVo da = copy.getDescs().get(0);
@@ -217,6 +229,8 @@ public class SeriesDraftAndCopyContractTest {
         vo.getReportParams().put("issn", "1397-6656");
         vo.setCategoryId("cat-nm");
         vo.setDomainId("dma-nm");
+        vo.setAvailability("SELECTED_DOMAINS");
+        vo.getAvailableDomainIds().add("dma-fa");
         vo.getLanguages().addAll(List.of("da", "en"));
 
         IssueCriteriaVo criteria = new IssueCriteriaVo();

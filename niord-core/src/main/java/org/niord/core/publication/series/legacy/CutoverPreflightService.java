@@ -126,6 +126,7 @@ public class CutoverPreflightService extends BaseService {
                 .getResultList();
         counts.put("importedIssues", imported.size());
 
+        assertEverySeriesHasAnOwner(violations, counts);
         assertOneCurrentIssuePerSeries(imported, violations, counts);
         assertCadencedIssuesDeriveTheirWindow(imported, violations);
         assertUnpublishedIssuesCarryNoStamp(imported, violations, counts);
@@ -247,6 +248,33 @@ public class CutoverPreflightService extends BaseService {
      * one message in one issue print it twice in the report, and the member count
      * an editor reads disagrees with what comes out.
      */
+    /**
+     * Every publication names the desk that owns it.
+     *
+     * A VIOLATION, not a note, and the count must read zero before the flip. The
+     * owner decides three things at once -- which admin list the publication
+     * appears on, who may change it, and the timezone its cut-offs are reckoned in
+     * -- so a row without one is a publication nobody is responsible for whose
+     * schedule is read in whatever zone the server happens to be set to. After the
+     * flip it is also what the public reads.
+     *
+     * Counted even when it is zero. An absent number and a number that is zero
+     * read alike on a checklist, and this is a line somebody ticks.
+     */
+    private void assertEverySeriesHasAnOwner(List<Violation> violations, Map<String, Integer> counts) {
+        List<String> orphans = em.createQuery(
+                        "SELECT s.seriesId FROM PublicationSeries s WHERE s.domain IS NULL",
+                        String.class)
+                .getResultList();
+        counts.put("seriesWithoutOwner", orphans.size());
+        for (String seriesId : orphans) {
+            violations.add(new Violation("SERIES_WITHOUT_OWNER", seriesId,
+                    "the publication names no domain. Every publication belongs to exactly one -- "
+                            + "the desk that lists and administers it, and the only source of the "
+                            + "timezone its cut-offs are read in. Assign one before the flip."));
+        }
+    }
+
     private void assertMembershipIsUnique(List<Violation> violations, Map<String, Integer> counts) {
         List<Object[]> memberDupes = em.createQuery(
                         "SELECT m.issue.id, m.messageUid, COUNT(m) FROM IssueMember m "

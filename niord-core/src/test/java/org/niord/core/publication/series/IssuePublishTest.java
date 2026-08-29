@@ -109,6 +109,10 @@ public class IssuePublishTest {
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
+        // Every publication names the desk that owns it: the column is NOT NULL and
+        // S-20a refuses a save without one, so a fixture that left it out no longer
+        // describes a state the system can be in.
+        s.setDomain(TestOwnerDomain.of(em));
         s.getLanguages().add("da");
 
         IssueCriteriaVo doc = new IssueCriteriaVo();
@@ -721,11 +725,15 @@ public class IssuePublishTest {
      */
     @Test
     public void theAuditVocabularyIsClosedAndSpecific() {
-        assertEquals(28, AuditAction.values().length, "the audit vocabulary changed size");
+        assertEquals(29, AuditAction.values().length, "the audit vocabulary changed size");
         assertTrue(List.of(AuditAction.values()).containsAll(
                         List.of(AuditAction.LINK_SET, AuditAction.LINK_CLEARED,
                                 AuditAction.INTERVAL_CHANGED, AuditAction.NAME_CHANGED,
-                                AuditAction.CRITERIA_OVERRIDDEN, AuditAction.FILE_REPLACED_MANUALLY)),
+                                AuditAction.CRITERIA_OVERRIDDEN, AuditAction.FILE_REPLACED_MANUALLY,
+                                // Moving a publication to another desk: it leaves one
+                                // team's screens and appears on another's, and the
+                                // question afterwards is always who and why.
+                                AuditAction.OWNER_TRANSFERRED)),
                 "the vocabulary is specific by design: a history panel cannot render "
                         + "'something changed', so every mutation an admin can make has its own value");
     }

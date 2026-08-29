@@ -16,6 +16,8 @@
 
 package org.niord.core.publication;
 
+import org.niord.core.domain.Domain;
+import org.niord.core.publication.series.TestOwnerDomain;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -510,22 +512,30 @@ public class PublicationResolutionTest {
     // ================================================== the sort domain
 
     /**
-     * The sort domain comes from the FIRST named publication, including when that
-     * one has no domain.
+     * The sort domain comes from the FIRST named publication, and no other.
      *
-     * Falling through to the second would look like an improvement and would
-     * change the order of an existing mixed request. 17 live publications have no
-     * domain, so it would fire.
+     * Falling through to a later one would look like an improvement and would
+     * change the order of an existing mixed request.
+     *
+     * IT NOW FOLLOWS THE OWNER, and that is an accepted change. Every publication
+     * names one, so the answer is a real domain where it used to be null for the
+     * seventeen that carried none -- and a sort order taken from the desk that
+     * produces a publication is a better answer than no order at all. What must
+     * not change is WHICH publication supplies it.
      */
     @Test
     @Transactional
-    public void theSortDomainComesFromTheFirstIdEvenWhenItHasNone() {
+    public void theSortDomainComesFromTheFirstIdAndNoOther() {
         PublicationIssue first = publishedIssueWith(List.of());
         PublicationIssue second = publishedIssueWith(List.of());
         em.flush();
 
-        assertNull(resolver.sortDomain(ordered(first.getPublicId(), second.getPublicId())),
-                "the sort domain fell through to a later publication");
+        String expected = first.getSeries().getDomain() == null
+                ? null : first.getSeries().getDomain().getDomainId();
+        Domain resolved = resolver.sortDomain(ordered(first.getPublicId(), second.getPublicId()));
+        assertEquals(expected, resolved == null ? null : resolved.getDomainId(),
+                "the sort domain did not come from the first publication named");
+
         assertNull(resolver.sortDomain(Set.of()));
         assertNull(resolver.sortDomain(null));
     }
@@ -708,6 +718,10 @@ public class PublicationResolutionTest {
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
+        // Every publication names the desk that owns it: the column is NOT NULL and
+        // S-20a refuses a save without one, so a fixture that left it out no longer
+        // describes a state the system can be in.
+        s.setDomain(TestOwnerDomain.of(em));
         s.getLanguages().add("da");
         s.createDesc("da").setName("Test series");
         em.persist(s);

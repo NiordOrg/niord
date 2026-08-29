@@ -423,6 +423,12 @@ public class IssueLifecycleService extends BaseService {
             throw new TransitionRefusedException("SERIES_HAS_ISSUES",
                     "the series has " + issues + " issue(s); retire it instead of deleting it");
         }
-        em.remove(em.contains(series) ? series : em.merge(series));
+        PublicationSeries managed = em.contains(series) ? series : em.merge(series);
+        // Emptied through the mapping rather than deleted around it: the list is
+        // owned here, so clearing it makes Hibernate remove the join rows in the
+        // same flush that removes the series, and in the right order. A native
+        // delete would work too, and would go stale the day the table is renamed.
+        managed.getAvailableDomains().clear();
+        em.remove(managed);
     }
 }

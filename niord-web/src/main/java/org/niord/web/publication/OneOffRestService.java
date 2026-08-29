@@ -29,6 +29,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -53,6 +54,7 @@ import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.ReleaseMode;
+import org.niord.core.publication.series.SeriesAvailability;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
 import org.niord.core.publication.series.SeriesStatus;
@@ -64,6 +66,7 @@ import org.niord.core.publication.vo.MessagePublication;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -189,16 +192,27 @@ public class OneOffRestService {
 
     // -------------------------------------------------------------------- read
 
-    /** The dashboard list: every publication whose kind is ONE_OFF. */
+    /**
+     * The dashboard list: every publication whose kind is ONE_OFF.
+     *
+     * `domain` narrows by OWNER, exactly as the series lists do, and not by who
+     * may cite it. A one-off shared with this desk is read-only here -- every
+     * control on the row would answer 403 -- so it belongs in the citation dialog
+     * and not in an administration list. Omitting the parameter returns the
+     * estate, which is what the show-all-domains toggle and every script send.
+     */
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @NoCache
     @RolesAllowed(Roles.ADMIN)
-    public List<OneOffVo> list() {
+    public List<OneOffVo> list(@QueryParam("domain") String domain) {
+        String owner = domain == null || domain.isBlank() ? null : domain.trim();
         return seriesService.findAll().stream()
                 .filter(s -> s.getKind() == SeriesKind.ONE_OFF)
+                .filter(s -> owner == null
+                        || (s.getDomain() != null && owner.equals(s.getDomain().getDomainId())))
                 .map(this::toVo)
                 .toList();
     }
@@ -237,8 +251,16 @@ public class OneOffRestService {
             series.setMessagePublication(MessagePublication.NONE);
         }
         resolveReferences(series, vo);
+        // A one-off is almost always a document or a link -- a reference other
+        // desks cite -- so silence means shared everywhere, which is what these
+        // publications were before the field existed. The editor pre-fills the
+        // same value; this is what a script that omits it gets.
+        if (vo.getAvailability() == null || vo.getAvailability().isBlank()) {
+            series.setAvailability(SeriesAvailability.defaultFor(series.getContentMode()));
+        }
         forceOneOffShape(series);
         requireCategory(series);
+        refuseHardRules(series);
         refuseDanglingOperands(series);
 
         PublicationSeries saved = seriesService.create(series);
@@ -328,6 +350,7 @@ public class OneOffRestService {
         resolveReferences(series, vo);
         forceOneOffShape(series);
         requireCategory(series);
+        refuseHardRules(series);
         refuseDanglingOperands(series);
 
         PublicationSeries saved = seriesService.update(series);
@@ -462,8 +485,11 @@ public class OneOffRestService {
             series.setCategory(category);
         }
 
-        // Absent CLEARS it. Null is a value here: it means visible from every
-        // domain, and without a way to say it there is no way back to global.
+        // ABSENT LEAVES THE OWNER ALONE. It used to CLEAR it, because a null owner
+        // meant "visible from every domain" -- which is what four of these
+        // publications were. Reachability is availability's job now, and a one-off
+        // has an owning desk like everything else, so there is nothing for a blank
+        // to express and clearing would only produce a row S-20a refuses.
         if (vo.getDomainId() != null && !vo.getDomainId().isBlank()) {
             Domain domain = domainService.findByDomainId(vo.getDomainId());
             if (domain == null) {
@@ -471,9 +497,53 @@ public class OneOffRestService {
                         "no domain " + vo.getDomainId());
             }
             series.setDomain(domain);
-        } else {
-            series.setDomain(null);
         }
+
+        resolveAvailability(series, vo);
+    }
+
+    /**
+     * Who besides the owner may cite this one-off.
+     *
+     * The same resolution the full series editor performs, and it has to be the
+     * same: a list this form accepted and that one refused would be two
+     * definitions of a valid publication, differing only by which screen it was
+     * typed on. A FULL REPRESENTATION -- an absent list means shared with nobody
+     * -- because unticking the last domain is something an admin means.
+     */
+    private void resolveAvailability(PublicationSeries series, SystemPublicationSeriesVo vo) {
+        String ownerId = series.getDomain() == null ? null : series.getDomain().getDomainId();
+
+        List<Domain> shared = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (String id : vo.getAvailableDomainIds() == null
+                ? List.<String>of() : vo.getAvailableDomainIds()) {
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            String wanted = id.trim();
+            // The owner is already the strongest form of "visible from here";
+            // storing it would round-trip to a list different from the one saved,
+            // because the read filters it out.
+            if (wanted.equals(ownerId) || !seen.add(wanted)) {
+                continue;
+            }
+            Domain domain = domainService.findByDomainId(wanted);
+            if (domain == null) {
+                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                        "the publication is shared with domain '" + wanted + "', which does not exist");
+            }
+            if (!domain.isActive()) {
+                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                        "the publication is shared with domain '" + wanted + "', which is not active. "
+                                + "Sharing with a switched-off domain shares it with nobody, and the "
+                                + "setting would read as if it did something.");
+            }
+            shared.add(domain);
+        }
+
+        series.getAvailableDomains().clear();
+        series.getAvailableDomains().addAll(shared);
     }
 
     private void applyLinks(PublicationIssue issue, OneOffVo request) {
@@ -520,6 +590,23 @@ public class OneOffRestService {
      * a document this form accepted and that one refused would be two definitions
      * of a valid series, differing only by which screen it was typed on.
      */
+    /**
+     * The rules a draft may not break either, refused on the save that carries them.
+     *
+     * The same gate the full series editor applies. Two of them stand behind NOT
+     * NULL columns -- the owning domain and the sharing setting -- so without this
+     * a one-off missing either would not be saved incomplete; it would die inside
+     * the flush with a message naming a Java field, on a form that has no control
+     * by that name.
+     */
+    private static void refuseHardRules(PublicationSeries series) {
+        List<SeriesValidator.FieldError> hard = SeriesValidator.hardRules(series);
+        if (!hard.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    hard.size() + " rule(s) fail: " + hard, hard);
+        }
+    }
+
     private void refuseDanglingOperands(PublicationSeries series) {
         List<SeriesValidator.FieldError> dangling = SeriesValidator.danglingOperands(series, operands);
         if (!dangling.isEmpty()) {

@@ -16,7 +16,11 @@
 
 package org.niord.core.publication.series.legacy;
 
+import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.SeriesAvailability;
+
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,17 +39,16 @@ import java.util.Map;
  * TWO KINDS OF ANSWER, and they are separate maps because they are separate
  * questions.
  *
- * A DOMAIN, for the few CADENCED series whose template names none. A cadenced
- * series reads its cut-offs in its domain's timezone and has no other source
- * for one, so a missing domain there is a genuine gap to fill.
+ * AN OWNER, for every series whose template names none. The owner is the desk
+ * that lists a publication, administers it, and supplies the timezone its
+ * cut-offs are read in, and every publication has exactly one.
  *
- * NOT for a cadence-less one. S-5, S-6 and S-7 refuse every nominal cut-off
- * field on a series with no cadence, so it has no cut-off to read in any zone
- * and the timezone argument does not reach it. What a domain still does is
- * NARROW visibility -- the publication picker matches "domain IS NULL OR domain
- * = the current one" -- so filling this "gap" on a publication that had no
- * domain in legacy hides it from every domain but one. Six rulings were
- * withdrawn for exactly that reason; see below.
+ * THE SCOPE OF THIS RULING HAS MOVED TWICE, and the reason is worth keeping. It
+ * once covered the cadenced series only, because assigning a domain also NARROWED
+ * where a publication could be cited -- so filling the "gap" on a publication
+ * that had none hid it from every desk but one, and six rulings were withdrawn
+ * for exactly that. Availability answers the citing question now, so an owner
+ * costs a publication nothing and the ruling covers everything again.
  *
  * A DESTINATION, because a legacy template is not always a series. Some are one
  * edition that needed to differ, cloned out of a real series because legacy had
@@ -87,17 +90,54 @@ public final class LegacyTemplateRulings {
      *
      * Rasmus, 2026-08-26: "accumulated-yearly-ntm = NM. The rest is NM Annex."
      *
-     * SIX OF THOSE NINE WERE WITHDRAWN on 2026-08-26, once it was established
-     * that they had been asked for by a validator rule rather than by the data.
-     * S-20 required a domain on every series, so nine publications that carried
-     * none in legacy had to be given one before they could be activated -- and
-     * assigning one narrows visibility rather than restoring it. S-20 now applies
-     * only to cadenced series, and these six are back to what legacy recorded:
-     * no domain, visible everywhere.
+     * SIX OF THESE WERE WITHDRAWN ON 2026-08-26 AND REINSTATED ON 2026-08-29,
+     * and the round trip is worth reading rather than tidying away. They were
+     * added because a validator rule demanded a domain, withdrawn when it turned
+     * out that assigning one NARROWED where a publication could be cited, and
+     * reinstated once the two questions were separated: a domain now says who
+     * ADMINISTERS a publication, and a separate availability setting says who may
+     * cite it. The six get an owner AND availability everywhere, so they keep the
+     * reach they had and gain a desk that is responsible for them.
      *
-     * The three that remain are cadenced or genuinely belong where they are put.
+     * Rasmus, 2026-08-29: "I only want each series or one-off shown and
+     * administrated in ONE domain. However, some of them should be available in
+     * other domains as well, e.g. the Journal Number one-off that should be
+     * available in every domain."
      */
     private static final Map<String, String> DOMAIN_BY_SERIES = new LinkedHashMap<>();
+
+    /**
+     * The owner for a series no template and no ruling names.
+     *
+     * NM Annex, because that is where the publications nobody else claims already
+     * live: the annexes, the reference lists, the one-offs. It is a real desk with
+     * a real timezone rather than a placeholder, which matters because the owner
+     * is the only source of the zone a cut-off is read in.
+     */
+    public static final String DEFAULT_DOMAIN = "niord-annex";
+
+    /**
+     * The six publications every domain cites and none of them owns.
+     *
+     * Each is a reference document rather than an edition of anything: the journal
+     * number, the list of lights, the wreck list, the harbour pilot link, the aids
+     * to navigation, the navigation guide. An editor in any domain reaches for
+     * them, so narrowing them to the desk that maintains them would empty the
+     * citation dialog everywhere else -- which is exactly what happened the first
+     * time they were given a domain.
+     *
+     * Named here rather than derived from "carried no domain in legacy", because
+     * that property is about the old data and this is a decision about the new
+     * model. A future import of an estate that happens to have filled the column in
+     * must not silently make them private.
+     */
+    private static final List<String> SHARED_EVERYWHERE = List.of(
+            "journal-number",
+            "aids-to-navigation",
+            "list-of-wrecks",
+            "www-danskehavnelods-dk",
+            "danish-list-of-lights",
+            "navigation-through-danish-waters");
 
     static {
         // YEARLY, so it has real cut-offs and needs a zone to read them in. It is
@@ -111,18 +151,12 @@ public final class LegacyTemplateRulings {
         DOMAIN_BY_SERIES.put("nm-annex-ice-service", "niord-annex");
         DOMAIN_BY_SERIES.put("nm-annex-ncags", "niord-annex");
 
-        // WITHDRAWN 2026-08-26, and deliberately left here as a record rather
-        // than deleted, because the obvious next question is "why do these have
-        // no domain".
-        //
-        //   aids-to-navigation                 |  none of these carried a domain
-        //   journal-number                     |  in legacy, and each is visible
-        //   list-of-wrecks                     |  from every domain because of
-        //   www-danskehavnelods-dk             |  it. The first four are cited
-        //   danish-list-of-lights              |  from the message editor in any
-        //   navigation-through-danish-waters   |  domain; giving them one would
-        //                                      |  remove them from the picker
-        //                                      |  everywhere else.
+        // The six that carried no domain in legacy. Owned by the annex desk,
+        // available everywhere -- which is what the null used to express, now said
+        // in the field that means it.
+        for (String seriesId : SHARED_EVERYWHERE) {
+            DOMAIN_BY_SERIES.put(seriesId, DEFAULT_DOMAIN);
+        }
     }
 
     /**
@@ -173,6 +207,41 @@ public final class LegacyTemplateRulings {
     /** The ruled domain for a series, or null when the template's own answer stands. */
     public static String domainFor(String seriesId) {
         return seriesId == null ? null : DOMAIN_BY_SERIES.get(seriesId);
+    }
+
+    /**
+     * Who besides the owner may cite an imported series.
+     *
+     * TWO RULES, and the split is by what the publication IS rather than by which
+     * domain it landed in.
+     *
+     * A GENERATED series is assembled from one domain's own messages over one
+     * domain's cut-off calendar. Its weekly edition means the NM desk's week and
+     * nothing else, so it is the owner's and no one else's: OWNER_ONLY.
+     *
+     * EVERYTHING ELSE -- an uploaded document, an external link, a publication with
+     * no content model at all -- is a reference somebody points at. That is how the
+     * old system behaved by construction, because it had no way to narrow one, and
+     * narrowing them now would remove from every citation dialog exactly the
+     * publications that are cited from all of them.
+     *
+     * The six shared references are covered by the same rule and not by an
+     * exception: none of them is generated. They are listed above for the OWNER
+     * decision, which the data really does not contain, and their availability
+     * falls out of what they are.
+     *
+     * Delegated to the model's own default rather than restated, because the
+     * editor applies the identical rule to a publication created by hand -- and an
+     * imported publication that shared differently from an authored one of the
+     * same kind would be a difference nobody could see the reason for.
+     */
+    public static SeriesAvailability availabilityFor(ContentMode contentMode) {
+        return SeriesAvailability.defaultFor(contentMode);
+    }
+
+    /** The six the ruling shares with every domain, for a report that shows what was applied. */
+    public static List<String> sharedEverywhere() {
+        return SHARED_EVERYWHERE;
     }
 
     /**

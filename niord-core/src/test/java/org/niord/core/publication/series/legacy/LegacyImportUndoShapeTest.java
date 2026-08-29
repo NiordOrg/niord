@@ -69,21 +69,36 @@ public class LegacyImportUndoShapeTest {
                         + "rows survive and the series delete fails on the constraint.");
     }
 
+    @Test
+    public void theUndoDeletesTheAvailabilityRows() throws IOException {
+        String src = read();
+        assertTrue(src.contains("DELETE FROM PublicationSeries_AvailableDomain"),
+                "the undo does not delete the availability rows. The domains a publication is "
+                        + "shared with live in a join table with a foreign key back to the series; "
+                        + "JPQL cannot address it, and a bulk delete of the owner does not cascade "
+                        + "the way remove() would -- so the rows survive and the series delete fails "
+                        + "on the constraint, in the one operation a cutover window cannot do "
+                        + "without.");
+    }
+
     /** The order is children first, and the parents last. */
     @Test
     public void theDeletesAreOrderedChildrenFirst() throws IOException {
         String src = read();
         int overrides = src.indexOf("DELETE FROM IssueOverride");
         int languages = src.indexOf("DELETE FROM PublicationSeries_languages");
+        int available = src.indexOf("DELETE FROM PublicationSeries_AvailableDomain");
         int issues = src.indexOf("DELETE FROM PublicationIssue i WHERE i.series.id IN :ids");
         int series = src.indexOf("DELETE FROM PublicationSeries s WHERE s.id IN :ids");
 
-        assertTrue(overrides > 0 && languages > 0 && issues > 0 && series > 0,
-                "one of the four deletes the ordering is about has moved or been renamed");
+        assertTrue(overrides > 0 && languages > 0 && available > 0 && issues > 0 && series > 0,
+                "one of the five deletes the ordering is about has moved or been renamed");
         assertTrue(overrides < issues,
                 "the overrides must go before the issues they point at");
         assertTrue(languages < series,
                 "the language rows must go before the series they point at");
+        assertTrue(available < series,
+                "and so must the availability rows");
     }
 
     private static String read() throws IOException {

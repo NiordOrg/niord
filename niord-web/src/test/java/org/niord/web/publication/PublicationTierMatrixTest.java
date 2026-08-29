@@ -157,6 +157,11 @@ public class PublicationTierMatrixTest {
         t.put("POST /publication-series/series/", Tier.ADMIN);
         t.put("PUT /publication-series/series/{seriesId}", Tier.ADMIN);
         t.put("PUT /publication-series/series/{seriesId}/status", Tier.ADMIN);
+        // Moving a publication to another domain. ADMIN at the container, and the
+        // body asks for admin in the TARGET domain as well -- a role the annotation
+        // cannot express, because @RolesAllowed is evaluated against the domain
+        // named in the request header and this endpoint is about a second one.
+        t.put("PUT /publication-series/series/{seriesId}/owner", Tier.ADMIN);
         t.put("PUT /publication-series/series/{seriesId}/public-authority", Tier.ADMIN);
         t.put("PUT /publication-series/public-authority", Tier.ADMIN);
         t.put("DELETE /publication-series/series/{seriesId}", Tier.ADMIN);
@@ -626,6 +631,42 @@ public class PublicationTierMatrixTest {
         if (!offenders.isEmpty()) {
             fail("a programmatic admin gate is not what it says:\n  " + String.join("\n  ", offenders));
         }
+    }
+
+    /**
+     * The transfer asks for admin at BOTH ends, and for a reason.
+     *
+     * A source assertion, like the domain guard's and for the same reason: the
+     * target-domain check is a role the ANNOTATION cannot express -- @RolesAllowed
+     * is evaluated against the domain named in the request header, and this
+     * endpoint is about a second one -- so nothing inspecting the surface can see
+     * it, and niord-web has no container test that could exercise it.
+     *
+     * Each of the three is an escape on its own. Without the target check, a desk
+     * could push its unwanted publications onto somebody who never accepted them.
+     * Without the source check, a desk could help itself to another authority's
+     * weekly edition. Without a reason, the receiving desk finds a publication on
+     * its list months later with nothing at all saying why it is theirs.
+     */
+    @Test
+    public void theOwnerTransferAsksForAdminAtBothEndsAndForAReason() throws IOException {
+        String src = sourceOf(PublicationSeriesRestService.class);
+        String body = bodyOf(src, "transferOwner");
+        assertTrue(body != null, "transferOwner is gone or renamed; the assertions below would "
+                + "then pass over nothing");
+
+        assertTrue(body.contains("domainGuard.assertWritable"),
+                "the transfer does not check the SOURCE domain: a caller could move a publication "
+                        + "out of a desk they do not sit at");
+        assertTrue(body.contains("isAdminIn("),
+                "the transfer does not check the TARGET domain. @RolesAllowed cannot express it -- "
+                        + "the container evaluates roles against the header's domain -- so this call "
+                        + "is the only thing standing between a desk and another authority's estate");
+        assertTrue(body.contains("requireReason("),
+                "the transfer does not demand a reason; the receiving desk would find a publication "
+                        + "on its list with nothing saying why");
+        assertTrue(body.contains("ownerTransferred("),
+                "the transfer is not audited on the series, so 'who moved this' has no answer");
     }
 
     /** Whether a body calls the guard, or calls something in the same file that does. */

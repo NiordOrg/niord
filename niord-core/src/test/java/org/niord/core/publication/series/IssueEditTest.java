@@ -88,6 +88,10 @@ public class IssueEditTest {
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
+        // Every publication names the desk that owns it: the column is NOT NULL and
+        // S-20a refuses a save without one, so a fixture that left it out no longer
+        // describes a state the system can be in.
+        s.setDomain(TestOwnerDomain.of(em));
         s.getLanguages().add("da");
         PublicationSeriesDesc desc = s.createDesc("da");
         desc.setName("Test series");

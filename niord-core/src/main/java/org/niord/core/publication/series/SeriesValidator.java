@@ -323,31 +323,42 @@ public final class SeriesValidator {
                             + "missing one fails at flush time as a 500 rather than as an answer"));
         }
 
-        // S-20. A series belongs to a domain, because that is where its TIMEZONE
-        // comes from -- and a cut-off schedule with no zone is a schedule in
-        // whatever zone the reader happens to be in.
+        // S-20a. EVERY series names an owner -- scheduled, unscheduled and one-off
+        // alike -- because the owner is the domain the publication is listed in and
+        // administered from, and a publication nobody's desk is responsible for is
+        // a publication nobody maintains.
+        //
+        // This used to be answerable with "none", and a null was read as "visible
+        // from every domain". That conflated two questions: where a publication is
+        // ADMINISTERED and where it may be CITED. The second has its own answer now
+        // -- availability -- so leaving the owner blank no longer buys reachability,
+        // it only takes the timezone away.
+        //
+        // A NULL OWNER ON AN EXISTING ROW IS NOT ADOPTED BY THE SAVE. The importer
+        // assigns owners; an ordinary save that found one missing and quietly filled
+        // it in from whichever desk happened to open the form would hand a shared
+        // publication to the first person who looked at it.
+        if (s.getDomain() == null) {
+            e.add(new FieldError("S-20a", "domainId",
+                    "a publication belongs to exactly one domain -- the desk that lists it, "
+                            + "administers it, and whose timezone its cut-offs are read in. Sharing "
+                            + "it with other domains is what availability is for."));
+        }
+
+        // S-20. And that domain must carry a timezone anything can read, because
+        // it is the only source of the zone a cut-off schedule is reckoned in.
         //
         // Not a style rule. The domains differ in practice: Atlantic/Faeroe for the
         // Faroe domain, UTC for Greenland, Europe/Copenhagen for the rest. A series
         // resolving in the wrong one names its issues for the wrong ISO week at the
         // year boundary and closes them an hour early or late all year.
-        // Required only where there ARE cut-offs to read. A cadence-less series
-        // has none -- S-5, S-6 and S-7 refuse every nominalCutoff* field on one --
-        // so there is no cut-off to read in any zone, and the timezone rationale
-        // does not reach it.
         //
-        // NULL MEANS GLOBAL, and that is load-bearing rather than a loophole: it
-        // is what makes the citation-only publications reachable from every
-        // domain. The publication picker matches "domain IS NULL OR domain = the
-        // current one", so assigning a domain NARROWS where a publication can be
-        // seen. Requiring one here hid four publications that every domain needs.
+        // Asked only where there ARE cut-offs to read. A cadence-less series has
+        // none -- S-5, S-6 and S-7 refuse every nominalCutoff* field on one -- so
+        // there is no cut-off to read in any zone, and a domain with an unreadable
+        // one costs it nothing.
         if (s.getCadence() != SeriesCadence.NONE) {
-            if (s.getDomain() == null) {
-                e.add(new FieldError("S-20", "domainId",
-                        "a series with a cadence must belong to a domain; the domain carries the "
-                                + "timezone its cut-offs are read in, and there is no other source "
-                                + "for one"));
-            } else if (s.getDomain().getDomainId() != null
+            if (s.getDomain() != null && s.getDomain().getDomainId() != null
                     && !isReadableZone(s.getDomain().getTimeZone())) {
                 // The domain is the only source of the zone, so a domain that
                 // carries none or carries a name nothing can parse leaves every
@@ -369,6 +380,26 @@ public final class SeriesValidator {
                                 + s.getDomain().getTimeZone() + "), and it is the only source of the "
                                 + "zone this series' cut-offs are reckoned in"));
             }
+        }
+
+        // S-20b. Availability is a closed answer, and SELECTED_DOMAINS has to name
+        // somebody.
+        //
+        // "Selected domains" with nothing selected reads on a screen as a sharing
+        // setting that is switched on, and behaves as if it were switched off. The
+        // two intentions are different -- one is a half-finished edit -- and
+        // collapsing the first into the second is how a publication somebody meant
+        // to share stays private with a control that says otherwise.
+        if (s.getAvailability() == null) {
+            e.add(new FieldError("S-20b", "availability",
+                    "a publication states who besides its owner may cite it: this domain only, "
+                            + "selected domains, or every domain"));
+        } else if (s.getAvailability() == SeriesAvailability.SELECTED_DOMAINS
+                && (s.getAvailableDomains() == null || s.getAvailableDomains().isEmpty())) {
+            e.add(new FieldError("S-20b", "availableDomainIds",
+                    "'selected domains' must name at least one; an empty list is a sharing setting "
+                            + "that looks switched on and behaves as switched off. Choose 'this "
+                            + "domain only' to share it with nobody."));
         }
 
         // S-22. Automatic release is modelled and not yet built. Saving a series
@@ -441,8 +472,14 @@ public final class SeriesValidator {
      * issue supplies: those are not gaps to fill in later but mistakes to correct
      * now, and a save that accepted them would store a series whose activation
      * is already known to fail.
+     *
+     * The two owner rules are here for a different reason again, the one S-19
+     * already had: the columns behind them are NOT NULL, so a draft that broke
+     * them would not be stored incomplete -- it would die inside the flush with a
+     * message naming a Java field, which tells an admin nothing about the control
+     * that caused it.
      */
-    public static final Set<String> HARD_RULES = Set.of("S-22", "S-23");
+    public static final Set<String> HARD_RULES = Set.of("S-20a", "S-20b", "S-22", "S-23");
 
     /** The hard-rule failures alone, for a save in any status. */
     public static List<FieldError> hardRules(PublicationSeries s) {

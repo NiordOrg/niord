@@ -29,6 +29,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
@@ -148,8 +150,43 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     @JoinColumn(nullable = false)
     private PublicationCategory category;
 
-    @ManyToOne
+    /**
+     * THE OWNER: the one domain this publication is listed in, administered from,
+     * and whose timezone its cut-offs are reckoned in.
+     *
+     * Required for every kind. It used to be optional, and a null read as "visible
+     * from every domain" -- which conflated two questions. Where a publication is
+     * ADMINISTERED and where it may be CITED are different facts, and answering
+     * both with one nullable column meant a publication that had to be reachable
+     * everywhere could not have a timezone at all. The second question now has its
+     * own answer in {@link #availability}, and this one is single-valued.
+     */
+    @ManyToOne(optional = false)
+    @NotNull
+    @JoinColumn(name = "domain_id", nullable = false)
     private Domain domain;
+
+    /**
+     * Who else may see and cite this publication. Read-only wherever it is shared.
+     */
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    @Column(nullable = false)
+    private SeriesAvailability availability = SeriesAvailability.OWNER_ONLY;
+
+    /**
+     * The domains named by SELECTED_DOMAINS, never including the owner.
+     *
+     * The join table is DECLARED rather than left to the default naming, because
+     * the schema is Flyway's and a migration has to name the table and its columns
+     * exactly. A default-named table is a name two independent sources have to
+     * agree on with nothing checking that they do.
+     */
+    @ManyToMany
+    @JoinTable(name = "PublicationSeries_AvailableDomain",
+            joinColumns = @JoinColumn(name = "series_id"),
+            inverseJoinColumns = @JoinColumn(name = "domain_id"))
+    private List<Domain> availableDomains = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @NotNull
@@ -376,6 +413,22 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
     public void setDomain(Domain domain) {
         this.domain = domain;
+    }
+
+    public SeriesAvailability getAvailability() {
+        return availability;
+    }
+
+    public void setAvailability(SeriesAvailability availability) {
+        this.availability = availability;
+    }
+
+    public List<Domain> getAvailableDomains() {
+        return availableDomains;
+    }
+
+    public void setAvailableDomains(List<Domain> availableDomains) {
+        this.availableDomains = availableDomains == null ? new ArrayList<>() : availableDomains;
     }
 
     public MessagePublication getMessagePublication() {
@@ -610,6 +663,21 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         if (sentNextIssueCreation != null) {
             nextIssueCreation = sentNextIssueCreation;
         }
+        // The same silence rule again, and here it matters most on the create path:
+        // a client that says nothing about who may cite this publication is not
+        // asking for it to be narrowed to one desk. The REST layer picks the
+        // default for a NEW series from its content mode; an existing one keeps
+        // whatever it already carried.
+        //
+        // availableDomains is deliberately NOT read here. It is a list of entity
+        // references the value object carries by id, exactly as the owner and the
+        // category are, and this class has no persistence context to resolve them
+        // in -- the resource does it and refuses an id that names nothing.
+        SeriesAvailability sentAvailability =
+                enumOf(SeriesAvailability.class, vo.getAvailability(), "availability");
+        if (sentAvailability != null) {
+            availability = sentAvailability;
+        }
         // publicAuthority is deliberately NOT read here. Which model serves a
         // series to the public is a cutover decision with its own endpoint, a
         // reason and an audit entry; a value arriving in a save -- from the form,
@@ -754,6 +822,16 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             sys.setFirstIssueStartsAt(firstIssueStartsAt);
             sys.setCriteria(criteria);
             sys.setDomainId(domain == null ? null : domain.getDomainId());
+            sys.setAvailability(availability == null ? null : availability.name());
+            // The owner is never in the list, on the wire or in the table: it is
+            // already the strongest form of "visible from here", and carrying it
+            // twice would let an editor tick and untick a box that changes nothing.
+            for (Domain d : availableDomains) {
+                if (d != null && d.getDomainId() != null
+                        && (domain == null || !d.getDomainId().equals(domain.getDomainId()))) {
+                    sys.getAvailableDomainIds().add(d.getDomainId());
+                }
+            }
             sys.getLanguages().addAll(languages);
             sys.setReportId(reportId);
             sys.setPageSize(pageSize == null ? null : pageSize.name());
@@ -785,7 +863,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
      * second source that can disagree with the domain, which is why this no longer
      * consults one.
      *
-     * The UTC branch is a last resort for a series with no domain, which S-20
+     * The UTC branch is a last resort for a series with no domain, which S-20a
      * refuses -- along with a domain whose zone is blank or unreadable, because
      * TimeZone.getTimeZone answers GMT for anything it does not recognise and
      * would otherwise shift every cut-off silently. It is reachable only by a

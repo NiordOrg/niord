@@ -60,7 +60,12 @@ public class SeriesVoRoundTripTest {
      * carry (categoryId, domainId), so round-tripping the object itself would be
      * asserting the wrong thing. Everything else must survive.
      */
-    private static final Set<String> RESOLVED_BY_ID = Set.of("category", "domain");
+    private static final Set<String> RESOLVED_BY_ID = Set.of("category", "domain",
+            // The sharing list is the same thing in plural: the wire carries
+            // availableDomainIds and the resource looks each one up, refusing an
+            // id that names nothing or names an inactive domain. Round-tripping
+            // the Domain objects would assert something no caller can do.
+            "availableDomains");
 
     /**
      * Fields deliberately off the wire entirely.
@@ -90,6 +95,10 @@ public class SeriesVoRoundTripTest {
             // The id form of the entity reference the REST layer resolves. The
             // round-trip probe already excludes the entity side for the same reason.
             "domainId", "the id of the domain reference, resolved by the REST layer",
+            // The same, in plural: the ids of the domains a publication is shared
+            // with. Resolved and refused by the REST layer, which is also where an
+            // unknown or inactive one is turned into an answer rather than a row.
+            "availableDomainIds", "the ids of the availability list, resolved by the REST layer",
             // An observation about the calendar. Stored, it would go stale the
             // moment the calendar moved on -- which is why RETIRED is a column and
             // dormancy is not.

@@ -16,6 +16,7 @@
 
 package org.niord.core.publication.series.replay;
 
+import org.niord.core.publication.series.TestOwnerDomain;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -651,6 +652,10 @@ public class LocalEstateReplayTest {
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setCategory(c);
+        // Every publication names the desk that owns it: the column is NOT NULL and
+        // S-20a refuses a save without one, so a fixture that left it out no longer
+        // describes a state the system can be in.
+        s.setDomain(TestOwnerDomain.of(em));
         s.setCriteria(criteriaFor(shape, messageSeriesId));
         em.persist(s);
         em.flush();

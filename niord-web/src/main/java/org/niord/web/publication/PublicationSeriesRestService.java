@@ -62,7 +62,9 @@ import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.ReleaseMode;
+import org.niord.core.publication.series.SeriesAvailability;
 import org.niord.core.publication.series.SeriesCadence;
+import org.niord.core.publication.series.SeriesOwnerTransfer;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.criteria.CriteriaResolver;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
@@ -219,14 +221,46 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     @RolesAllowed(Roles.USER)
-    public List<PublicationSeriesVo> search(@QueryParam("lang") String lang) {
+    public List<PublicationSeriesVo> search(@QueryParam("lang") String lang,
+                                            @QueryParam("domain") String domain) {
         // The narrowing itself, and the fallback when the series does not carry
         // the language asked for, live on the entity: they are rules about the
         // data, and this module has no container tests to assert them in.
         DataFilter filter = DataFilter.get().lang(lang);
         List<PublicationSeriesVo> out = new ArrayList<>();
-        for (PublicationSeries s : seriesService.findByStatus(SeriesStatus.ACTIVE)) {
+        for (PublicationSeries s : ownedBy(seriesService.findByStatus(SeriesStatus.ACTIVE), domain)) {
             out.add(s.toVo(PublicationSeriesVo.class, filter));
+        }
+        return out;
+    }
+
+    /**
+     * The admin lists narrow by OWNER, and that is not the picker's rule.
+     *
+     * A shared publication is read-only where it is shared: the receiving desk may
+     * cite it and may not touch it, so putting it in that desk's administration
+     * list would be offering an editor a row every control on which answers 403.
+     * The citation surfaces ask a different question -- what may I cite from here
+     * -- and answer it with the visible-from predicate, which reaches shared rows
+     * on purpose.
+     *
+     * OMITTING THE PARAMETER RETURNS THE ESTATE, and that is load-bearing rather
+     * than a fallback. The show-all-domains toggle, the sysadmin's estate view,
+     * the export and every script read this list without a domain, and so do the
+     * estate-wide screens -- the import report, the pre-flight, the readiness diff
+     * and the bulk authority flip -- which are estate-wide by rule and must not be
+     * cut down to one desk.
+     */
+    private static List<PublicationSeries> ownedBy(List<PublicationSeries> series, String domainId) {
+        if (domainId == null || domainId.isBlank()) {
+            return series;
+        }
+        String wanted = domainId.trim();
+        List<PublicationSeries> out = new ArrayList<>();
+        for (PublicationSeries s : series) {
+            if (s.getDomain() != null && wanted.equals(s.getDomain().getDomainId())) {
+                out.add(s);
+            }
         }
         return out;
     }
@@ -246,10 +280,11 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     @RolesAllowed(Roles.ADMIN)
-    public List<SystemPublicationSeriesVo> searchDetails(@QueryParam("status") String status) {
-        List<PublicationSeries> found = status == null
+    public List<SystemPublicationSeriesVo> searchDetails(@QueryParam("status") String status,
+                                                         @QueryParam("domain") String domain) {
+        List<PublicationSeries> found = ownedBy(status == null
                 ? seriesService.findAll()
-                : seriesService.findByStatus(seriesStatusOf(status));
+                : seriesService.findByStatus(seriesStatusOf(status)), domain);
 
         Map<String, Integer> released = seriesService.publishedIssueCounts();
         List<SystemPublicationSeriesVo> out = new ArrayList<>();
@@ -338,6 +373,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         PublicationSeries series = new PublicationSeries();
         series.updateFromVo(vo);
         resolveReferences(series, vo);
+        applyDefaultAvailability(series, vo);
 
         // S-19, checked here rather than left to the flush.
         //
@@ -362,6 +398,26 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         refuseDanglingOperands(series);
 
         return seriesService.create(series).toVo(SystemPublicationSeriesVo.class);
+    }
+
+    /**
+     * What a NEW publication is shared as when the body says nothing.
+     *
+     * A generated series is the owner's; anything else -- a document, a link, a
+     * publication with no content model -- is a reference other desks cite, which
+     * is what the whole catalogue was before the field existed. The editor
+     * pre-fills the same values, so a series created through the form and one
+     * created by a script agree.
+     *
+     * CREATE ONLY. On an update, silence means "unchanged": a client written
+     * before this field existed omits it, and re-deciding the default there would
+     * quietly re-share a publication somebody had deliberately narrowed.
+     */
+    private static void applyDefaultAvailability(PublicationSeries series,
+                                                 SystemPublicationSeriesVo vo) {
+        if (vo.getAvailability() == null || vo.getAvailability().isBlank()) {
+            series.setAvailability(SeriesAvailability.defaultFor(series.getContentMode()));
+        }
     }
 
     /**
@@ -417,18 +473,17 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
             }
             series.setCategory(category);
         }
-        // FULL REPRESENTATION on the domain: an absent domainId CLEARS it rather
-        // than meaning "leave whatever is there".
+        // THE OWNER IS NOT CLEARABLE, and that is the change the sharing model
+        // made. An absent domainId used to CLEAR the owner, because null was a
+        // value: "visible from every domain". It is not a value any more -- the
+        // column is NOT NULL and reachability is availability's job -- so an
+        // absent one leaves the stored owner alone, exactly as the category does.
         //
-        // Null is a meaningful VALUE here, not the absence of one -- it means
-        // "global, visible from every domain", which is what the publication
-        // picker implements as "domain IS NULL OR domain = the current one". So
-        // there has to be a way to say it, and a PUT carrying the whole series is
-        // where it gets said. Treating null as "unchanged" left no way at all to
-        // put a publication back to global once it had been given a domain.
-        //
-        // The category is deliberately NOT symmetric: that column is NOT NULL and
-        // has no "none" to express.
+        // A NULL OWNER ON AN EXISTING ROW IS NOT ADOPTED EITHER. If a row somehow
+        // has none, the save does not quietly hand it to whichever desk opened the
+        // form; it is left null and S-20a refuses the save with a sentence saying
+        // so. Assigning an owner is the transfer endpoint's job, and it asks for a
+        // reason and writes an audit entry.
         if (vo.getDomainId() != null && !vo.getDomainId().isBlank()) {
             Domain domain = domainService.findByDomainId(vo.getDomainId());
             if (domain == null) {
@@ -436,9 +491,63 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                         "no domain '" + vo.getDomainId() + "'");
             }
             series.setDomain(domain);
-        } else {
-            series.setDomain(null);
         }
+
+        resolveAvailability(series, vo);
+    }
+
+    /**
+     * The sharing list, resolved from ids and refused when one names nothing.
+     *
+     * A FULL REPRESENTATION, unlike the owner: an absent list means "shared with
+     * nobody", which is a state the editor has to be able to save -- an admin who
+     * unticks the last domain is saying something, and treating the empty list as
+     * "unchanged" would leave the publication shared with a domain the screen no
+     * longer shows.
+     *
+     * THE OWNER IS DROPPED FROM IT rather than refused. The owner is already the
+     * strongest form of "visible from here"; a client that echoes back what it
+     * read, or one that ticks its own domain, means no harm and gets the same
+     * result either way. Storing it would put a row in the join table that the
+     * read then filters out, so the list would round-trip to something different
+     * from what was saved.
+     *
+     * An UNKNOWN or INACTIVE domain is refused. Unknown is a client naming
+     * something that does not exist. Inactive is subtler and worse: the predicate
+     * ignores an inactive domain, so the row would be stored, shown in the editor,
+     * and share the publication with nobody -- a setting that looks switched on and
+     * is not.
+     */
+    private void resolveAvailability(PublicationSeries series, SystemPublicationSeriesVo vo) {
+        String ownerId = series.getDomain() == null ? null : series.getDomain().getDomainId();
+
+        List<Domain> shared = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (String id : vo.getAvailableDomainIds() == null
+                ? List.<String>of() : vo.getAvailableDomainIds()) {
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            String wanted = id.trim();
+            if (wanted.equals(ownerId) || !seen.add(wanted)) {
+                continue;
+            }
+            Domain domain = domainService.findByDomainId(wanted);
+            if (domain == null) {
+                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                        "the publication is shared with domain '" + wanted + "', which does not exist");
+            }
+            if (!domain.isActive()) {
+                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                        "the publication is shared with domain '" + wanted + "', which is not active. "
+                                + "Sharing with a switched-off domain shares it with nobody, and the "
+                                + "setting would read as if it did something.");
+            }
+            shared.add(domain);
+        }
+
+        series.getAvailableDomains().clear();
+        series.getAvailableDomains().addAll(shared);
     }
 
     /**
@@ -486,6 +595,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // the worst place for a template to be wrong.
         vo.setNextIssueCreation(NextIssueCreation.MANUAL.name());
         vo.setMessagePublication(MessagePublication.NONE.name());
+
+        // Shared as its content mode says, and the template's content mode is
+        // GENERATED_FROM_QUERY -- so the owner's desk and nobody else's. The form
+        // offers the control; this is what it starts on, and it agrees with what
+        // the server would default to if the control were never touched.
+        vo.setAvailability(
+                SeriesAvailability.defaultFor(ContentMode.GENERATED_FROM_QUERY).name());
 
         // LEGACY until cutover flips it, matching every imported series. A new
         // series claiming NEW would assert that the public site already serves it.
@@ -567,6 +683,20 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         source.setImportSource(null);
         source.setPublicAuthority(PublicAuthority.LEGACY.name());
         source.setFirstIssueStartsAt(null);
+
+        // THE SHARING SETTINGS TRAVEL; THE OWNER DOES NOT.
+        //
+        // Availability and its list are configuration, and they are exactly the
+        // kind an admin copies a publication to keep: "another quarterly annex,
+        // shared with the same three desks" is why the copy button exists.
+        //
+        // The owner is a claim about the ORIGINAL row, like the four fields above
+        // it, and it is also the one field the copy must not carry across a desk:
+        // copying somebody else's publication would otherwise author a new one
+        // straight into their domain, which the write guard then refuses on save
+        // with a message about a domain the admin never chose. Cleared here and
+        // seeded from the session domain by the form.
+        source.setDomainId(null);
 
         // Timestamps of the row this was copied FROM. Left in place they would
         // date a series that does not exist yet.
@@ -855,6 +985,121 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                     "'" + token + "' is not a publication series status; the states are DRAFT, ACTIVE "
                             + "and RETIRED");
         };
+    }
+
+    /**
+     * S21. Move a publication to another domain.
+     *
+     * ITS OWN ENDPOINT, and not a field on the save, for the reason the authority
+     * flip is its own endpoint: it changes who is responsible for a publication.
+     * The ordinary save refuses a body naming any domain but the caller's, and
+     * that refusal is what stops an admin handing their series to a desk that is
+     * not expecting it -- so the way to move one has to be a deliberate act with
+     * its own permission, its own reason and its own line in the trail.
+     *
+     * ADMIN IN BOTH DOMAINS. Either half alone is an escape. Admin only in the
+     * SOURCE would let a desk push its unwanted publications onto somebody else,
+     * who then owns something they never accepted; admin only in the TARGET would
+     * let a desk help itself to another authority's weekly edition. Requiring both
+     * means a transfer is always performed by somebody who is accountable at both
+     * ends -- which is also the only person who can explain it afterwards.
+     *
+     * The refusal names WHICH side is missing, because the two have opposite
+     * remedies: one is fixed by switching domain, the other by asking for a role
+     * in a domain the caller does not work in.
+     *
+     * WHAT MOVES AND WHAT DOES NOT. The owner moves, and with it the timezone
+     * FUTURE cut-offs are read in. Nothing already stamped changes: a published
+     * issue's cut-off is a moment recorded in the past and re-reading it in
+     * another zone would silently renumber the archive. The target is removed from
+     * the sharing list if it was on it -- it is the owner now, which is the
+     * strongest form of the same thing, and leaving the row would put a domain in
+     * a list the read filters back out.
+     */
+    @PUT
+    @Path("/series/{seriesId}/owner")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
+    @VersionChecked
+    public SystemPublicationSeriesVo transferOwner(@PathParam("seriesId") String seriesId,
+                                                   Map<String, Object> body) {
+        PublicationSeries series = required(seriesId);
+
+        // The source half of the permission, and it is the guard the whole admin
+        // surface already uses: the caller has to be sitting at the owning desk.
+        domainGuard.assertWritable(series);
+        StaleVersionGuard.check(series, StaleVersionGuard.versionOf(body));
+
+        // An absent body, an absent key and an explicit null all read the same
+        // here: nothing was named. String.valueOf on a null yields "null", which
+        // would otherwise become a domain id nobody can explain.
+        String targetId = textOf(body, "domainId");
+        if (targetId.isEmpty()) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "a transfer names the domain the publication is moving to");
+        }
+        Domain target = domainService.findByDomainId(targetId);
+        if (target == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "no domain '" + targetId + "'");
+        }
+        String fromId = series.getDomain() == null ? null : series.getDomain().getDomainId();
+
+        // The target half, and every other refusal, decided away from the request.
+        // Only the token's per-domain roles can answer whether the caller is an
+        // admin THERE: the container's check ran against the domain in the header.
+        SeriesOwnerTransfer.assertTransferable(series, target, isAdminIn(targetId));
+
+        // A REASON, in words. Months later somebody in the receiving domain finds
+        // a publication on their list that they did not create, and this sentence
+        // is the only thing that will tell them why it is theirs.
+        String reason = IssueLifecycleService.requireReason(textOf(body, "reason"),
+                "moving a publication changes which desk lists it, administers it and answers for "
+                        + "it; the trail must say why");
+
+        SeriesOwnerTransfer.moveTo(series, target);
+
+        PublicationSeries saved = seriesService.update(series);
+        audit.ownerTransferred(saved, userService.currentUser(), fromId, targetId, reason);
+        log.info("Series {} owner {} -> {}, reason '{}'", seriesId, fromId, targetId, reason);
+        return saved.toVo(SystemPublicationSeriesVo.class);
+    }
+
+    /**
+     * One string out of an untyped body, trimmed, with absent and null the same.
+     *
+     * String.valueOf yields the four characters "null" for a null value, which as
+     * a domain id or a reason is worse than nothing: it names something that does
+     * not exist, and the refusal then quotes a word nobody typed.
+     */
+    private static String textOf(Map<String, Object> body, String key) {
+        Object raw = body == null ? null : body.get(key);
+        return raw == null ? "" : String.valueOf(raw).trim();
+    }
+
+    /**
+     * Whether the caller is an admin in a named domain.
+     *
+     * TWO SOURCES, and both are needed. The token's resource_access claim carries
+     * a role set per domain client, which is the only thing that can answer for a
+     * domain the caller is not currently working in -- the security identity holds
+     * the roles for the domain named in the NiordDomain header and nothing else.
+     * For that header domain the identity IS the answer, and it is the same answer
+     * every other write on this surface trusts, including installations where
+     * admin is granted at the realm rather than per client.
+     */
+    private boolean isAdminIn(String domainId) {
+        if (domainId == null || domainId.isBlank()) {
+            return false;
+        }
+        if (userService.getKeycloakDomainIdsForRole(Roles.ADMIN).contains(domainId)) {
+            return true;
+        }
+        Domain current = domainGuard.currentDomain();
+        return current != null && domainId.equals(current.getDomainId())
+                && userService.isCallerInRole(Roles.ADMIN);
     }
 
     /**
@@ -1158,6 +1403,18 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         }
         if (vo.getDomainId() != null && !vo.getDomainId().isBlank()) {
             candidate.setDomain(new Domain());
+        }
+        // And one per shared domain, for the same reason and with the same limit:
+        // S-20b asks whether "selected domains" NAMES anybody, and the report has
+        // no persistence context to look the ids up in. Whether each one EXISTS is
+        // create and update's question, answered there by refusing an id that
+        // resolves to nothing. Nameless like the owner's placeholder, so no rule
+        // reading a domain's own fields can fire on a row nothing looked up.
+        for (String id : vo.getAvailableDomainIds() == null
+                ? List.<String>of() : vo.getAvailableDomainIds()) {
+            if (id != null && !id.isBlank()) {
+                candidate.getAvailableDomains().add(new Domain());
+            }
         }
         // The dry run resolves operands for real, so "Check rules" answers the same
         // question the save will. A report that passed on a dangling operand and a

@@ -27,10 +27,12 @@ import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesService;
+import org.niord.core.publication.series.SeriesAvailability;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.SeriesValidator;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -98,6 +100,24 @@ public class BatchPublicationSeriesImportProcessor extends AbstractItemHandler {
             }
         }
 
+        // The availability list, resolved the same way and refused the same way.
+        // An id this installation does not have is not a domain to share with, and
+        // silently dropping it would make the file mean something different here
+        // from what it means where it was written.
+        List<Domain> availableDomains = new ArrayList<>();
+        for (String id : vo.getAvailableDomainIds()) {
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            Domain shared = domainService.findByDomainId(id.trim());
+            if (shared == null) {
+                getLog().warning("Skipping series " + vo.getSeriesId() + ": it is shared with domain '"
+                        + id + "', which does not exist in this installation");
+                return null;
+            }
+            availableDomains.add(shared);
+        }
+
         PublicationSeries existing = seriesService.findBySeriesId(vo.getSeriesId());
         PublicationSeries series = existing == null ? new PublicationSeries() : existing;
 
@@ -122,7 +142,28 @@ public class BatchPublicationSeriesImportProcessor extends AbstractItemHandler {
             return null;
         }
 
-        series.setDomain(domain);
+        // AN ABSENT domainId LEAVES THE OWNER ALONE, exactly as the category is
+        // left alone and for the same reason: the column is NOT NULL, so writing
+        // null does not clear an owner -- it fails inside the batch flush and takes
+        // the chunk around it down. A new series with no owner has no desk at all,
+        // and that row is dropped with a sentence of its own below.
+        if (domain != null) {
+            series.setDomain(domain);
+        }
+        // The sharing list, on the other hand, IS a full representation: an absent
+        // one means "shared with nobody", which is a state the file has to be able
+        // to express. Availability itself defaults the same way a script-created
+        // series defaults, in updateFromVo's silence rule and the default below.
+        series.getAvailableDomains().clear();
+        series.getAvailableDomains().addAll(availableDomains);
+        if (vo.getAvailability() == null && existing == null) {
+            // A file written by hand, or by an older export, says nothing about
+            // sharing. A generated series is the owner's; anything else is a
+            // reference other desks cite, which is what it was before this field
+            // existed. The editor picks the same defaults.
+            series.setAvailability(SeriesAvailability.defaultFor(series.getContentMode()));
+        }
+
         series.setStatus(keep);
 
         // THE SAME GATE THE REST SAVES APPLY. A draft may be incomplete; it may

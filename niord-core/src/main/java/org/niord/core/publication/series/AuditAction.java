@@ -93,5 +93,17 @@ public enum AuditAction {
      * Which model answers the public for this series. Visible to every anonymous
      * reader the moment it changes, so it is its own action.
      */
-    SERIES_AUTHORITY_CHANGED
+    SERIES_AUTHORITY_CHANGED,
+
+    /**
+     * The series moved to another domain: a different desk now lists it,
+     * administers it, and supplies the timezone its future cut-offs are read in.
+     *
+     * Its own action rather than a note on an edit, because it is the one change
+     * that makes a publication disappear from one team's screens and appear on
+     * another's -- and the question afterwards is always "who moved this, and
+     * why", which a generic edit entry cannot answer. The detail carries both
+     * ends; the reason is required at the endpoint.
+     */
+    OWNER_TRANSFERRED
 }

@@ -415,6 +415,17 @@ public class LegacyImportService extends BaseService {
                 .setParameter("ids", seriesIds)
                 .executeUpdate();
 
+        // The availability list, for the same reason and by the same route. It is
+        // a join table rather than an element collection, but JPQL cannot address
+        // one either, and a bulk delete of the owner does not cascade the way
+        // remove() would -- so the rows survive and the series delete below fails
+        // on the constraint, in the one operation a cutover window cannot do
+        // without.
+        em.createNativeQuery(
+                        "DELETE FROM PublicationSeries_AvailableDomain WHERE series_id IN (:ids)")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
         int series = em.createQuery(
                         "DELETE FROM PublicationSeries s WHERE s.id IN :ids")
                 .setParameter("ids", seriesIds)
@@ -652,34 +663,68 @@ public class LegacyImportService extends BaseService {
      */
     private void applyDomainRulings(Plan plan) {
         for (PublicationSeries series : plan.series()) {
-            applyDomainRuling(series);
+            applyDomainRuling(plan, series);
+            applyAvailabilityRuling(series);
         }
     }
 
-    private void applyDomainRuling(PublicationSeries series) {
+    /**
+     * Every series leaves this pass with an owner, or the import refuses.
+     *
+     * THREE SOURCES, IN ORDER. The template's own domain wins where it has one --
+     * a ruling that overrode real data would be a second source of truth. A ruling
+     * fills the named gaps. Everything else falls to the annex desk, because a
+     * publication with no owner is a publication no desk lists, nobody
+     * administers, and which has no timezone to read a cut-off in.
+     *
+     * A MISSING DOMAIN IS NOW A PROBLEM RATHER THAN A WARNING, and that is the one
+     * behaviour that changed here. It used to leave the series domainless and let
+     * S-20 refuse the activation later, which was proportionate while a null owner
+     * was a legal state. It is not one any more: the column is NOT NULL, so a
+     * domainless series does not land DRAFT and wait for somebody -- it takes the
+     * whole write down mid-flush with a constraint violation naming a column.
+     * Refusing in the plan is the same outcome said at the point where it can be
+     * acted on, with the full report the dry run exists to produce.
+     */
+    private void applyDomainRuling(Plan plan, PublicationSeries series) {
         if (series.getDomain() != null) {
             return;
         }
-        String domainId = LegacyTemplateRulings.domainFor(series.getSeriesId());
-        if (domainId == null) {
-            return;
-        }
+        String ruled = LegacyTemplateRulings.domainFor(series.getSeriesId());
+        String domainId = ruled == null ? LegacyTemplateRulings.DEFAULT_DOMAIN : ruled;
+
         Domain domain = domainService.findByDomainId(domainId);
         if (domain == null) {
-            // NOT a problem, which would refuse the whole import. The ruling names
-            // a domain this installation does not have -- a stale ruling, or an
-            // installation that genuinely lacks it -- and the consequence is
-            // exactly today's state: the series lands with no domain, stays DRAFT,
-            // and S-20 refuses to activate it with a message that says why. That
-            // is proportionate. Failing 1,077 issues over one absent domain is not.
-            //
-            // It is still counted, in seriesWithoutDomain, because a silent log is
-            // indistinguishable from nothing having been checked.
-            log.warn("import ruling files series '{}' under domain '{}', which does not exist here",
-                    series.getSeriesId(), domainId);
+            problem(plan, "OWNER_DOMAIN_NOT_FOUND", series.getLegacyTemplateId(),
+                    series.getSeriesId(),
+                    "the series would be owned by domain '" + domainId + "', which does not exist "
+                            + "here. Every publication belongs to exactly one domain -- it is the "
+                            + "desk that lists it and the only source of the timezone its cut-offs "
+                            + "are read in -- so there is nothing to import it as.");
             return;
         }
         series.setDomain(domain);
+
+        // A NOTE RATHER THAN A PROBLEM, and only where the template said nothing.
+        // The import is right to fill the gap, and it is also a decision somebody
+        // should be able to read back: the estate is far too large to check row by
+        // row and the run happens once.
+        plan.report().getNotes().add(new LegacyImportReportVo.ProblemVo(
+                "OWNER_ASSIGNED", series.getLegacyTemplateId(), series.getSeriesId(),
+                "the template named no domain; the series is owned by '" + domainId + "'"
+                        + (ruled == null ? " by default" : " by ruling")));
+    }
+
+    /**
+     * And who besides the owner may cite it.
+     *
+     * Decided from what the publication IS, not from where it landed -- see the
+     * ruling. A generated series belongs to the desk whose messages and calendar
+     * make it; a document or a link is a reference anybody may point at, which is
+     * how the old system behaved because it had no way to narrow one.
+     */
+    private void applyAvailabilityRuling(PublicationSeries series) {
+        series.setAvailability(LegacyTemplateRulings.availabilityFor(series.getContentMode()));
     }
 
     /**

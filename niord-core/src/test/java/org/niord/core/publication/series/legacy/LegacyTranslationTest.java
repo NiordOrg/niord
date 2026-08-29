@@ -129,6 +129,12 @@ public class LegacyTranslationTest {
             PublicationCategory category = new PublicationCategory();
             category.setCategoryId("category-of-" + s.getSeriesId());
             s.setCategory(category);
+            // NO OWNER IS SUPPLIED HERE, deliberately. This file tests the pure
+            // TRANSLATION -- what the legacy row alone can say -- and which series
+            // come out of it with no domain is precisely what two of the
+            // assertions below are about. The importer's ruling pass is what
+            // supplies the missing owners, and LegacyTemplateRulingsTest is where
+            // that is asserted.
 
             String doc = criteria.get(s.getLegacyTemplateId());
             if (doc != null && s.getContentMode() == ContentMode.GENERATED_FROM_QUERY) {
@@ -272,14 +278,22 @@ public class LegacyTranslationTest {
      * day it is created. That is precisely what the copied report parameters did
      * -- and asserting it as the hard-rule set rather than as S-23 by name keeps
      * the claim tied to whatever the save actually enforces.
+     *
+     * THE OWNER RULE IS EXCLUDED HERE, and only here. It is a hard rule for the
+     * same reason S-19 would be -- the column is NOT NULL -- but this file drives
+     * the pure TRANSLATION, which states what a legacy row says and no more. The
+     * importer's ruling pass fills every owner it does not name, and
+     * LegacyTemplateRulingsTest asserts that no series leaves it without one.
      */
     @Test
     public void noImportedSeriesBreaksARuleThatEverySaveEnforces() {
         List<String> refusals = new ArrayList<>();
         for (PublicationSeries s : importedSeries()) {
-            SeriesValidator.hardRules(s).forEach(e ->
-                    refusals.add(s.getSeriesId() + ": " + e.rule() + " on " + e.field()
-                            + " -- " + e.message()));
+            SeriesValidator.hardRules(s).stream()
+                    .filter(e -> !("S-20a".equals(e.rule()) && s.getDomain() == null))
+                    .forEach(e ->
+                            refusals.add(s.getSeriesId() + ": " + e.rule() + " on " + e.field()
+                                    + " -- " + e.message()));
         }
         assertEquals(List.of(), refusals,
                 "a series that breaks a hard rule cannot be saved, let alone activated");
@@ -315,7 +329,12 @@ public class LegacyTranslationTest {
                 if (fromTheIssues.contains(e.rule())) {
                     continue;
                 }
-                if ("S-20".equals(e.rule()) && s.getDomain() == null) {
+                // The owner rules, on a series the ruling pass has not run over
+                // yet. A translated row states what the legacy template said and
+                // no more; the importer files the ones that named nothing, which
+                // is asserted where that pass lives.
+                if (("S-20".equals(e.rule()) || "S-20a".equals(e.rule()))
+                        && s.getDomain() == null) {
                     continue;
                 }
                 refusals.add(s.getSeriesId() + ": " + e.rule() + " on " + e.field()

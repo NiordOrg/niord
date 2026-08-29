@@ -41,13 +41,24 @@ import org.niord.core.domain.DomainService;
  * it decides which desk is accountable for what the series publishes, so
  * "belongs to" is a real claim and this is what enforces it.
  *
- * A series with NO domain is writable by ANY admin. That half is deliberate and
- * it is not an oversight to be tightened later. A domainless series is visible
- * from every domain -- that is what a null domain MEANS here -- and a shared
- * publication nobody can edit is worse than one anybody can: there is no domain
- * to switch to in order to gain the right, so the alternative is a series that
- * is permanently read-only through the UI and only reachable by editing the
- * database.
+ * A series with NO domain is writable by ANY admin, and that half is a SAFETY
+ * VALVE rather than a rule about how the model works. Every publication names an
+ * owner now -- the column is NOT NULL and S-20a refuses a save without one -- so
+ * this branch should be unreachable. Where it is reachable, on a database whose
+ * owner backfill could not run, a publication nobody can edit is worse than one
+ * anybody can: there is no domain to switch to in order to gain the right, so the
+ * alternative is a row that is permanently read-only through the UI and only
+ * reachable by editing the database.
+ *
+ * IT DOES NOT LET A SAVE ADOPT ONE. Being allowed to write an ownerless series is
+ * not being allowed to make it yours: the save still fails S-20a, and assigning an
+ * owner is the transfer endpoint's job, which asks for a reason and writes an
+ * audit entry.
+ *
+ * SHARING NEVER GRANTS A WRITE. A publication available in another domain is
+ * read-only there; this guard compares the OWNER and nothing else, so a desk that
+ * can cite a series still cannot retire it, rename it or take it off the public
+ * list.
  *
  * READS ARE NOT SCOPED. Every admin may look at every series, because the list
  * screens, the pickers and the citation surfaces all cross domains by design and
@@ -95,8 +106,10 @@ public class PublicationDomainGuard {
      */
     public static boolean writable(Domain seriesDomain, Domain currentDomain) {
         if (seriesDomain == null) {
-            // Visible from everywhere, therefore writable from everywhere. See
-            // the class note: there is no domain to switch to.
+            // A row with no owner at all, which the model no longer permits. See
+            // the class note: there is no domain to switch to in order to gain
+            // the right, so refusing here would leave it editable only in the
+            // database. The save still refuses it under S-20a.
             return true;
         }
         if (currentDomain == null) {
@@ -162,7 +175,9 @@ public class PublicationDomainGuard {
      */
     public void assertMayAssign(String domainId, String what) {
         if (domainId == null || domainId.isBlank()) {
-            // Assigning no domain is assigning something every admin may write.
+            // Naming no domain is not assigning one: the save leaves the stored
+            // owner alone, and a create that names none is refused by S-20a
+            // rather than here. There is nothing for this check to compare.
             return;
         }
         Domain current = domainService.currentDomain();

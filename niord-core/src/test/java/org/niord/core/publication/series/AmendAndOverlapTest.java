@@ -94,6 +94,10 @@ public class AmendAndOverlapTest {
         // No report configured: these tests are about what an amend preserves and
         // what an overlap refuses, and a rendered document is a different subject.
         s.setCategory(c);
+        // Every publication names the desk that owns it: the column is NOT NULL and
+        // S-20a refuses a save without one, so a fixture that left it out no longer
+        // describes a state the system can be in.
+        s.setDomain(TestOwnerDomain.of(em));
         s.getLanguages().add("da");
 
         IssueCriteriaVo doc = new IssueCriteriaVo();

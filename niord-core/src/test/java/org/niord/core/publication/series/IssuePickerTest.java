@@ -97,6 +97,11 @@ public class IssuePickerTest {
         em.createNativeQuery(
                         "DELETE FROM PublicationSeries_languages WHERE PublicationSeries_id IN (:series)")
                 .setParameter("series", seriesIds).executeUpdate();
+        // The availability list: a join table with no entity to delete through,
+        // holding a foreign key into the series about to go.
+        em.createNativeQuery(
+                        "DELETE FROM PublicationSeries_AvailableDomain WHERE series_id IN (:series)")
+                .setParameter("series", seriesIds).executeUpdate();
         em.createQuery("DELETE FROM PublicationSeries s WHERE s.id IN :series")
                 .setParameter("series", seriesIds).executeUpdate();
     }
@@ -184,7 +189,7 @@ public class IssuePickerTest {
     @Test
     @Transactional
     public void thePickerDefaultsToPublishedAndOpenAndNotToAllThree() {
-        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, null, MessagePublication.NONE);
+        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, domain("picker-owner"), MessagePublication.NONE);
         PublicationIssue open = issue(s, IssueStatus.OPEN, "Open week", 1_700_000_000_000L);
         PublicationIssue published = issue(s, IssueStatus.PUBLISHED, "Published week", 1_700_100_000_000L);
         PublicationIssue retired = issue(s, IssueStatus.RETIRED, "Retired week", 1_700_200_000_000L);
@@ -209,7 +214,7 @@ public class IssuePickerTest {
     @Test
     @Transactional
     public void theLegacyStatusVocabularyIsAcceptedAndTranslated() {
-        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, null, MessagePublication.NONE);
+        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, domain("picker-owner"), MessagePublication.NONE);
         PublicationIssue open = issue(s, IssueStatus.OPEN, "Open week", 1_700_000_000_000L);
         PublicationIssue published = issue(s, IssueStatus.PUBLISHED, "Published week", 1_700_100_000_000L);
         PublicationIssue retired = issue(s, IssueStatus.RETIRED, "Retired week", 1_700_200_000_000L);
@@ -255,9 +260,9 @@ public class IssuePickerTest {
     @Test
     @Transactional
     public void theLegacyTypeIsDerivedFromTheContentMode() {
-        PublicationSeries generated = series(ContentMode.GENERATED_FROM_QUERY, null,
+        PublicationSeries generated = series(ContentMode.GENERATED_FROM_QUERY, domain("picker-owner"),
                 MessagePublication.NONE);
-        PublicationSeries linked = series(ContentMode.EXTERNAL_LINK, null, MessagePublication.NONE);
+        PublicationSeries linked = series(ContentMode.EXTERNAL_LINK, domain("picker-owner"), MessagePublication.NONE);
         PublicationIssue report = issue(generated, IssueStatus.PUBLISHED, "Report", 1_700_000_000_000L);
         PublicationIssue link = issue(linked, IssueStatus.PUBLISHED, "Link", 1_700_100_000_000L);
 
@@ -281,46 +286,103 @@ public class IssuePickerTest {
     }
 
     /**
-     * A series with no domain is visible from EVERY domain.
+     * The picker offers what the caller's domain may CITE, not what it owns.
      *
-     * Most of the catalogue has none, because the templates it was imported from
-     * have none, and the legacy model reads a null domain as "applies everywhere".
-     * Written as an explicit null branch because the bare comparison is an INNER
-     * one: such a series is not merely unmatched, it is unreturnable.
+     * Four cases in one request, because they are one rule and asserting them
+     * apart is how two of them come to disagree: a publication shared with every
+     * domain is offered, one shared with THIS domain by name is offered, one
+     * shared with a DIFFERENT domain is not, and one that is nobody's but its
+     * owner's is not.
+     *
+     * The first case is the one that matters most in practice. Most of the
+     * citation-only catalogue is shared with every domain -- it is what a null
+     * owner used to express -- so getting it wrong empties the citation dialog.
      */
     @Test
     @Transactional
-    public void aDomainFreeSeriesIsVisibleFromEveryDomain() {
-        PublicationSeries free = series(ContentMode.GENERATED_FROM_QUERY, null, MessagePublication.NONE);
-        PublicationSeries scoped = series(ContentMode.GENERATED_FROM_QUERY, domain("picker-domain-a"),
-                MessagePublication.NONE);
+    public void thePickerOffersWhatTheDomainMayCite() {
+        Domain elsewhere = domain("picker-domain-a");
+        Domain asking = domain("picker-domain-b");
+        Domain third = domain("picker-domain-c");
+
+        PublicationSeries everywhere = shared(elsewhere, SeriesAvailability.ALL_DOMAINS);
+        PublicationSeries named = shared(elsewhere, SeriesAvailability.SELECTED_DOMAINS, asking);
+        PublicationSeries namedElsewhere = shared(elsewhere, SeriesAvailability.SELECTED_DOMAINS, third);
+        PublicationSeries theirs = shared(elsewhere, SeriesAvailability.OWNER_ONLY);
+
         // A marker in the name, so the assertion is about the domain clause and
         // not about which page of a shared test database the row landed on --
         // the query is deliberately unscoped by series here, which is the whole
         // point of it.
         String marker = "dmn-" + UUID.randomUUID().toString().substring(0, 8);
-        PublicationIssue freeIssue = issue(free, IssueStatus.PUBLISHED,
-                "Free " + marker, 1_700_000_000_000L);
-        PublicationIssue scopedIssue = issue(scoped, IssueStatus.PUBLISHED,
-                "Scoped " + marker, 1_700_100_000_000L);
+        PublicationIssue everywhereIssue = issue(everywhere, IssueStatus.PUBLISHED,
+                "Everywhere " + marker, 1_700_000_000_000L);
+        PublicationIssue namedIssue = issue(named, IssueStatus.PUBLISHED,
+                "Named " + marker, 1_700_100_000_000L);
+        PublicationIssue namedElsewhereIssue = issue(namedElsewhere, IssueStatus.PUBLISHED,
+                "Named elsewhere " + marker, 1_700_200_000_000L);
+        PublicationIssue theirsIssue = issue(theirs, IssueStatus.PUBLISHED,
+                "Theirs " + marker, 1_700_300_000_000L);
 
-        List<PublicationIssuePickerVo> fromOtherDomain = picker.search(
+        List<PublicationIssuePickerVo> offered = picker.search(
                 new IssuePickerService.PickerQuery("da", marker, null,
                         IssuePickerService.DEFAULT_STATUSES, null, null, "picker-domain-b", 0, 500))
                 .getData();
 
-        assertTrue(contains(fromOtherDomain, freeIssue),
-                "a domain-free series vanished from a domain-scoped picker. Most of the catalogue is "
-                        + "domain-free, so this empties the citation dialog");
-        assertFalse(contains(fromOtherDomain, scopedIssue),
-                "a series belonging to another domain was offered");
+        assertTrue(contains(offered, everywhereIssue),
+                "a publication shared with every domain vanished from a domain-scoped picker. "
+                        + "Most of the citation-only catalogue is shared that way, so this empties "
+                        + "the citation dialog");
+        assertTrue(contains(offered, namedIssue),
+                "a publication shared with THIS domain by name was not offered; 'selected domains' "
+                        + "would then select nothing");
+        assertFalse(contains(offered, namedElsewhereIssue),
+                "a publication shared with a DIFFERENT domain was offered");
+        assertFalse(contains(offered, theirsIssue),
+                "a publication belonging to another domain and shared with nobody was offered");
+    }
+
+    /**
+     * An INACTIVE domain on the list reaches nothing.
+     *
+     * A domain that has been switched off is not a desk anybody is sitting at, so
+     * a stale row naming one must not keep a publication reachable from a place
+     * that no longer exists.
+     */
+    @Test
+    @Transactional
+    public void asharedInactiveDomainIsIgnoredByThePicker() {
+        Domain switchedOff = domain("picker-domain-off");
+        switchedOff.setActive(false);
+        em.flush();
+
+        PublicationSeries s = shared(domain("picker-domain-a"),
+                SeriesAvailability.SELECTED_DOMAINS, switchedOff);
+        String marker = "off-" + UUID.randomUUID().toString().substring(0, 8);
+        PublicationIssue i = issue(s, IssueStatus.PUBLISHED, "Off " + marker, 1_700_000_000_000L);
+
+        assertFalse(contains(picker.search(new IssuePickerService.PickerQuery("da", marker, null,
+                                IssuePickerService.DEFAULT_STATUSES, null, null,
+                                "picker-domain-off", 0, 500)).getData(), i),
+                "a switched-off domain still reached the publication");
+    }
+
+    /** A series owned by one domain and shared as stated. */
+    private PublicationSeries shared(Domain owner, SeriesAvailability availability, Domain... with) {
+        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, owner, MessagePublication.NONE);
+        s.setAvailability(availability);
+        for (Domain d : with) {
+            s.getAvailableDomains().add(d);
+        }
+        em.flush();
+        return s;
     }
 
     /** The title filter is a case-insensitive substring within the requested language. */
     @Test
     @Transactional
     public void theTitleFilterMatchesASubstringCaseInsensitively() {
-        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, null, MessagePublication.NONE);
+        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, domain("picker-owner"), MessagePublication.NONE);
         PublicationIssue wanted = issue(s, IssueStatus.PUBLISHED, "EfS uge 33", 1_700_000_000_000L);
         PublicationIssue other = issue(s, IssueStatus.PUBLISHED, "P&T uge 33", 1_700_100_000_000L);
 
@@ -341,7 +403,7 @@ public class IssuePickerTest {
     @Test
     @Transactional
     public void pagingNarrowsTheDataAndNotTheTotal() {
-        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, null, MessagePublication.NONE);
+        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, domain("picker-owner"), MessagePublication.NONE);
         for (int n = 0; n < 5; n++) {
             issue(s, IssueStatus.PUBLISHED, "Week " + n, 1_700_000_000_000L + n * 100_000_000L);
         }
@@ -365,7 +427,7 @@ public class IssuePickerTest {
     @Test
     @Transactional
     public void theRowCarriesWhetherTheSeriesIsLanguageSpecific() {
-        PublicationSeries s = series(ContentMode.EXTERNAL_LINK, null, MessagePublication.EXTERNAL);
+        PublicationSeries s = series(ContentMode.EXTERNAL_LINK, domain("picker-owner"), MessagePublication.EXTERNAL);
         s.setLanguageSpecific(false);
         em.merge(s);
         PublicationIssue i = issue(s, IssueStatus.PUBLISHED, "Shared link", 1_700_000_000_000L);
@@ -388,7 +450,7 @@ public class IssuePickerTest {
     @Test
     @Transactional
     public void hydrationByIdReturnsARetiredIssue() {
-        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, null, MessagePublication.NONE);
+        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, domain("picker-owner"), MessagePublication.NONE);
         PublicationIssue retired = issue(s, IssueStatus.RETIRED, "Retired week", 1_700_000_000_000L);
 
         List<PublicationIssuePickerVo> rows = picker.byIds(List.of(retired.getPublicId()), "da");
@@ -402,7 +464,7 @@ public class IssuePickerTest {
     @Test
     @Transactional
     public void unknownIdsAreOmittedSilently() {
-        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, null, MessagePublication.NONE);
+        PublicationSeries s = series(ContentMode.GENERATED_FROM_QUERY, domain("picker-owner"), MessagePublication.NONE);
         PublicationIssue known = issue(s, IssueStatus.PUBLISHED, "Known", 1_700_000_000_000L);
 
         List<PublicationIssuePickerVo> rows =

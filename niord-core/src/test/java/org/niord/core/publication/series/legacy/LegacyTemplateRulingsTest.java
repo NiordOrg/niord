@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.domain.Domain;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.SeriesAvailability;
 
 import java.util.List;
 import java.util.Map;
@@ -275,12 +276,12 @@ public class LegacyTemplateRulingsTest {
     }
 
     /**
-     * The count of unactivatable series is reported, and zero would be a finding.
+     * The count of ownerless series is reported, and zero is what it must read.
      *
-     * A series with no domain stays DRAFT because S-20 refuses it. That is
-     * proportionate -- refusing 1,077 issues over one absent domain is not -- but
-     * it has to be VISIBLE, or an admin reads a clean import report and does not
-     * learn that some publications cannot be activated.
+     * A series with no owner has no timezone, appears on no admin list and is
+     * refused by S-20a -- and the column is NOT NULL, so it cannot even be
+     * written. The number has to be VISIBLE, or an admin reads a clean import
+     * report and does not learn that some publications could not be filed.
      */
     @Test
     public void theReportSaysHowManySeriesHaveNoDomain() {
@@ -289,5 +290,105 @@ public class LegacyTemplateRulingsTest {
         long actual = plan.series().stream().filter(s -> s.getDomain() == null).count();
         assertEquals(actual, plan.report().getSeriesWithoutDomain(),
                 "the reported count disagrees with the plan it describes");
+    }
+
+    // ---------------------------------------------------------- owner and sharing
+
+    /**
+     * EVERY imported series leaves the plan with an owner.
+     *
+     * The rule that used to say "fill the named gaps and leave the rest" now says
+     * "fill every gap", because there is no longer a state in which an ownerless
+     * publication is legal: no desk lists it, nobody administers it, it has no
+     * timezone, and the column refuses it.
+     *
+     * The annex domain is created here rather than assumed -- this test database
+     * ships with niord-nm and little else, which is the same reason the orphan
+     * ruling above creates it.
+     */
+    @Test
+    @Transactional
+    public void everySeriesLeavesThePlanWithAnOwner() {
+        ensureAnnexDomain();
+
+        List<String> ownerless = plan().series().stream()
+                .filter(s -> s.getDomain() == null)
+                .map(PublicationSeries::getSeriesId)
+                .toList();
+
+        assertTrue(ownerless.isEmpty(),
+                "these series imported with no owner, and the column is NOT NULL -- the write "
+                        + "would fail mid-flush naming a column: " + ownerless);
+    }
+
+    /**
+     * The six that carried no domain are the annex desk's, and shared everywhere.
+     *
+     * Both halves matter and they are different decisions. The OWNER is a ruling:
+     * the data does not contain it, and somebody had to choose a desk. The SHARING
+     * falls out of what they are -- none of them is generated, so each is a
+     * reference other desks cite, which is exactly the reach they had when they
+     * carried no domain at all.
+     */
+    @Test
+    @Transactional
+    public void thesixSharedReferencesAreOwnedByTheAnnexAndSharedEverywhere() {
+        ensureAnnexDomain();
+        LegacyImportService.Plan plan = plan();
+
+        for (String seriesId : LegacyTemplateRulings.sharedEverywhere()) {
+            PublicationSeries s = plan.series().stream()
+                    .filter(row -> seriesId.equals(row.getSeriesId()))
+                    .findFirst().orElse(null);
+            if (s == null) {
+                // The captured estate is a slice; a ruling naming a series it does
+                // not contain is not this test's subject.
+                continue;
+            }
+            assertNotNull(s.getDomain(), seriesId + " imported with no owner");
+            assertEquals("niord-annex", s.getDomain().getDomainId(),
+                    seriesId + " is one of the six that carried no domain; the ruling files them "
+                            + "under the annex desk");
+            assertEquals(SeriesAvailability.ALL_DOMAINS, s.getAvailability(),
+                    seriesId + " is cited from every domain, and giving it an owner must not take "
+                            + "that away -- which is exactly what happened the first time these "
+                            + "were assigned a domain");
+        }
+    }
+
+    /**
+     * And the weeklies are their own desk's alone.
+     *
+     * A generated series is assembled from one domain's messages over that
+     * domain's cut-off calendar, so its editions mean that desk's week. Sharing
+     * one would offer another authority's weekly edition as if it were everybody's.
+     */
+    @Test
+    @Transactional
+    public void ageneratedSeriesIsSharedWithNobody() {
+        ensureAnnexDomain();
+        LegacyImportService.Plan plan = plan();
+
+        for (String seriesId : List.of("weekly-ntm", "weekly-ntm-p-t")) {
+            PublicationSeries s = plan.series().stream()
+                    .filter(row -> seriesId.equals(row.getSeriesId()))
+                    .findFirst().orElse(null);
+            assertNotNull(s, seriesId + " is not in the plan at all");
+            assertEquals(SeriesAvailability.OWNER_ONLY, s.getAvailability(),
+                    seriesId + " is generated from its own desk's messages; sharing it would offer "
+                            + "one authority's weekly edition as if it were everybody's");
+        }
+    }
+
+    private void ensureAnnexDomain() {
+        if (em.createQuery("SELECT COUNT(d) FROM Domain d WHERE d.domainId = :id", Long.class)
+                .setParameter("id", "niord-annex").getSingleResult() == 0) {
+            Domain annex = new Domain();
+            annex.setDomainId("niord-annex");
+            annex.setName("NM Annex");
+            annex.setTimeZone("Europe/Copenhagen");
+            em.persist(annex);
+            em.flush();
+        }
     }
 }

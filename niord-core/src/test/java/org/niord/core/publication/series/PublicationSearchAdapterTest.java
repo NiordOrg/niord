@@ -43,17 +43,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Which issues a domain-scoped publication search can find.
  *
- * The adapter had no test at all, which is how a series with NO domain came to be
- * silently unfindable: `s.domain.domainId = :domain` is an INNER comparison, so a
- * null domain does not merely fail to match -- the row cannot be returned by that
- * query under any value.
+ * The adapter had no test at all, which is how most of the catalogue came to be
+ * silently unfindable from every domain-scoped search: the comparison was an
+ * inner one, so a publication that was meant to be reachable from everywhere was
+ * not merely unmatched but unreturnable under any value.
  *
- * That is not a hypothetical. Thirteen of the twenty-three series in the deployed
- * estate carry no domain, because the legacy templates they were imported from
- * carry none either, and legacy reads a null domain as "applies everywhere"
- * (Publication.findRecordingPublications: "p.domain is null or :series member of
- * p.domain.messageSeries"). So most of the catalogue was disappearing from every
- * domain-scoped search.
+ * The rule it answers now is VISIBLE FROM, not ownership: a publication is found
+ * from a domain that owns it, from every domain when it is shared with all of
+ * them, and from the domains it names. The admin lists ask a different question
+ * -- who OWNS it -- and are narrowed elsewhere; a publication shared with a desk
+ * is read-only there, so listing it for administration would offer an editor a
+ * row every control on which answers 403.
  */
 @QuarkusTest
 @EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
@@ -113,6 +113,11 @@ public class PublicationSearchAdapterTest {
         em.createNativeQuery(
                         "DELETE FROM PublicationSeries_languages WHERE PublicationSeries_id IN (:series)")
                 .setParameter("series", seriesIds).executeUpdate();
+        // The availability list, for the same reason: a join table with no entity
+        // to delete through, and a foreign key into the series about to go.
+        em.createNativeQuery(
+                        "DELETE FROM PublicationSeries_AvailableDomain WHERE series_id IN (:series)")
+                .setParameter("series", seriesIds).executeUpdate();
         em.createQuery("DELETE FROM PublicationSeries s WHERE s.id IN :series")
                 .setParameter("series", seriesIds).executeUpdate();
     }
@@ -131,9 +136,22 @@ public class PublicationSearchAdapterTest {
         return d;
     }
 
-    /** An issue on a series with the given domain, or with none when null. */
+    /** An issue on a series owned by the given domain and shared with nobody. */
     private PublicationIssue issueOn(Domain domain) {
         return issueOn(domain, ContentMode.GENERATED_FROM_QUERY);
+    }
+
+    /** An issue whose series is owned by one domain and shared as stated. */
+    private PublicationIssue issueOn(Domain owner, SeriesAvailability availability,
+                                     Domain... shared) {
+        PublicationIssue issue = issueOn(owner, ContentMode.GENERATED_FROM_QUERY);
+        PublicationSeries s = issue.getSeries();
+        s.setAvailability(availability);
+        for (Domain d : shared) {
+            s.getAvailableDomains().add(d);
+        }
+        em.flush();
+        return issue;
     }
 
     /** An issue on a series publishing the given kind of content. */
@@ -183,21 +201,21 @@ public class PublicationSearchAdapterTest {
     // ---------------------------------------------------------------- assertions
 
     /**
-     * A series with no domain is findable from every domain.
+     * A publication shared with every domain is findable from every domain.
      *
-     * Legacy's meaning of a null domain, preserved: it applies everywhere rather
-     * than nowhere. Getting this backwards hides a publication from the editors
-     * who maintain it, and nothing about the empty result looks wrong.
+     * This is what a null owner used to buy, said in the field that means it. It
+     * is the case that matters most: most of the citation-only catalogue is
+     * ALL_DOMAINS, and getting it backwards hides a publication from every editor
+     * who cites it while nothing about the empty result looks wrong.
      */
     @Test
     @Transactional
-    public void aseriesWithNoDomainIsFoundFromAnyDomain() {
-        PublicationIssue unscoped = issueOn(null);
+    public void asharedPublicationIsFoundFromAnyDomain() {
+        PublicationIssue shared = issueOn(domain("niord-annex"), SeriesAvailability.ALL_DOMAINS);
 
-        assertTrue(finds(adapter.search(new PublicationSearchParams().domain("niord-nm")), unscoped),
-                "a series with no domain was dropped from a domain-scoped search; legacy reads a "
-                        + "null domain as applying everywhere");
-        assertTrue(finds(adapter.search(new PublicationSearchParams().domain("niord-fa")), unscoped),
+        assertTrue(finds(adapter.search(new PublicationSearchParams().domain("niord-nm")), shared),
+                "ALL_DOMAINS was dropped from a domain-scoped search");
+        assertTrue(finds(adapter.search(new PublicationSearchParams().domain("niord-fa")), shared),
                 "and from every other domain too -- 'everywhere' is not 'one of them'");
     }
 
@@ -211,9 +229,9 @@ public class PublicationSearchAdapterTest {
     }
 
     /**
-     * And NOT from another one. The null branch must not have widened everything.
+     * And NOT from another one. The sharing branch must not have widened everything.
      *
-     * Without this the fix reads as "domain filtering still works", when it could
+     * Without this the rule reads as "domain filtering still works", when it could
      * equally have become "domain filtering does nothing".
      */
     @Test
@@ -225,16 +243,92 @@ public class PublicationSearchAdapterTest {
                 "the domain filter stopped filtering");
     }
 
+    /** A publication shared with a named domain is found from it, and only from it. */
+    @Test
+    @Transactional
+    public void selectedDomainsIsFoundFromWhatItNamesAndNowhereElse() {
+        Domain guest = domain("niord-nm");
+        PublicationIssue shared = issueOn(domain("niord-annex"),
+                SeriesAvailability.SELECTED_DOMAINS, guest);
+
+        assertTrue(finds(adapter.search(new PublicationSearchParams().domain("niord-nm")), shared),
+                "the domain the publication is shared with cannot see it");
+        assertFalse(finds(adapter.search(new PublicationSearchParams().domain("niord-fa")), shared),
+                "a domain it is NOT shared with can see it; 'selected' would then select nothing");
+    }
+
+    /**
+     * An inactive domain on the list is ignored.
+     *
+     * A domain that has been switched off is not a desk anybody is sitting at, so
+     * a stale row naming one must not keep a publication reachable from a place
+     * that no longer exists.
+     */
+    @Test
+    @Transactional
+    public void asharedInactiveDomainDoesNotReachThePublication() {
+        Domain switchedOff = domain("niord-inactive-probe");
+        switchedOff.setActive(false);
+        em.flush();
+
+        PublicationIssue shared = issueOn(domain("niord-annex"),
+                SeriesAvailability.SELECTED_DOMAINS, switchedOff);
+
+        assertFalse(finds(
+                        adapter.search(new PublicationSearchParams().domain("niord-inactive-probe")),
+                        shared),
+                "a switched-off domain still reached the publication");
+    }
+
     /** With no domain asked for, both kinds come back. */
     @Test
     @Transactional
     public void anunscopedSearchFindsBoth() {
-        PublicationIssue unscoped = issueOn(null);
+        PublicationIssue shared = issueOn(domain("niord-annex"), SeriesAvailability.ALL_DOMAINS);
         PublicationIssue scoped = issueOn(domain("niord-nm"));
 
         List<PublicationIssue> hits = adapter.search(new PublicationSearchParams());
-        assertTrue(finds(hits, unscoped));
+        assertTrue(finds(hits, shared));
         assertTrue(finds(hits, scoped));
+    }
+
+    // ------------------------------------------------- the union's legacy half
+
+    /**
+     * A legacy row whose imported twin is out of scope is named as hidden.
+     *
+     * The legacy half of the union carries the old nullable domain column and
+     * nothing else, so on its own it answers by the rule the redesign replaced.
+     * That is invisible while the issue half returns the twin -- the two collide
+     * by id and the merge drops the legacy row -- and becomes visible exactly when
+     * the new rule HIDES the twin, at which point the legacy row is what shows the
+     * publication that was just hidden.
+     */
+    @Test
+    @Transactional
+    public void atwinnedLegacyRowFollowsItsTwin() {
+        // A bare UUID: the column is the legacy publication id and is 36 characters
+        // wide, so a prefixed value is truncated rather than stored.
+        PublicationIssue mine = issueOn(domain("niord-nm"));
+        mine.setLegacyPublicationId(UUID.randomUUID().toString());
+        PublicationIssue shared = issueOn(domain("niord-annex"), SeriesAvailability.ALL_DOMAINS);
+        shared.setLegacyPublicationId(UUID.randomUUID().toString());
+        em.flush();
+
+        java.util.Set<String> hidden = adapter.legacyIdsHiddenFrom("niord-fa");
+        assertTrue(hidden.contains(mine.getLegacyPublicationId()),
+                "a legacy row whose twin belongs to another desk and is shared with nobody must "
+                        + "not survive the union; it would show exactly what the new rule hid");
+        assertFalse(hidden.contains(shared.getLegacyPublicationId()),
+                "a legacy row whose twin is shared with every domain must not be hidden");
+    }
+
+    /** With no domain named there is nothing to hide: the estate is the answer. */
+    @Test
+    @Transactional
+    public void anunscopedUnionHidesNoLegacyRow() {
+        assertTrue(adapter.legacyIdsHiddenFrom(null).isEmpty());
+        assertTrue(adapter.legacyIdsHiddenFrom("  ").isEmpty());
     }
 
     // ------------------------------------------------------------- the type filter
@@ -254,10 +348,10 @@ public class PublicationSearchAdapterTest {
     @Test
     @Transactional
     public void atypeSearchSelectsTheMatchingContentMode() {
-        PublicationIssue generated = issueOn(null, ContentMode.GENERATED_FROM_QUERY);
-        PublicationIssue uploaded = issueOn(null, ContentMode.UPLOADED_FILE);
-        PublicationIssue linked = issueOn(null, ContentMode.EXTERNAL_LINK);
-        PublicationIssue none = issueOn(null, ContentMode.NONE);
+        PublicationIssue generated = issueOn(domain("niord-nm"), ContentMode.GENERATED_FROM_QUERY);
+        PublicationIssue uploaded = issueOn(domain("niord-nm"), ContentMode.UPLOADED_FILE);
+        PublicationIssue linked = issueOn(domain("niord-nm"), ContentMode.EXTERNAL_LINK);
+        PublicationIssue none = issueOn(domain("niord-nm"), ContentMode.NONE);
 
         Map<PublicationType, PublicationIssue> expected = new LinkedHashMap<>();
         expected.put(PublicationType.MESSAGE_REPORT, generated);
@@ -285,10 +379,10 @@ public class PublicationSearchAdapterTest {
     @Transactional
     public void anomittedTypeReachesEveryContentMode() {
         List<PublicationIssue> all = List.of(
-                issueOn(null, ContentMode.GENERATED_FROM_QUERY),
-                issueOn(null, ContentMode.UPLOADED_FILE),
-                issueOn(null, ContentMode.EXTERNAL_LINK),
-                issueOn(null, ContentMode.NONE));
+                issueOn(domain("niord-nm"), ContentMode.GENERATED_FROM_QUERY),
+                issueOn(domain("niord-nm"), ContentMode.UPLOADED_FILE),
+                issueOn(domain("niord-nm"), ContentMode.EXTERNAL_LINK),
+                issueOn(domain("niord-nm"), ContentMode.NONE));
 
         List<PublicationIssue> hits = adapter.search(new PublicationSearchParams());
         for (PublicationIssue issue : all) {

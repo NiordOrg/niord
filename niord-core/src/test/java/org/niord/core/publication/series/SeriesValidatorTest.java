@@ -388,41 +388,102 @@ public class SeriesValidatorTest {
     }
 
     /**
-     * A series with a cadence still needs a domain: its cut-offs have to be read
-     * in some zone, and the domain is the only place one comes from.
+     * S-20a. EVERY publication names an owner, cadence or no cadence.
+     *
+     * THE RULE USED TO STOP AT THE CADENCED ONES, and this pair of tests used to
+     * assert the opposite of what they assert now. The argument then was about
+     * timezones: a cadence-less series has no cut-off to read in any zone, so
+     * demanding a domain bought nothing and cost visibility, because a null domain
+     * was what made a publication citable from every desk.
+     *
+     * The owner is no longer the answer to that question. Availability is, so a
+     * blank owner buys nothing at all -- it only leaves a publication that no desk
+     * lists and nobody administers, and whose column is NOT NULL.
      */
     @Test
-    public void acadencedSeriesStillNeedsADomain() {
+    public void acadencedSeriesStillNeedsAnOwner() {
         PublicationSeries s = valid();
         s.setDomain(null);
 
-        assertFires("S-20", s);
+        assertFires("S-20a", s);
     }
 
-    /**
-     * A cadence-less one does NOT, and this is the case the old rule got wrong.
-     *
-     * S-5, S-6 and S-7 refuse every nominalCutoff* field on a cadence-less
-     * series, so it has no cut-off to read in any zone and the timezone argument
-     * does not reach it. What requiring a domain DID do was narrow visibility:
-     * the publication picker matches "domain IS NULL OR domain = the current",
-     * so four publications that every domain cites had to be filed under one.
-     */
     @Test
-    public void acadencelessSeriesMayHaveNoDomain() {
+    public void acadencelessSeriesNeedsAnOwnerToo() {
         PublicationSeries s = cadenceless();
         s.setDomain(null);
 
-        assertDoesNotFire("S-20", s);
+        assertFires("S-20a", s);
     }
 
-    /** And it may still HAVE one -- null is permitted, not mandated. */
+    /**
+     * And it is refused on every save, not only at activation.
+     *
+     * The column is NOT NULL, so a draft breaking this rule is not stored
+     * incomplete -- it dies inside the flush naming a Java field, on a form that
+     * has no control by that name. Same reason S-19 is a hard rule.
+     */
     @Test
-    public void acadencelessSeriesMayAlsoCarryADomain() {
+    public void amissingOwnerIsRefusedOnEverySave() {
+        PublicationSeries s = cadenceless();
+        s.setDomain(null);
+
+        assertTrue(SeriesValidator.hardRules(s).stream().anyMatch(e -> e.rule().equals("S-20a")),
+                "a series with no owner passed the draft gate; it would then be refused by the "
+                        + "database instead, with a message about a column");
+    }
+
+    /** A cadence-less series with an owner is clean, as one with a cadence is. */
+    @Test
+    public void acadencelessSeriesWithAnOwnerIsClean() {
         PublicationSeries s = cadenceless();
         s.setDomain(domainIn("Europe/Copenhagen"));
 
         assertDoesNotFire("S-20", s);
+        assertDoesNotFire("S-20a", s);
+    }
+
+    // ------------------------------------------------------------------ S-20b
+
+    /**
+     * "Selected domains" has to select somebody.
+     *
+     * An empty list reads on the editor as a sharing setting that is switched on
+     * and behaves as one that is switched off. The two are different intentions --
+     * one of them is a half-finished edit -- and collapsing the first into the
+     * second is how a publication somebody meant to share stays private behind a
+     * control that says otherwise.
+     */
+    @Test
+    public void selectedDomainsWithAnEmptyListIsRefused() {
+        PublicationSeries s = valid();
+        s.setAvailability(SeriesAvailability.SELECTED_DOMAINS);
+
+        assertFires("S-20b", s);
+        assertTrue(SeriesValidator.hardRules(s).stream().anyMatch(e -> e.rule().equals("S-20b")),
+                "and on every save: the availability column is NOT NULL and the list is what "
+                        + "gives that value meaning");
+    }
+
+    /** Naming one is enough. */
+    @Test
+    public void selectedDomainsNamingADomainIsClean() {
+        PublicationSeries s = valid();
+        s.setAvailability(SeriesAvailability.SELECTED_DOMAINS);
+        s.getAvailableDomains().add(domainIn("Europe/Copenhagen"));
+
+        assertDoesNotFire("S-20b", s);
+    }
+
+    /** The other two values need no list, and an empty one is not a fault there. */
+    @Test
+    public void theOtherAvailabilitiesNeedNoList() {
+        for (SeriesAvailability availability
+                : List.of(SeriesAvailability.OWNER_ONLY, SeriesAvailability.ALL_DOMAINS)) {
+            PublicationSeries s = valid();
+            s.setAvailability(availability);
+            assertDoesNotFire("S-20b", s);
+        }
     }
 
     /**
@@ -538,10 +599,17 @@ public class SeriesValidatorTest {
     /**
      * The hard rules are the ones a DRAFT may not break either: a draft may be
      * incomplete, but not wrong. Everything else waits for activation.
+     *
+     * TWO KINDS ON ONE LIST. S-22 and S-23 are here because they ask for something
+     * the system cannot do or type a value the issue supplies -- mistakes rather
+     * than gaps. S-20a and S-20b are here for the reason S-19 would be: the
+     * columns behind them are NOT NULL, so a draft breaking them is not stored
+     * incomplete, it dies inside the flush naming a Java field on a form that has
+     * no control by that name.
      */
     @Test
-    public void theHardRulesAreExactlyTheTwoADraftMayNotBreak() {
-        assertEquals(Set.of("S-22", "S-23"), SeriesValidator.HARD_RULES);
+    public void theHardRulesAreExactlyTheOnesADraftMayNotBreak() {
+        assertEquals(Set.of("S-20a", "S-20b", "S-22", "S-23"), SeriesValidator.HARD_RULES);
 
         PublicationSeries incomplete = valid();
         incomplete.setNominalCutoffDay(null);
@@ -554,6 +622,14 @@ public class SeriesValidatorTest {
         wrong.getReportParams().put("week", "12");
         assertEquals(List.of("S-22", "S-23"),
                 SeriesValidator.hardRules(wrong).stream().map(SeriesValidator.FieldError::rule).toList());
+
+        PublicationSeries ownerless = valid();
+        ownerless.setDomain(null);
+        assertEquals(List.of("S-20a"),
+                SeriesValidator.hardRules(ownerless).stream()
+                        .map(SeriesValidator.FieldError::rule).toList(),
+                "a publication with no owner must be refused on the save that carries it, not by "
+                        + "the database afterwards");
     }
 
 }

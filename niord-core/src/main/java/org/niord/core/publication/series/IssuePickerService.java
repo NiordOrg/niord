@@ -50,11 +50,12 @@ import java.util.Set;
  * while a lookup that demanded a login would blank the citation chips on the
  * public site.
  *
- * Neither is domain-scoped by default. The shipped pickers are cross-domain, and
- * scoping them would make the domain-free citation publications -- most of the
- * catalogue -- vanish from the citation dialog. Where a caller DOES name a
- * domain, a series with no domain still matches it, because "no domain" means
- * every domain rather than none.
+ * Neither is domain-scoped by default. Where a caller DOES name a domain, the
+ * narrowing is VISIBLE-FROM rather than ownership: a publication shared with that
+ * domain, or shared with every domain, is citable from it even though it is
+ * administered elsewhere. That is what keeps the citation-only publications -- the
+ * journal number, the list of lights -- in the dialog from every desk, which is
+ * what a null domain used to buy and no longer does.
  *
  * Paging happens in the DATABASE. One series holds over a thousand issues, and
  * selecting them all to hand back twenty is the shape of paging this redesign
@@ -141,13 +142,12 @@ public class IssuePickerService {
             params.put("contentMode", ContentMode.ofPublicationType(query.type()));
         }
         if (query.domain() != null && !query.domain().isBlank()) {
-            // A series with NO domain matches every domain. Written as an explicit
-            // null branch on a named LEFT JOIN because a path expression generates
-            // an INNER join, which eliminates the domain-free series before the
-            // where-clause is even evaluated -- so the null case would read
-            // correctly and still return nothing.
-            where.append(" AND (d IS NULL OR d.domainId = :domain)");
-            params.put("domain", query.domain().trim());
+            // VISIBLE FROM the named domain: owned by it, available everywhere, or
+            // sharing with it explicitly. One fragment, shared with the anonymous
+            // search, because a publication the picker offers and the search
+            // withholds is a citation that can be made and then not resolved.
+            where.append(" AND ").append(SeriesVisibility.clause("s", "d"));
+            SeriesVisibility.bind(params, query.domain());
         }
         if (query.title() != null && !query.title().isBlank()) {
             // Matched inside the requested language, in SQL rather than in memory:

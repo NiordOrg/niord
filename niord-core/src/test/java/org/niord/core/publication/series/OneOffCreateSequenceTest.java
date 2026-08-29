@@ -99,6 +99,10 @@ public class OneOffCreateSequenceTest {
         s.setMessagePublication(MessagePublication.NONE);
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setCategory(c);
+        // Every publication names the desk that owns it: the column is NOT NULL and
+        // S-20a refuses a save without one, so a fixture that left it out no longer
+        // describes a state the system can be in.
+        s.setDomain(TestOwnerDomain.of(em));
         s.getLanguages().add("da");
         s.createDesc("da").setName("One-off probe");
         return s;
@@ -201,12 +205,15 @@ public class OneOffCreateSequenceTest {
     }
 
     /**
-     * Editing one afterwards works, including clearing the domain.
+     * Editing one afterwards works, and the owner survives the edit.
      *
      * The second half of the same interaction: the endpoint updates the series,
-     * writes the link onto the desc the lifecycle made, and may activate. Null
-     * domain means visible from every domain, which four of these publications
-     * need.
+     * writes the link onto the desc the lifecycle made, and may activate.
+     *
+     * THE OWNER USED TO BE CLEARABLE HERE, and this test asserted that it was --
+     * because a null owner meant "visible from every domain", which four of these
+     * publications needed. Reachability is availability's job now, so a blank
+     * owner expresses nothing and the save leaves the stored one alone.
      */
     @Test
     @Transactional
@@ -219,7 +226,6 @@ public class OneOffCreateSequenceTest {
         // always makes a new row, so calling it for a language that already has
         // one violates UNIQUE (entity_id, lang) -- the same trap as on the issue.
         saved.getDescs().get(0).setName("Renamed probe");
-        saved.setDomain(null);
         PublicationSeries updated = seriesService.update(saved);
         for (PublicationIssueDesc d : issue.getDescs()) {
             d.setLink("https://example.invalid/renamed");
@@ -229,7 +235,9 @@ public class OneOffCreateSequenceTest {
         PublicationSeries reloaded = seriesService.findBySeriesId(updated.getSeriesId());
         assertNotNull(reloaded);
         assertEquals("Renamed probe", reloaded.getDescs().get(0).getName());
-        assertEquals(null, reloaded.getDomain(), "the domain could not be cleared back to global");
+        assertNotNull(reloaded.getDomain(),
+                "the owner was lost by an ordinary edit; every publication belongs to exactly one "
+                        + "domain and the column is NOT NULL");
         assertEquals("https://example.invalid/renamed",
                 em.find(PublicationIssue.class, issue.getId()).getDescs().get(0).getLink());
     }

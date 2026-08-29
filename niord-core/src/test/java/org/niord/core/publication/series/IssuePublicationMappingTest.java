@@ -324,6 +324,10 @@ public class IssuePublicationMappingTest {
         PublicationSeries series = new PublicationSeries();
         series.setSeriesId("weekly-ntm");
         series.setCategory(category);
+        // Every publication names the desk that owns it: the column is NOT NULL and
+        // S-20a refuses a save without one, so a fixture that left it out no longer
+        // describes a state the system can be in.
+        series.setDomain(TestOwnerDomain.detached());
         series.setMessagePublication(MessagePublication.EXTERNAL);
         series.setNominalCutoffTimeZone("UTC");
 

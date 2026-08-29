@@ -16,6 +16,7 @@
 
 package org.niord.core.publication.series.legacy;
 
+import org.niord.core.publication.series.TestOwnerDomain;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -304,6 +305,10 @@ public class CutoverPreflightTest {
         s.setNumberingScheme(org.niord.core.publication.series.NumberingScheme.NONE);
         s.setPublicAuthority(org.niord.core.publication.series.PublicAuthority.LEGACY);
         s.setCategory(c);
+        // Every publication names the desk that owns it: the column is NOT NULL and
+        // S-20a refuses a save without one, so a fixture that left it out no longer
+        // describes a state the system can be in.
+        s.setDomain(TestOwnerDomain.of(em));
         s.getLanguages().add("da");
         s.createDesc("da").setName("Pre-flight probe");
         if (withCriteria) {
@@ -317,6 +322,35 @@ public class CutoverPreflightTest {
         }
         em.persist(s);
         return s;
+    }
+
+    /**
+     * The ownerless count is on the sheet, whatever it reads.
+     *
+     * An absent number and a zero read alike on a checklist somebody ticks, so the
+     * count is written whether or not there is anything to report -- and a
+     * publication with no owner is a violation rather than a note, because the
+     * owner decides which admin list it appears on, who may change it, and the
+     * timezone its cut-offs are reckoned in.
+     */
+    @Test
+    @Transactional
+    public void theOwnerlessCountIsReportedAndIsAViolationWhenItIsNotZero() {
+        CutoverPreflightService.Preflight result = preflight.run();
+
+        assertNotNull(result.counts().get("seriesWithoutOwner"),
+                "the pre-flight does not say how many publications have no owner; an absent number "
+                        + "and zero read alike on a sheet somebody ticks");
+
+        long ownerless = em.createQuery(
+                        "SELECT COUNT(s) FROM PublicationSeries s WHERE s.domain IS NULL", Long.class)
+                .getSingleResult();
+        assertEquals((int) ownerless, result.counts().get("seriesWithoutOwner").intValue(),
+                "the reported count disagrees with the estate it describes");
+        assertEquals(ownerless, result.violations().stream()
+                        .filter(v -> "SERIES_WITHOUT_OWNER".equals(v.code())).count(),
+                "an ownerless publication must be a VIOLATION, not a note: it appears on no admin "
+                        + "list, nobody administers it, and it has no timezone to read a cut-off in");
     }
 
     /** The audit's own pattern, applied the way the audit applies it. */

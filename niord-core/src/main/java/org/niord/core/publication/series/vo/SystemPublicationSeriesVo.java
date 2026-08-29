@@ -82,7 +82,28 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
     /** The criteria document, verbatim. */
     private Object criteria;
 
+    /**
+     * The OWNER: the one domain this publication is administered from. Required.
+     *
+     * The editor never offers a picker for it -- a create seeds it from the
+     * session domain and an edit shows the stored one -- but it is on the wire
+     * because the interchange import and the export both carry it, and because a
+     * body that omitted it would have to be filled in from a header, which is a
+     * second source for a field the row already states.
+     */
     private String domainId;
+
+    /** OWNER_ONLY, SELECTED_DOMAINS or ALL_DOMAINS. Omission keeps what is stored. */
+    private String availability;
+
+    /**
+     * The domains named by SELECTED_DOMAINS. Never carries the owner.
+     *
+     * Meaningful only for that one value; sent with any other it is ignored on the
+     * way in and comes back empty, so a client that switches to "this domain only"
+     * and back does not silently keep a list nobody can see.
+     */
+    private List<String> availableDomainIds = new ArrayList<>();
 
     private List<String> languages = new ArrayList<>();
 
@@ -251,6 +272,22 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setDomainId(String domainId) {
         this.domainId = domainId;
+    }
+
+    public String getAvailability() {
+        return availability;
+    }
+
+    public void setAvailability(String availability) {
+        this.availability = availability;
+    }
+
+    public List<String> getAvailableDomainIds() {
+        return availableDomainIds;
+    }
+
+    public void setAvailableDomainIds(List<String> availableDomainIds) {
+        this.availableDomainIds = availableDomainIds == null ? new ArrayList<>() : availableDomainIds;
     }
 
     public List<String> getLanguages() {
