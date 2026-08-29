@@ -65,7 +65,8 @@ public class S124Service {
         language = app.getLanguage(language);
 
         String responsibleAgency = "Unknown Agency";
-        DictionaryEntry responsibleAgencyEntry = dictionaryService.findByName("message").getEntries().get("msg.responsible.agency");
+        Dictionary messageDictionary = dictionaryService.findByName("message");
+        DictionaryEntry responsibleAgencyEntry = messageDictionary != null ? messageDictionary.getEntries().get("msg.responsible.agency") : null;
         if (responsibleAgencyEntry != null) {
             // For now we generate english only
             DictionaryEntryDesc desc = responsibleAgencyEntry.getDesc("en");
@@ -108,7 +109,8 @@ public class S124Service {
         }
 
         String responsibleAgency = "Unknown Agency";
-        DictionaryEntry responsibleAgencyEntry = dictionaryService.findByName("message").getEntries().get("msg.responsible.agency");
+        Dictionary messageDictionary = dictionaryService.findByName("message");
+        DictionaryEntry responsibleAgencyEntry = messageDictionary != null ? messageDictionary.getEntries().get("msg.responsible.agency") : null;
         if (responsibleAgencyEntry != null) {
             DictionaryEntryDesc desc = responsibleAgencyEntry.getDesc("en");
             if (desc != null) {

@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
@@ -55,7 +54,6 @@ import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.impl.DatasetImpl;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.JAXBIntrospector;
-import jakarta.xml.bind.Marshaller;
 import jakarta.xml.bind.Unmarshaller;
 
 /**
@@ -94,33 +92,17 @@ class S124Utils {
     static String marshalS124(Dataset dataset, Boolean format) throws JAXBException {
         requireNonNull(dataset, "dataset is null");
 
-        // Manipulate the class loader for the JAXBContext
         Locale locale = Locale.getDefault();
         try {
             // Make sure decimal numbers are using . and not ,
             // This is an ugly hack, but the only simple solution I could find
             Locale.setDefault(Locale.US);
-            final Thread thread = Thread.currentThread();
-            final ClassLoader originalClassLoader = thread.getContextClassLoader();
-            thread.setContextClassLoader(DatasetImpl.class.getClassLoader());
-            final JAXBContext jaxbContext = JAXBContext.newInstance(DatasetImpl.class);
 
-            // Create the JAXB Marshaller
-            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, format);
-            jaxbMarshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, 
-                "http://www.iho.int/S124/gml/2.0 https://schemas.s100dev.net/schemas/S124/2.0.0/20250729/124_2.0.0.xsd");
-
-            // Transform the S-124 object to an output stream
-            ByteArrayOutputStream xmlStream = new ByteArrayOutputStream();
-            jaxbMarshaller.marshal(dataset, xmlStream);
-
-            // Replace the original context loader
-            thread.setContextClassLoader(originalClassLoader);
-
-            // Return the XML string
-
-            return xmlStream.toString();
+            // Delegate to the bindings, which fill in any missing coded values from their labels and then check the
+            // rules of the product specification that the GML schema cannot express. Doing so here means a
+            // non-conformant dataset fails at generation time - with an S124ConformanceException naming the rule -
+            // rather than being published and only rejected further downstream.
+            return dk.dma.niord.s100.xmlbindings.s124.v2_0_0.util.S124Utils.marshalS124(dataset, format, true);
         } finally {
             Locale.setDefault(locale);
         }

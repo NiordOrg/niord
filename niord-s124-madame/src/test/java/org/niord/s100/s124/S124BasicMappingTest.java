@@ -55,11 +55,11 @@ public class S124BasicMappingTest extends S124TestBase {
         // Assert
         assertNotNull("Dataset should not be null", dataset);
         assertNotNull("Dataset ID should not be null", dataset.getId());
-        assertEquals("Dataset ID should match", datasetInfo.getDatasetId(), dataset.getId());
+        assertEquals("Dataset ID should be the NCName form of the dataset id", S124Identifiers.toNCName(datasetInfo.getDatasetId()), dataset.getId());
 
         // Verify dataset identification
         assertNotNull(dataset.getDatasetIdentificationInformation());
-        assertEquals("Dataset encoding specification should match", "S100 Part 10b", dataset.getDatasetIdentificationInformation().getEncodingSpecification());
+        assertEquals("Dataset encoding specification should match", "S-100 Part 10b", dataset.getDatasetIdentificationInformation().getEncodingSpecification());
         assertEquals("Dataset encoding specification edition should match", "1.0", dataset.getDatasetIdentificationInformation().getEncodingSpecificationEdition());
 
         // Verify members
