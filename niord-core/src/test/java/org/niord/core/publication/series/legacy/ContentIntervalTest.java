@@ -19,6 +19,7 @@ package org.niord.core.publication.series.legacy;
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.series.IntervalBoundSource;
+import org.niord.core.publication.series.IssueShape;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesCadence;
@@ -87,6 +88,10 @@ public class ContentIntervalTest {
      * The instant here is chosen so the two answers differ by a whole year: half
      * past noon UTC on the last day of 2025 is already the small hours of 2026 in
      * a zone fourteen hours ahead.
+     *
+     * The numbering runs as a step of its own, after the interval, because the
+     * year comes from where the period CLOSES and that is not settled until the
+     * cut-off is. The translation leaves it unset on purpose.
      */
     @Test
     public void theImportedYearIsReadInTheSeriesZone() {
@@ -97,6 +102,9 @@ public class ContentIntervalTest {
         ahead.setDomain(domainIn("Pacific/Kiritimati"));
         PublicationIssue inThatZone = LegacyIssueTranslation.translate(
                 release(newYearSomewhere, null), ahead, FROZEN, null);
+        assertNull(inThatZone.getYear(),
+                "the translation numbers nothing: the cut-off it would read is settled later");
+        IssueShape.applyNumbers(inThatZone, ahead);
         assertEquals(2026, inThatZone.getYear(),
                 "the year was read somewhere other than the series' own zone");
 
@@ -105,6 +113,7 @@ public class ContentIntervalTest {
         PublicationSeries none = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.YEARLY);
         PublicationIssue inUtc = LegacyIssueTranslation.translate(
                 release(newYearSomewhere, null), none, FROZEN, null);
+        IssueShape.applyNumbers(inUtc, none);
         assertEquals(2025, inUtc.getYear());
     }
 

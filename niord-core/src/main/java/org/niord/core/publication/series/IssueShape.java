@@ -203,17 +203,24 @@ public class IssueShape extends BaseService {
     // ------------------------------------------------------------------- numbers
 
     /**
-     * The week, the weeks, the year and the per-language names.
+     * The week, the weeks and the year, from the issue's own cut-off. No names.
      *
      * Silent about the numbers when there is no cut-off to derive them from -- an
      * issue with neither a stamp nor a nominal close has no week yet, and reading
      * the interval START instead would name it for the wrong end of its own
-     * window. The names are set regardless: the column is NOT NULL precisely
-     * because a nameless issue is unfindable in every list that shows it, and the
-     * suggestion falls back through the series name to the series id rather than
-     * to a placeholder.
+     * window.
+     *
+     * STATIC AND SEPARATE, because there is a second caller that must reach the
+     * numbers WITHOUT reaching the names. An issue recovered from the archive
+     * carries the title the archive gave it, and that title is a fact rather than
+     * a rendering of the period -- so it takes the numbers from here and nothing
+     * else. Two derivations would drift the moment one of them was corrected, and
+     * an issue whose stored week disagrees with the week its own cut-off falls in
+     * is unfindable by either.
+     *
+     * @return the numbers, or null where the issue has no cut-off to number by
      */
-    private void number(PublicationIssue issue, PublicationSeries series, boolean keepChangedNames) {
+    public static IssueNaming.Numbers applyNumbers(PublicationIssue issue, PublicationSeries series) {
         IssueNaming.Numbers numbers = null;
         Date cutoff = issue.effectiveCutoff();
         if (cutoff != null && series != null) {
@@ -231,6 +238,19 @@ public class IssueShape extends BaseService {
             issue.setWeekTo(numbers.weekTo());
             issue.setYear(numbers.year());
         }
+        return numbers;
+    }
+
+    /**
+     * The numbers, and then the per-language names.
+     *
+     * The names are set regardless of whether the numbers came out: the column is
+     * NOT NULL precisely because a nameless issue is unfindable in every list that
+     * shows it, and the suggestion falls back through the series name to the
+     * series id rather than to a placeholder.
+     */
+    private void number(PublicationIssue issue, PublicationSeries series, boolean keepChangedNames) {
+        IssueNaming.Numbers numbers = applyNumbers(issue, series);
         if (series == null) {
             return;
         }

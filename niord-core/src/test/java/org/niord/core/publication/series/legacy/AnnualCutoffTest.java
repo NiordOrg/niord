@@ -145,4 +145,53 @@ public class AnnualCutoffTest {
         assertEquals(CutoffRecovery.NOT_RELEASED, firing2027.getCutoffSource());
         assertNull(firing2027.getPublishedAt());
     }
+
+    /**
+     * An annual is numbered for the year its cut-off falls in -- the CALENDAR
+     * year, which is what its numbering scheme takes.
+     *
+     * The distinction is the whole reason the year basis exists. An accumulated
+     * edition closes at 31 December 23:59, and the ISO week-based answer names
+     * that instant for the January after it: "Akkumuleret EfS 2004" for the 2003
+     * volume, in its title, in its file name, and therefore in the public download
+     * link it is cited by.
+     *
+     * Imported annuals previously took their year from the start of the public
+     * window rather than from the cut-off. That happens to agree for an in-force
+     * list, whose window opens inside the year it describes, and disagrees for
+     * every accumulated one loaded years late.
+     */
+    @Test
+    public void anAnnualIsNumberedForTheCalendarYearItsCutoffFallsIn() {
+        assertEquals(Integer.valueOf(2018), issue(EFS_A_2018).getYear());
+        assertEquals(Integer.valueOf(2024), issue(EFS_A_2024).getYear());
+        assertEquals(Integer.valueOf(2017), issue(EFS_A_2017_SECOND_EDITION).getYear(),
+                "the second 2017 edition took effect in March 2017 and is the 2017 edition");
+        assertEquals(Integer.valueOf(2022), issue(FIRING_2022_EDITED_NEXT_YEAR).getYear(),
+                "edited in January 2023, but it is the 2022 edition");
+        assertEquals(Integer.valueOf(2003), issue(ACCUMULATED_2003).getYear(),
+                "what was published during 2003, loaded in 2016: the 2003 volume");
+        assertEquals(Integer.valueOf(2018), issue(ACCUMULATED_2018_OPEN_ENDED).getYear(),
+                "closes at the end of 2018, so the ISO week-based year would name it 2019");
+    }
+
+    /**
+     * An unreleased annual is numbered from its NOMINAL close, exactly as a
+     * natively created open issue is.
+     *
+     * It has no cut-off stamp -- nobody has published it -- but it does have a
+     * period, and the period's end is what the edition will be called. Leaving it
+     * blank until publish would show the one row an admin is about to work on as
+     * the only unnumbered row in its series.
+     */
+    @Test
+    public void anUnreleasedAnnualIsNumberedFromItsNominalClose() {
+        PublicationIssue firing2027 = issue(FIRING_2027_OPEN);
+        assertNull(firing2027.getCutoffStampedAt(), "nobody published it");
+        assertNotNull(firing2027.getYear(), "an open issue with a period still has a year");
+        assertEquals(Integer.valueOf(firing2027.effectiveCutoff().toInstant()
+                        .atZone(firing2027.getSeries().cutoffZone()).getYear()),
+                firing2027.getYear(),
+                "the year of an annual is the calendar year its period closes in");
+    }
 }

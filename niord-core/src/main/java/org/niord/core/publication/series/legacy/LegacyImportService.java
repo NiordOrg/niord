@@ -28,6 +28,7 @@ import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.IssueMember;
+import org.niord.core.publication.series.IssueShape;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
 import org.niord.core.publication.series.IssueStatus;
@@ -1142,6 +1143,7 @@ public class LegacyImportService extends BaseService {
 
         closeSupersededIssues(plan, publications);
         applyNominalSchedules(plan);
+        numberIssues(plan);
 
         plan.report().setIssuesByStatus(byStatus);
         plan.report().setIssuesByCutoffSource(byCutoffSource);
@@ -1204,6 +1206,38 @@ public class LegacyImportService extends BaseService {
         }
         log.info("series kinds: {} one-off, {} unscheduled, {} scheduled",
                 oneOffs, unscheduled, plan.series().size() - oneOffs - unscheduled);
+    }
+
+    /**
+     * Numbers every imported issue the way a natively created one is numbered.
+     *
+     * LAST, because it reads the cut-off and the cut-off is the last thing to
+     * settle: the recovery cascade runs per row, the chain walk decides where each
+     * period opened, and the supersession pass closes what a successor took over.
+     * An issue numbered before any of that is numbered from a bound that later
+     * moved.
+     *
+     * THROUGH THE SHAPE THE NATIVE PATH USES, not a copy of it. The week comes
+     * from the ISO week the cut-off falls in, the year from whichever year the
+     * series is numbered by, and a window that swallowed more than one period
+     * carries the pair -- and those three rules had exactly one implementation
+     * before this and must keep having one. Imported issues previously carried a
+     * year and no week at all, which reads on the wire as an issue that belongs to
+     * a year but to none of its weeks.
+     *
+     * NAMES ARE NOT TOUCHED. An imported name is what the archive called the
+     * edition, and it is cited by that name in message HTML that is already
+     * public; re-deriving over it would rewrite the archive to match a pattern
+     * nobody applied at the time.
+     *
+     * An issue with no cut-off -- an OPEN row that was never released, or an
+     * archived one whose release instant could not be believed -- is left
+     * unnumbered, which is the same answer the native path gives.
+     */
+    private void numberIssues(Plan plan) {
+        for (PublicationIssue issue : plan.issues().values()) {
+            IssueShape.applyNumbers(issue, issue.getSeries());
+        }
     }
 
     private void applyNominalSchedules(Plan plan) {
