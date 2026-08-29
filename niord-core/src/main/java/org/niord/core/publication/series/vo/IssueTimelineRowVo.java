@@ -46,6 +46,12 @@ public class IssueTimelineRowVo implements IJsonSerializable {
 
     private Integer year;
 
+    /** The week a double week runs to; absent on a single week and on a synthesized cell. */
+    private Integer weekTo;
+
+    /** The edition, where the series numbers editions; absent on a synthesized cell. */
+    private String edition;
+
     /** OPEN, PUBLISHED or RETIRED for a real row; MISSING or UPCOMING for a synthesized one. */
     private String computedStatus;
 
@@ -127,5 +133,20 @@ public class IssueTimelineRowVo implements IJsonSerializable {
 
     public void setIntervalTo(Date intervalTo) {
         this.intervalTo = intervalTo;
+    }
+    public Integer getWeekTo() {
+        return weekTo;
+    }
+
+    public void setWeekTo(Integer weekTo) {
+        this.weekTo = weekTo;
+    }
+
+    public String getEdition() {
+        return edition;
+    }
+
+    public void setEdition(String edition) {
+        this.edition = edition;
     }
 }

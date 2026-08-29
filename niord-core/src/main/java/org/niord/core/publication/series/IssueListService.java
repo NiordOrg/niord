@@ -249,6 +249,8 @@ public class IssueListService {
         if (issue.getWeek() != null && issue.getYear() != null) {
             row.setWeek(issue.getWeek());
             row.setYear(issue.getYear());
+            row.setWeekTo(issue.getWeekTo());
+            row.setEdition(issue.getEdition());
         } else {
             IssueNaming.Numbers numbers = numbersOf(issue.effectiveCutoff(), zone);
             if (numbers != null) {
