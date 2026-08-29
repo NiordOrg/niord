@@ -317,8 +317,12 @@ public class S124ComplexAttributesTest extends S124TestBase {
         Dataset dataset = S124Mapper.map(datasetInfo, message);
 
         // Assert
+        // generalArea is mandatory (minOccurs=1), so the mapper falls back to the vicinity rather than emitting a
+        // preamble that the S-124 schema rejects
         NavwarnPreamble preamble = findPreamble(dataset);
-        assertTrue("Should have no general areas when none provided", preamble.getGeneralAreas().isEmpty());
+        assertEquals("Should fall back to a single general area", 1, preamble.getGeneralAreas().size());
+        assertEquals("Fallback general area should be the vicinity", "Great Belt",
+                preamble.getGeneralAreas().get(0).getLocationNames().get(0).getText());
     }
 
     @Test
@@ -351,8 +355,12 @@ public class S124ComplexAttributesTest extends S124TestBase {
         Dataset dataset = S124Mapper.map(datasetInfo, message);
 
         // Assert
+        // navwarnTypeGeneral is mandatory (minOccurs=1), so a message without a mappable category falls back to
+        // "Other Hazards" instead of producing a preamble that the S-124 schema rejects
         NavwarnPreamble preamble = findPreamble(dataset);
-        assertNull("Should have no navwarn type when no categories", preamble.getNavwarnTypeGeneral());
+        assertNotNull("Should fall back to a navwarn type when no categories", preamble.getNavwarnTypeGeneral());
+        assertEquals("Fallback navwarn type should be Other Hazards", NavwarnTypeGeneralLabel.OTHER_HAZARDS,
+                preamble.getNavwarnTypeGeneral().getValue());
     }
 
     @Test

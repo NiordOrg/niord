@@ -43,7 +43,7 @@ import java.util.*;
 public abstract class S124TestBase {
 
     protected static final String TEST_COUNTRY = "DK";
-    protected static final String TEST_PRODUCTION_AGENCY = "Danish Maritime Authority";
+    protected static final String TEST_PRODUCTION_AGENCY = S124Identifiers.PRODUCER_CODE;
     protected static final String TEST_LANGUAGE = "en";
 
     protected GeometryFactory geometryFactory;
