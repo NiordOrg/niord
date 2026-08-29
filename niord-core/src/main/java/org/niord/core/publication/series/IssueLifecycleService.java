@@ -413,7 +413,30 @@ public class IssueLifecycleService extends BaseService {
         em.remove(em.contains(issue) ? issue : em.merge(issue));
     }
 
-    /** S4 / X-5. A series may be deleted only when it has no issues at all. */
+    /**
+     * S4 / X-5. A series may be deleted only when it has no issues at all.
+     *
+     * THE TRAIL GOES WITH IT, and it has to go FIRST. An audit entry owns a
+     * foreign key to the row it describes, and nothing cascades it -- so a series
+     * that had ever been activated, retired or moved to another domain carried at
+     * least one series-level entry and could not be deleted at all. The delete
+     * failed inside the flush on a constraint naming a table nobody was thinking
+     * about, on a screen whose only other option is "retire".
+     *
+     * Only the SERIES-level entries are addressed here, and that is exactly the
+     * set: IssueAuditEntry sets either its issue or its series and never both, and
+     * this method has already refused a series that still has issues -- so there is
+     * no issue-level row of this series left to reach. The issue-level ones are
+     * deleted by whatever deletes the issue: deleteIssue above clears its own, and
+     * the import undo clears both halves before it bulk-deletes.
+     *
+     * Deleting the trail is right rather than regrettable. The entries describe a
+     * publication that is about to stop existing, and a deletable series is one
+     * that never published anything -- the events worth keeping are the ones on
+     * issues, and a series with issues cannot be deleted. What is left is the
+     * server log line the resource writes, which is the only thing that says the
+     * series was ever there.
+     */
     @Transactional
     public void deleteSeries(PublicationSeries series) {
         Long issues = em.createQuery(
@@ -423,6 +446,9 @@ public class IssueLifecycleService extends BaseService {
             throw new TransitionRefusedException("SERIES_HAS_ISSUES",
                     "the series has " + issues + " issue(s); retire it instead of deleting it");
         }
+        em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.series = :s")
+                .setParameter("s", series).executeUpdate();
+
         PublicationSeries managed = em.contains(series) ? series : em.merge(series);
         // Emptied through the mapping rather than deleted around it: the list is
         // owned here, so clearing it makes Hibernate remove the join rows in the

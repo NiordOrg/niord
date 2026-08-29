@@ -22,6 +22,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.domain.Domain;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
@@ -59,6 +60,12 @@ public class IssueLifecycleTest {
 
     @Inject
     IssuePublishService publishService;
+
+    @Inject
+    PublicationSeriesService seriesService;
+
+    @Inject
+    IssueAuditService audit;
 
     @Inject
     EntityManager em;
@@ -299,6 +306,63 @@ public class IssueLifecycleTest {
                         () -> lifecycle.deleteSeries(s));
         assertEquals("SERIES_HAS_ISSUES", e.code());
         assertTrue(e.getMessage().contains("1 issue"), "the refusal should name the count: " + e.getMessage());
+    }
+
+    /**
+     * A series that accumulated a TRAIL can still be deleted.
+     *
+     * An audit entry owns a foreign key to the row it describes and nothing
+     * cascades it, so a series that had ever been activated, retired or moved to
+     * another domain could not be deleted at all: the delete failed inside the
+     * flush on a constraint naming a table nobody was thinking about, and the only
+     * other thing the screen offers is "retire".
+     *
+     * It went unseen because the delete is guarded on having no ISSUES, and every
+     * fixture that reached it was a series nothing had ever happened to. Both
+     * series-level events are driven here through the paths that really write
+     * them -- the status transition, and the move the transfer endpoint performs
+     * -- rather than by planting rows, so the test fails if either stops writing
+     * one.
+     */
+    @Test
+    @Transactional
+    public void aSeriesWithATrailCanStillBeDeleted() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        User actor = user();
+        em.flush();
+
+        Domain elsewhere = new Domain();
+        elsewhere.setDomainId("lifecycle-transfer-" + UUID.randomUUID().toString().substring(0, 8));
+        elsewhere.setName("Another desk");
+        elsewhere.setTimeZone("Europe/Copenhagen");
+        em.persist(elsewhere);
+
+        // The move, exactly as the transfer endpoint performs one: the owner
+        // changes and the trail records both ends.
+        String fromId = s.getDomain().getDomainId();
+        SeriesOwnerTransfer.moveTo(s, elsewhere);
+        audit.ownerTransferred(s, actor, fromId, elsewhere.getDomainId(),
+                "moved so the delete has a trail to trip over");
+
+        // And a real retirement, which writes SERIES_RETIRED.
+        seriesService.transition(s, SeriesStatus.RETIRED,
+                "retired so the delete has a second entry to trip over", actor);
+        em.flush();
+
+        Integer seriesId = s.getId();
+        assertFalse(audit.forSeries(s).isEmpty(),
+                "the fixture wrote no series-level trail at all, so the delete below would pass "
+                        + "over nothing and this test would prove the opposite of what it claims");
+
+        lifecycle.deleteSeries(s);
+        em.flush();
+
+        assertNull(em.find(PublicationSeries.class, seriesId),
+                "the series survived its own delete");
+        assertEquals(0L, em.createQuery(
+                                "SELECT COUNT(a) FROM IssueAuditEntry a WHERE a.series.id = :id", Long.class)
+                        .setParameter("id", seriesId).getSingleResult(),
+                "the trail outlived the series it describes, pointing at a row that no longer exists");
     }
 
     // ================================================================= curation
