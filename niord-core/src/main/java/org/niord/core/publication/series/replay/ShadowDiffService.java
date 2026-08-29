@@ -279,16 +279,57 @@ public class ShadowDiffService {
     public static final int REQUIRED_GREEN_RELEASES = 2;
 
     /**
+     * Whether this series has a membership the diff could compare at all.
+     *
+     * The single definition of "comparable", asked both when a release is being
+     * diffed -- where a NO is recorded as the skip reason -- and when its series
+     * is being judged ready for cutover. They are the same question and were two
+     * answers: the readiness rule inferred it from the runs, so it only held for
+     * a series whose releases had at least been LOOKED at. A one-off with an
+     * uploaded document has no releases to look at, and it was reported as
+     * "0 consecutive green comparisons of 0 runs" -- forever not ready, because
+     * the evidence it was waiting for is evidence it can never produce.
+     *
+     * A member list is generated from a query, and only from a query. Uploaded
+     * files, external links and content declared as none have no membership to
+     * reproduce; so does a query-backed series with no criteria document, which
+     * states no membership either.
+     */
+    public static boolean hasMembershipSemantics(PublicationSeries series) {
+        return series != null
+                && series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
+                && series.getCriteria() != null;
+    }
+
+    /** Readiness from the runs alone, for a caller that has no series row to hand. */
+    public static Readiness readinessOf(List<ShadowDiffRun> newestReleaseFirst) {
+        return readinessOf(newestReleaseFirst, null);
+    }
+
+    /**
      * ONE readiness rule, computed over a series' runs NEWEST RELEASE FIRST.
      *
      * The question is "have the last N releases agreed", so the order is the
      * release's cut-off, never when the diff happened to run. A skipped run does
-     * not extend a streak: nothing was compared. And a series none of whose
-     * releases carries a member list -- an annex, an uploaded document -- can
-     * never be compared at all; it is EXEMPT rather than forever "no", and its
-     * evidence is the import figures and the public-feed diff of the rehearsal.
+     * not extend a streak: nothing was compared.
+     *
+     * And a series with nothing to compare is EXEMPT rather than forever "no".
+     * That is decided from the SERIES -- what its content is and whether it
+     * states a membership at all -- because that is where the fact lives. Read
+     * off the runs instead it was true only of a series that had releases and
+     * whose every release had been diffed and skipped: the annexes qualified, a
+     * one-off with an uploaded document did not, and the bulk flip refused the
+     * whole batch over it. The run-derived reading is kept as a fallback for the
+     * callers that hold runs and no series row, and it agrees with the series
+     * rule wherever both can answer.
+     *
+     * A series that is exempt is not thereby unverified: its evidence is the
+     * import figures and the public-feed diff of the rehearsal, not a comparison
+     * the diff was never able to make.
+     *
+     * @param series the series the runs belong to, or null when it is not known
      */
-    public static Readiness readinessOf(List<ShadowDiffRun> newestReleaseFirst) {
+    public static Readiness readinessOf(List<ShadowDiffRun> newestReleaseFirst, PublicationSeries series) {
         int streak = 0;
         boolean broken = false;
         long skipped = 0;
@@ -308,7 +349,7 @@ public class ShadowDiffService {
                 }
             }
         }
-        boolean exempt = allWithoutSemantics;
+        boolean exempt = series != null ? !hasMembershipSemantics(series) : allWithoutSemantics;
         return new Readiness(streak, newestReleaseFirst.size(), skipped, exempt,
                 exempt || streak >= REQUIRED_GREEN_RELEASES);
     }
@@ -336,13 +377,18 @@ public class ShadowDiffService {
         }
 
         Map<String, Readiness> out = new LinkedHashMap<>();
-        for (String seriesId : em.createQuery(
-                        "SELECT s.seriesId FROM PublicationSeries s ORDER BY s.seriesId", String.class)
+        // The series rows themselves, not just their ids: whether a series is
+        // exempt is a fact about its content and its criteria, and reading it off
+        // the runs alone left every series with no runs reported as not ready.
+        for (PublicationSeries series : em.createQuery(
+                        "SELECT s FROM PublicationSeries s ORDER BY s.seriesId", PublicationSeries.class)
                 .getResultList()) {
-            out.put(seriesId, readinessOf(runsBySeries.getOrDefault(seriesId, List.of())));
+            out.put(series.getSeriesId(),
+                    readinessOf(runsBySeries.getOrDefault(series.getSeriesId(), List.of()), series));
         }
         // Anything the runs name that the estate does not -- the unmapped bucket,
-        // and a series deleted since it was compared.
+        // and a series deleted since it was compared. No series row to read, so
+        // the runs are all there is to judge them on.
         runsBySeries.forEach((seriesId, runs) -> out.computeIfAbsent(seriesId, k -> readinessOf(runs)));
         return out;
     }
@@ -549,8 +595,7 @@ public class ShadowDiffService {
         if (series == null) {
             return "NO_IMPORTED_SERIES";
         }
-        if (series.getContentMode() != ContentMode.GENERATED_FROM_QUERY
-                || series.getCriteria() == null) {
+        if (!hasMembershipSemantics(series)) {
             return "NO_MEMBERSHIP_SEMANTICS";
         }
         if (release.getPublishDateFrom() == null) {

@@ -108,10 +108,15 @@ public class DiagnosticReportService {
         md.append("| Series | Consecutive green | Runs | Skipped | Ready |\n");
         md.append("| --- | ---: | ---: | ---: | :---: |\n");
 
+        // Readiness comes from the same computation the shadow-diff endpoint and
+        // the pre-flight use, over every series in the estate rather than only
+        // the ones some run happens to name. A series nothing has compared is
+        // exactly the row a reader of this table needs to see, and grouping the
+        // runs alone left it out of the table entirely.
         List<String> notReady = new ArrayList<>();
-        for (Map.Entry<String, List<ShadowDiffRun>> e : bySeries.entrySet()) {
-            List<ShadowDiffRun> seriesRuns = e.getValue();   // newest release first
-            ShadowDiffService.Readiness r = ShadowDiffService.readinessOf(seriesRuns);
+        for (Map.Entry<String, ShadowDiffService.Readiness> e
+                : shadowDiff.readinessBySeries(runs).entrySet()) {
+            ShadowDiffService.Readiness r = e.getValue();
 
             if (!r.ready()) {
                 notReady.add(e.getKey());

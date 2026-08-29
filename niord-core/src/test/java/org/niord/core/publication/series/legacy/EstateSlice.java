@@ -153,6 +153,30 @@ public final class EstateSlice {
     }
 
     /**
+     * The criteria document each series was imported with, keyed on its LEGACY template id.
+     *
+     * Keyed on the legacy id rather than the seriesId so a caller that has just
+     * translated a template can find the document without first agreeing with
+     * the harvest about what the series ended up being called. The document is
+     * the one the import wrote, which is what makes it usable as the criteria
+     * half of a reconstructed imported series -- rebuilding it here would need
+     * the tagged messages, and those are not in a fixture.
+     */
+    public static Map<String, String> criteriaByLegacyTemplateId() {
+        Map<String, String> out = new LinkedHashMap<>();
+        JsonNode series = root().path("series");
+        series.fieldNames().forEachRemaining(id -> {
+            JsonNode n = series.path(id);
+            String template = n.path("legacyTemplateId").asText(null);
+            JsonNode criteria = n.path("criteria");
+            if (template != null && criteria.isObject()) {
+                out.put(template, criteria.toString());
+            }
+        });
+        return out;
+    }
+
+    /**
      * Issues whose frozen membership is identical to another issue's.
      *
      * Eight groups in the estate, two of them three ways. They are the New Year

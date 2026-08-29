@@ -201,7 +201,7 @@ public class CutoverPreflightService extends BaseService {
 
         for (PublicationSeries s : all) {
             ShadowDiffService.Readiness readiness = ShadowDiffService.readinessOf(
-                    runsBySeries.getOrDefault(s.getSeriesId(), List.of()));
+                    runsBySeries.getOrDefault(s.getSeriesId(), List.of()), s);
 
             IssueListResultVo list = IssueListService.build(s,
                     issuesBySeries.getOrDefault(s.getSeriesId(), List.of()), now);

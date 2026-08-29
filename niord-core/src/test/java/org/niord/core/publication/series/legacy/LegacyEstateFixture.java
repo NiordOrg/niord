@@ -152,6 +152,11 @@ public final class LegacyEstateFixture {
         Domain d = new Domain();
         d.setDomainId(text(n, "domainId"));
         d.setName(text(n, "name"));
+        // The zone, which the capture carries and this was dropping. It is the
+        // only source of the zone a series' cut-offs are reckoned in, and S-20
+        // refuses a domain that names none -- so a fixture domain without it
+        // makes every series that has a perfectly good domain look invalid.
+        d.setTimeZone(text(n, "timeZone"));
         List<MessageSeries> series = new ArrayList<>();
         if (n.hasNonNull("messageSeries")) {
             for (JsonNode s : n.get("messageSeries")) {

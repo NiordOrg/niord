@@ -19,7 +19,11 @@ package org.niord.core.publication.series.legacy;
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.series.BindsRule;
 import org.niord.core.publication.Publication;
+import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.IssueStatus;
+import org.niord.core.publication.series.SeriesValidator;
+import org.niord.core.publication.series.criteria.CriteriaSerialization;
+import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
 import org.niord.core.publication.series.ContentMode;
@@ -63,6 +67,79 @@ public class LegacyTranslationTest {
         for (Publication t : LegacyEstateFixture.templates()) {
             out.add(LegacySeriesTranslation.translate(
                     t, LegacySeriesTranslation.authorSeriesId(t, authored), SOURCE));
+        }
+        return out;
+    }
+
+    /**
+     * EVERY series the import creates, in the shape it creates them.
+     *
+     * series() above is the twelve templates alone; the estate also produces
+     * eight from the template-less publications -- three shared annex series and
+     * five standalone one-offs -- and those are exactly the shapes a rule about
+     * uploaded documents and absent criteria has to be checked against.
+     *
+     * Two pieces are attached here because the import attaches them from
+     * elsewhere and a series is not complete without them. The CATEGORY is
+     * resolved against the category table, so a stand-in stands for it: the
+     * question here is whether the translated fields are valid, not whether the
+     * category lookup works, and leaving it null would fail every series on S-19
+     * and say nothing. The CRITERIA is read off the harvest, because the import
+     * derives it from the message series the tagged messages actually belong to
+     * and no fixture carries those.
+     */
+    private static List<PublicationSeries> importedSeries() {
+        Set<String> authored = new LinkedHashSet<>();
+        List<PublicationSeries> out = new ArrayList<>();
+
+        for (Publication t : LegacyEstateFixture.templates()) {
+            out.add(LegacySeriesTranslation.translate(
+                    t, LegacySeriesTranslation.authorSeriesId(t, authored), SOURCE));
+        }
+
+        Map<String, List<Publication>> shared = new LinkedHashMap<>();
+        List<Publication> standalone = new ArrayList<>();
+        for (Publication p : LegacyEstateFixture.publications()) {
+            if (p.getTemplate() != null) {
+                continue;
+            }
+            LegacyOrphanGrouping.Placement place = LegacyOrphanGrouping.placeOf(p);
+            switch (place.kind()) {
+                case SHARED_SERIES ->
+                        shared.computeIfAbsent(place.seriesId(), k -> new ArrayList<>()).add(p);
+                case OWN_SERIES -> standalone.add(p);
+                default -> {
+                    // Files onto a series a template already produced.
+                }
+            }
+        }
+        for (Map.Entry<String, List<Publication>> e : shared.entrySet()) {
+            authored.add(e.getKey());
+            out.add(LegacySeriesTranslation.translate(
+                    LegacyOrphanGrouping.configurationSource(e.getValue()), e.getKey(), SOURCE));
+        }
+        Map<String, String> ownIds =
+                LegacySeriesTranslation.authorOrphanSeriesIds(standalone, authored);
+        for (Publication p : standalone) {
+            out.add(LegacySeriesTranslation.translate(p, ownIds.get(p.getPublicationId()), SOURCE));
+        }
+
+        Map<String, String> criteria = EstateSlice.criteriaByLegacyTemplateId();
+        for (PublicationSeries s : out) {
+            PublicationCategory category = new PublicationCategory();
+            category.setCategoryId("category-of-" + s.getSeriesId());
+            s.setCategory(category);
+
+            String doc = criteria.get(s.getLegacyTemplateId());
+            if (doc != null && s.getContentMode() == ContentMode.GENERATED_FROM_QUERY) {
+                try {
+                    s.setCriteria(CriteriaSerialization.mapper()
+                            .readValue(doc, IssueCriteriaVo.class));
+                } catch (Exception e) {
+                    throw new IllegalStateException(
+                            "cannot read the harvested criteria of " + s.getSeriesId(), e);
+                }
+            }
         }
         return out;
     }
@@ -119,6 +196,151 @@ public class LegacyTranslationTest {
                                 + " and still carries a liveness flag, which S-2 refuses");
             }
         }
+    }
+
+    /**
+     * The parameters the ISSUE supplies are not copied into the series that
+     * would then be refused for carrying them.
+     *
+     * Both weekly templates store reportParams {"year": "${year}", "week":
+     * "${week}"} -- the substitutions the old report engine filled in. The new
+     * model injects year, week, weekTo and edition from the issue being
+     * rendered, and S-23 refuses them as typed parameters; carried over verbatim
+     * they made an imported weekly series impossible to activate at all, because
+     * S-17 needs every rule green and S-23 was never going to be. Measured on
+     * the test estate: PUT .../status ACTIVE answered 400 SERIES_INVALID for both.
+     */
+    @Test
+    public void noImportedSeriesCarriesAReportParameterTheIssueSupplies() {
+        for (PublicationSeries s : importedSeries()) {
+            assertEquals(List.of(), SeriesValidator.reservedReportParams(s.getReportParams()),
+                    s.getSeriesId() + " was imported with a report parameter that S-23 refuses, so "
+                            + "it cannot be activated until somebody hand-edits it");
+        }
+    }
+
+    /** The two weekly series specifically, named because they are the ones that failed. */
+    @Test
+    public void theWeeklySeriesImportWithNeitherAYearNorAWeekParameter() {
+        Map<String, Map<String, Object>> byId = new LinkedHashMap<>();
+        importedSeries().forEach(s -> byId.put(s.getSeriesId(), s.getReportParams()));
+
+        for (String seriesId : List.of("weekly-ntm", "weekly-ntm-p-t")) {
+            Map<String, Object> params = byId.get(seriesId);
+            assertNotNull(params, seriesId + " is not among the imported series: " + byId.keySet());
+            assertFalse(params.containsKey("year"), seriesId + " still carries a year parameter");
+            assertFalse(params.containsKey("week"), seriesId + " still carries a week parameter");
+        }
+    }
+
+    /**
+     * Dropping is narrow: a reserved name, or a value still holding a ${...}.
+     *
+     * Everything else is a parameter somebody configured deliberately and the
+     * new model has no opinion about, so it travels. Asserted directly because
+     * the captured estate happens to carry nothing but the reserved pair -- the
+     * "keeps the rest" half of the rule has no witness in the fixture, and an
+     * unwitnessed half is the one that quietly turns into "drops everything".
+     */
+    @Test
+    public void onlyTheDerivedNamesAndTheUnresolvedTokensAreDropped() {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("year", "${year}");
+        params.put("week", "${week}");
+        params.put("Edition", 4);
+        params.put("chartNumber", "${chart}");
+        params.put("area", "Kattegat");
+        params.put("copies", 250);
+
+        Map<String, Object> kept = LegacySeriesTranslation.importableReportParams(params);
+
+        assertEquals(Set.of("area", "copies"), kept.keySet(),
+                "the issue supplies year, week and edition -- and a ${...} kept as a literal reaches "
+                        + "the report as the characters themselves");
+        assertEquals("Kattegat", kept.get("area"));
+        assertEquals(250, kept.get("copies"));
+        assertTrue(LegacySeriesTranslation.importableReportParams(null).isEmpty(),
+                "a template with no parameters imports as no parameters, never as null");
+    }
+
+    /**
+     * No imported series breaks a rule that is refused on EVERY save.
+     *
+     * S-22 and S-23 are the two a draft may not break either, because they are
+     * not gaps somebody fills in later: they are values the model supplies
+     * itself, and a series carrying one is already known to fail activation the
+     * day it is created. That is precisely what the copied report parameters did
+     * -- and asserting it as the hard-rule set rather than as S-23 by name keeps
+     * the claim tied to whatever the save actually enforces.
+     */
+    @Test
+    public void noImportedSeriesBreaksARuleThatEverySaveEnforces() {
+        List<String> refusals = new ArrayList<>();
+        for (PublicationSeries s : importedSeries()) {
+            SeriesValidator.hardRules(s).forEach(e ->
+                    refusals.add(s.getSeriesId() + ": " + e.rule() + " on " + e.field()
+                            + " -- " + e.message()));
+        }
+        assertEquals(List.of(), refusals,
+                "a series that breaks a hard rule cannot be saved, let alone activated");
+    }
+
+    /**
+     * What stands between an imported series and ACTIVE, and nothing else.
+     *
+     * S-17 needs every rule green, so the useful question is not "does the
+     * translation alone validate" -- it cannot, because the import derives the
+     * nominal schedule and the first interval from the ISSUES it goes on to
+     * write, which this reconstruction does not have. The question is whether
+     * anything ELSE is in the way, and the answer has to stay no: a single
+     * remaining rule is a series an operator has to hand-edit before the archive
+     * can publish, which is the state the copied report parameters left both
+     * weekly series in.
+     *
+     * S-20 is admitted for the two publications whose legacy row names no domain
+     * at all -- the accumulated yearly EfS and NCAGS 2021, both cadenced, both
+     * domainless in the estate. That is missing DATA rather than a translation
+     * defect: no rule can invent the timezone their cut-offs are read in, and
+     * which domain they belong to is an editorial answer.
+     */
+    @Test
+    public void nothingButTheIssueDerivedFieldsStandsBetweenAnImportedSeriesAndActivation() {
+        // Derived by the import from the issues it writes, so absent here by
+        // construction and not a finding.
+        Set<String> fromTheIssues = Set.of("S-4", "S-5", "S-6", "S-7");
+
+        List<String> refusals = new ArrayList<>();
+        for (PublicationSeries s : importedSeries()) {
+            for (SeriesValidator.FieldError e : SeriesValidator.validateForActivation(s, null)) {
+                if (fromTheIssues.contains(e.rule())) {
+                    continue;
+                }
+                if ("S-20".equals(e.rule()) && s.getDomain() == null) {
+                    continue;
+                }
+                refusals.add(s.getSeriesId() + ": " + e.rule() + " on " + e.field()
+                        + " -- " + e.message());
+            }
+        }
+        assertEquals(List.of(), refusals,
+                "an imported series that needs hand-editing before it can be activated is an "
+                        + "archive nobody can publish from");
+    }
+
+    /** The two the estate leaves domainless are named, so the number cannot drift unnoticed. */
+    @Test
+    public void exactlyTwoImportedSeriesCarryACadenceAndNoDomain() {
+        List<String> domainless = importedSeries().stream()
+                .filter(s -> s.getDomain() == null)
+                .filter(s -> s.getCadence() != null
+                        && s.getCadence() != org.niord.core.publication.series.SeriesCadence.NONE)
+                .map(PublicationSeries::getSeriesId)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of("accumulated-yearly-ntm", "ncags-2021"), domainless,
+                "S-20 refuses a cadenced series with no domain, and no translation can invent one; "
+                        + "which domain these belong to is an editorial answer, not an importable one");
     }
 
     /** R3: the seriesId is authored, and is never the legacy UUID. */

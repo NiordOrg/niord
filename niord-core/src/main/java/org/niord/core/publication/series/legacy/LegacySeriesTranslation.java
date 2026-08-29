@@ -30,6 +30,7 @@ import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.ReleaseMode;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.SeriesValidator;
 import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
 import org.niord.model.publication.PublicationType;
 
@@ -294,7 +295,7 @@ public final class LegacySeriesTranslation {
         series.setNextIssueCreation(NextIssueCreation.MANUAL);
 
         applyPrintSettings(template, series);
-        series.setReportParams(template.getReportParams());
+        series.setReportParams(importableReportParams(template.getReportParams()));
         series.setLanguages(languages(template));
         attachDescs(template, series);
 
@@ -330,6 +331,53 @@ public final class LegacySeriesTranslation {
         series.setPageOrientation(enumOf(PageOrientation.class, settings.get("pageOrientation"),
                 "pageOrientation", template.getPublicationId()));
         series.setMapThumbnails(settings.get("mapThumbnails") instanceof Boolean b ? b : null);
+    }
+
+    /** A value the old report engine would have filled in, left behind as text. */
+    private static final java.util.regex.Pattern SUBSTITUTION =
+            java.util.regex.Pattern.compile("\\$\\{[^}]*}");
+
+    /**
+     * The report parameters worth carrying over, which is neither all nor none.
+     *
+     * TWO KINDS ARE DROPPED, and both are dropped because the new model answers
+     * them itself rather than because anything is wrong with the row.
+     *
+     * The first is a RESERVED NAME. week, weekTo, year and edition are injected
+     * into every report from the issue being rendered, and typing one beside the
+     * derived value is refused outright by S-23 -- so copying them across
+     * produces a series that cannot be activated at all until an operator
+     * hand-edits it. Both weekly templates carry exactly that pair. The reserved
+     * names are asked of the validator rather than listed a second time here, so
+     * the importer cannot drift from the rule it has to satisfy.
+     *
+     * The second is a value that is still a ${...} SUBSTITUTION. Those were
+     * resolved by the report engine that fed the old templates; kept as literals
+     * they would reach the report as the seven characters "${year}", which is
+     * worse than not having the parameter at all.
+     *
+     * Everything else survives untouched, and none of this is a finding: it is
+     * normalisation of a field whose meaning changed, so the dry run says
+     * nothing about it.
+     */
+    static Map<String, Object> importableReportParams(Map<String, Object> params) {
+        Map<String, Object> kept = new LinkedHashMap<>();
+        if (params == null) {
+            return kept;
+        }
+        Set<String> reserved = new LinkedHashSet<>(SeriesValidator.reservedReportParams(params));
+        for (Map.Entry<String, Object> e : params.entrySet()) {
+            if (reserved.contains(e.getKey()) || carriesASubstitution(e.getValue())) {
+                continue;
+            }
+            kept.put(e.getKey(), e.getValue());
+        }
+        return kept;
+    }
+
+    /** Whether a stored value still holds a ${...} nothing is going to fill in. */
+    private static boolean carriesASubstitution(Object value) {
+        return value instanceof String s && SUBSTITUTION.matcher(s).find();
     }
 
     /**

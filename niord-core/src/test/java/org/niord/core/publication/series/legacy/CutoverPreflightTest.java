@@ -23,6 +23,8 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.series.BindsRule;
+import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.PublicationSeries;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -226,6 +228,95 @@ public class CutoverPreflightTest {
                 "tag=nm-almanac-2024-v1", "tag=firing-areas-2019-v1")) {
             assertFalse(namesAWeeklyTag(unrelated), "not a weekly tag: " + unrelated);
         }
+    }
+
+    /**
+     * A series with nothing to compare is exempt ON THE SHEET, not only at the flip.
+     *
+     * Step 4 of the rehearsal is ticked from these rows, so a row reading "0
+     * consecutive green of 0 runs, not ready" against a publication that is a
+     * single uploaded document sends an operator looking for evidence that
+     * cannot exist -- and, on the estate that produced this defect, made the
+     * bulk flip refuse everything.
+     *
+     * Both halves are asserted together, because the useful claim is the
+     * DIFFERENCE: the query-backed series beside it, which the diff really could
+     * compare, must still read not ready with the same zero runs.
+     */
+    @Test
+    @Transactional
+    public void aSeriesWithNoMembershipToCompareIsReportedExempt() {
+        PublicationSeries uploaded = seedSeries(ContentMode.UPLOADED_FILE, false);
+        PublicationSeries generated = seedSeries(ContentMode.GENERATED_FROM_QUERY, true);
+        em.flush();
+        try {
+            java.util.Map<String, CutoverPreflightService.SeriesRow> rows = preflight.run().series();
+
+            CutoverPreflightService.SeriesRow u = rows.get(uploaded.getSeriesId());
+            assertNotNull(u, "every series in the estate gets a row: " + rows.keySet());
+            assertTrue(u.exempt(), "an uploaded document has no member list the diff could reproduce");
+            assertTrue(u.meetsCutoverPrecondition());
+            assertEquals(0, u.runs());
+
+            CutoverPreflightService.SeriesRow g = rows.get(generated.getSeriesId());
+            assertNotNull(g);
+            assertFalse(g.exempt(), "a query-backed series with criteria CAN be compared");
+            assertFalse(g.meetsCutoverPrecondition(),
+                    "and with no comparisons it has no evidence, which is a different answer "
+                            + "from having nothing to compare");
+        } finally {
+            em.remove(uploaded);
+            em.remove(generated);
+            em.flush();
+        }
+    }
+
+    /**
+     * The smallest series the pre-flight will describe, in the given shape.
+     *
+     * The series is removed again by the caller; the category is REUSED under a
+     * fixed id instead, because it is what the series points at and a fresh one
+     * per run would accumulate a row per test on a database every test shares.
+     */
+    private PublicationSeries seedSeries(ContentMode mode, boolean withCriteria) {
+        org.niord.core.publication.PublicationCategory c = em.createQuery(
+                        "SELECT c FROM PublicationCategory c WHERE c.categoryId = :id",
+                        org.niord.core.publication.PublicationCategory.class)
+                .setParameter("id", "preflight-probe")
+                .getResultStream().findFirst().orElse(null);
+        if (c == null) {
+            c = new org.niord.core.publication.PublicationCategory();
+            c.setCategoryId("preflight-probe");
+            c.setPriority(900);
+            c.setPublish(false);
+            em.persist(c);
+        }
+
+        PublicationSeries s = new PublicationSeries();
+        s.setSeriesId("preflight-" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        s.setStatus(org.niord.core.publication.series.SeriesStatus.ACTIVE);
+        s.setKind(org.niord.core.publication.series.SeriesKind.ONE_OFF);
+        s.setCadence(org.niord.core.publication.series.SeriesCadence.NONE);
+        s.setContentMode(mode);
+        s.setCutoffDefault(org.niord.core.publication.series.CutoffDefault.RELEASE_MOMENT);
+        s.setReleaseMode(org.niord.core.publication.series.ReleaseMode.MANUAL_GATE);
+        s.setNextIssueCreation(org.niord.core.publication.series.NextIssueCreation.MANUAL);
+        s.setNumberingScheme(org.niord.core.publication.series.NumberingScheme.NONE);
+        s.setPublicAuthority(org.niord.core.publication.series.PublicAuthority.LEGACY);
+        s.setCategory(c);
+        s.getLanguages().add("da");
+        s.createDesc("da").setName("Pre-flight probe");
+        if (withCriteria) {
+            org.niord.core.publication.series.criteria.IssueCriteriaVo doc =
+                    new org.niord.core.publication.series.criteria.IssueCriteriaVo();
+            org.niord.core.publication.series.criteria.MessageSeriesCriterionVo node =
+                    new org.niord.core.publication.series.criteria.MessageSeriesCriterionVo();
+            node.setValues(new java.util.ArrayList<>(List.of("dma-nm")));
+            doc.getCriteria().add(node);
+            s.setCriteria(doc);
+        }
+        em.persist(s);
+        return s;
     }
 
     /** The audit's own pattern, applied the way the audit applies it. */

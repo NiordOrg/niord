@@ -270,7 +270,7 @@ public class PublicationSeriesService extends BaseService {
                                 + "the public only once it is active.");
             }
             ShadowDiffService.Readiness readiness =
-                    ShadowDiffService.readinessOf(shadowDiff.forSeries(series.getSeriesId()));
+                    ShadowDiffService.readinessOf(shadowDiff.forSeries(series.getSeriesId()), series);
             if (!readiness.ready() && !force) {
                 throw new IssueLifecycleService.TransitionRefusedException("NOT_READY_FOR_CUTOVER",
                         "'" + series.getSeriesId() + "' has " + readiness.consecutiveGreen()

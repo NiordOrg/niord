@@ -247,7 +247,14 @@ public class SeriesTransitionTest {
         assertEquals(PublicAuthority.LEGACY, s.getPublicAuthority());
     }
 
-    /** Without the shadow diff's green light the flip is refused -- with the count in words. */
+    /**
+     * Without the shadow diff's green light the flip is refused -- with the count in words.
+     *
+     * The fixture is query-backed and carries criteria, so it is a series the
+     * diff CAN compare, and no comparisons is missing evidence rather than an
+     * impossible demand. That is the whole difference from the series exempted
+     * below.
+     */
     @Test
     @Transactional
     public void anUnprovenSeriesIsRefusedUnlessForced() {
@@ -260,6 +267,41 @@ public class SeriesTransitionTest {
         assertEquals("NOT_READY_FOR_CUTOVER", e.code());
         assertTrue(e.getMessage().contains("0 consecutive green"), e.getMessage());
         assertEquals(PublicAuthority.LEGACY, s.getPublicAuthority());
+    }
+
+    /**
+     * A series with nothing to compare flips WITHOUT force and with no runs.
+     *
+     * The refusal that stopped the cutover rehearsal: the bulk flip is one
+     * transaction and one refusal refuses the lot, so a one-off with an uploaded
+     * document -- which the shadow diff can never compare, and which therefore
+     * has zero runs forever -- held back every other series in the estate. The
+     * precondition is evidence where evidence is possible, not evidence nobody
+     * can produce.
+     *
+     * force is deliberately FALSE here. Getting the batch through by forcing it
+     * would record the cutover of an estate nothing is wrong with as overridden,
+     * and the audit trail is what anybody afterwards reads to find out which
+     * flips were judged and which were pushed past a refusal.
+     */
+    @Test
+    @Transactional
+    public void aSeriesWithNoMembershipToCompareFlipsWithoutForce() {
+        for (ContentMode mode : List.of(ContentMode.UPLOADED_FILE, ContentMode.EXTERNAL_LINK,
+                ContentMode.NONE)) {
+            PublicationSeries s = series(SeriesStatus.ACTIVE);
+            s.setContentMode(mode);
+            s.setCriteria(null);
+
+            PublicationSeries saved = seriesService.setPublicAuthority(s, PublicAuthority.NEW, false,
+                    "cutover window", user());
+
+            assertEquals(PublicAuthority.NEW, saved.getPublicAuthority(),
+                    mode + " has no member list to reproduce, so there is no comparison to wait for");
+            String detail = String.valueOf(
+                    entries(saved, AuditAction.SERIES_AUTHORITY_CHANGED).get(0).getDetail());
+            assertTrue(detail.contains("false"), "and it is not recorded as forced: " + detail);
+        }
     }
 
     /** The way round the precondition exists, demands a reason, and says it was used. */
