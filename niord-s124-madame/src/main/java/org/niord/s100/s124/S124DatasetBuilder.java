@@ -100,6 +100,12 @@ class S124DatasetBuilder {
             }
         }
 
+        // Same guard as the MessagePart overload: with no geometry anywhere, JTS reports 0 for the envelope's minima
+        // and -1 for its maxima, which would be published as an inverted bounding box off the coast of Ghana.
+        if (envelope.isNull()) {
+            return null;
+        }
+
         Pos lowerCorner = new PosImpl();
         // Envelope uses X,Y (lon,lat) but GML expects lat,lon order
         lowerCorner.setValue(new Double[] { envelope.getMinY(), envelope.getMinX() });

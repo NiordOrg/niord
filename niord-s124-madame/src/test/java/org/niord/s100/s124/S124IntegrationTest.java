@@ -379,7 +379,8 @@ public class S124IntegrationTest extends S124TestBase {
         // Should have references
         var references = findReferences(dataset);
         assertEquals("Should have 1 reference", 1, references.size());
-        assertFalse(references.get(0).isNoMessageOnHand());
+        // The reference is an UPDATE, which supersedes the referenced warning
+        assertTrue(references.get(0).isNoMessageOnHand());
     }
 
     private void validateCancellationDataset(Dataset dataset) {

@@ -282,7 +282,9 @@ class S124Mapper {
             for (Reference ref : message.getReferences()) {
                 if (ref.getMessage() != null && ref.getMessage().getMainType() == NW) {
                     ReferenceType rt = profileFactory.createReferenceType();
-                    rt.setHref("#" + toMessageId(ref.getMessage()));
+                    // Must address the References member, whose id carries the "R." prefix - otherwise the fragment
+                    // has no target in the document and the association cannot be resolved.
+                    rt.setHref("#" + toReferenceId(ref.getMessage()));
                     rt.setRole(ref.getType() != null ? ref.getType().name() : "reference");
                     part.getAffects().add(rt);
                 }
@@ -449,7 +451,12 @@ class S124Mapper {
         p.setNavwarnTypeGeneral(ngt);
 
         /************ publicationTime: dateTime ************/
-        // publicationTime is mandatory, so an unpublished message falls back to its audit dates
+        // publicationTime is mandatory, so an unpublished message falls back to its audit dates. Dating a warning
+        // from when its record happened to be touched is a real inference, so say so out loud.
+        if (msg.getPublishDateFrom() == null) {
+            log.warn("Message {} has no publish date; dating publicationTime from {}", msg.getShortId(),
+                    msg.getUpdated() != null ? "the updated timestamp" : msg.getCreated() != null ? "the created timestamp" : "the current time");
+        }
         p.setPublicationTime(toOtherOffsetDateTime(referenceDate(msg)));
         return p;
     }
@@ -457,40 +464,40 @@ class S124Mapper {
     private List<References> toDataModelReferences(Message message) {
         List<References> result = new ArrayList<>();
         List<Reference> references = message.getReferences();
-        // A message can reference the same message more than once (say a repetition and an update). The id is derived
-        // from the referenced message, so emitting both would put a duplicate gml:id in the dataset.
-        Set<String> emitted = new HashSet<>();
+        // A message can reference the same message more than once (say a repetition and an update), which would put a
+        // duplicate gml:id in the dataset. Deduplicate on the referenced message itself rather than on the derived id,
+        // so that two genuinely different warnings are never conflated by the id sanitisation.
+        Set<Object> referenced = new HashSet<>();
+        Set<String> emittedIds = new HashSet<>();
         if (references != null) {
             for (Reference r : references) {
                 Message refMessage = r.getMessage();
                 if (refMessage != null && refMessage.getMainType() == NW) {
-                    String referenceId = "R." + toMessageId(refMessage);
-                    if (!emitted.add(referenceId)) {
+                    if (!referenced.add(identityOf(refMessage))) {
                         log.warn("Message {} references {} more than once; keeping only the first", message.getShortId(),
                                 refMessage.getShortId());
                         continue;
                     }
+                    String referenceId = toReferenceId(refMessage);
+                    if (!emittedIds.add(referenceId)) {
+                        // Two different warnings whose short ids differ only in characters that are not admissible in
+                        // an NCName. Emitting both would produce a duplicate gml:id, i.e. invalid XML.
+                        log.error("Message {} references {}, whose id \"{}\" collides with an earlier reference; skipping it",
+                                message.getShortId(), refMessage.getShortId(), referenceId);
+                        continue;
+                    }
                     References gmlreferences = s124ObjectFactory.createReferences();
                     gmlreferences.setId(referenceId);
-                    gmlreferences.setNoMessageOnHand(false);
 
-                    // Add reference type information if available
-                    ReferenceCategoryLabel category = ReferenceCategoryLabel.WARNING_REFERENCE;
-                    if (r.getType() != null) {
-                        switch (r.getType()) {
-                            case CANCELLATION:
-                                // This reference cancels the referenced message
-                                gmlreferences.setNoMessageOnHand(true);
-                                category = ReferenceCategoryLabel.WARNING_CANCELLATION;
-                                break;
-                            case UPDATE:
-                            case REPETITION:
-                            case REFERENCE:
-                            default:
-                                gmlreferences.setNoMessageOnHand(false);
-                                break;
-                        }
-                    }
+                    // Niord declares which reference types supersede the referenced message. All of them but a plain
+                    // REFERENCE cancel it, and a consumer that saw WARNING_REFERENCE would keep treating the
+                    // superseded warning as being in force.
+                    // NB: ReferenceType here is the GML association type, so the Niord enum needs qualifying
+                    boolean cancels = r.getType() != null
+                            && org.niord.model.message.ReferenceType.cancelsReferencedMessage().contains(r.getType());
+                    ReferenceCategoryLabel category = cancels ? ReferenceCategoryLabel.WARNING_CANCELLATION
+                            : ReferenceCategoryLabel.WARNING_REFERENCE;
+                    gmlreferences.setNoMessageOnHand(cancels);
 
                     // referenceCategory is mandatory
                     ReferenceCategoryType referenceCategory = s124ObjectFactory.createReferenceCategoryType();
@@ -511,6 +518,24 @@ class S124Mapper {
             }
         }
         return result;
+    }
+
+    /**
+     * The {@code gml:id} of the References member describing a referenced warning. The prefix keeps it distinct from
+     * the preamble id of the message doing the referencing, which a self-reference would otherwise collide with.
+     * <p>
+     * Every {@code #fragment} pointing at a References member has to be built from this same method, or the
+     * association dangles.
+     */
+    private String toReferenceId(Message refMessage) {
+        return "R." + toMessageId(refMessage);
+    }
+
+    /**
+     * Identifies a message for deduplication purposes, independent of any id sanitisation.
+     */
+    private static Object identityOf(Message msg) {
+        return msg.getUid() != null ? msg.getUid() : msg.getId();
     }
 
     /**

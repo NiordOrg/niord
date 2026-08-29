@@ -16,6 +16,8 @@
 package org.niord.s100.s124;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
@@ -23,6 +25,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
@@ -40,6 +44,9 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.Dataset;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPart;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.ReferenceCategoryLabel;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.References;
 
 /**
  * Validates generated S-124 datasets against the S-124 2.0.0 XSD that ships with the bindings.
@@ -222,6 +229,104 @@ public class S124SchemaValidationTest extends S124TestBase {
         }
 
         assertSchemaValid(message);
+    }
+
+    /**
+     * The XSD types datasetFileIdentifier as a plain string, so schema validation cannot catch a regression here.
+     * The S-100 Part 17 clause 17-4.3 shape is what Baleen and any other packager depend on, so pin it.
+     */
+    @Test
+    public void testDatasetFileIdentifierFollowsPart17() {
+        S124DatasetInfo info = new S124DatasetInfo("Local Warning-120-26", "Danish Maritime Authority", "DMA", List.of());
+        assertEquals("124DK00LocalWarning12026.GML", info.getFileIdentifier());
+    }
+
+    /**
+     * A NavwarnPart's affects association has to address the References member that is actually in the document,
+     * otherwise the fragment dangles and the affected warning cannot be resolved.
+     */
+    @Test
+    public void testAffectsResolvesToAReferencesMember() throws Exception {
+        Message message = enrich(createBasicMessage());
+        Message referenced = enrich(createBasicMessage());
+        referenced.setId(996);
+        referenced.setShortId("Local Warning-116-26");
+
+        Reference reference = new Reference();
+        reference.setMessage(referenced);
+        reference.setType(ReferenceType.REFERENCE);
+        message.getReferences().add(reference);
+
+        S124DatasetInfo info = new S124DatasetInfo(message.getShortId(), "Danish Maritime Authority", "DMA", List.of(message));
+        Dataset dataset = S124Mapper.map(info, message);
+
+        Set<String> ids = dataset.getMembers().getNavwarnPartsAndNavwarnAreaAffectedsAndTextPlacements().stream()
+                .filter(dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.AbstractGMLType.class::isInstance)
+                .map(dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.AbstractGMLType.class::cast)
+                .map(dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.AbstractGMLType::getId).collect(Collectors.toSet());
+
+        List<String> affects = dataset.getMembers().getNavwarnPartsAndNavwarnAreaAffectedsAndTextPlacements().stream()
+                .filter(NavwarnPart.class::isInstance).map(NavwarnPart.class::cast)
+                .flatMap(p -> p.getAffects().stream()).map(a -> a.getHref().substring(1)).collect(Collectors.toList());
+
+        assertFalse("The part should affect something", affects.isEmpty());
+        for (String target : affects) {
+            assertTrue("affects points at '" + target + "' which is not in the document " + ids, ids.contains(target));
+        }
+    }
+
+    /**
+     * Niord treats a repetition or an update as superseding the referenced warning, so S-124 has to say cancellation
+     * rather than leave a consumer believing the old warning is still in force.
+     */
+    @Test
+    public void testSupersedingReferencesAreCancellations() throws Exception {
+        for (ReferenceType type : org.niord.model.message.ReferenceType.cancelsReferencedMessage()) {
+            Message message = enrich(createBasicMessage());
+            Message referenced = enrich(createBasicMessage());
+            referenced.setId(995);
+            referenced.setShortId("Local Warning-115-26");
+
+            Reference reference = new Reference();
+            reference.setMessage(referenced);
+            reference.setType(type);
+            message.getReferences().add(reference);
+
+            S124DatasetInfo info = new S124DatasetInfo(message.getShortId(), "Danish Maritime Authority", "DMA", List.of(message));
+            References references = dk.dma.niord.s100.xmlbindings.s124.v2_0_0.References.class.cast(
+                    S124Mapper.map(info, message).getMembers().getNavwarnPartsAndNavwarnAreaAffectedsAndTextPlacements().stream()
+                            .filter(References.class::isInstance).findFirst().orElse(null));
+
+            assertNotNull(type + " should produce a References member", references);
+            assertEquals(type + " supersedes the referenced warning", ReferenceCategoryLabel.WARNING_CANCELLATION,
+                    references.getReferenceCategory().getValue());
+            assertTrue(type + " should set noMessageOnHand", references.isNoMessageOnHand());
+        }
+    }
+
+    /**
+     * A plain REFERENCE does not supersede anything.
+     */
+    @Test
+    public void testPlainReferenceIsNotACancellation() throws Exception {
+        Message message = enrich(createBasicMessage());
+        Message referenced = enrich(createBasicMessage());
+        referenced.setId(994);
+        referenced.setShortId("Local Warning-114-26");
+
+        Reference reference = new Reference();
+        reference.setMessage(referenced);
+        reference.setType(ReferenceType.REFERENCE);
+        message.getReferences().add(reference);
+
+        S124DatasetInfo info = new S124DatasetInfo(message.getShortId(), "Danish Maritime Authority", "DMA", List.of(message));
+        References references = S124Mapper.map(info, message).getMembers()
+                .getNavwarnPartsAndNavwarnAreaAffectedsAndTextPlacements().stream()
+                .filter(References.class::isInstance).map(References.class::cast).findFirst().orElse(null);
+
+        assertNotNull(references);
+        assertEquals(ReferenceCategoryLabel.WARNING_REFERENCE, references.getReferenceCategory().getValue());
+        assertFalse(references.isNoMessageOnHand());
     }
 
     /**
