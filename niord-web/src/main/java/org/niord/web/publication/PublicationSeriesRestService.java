@@ -107,15 +107,22 @@ import java.util.Set;
  * which serves released issues only.
  *
  * TRANSACTIONS. The class is @Transactional, which is right for every endpoint
- * here but the three legacy-import ones. Those open their OWN transaction with a
- * budget sized for the whole estate, so they are marked NOT_SUPPORTED to keep the
- * class annotation from wrapping them in a second, ambient transaction on the
- * DEFAULT timeout. That combination was found failing in the worst possible way:
- * the reaper aborted the ambient transaction long before the work finished, so a
- * COMPLETED import returned 500 with "the transaction is not active" while its
- * rows sat committed in the database -- and an operator reading that would re-run
- * a cutover that had worked. The rationale is stated here once; the endpoints
- * carry the annotation and a one-line pointer back.
+ * here but the estate-scale ones. Those either open their OWN transaction with a
+ * budget sized for the whole estate, or commit in bounded batches of their own,
+ * so they are marked NOT_SUPPORTED to keep the class annotation from wrapping
+ * them in a second, ambient transaction on the DEFAULT timeout. That combination
+ * was found failing in the worst possible way: the reaper aborted the ambient
+ * transaction long before the work finished, so a COMPLETED import returned 500
+ * while its rows sat committed in the database -- and an operator reading that
+ * would re-run a cutover that had worked. The rationale is stated here once; the
+ * endpoints carry the annotation and a one-line pointer back.
+ *
+ * The annotation belongs on the SERVICE as well, and for the same reason: the
+ * services these endpoints call extend a base class that is itself @Transactional,
+ * and that binding is inherited -- so removing the ambient transaction here alone
+ * only moved it one frame down. The endpoint annotation is what keeps a request
+ * from imposing its budget; the service annotation is what keeps the service from
+ * opening one of its own.
  */
 @Path("/publication-series")
 @RequestScoped
@@ -1254,6 +1261,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * re-resolves every imported issue, which is minutes of work and not
      * something to trigger on a page refresh.
      */
+    // Minutes of work with historical=true; see the class comment on transactions.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @GET
     @Path("/diagnostic-report")
     @Produces(MediaType.TEXT_PLAIN)
@@ -1282,6 +1291,10 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * rather than one request that appears to work and times out at 240 seconds
      * with everything rolled back.
      */
+    // Commits per release, in its own transactions; see the class comment on
+    // transactions. An ambient one would hold every batch open to the end and be
+    // reaped mid-sweep, discarding comparisons the sweep reported as written.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @POST
     @Path("/shadow-diff/run")
     @Produces(MediaType.APPLICATION_JSON)
@@ -1304,6 +1317,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * evidence the cutover decision rests on, and that should never be a side
      * effect of asking for a sweep.
      */
+    // Opens its own transaction; see the class comment on transactions.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @POST
     @Path("/shadow-diff/reset")
     @Produces(MediaType.APPLICATION_JSON)
@@ -1398,6 +1413,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * flip. Folding either in would stop the pre-flight ever passing on an estate
      * that is in exactly the state everybody expects.
      */
+    // Reads the whole estate; see the class comment on transactions.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @GET
     @Path("/cutover-preflight")
     @Produces(MediaType.APPLICATION_JSON)

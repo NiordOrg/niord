@@ -18,6 +18,7 @@ package org.niord.core.publication.series.legacy;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
@@ -75,6 +76,25 @@ import java.util.Set;
  * referenced CATEGORY is auto-created instead, and that asymmetry is deliberate --
  * a category is a label with a priority, and inventing one is recoverable by
  * editing it; inventing a scope is not.
+ *
+ * THE THREE ENTRY POINTS ARE NOT_SUPPORTED, AND THAT ANNOTATION IS LOAD-BEARING.
+ * {@link BaseService} carries a class-level {@code @Transactional}, and
+ * {@code jakarta.transaction.Transactional} is {@code @Inherited} -- so without a
+ * method-level binding of its own, every public method here is wrapped by the
+ * REQUIRED interceptor on the container's DEFAULT transaction budget. The
+ * estate-scale work then commits happily through the hand-opened transaction
+ * below, the ambient one the interceptor opened is reaped long before the method
+ * returns, and its commit throws a CHECKED RollbackException on the way out --
+ * which the generated subclass cannot declare, so it surfaces as
+ * ArcUndeclaredThrowableException and the caller reads 500 over a database that
+ * has the whole archive in it. That is the worst answer available: an operator
+ * seeing it re-runs a cutover that worked. Measured on the deployed test backend
+ * at 784s against a 240s default.
+ *
+ * NOT_SUPPORTED suppresses the inherited binding (a method-level binding of an
+ * annotation type replaces the class-level one rather than adding to it), so the
+ * only transaction any of these three runs in is the one it opens itself, with
+ * the budget it chose.
  */
 @ApplicationScoped
 public class LegacyImportService extends BaseService {
@@ -148,6 +168,8 @@ public class LegacyImportService extends BaseService {
      * mid-read and the commit afterwards failed with "the transaction is not
      * active". Read-only work should not be able to fail that way.
      */
+    // Its own transaction and no other; see the class comment on transactions.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     public LegacyImportReportVo dryRun() {
         return QuarkusTransaction.requiringNew()
                 .timeout(IMPORT_TIMEOUT_SECONDS)
@@ -202,6 +224,8 @@ public class LegacyImportService extends BaseService {
      * that annotation cannot carry a timeout, and this one operation needs a
      * budget the rest of the application must not get.
      */
+    // Its own transaction and no other; see the class comment on transactions.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     public LegacyImportReportVo run() {
         return QuarkusTransaction.requiringNew()
                 .timeout(IMPORT_TIMEOUT_SECONDS)
@@ -267,6 +291,8 @@ public class LegacyImportService extends BaseService {
      * the import would withdraw published editions from under their readers. The
      * check is on the data rather than on a flag somebody remembers to set.
      */
+    // Its own transaction and no other; see the class comment on transactions.
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     public UndoReport undo() {
         return QuarkusTransaction.requiringNew()
                 .timeout(IMPORT_TIMEOUT_SECONDS)

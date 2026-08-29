@@ -414,25 +414,38 @@ public class LegacyImportServiceTest {
     // ------------------------------------------------- the transaction budget
 
     /**
-     * run() must NOT carry @Transactional.
+     * run() must carry @Transactional(NOT_SUPPORTED) -- not no annotation at all.
      *
      * The import needs about 250 seconds and the platform default is 240, so it
      * failed twice at 240.2s and 240.8s -- a timeout that reads exactly like a
-     * data defect. The transaction is now opened by hand with an explicit
-     * budget, because @Transactional cannot carry one.
+     * data defect. The transaction is opened by hand with an explicit budget,
+     * because @Transactional cannot carry one.
      *
-     * Re-adding the annotation would put a 240s outer transaction back around
-     * the inner one and restore the failure in a form nobody would recognise:
-     * the code would still SAY 1800 seconds. This is cheap insurance against a
-     * tidy-up that looks obviously correct.
+     * LEAVING THE METHOD BARE DOES NOT LEAVE IT UNTRANSACTED, which is what this
+     * test asserted first and what cost a second cutover rehearsal. The service
+     * extends a base class annotated @Transactional at class level, and that
+     * binding is @Inherited: a method with no binding of its own is wrapped by
+     * the REQUIRED interceptor on the DEFAULT budget, invisibly. The import then
+     * commits its own transaction after 784 seconds and the ambient one, reaped
+     * long before, throws a checked RollbackException on the way out -- which the
+     * generated subclass cannot declare, so a COMPLETED import answered 500 over a
+     * database holding the whole archive.
+     *
+     * NOT_SUPPORTED is the binding that suppresses the inherited one. Removing it
+     * restores the failure in a form nobody would recognise, because the code
+     * would still SAY 1800 seconds.
      */
     @Test
     public void runOpensItsOwnTransactionSoItCanCarryATimeout() throws Exception {
         java.lang.reflect.Method run = LegacyImportService.class.getMethod("run");
 
-        assertNull(run.getAnnotation(jakarta.transaction.Transactional.class),
-                "@Transactional on run() silently reimposes the 240s default, and the import "
-                        + "needs longer than that -- see IMPORT_TIMEOUT_SECONDS");
+        jakarta.transaction.Transactional tx =
+                run.getAnnotation(jakarta.transaction.Transactional.class);
+        assertNotNull(tx, "a bare run() inherits REQUIRED from the base class and gets the 240s "
+                + "default -- see IMPORT_TIMEOUT_SECONDS");
+        assertEquals(jakarta.transaction.Transactional.TxType.NOT_SUPPORTED, tx.value(),
+                "anything but NOT_SUPPORTED leaves an ambient transaction around a 784-second "
+                        + "operation");
 
         assertTrue(LegacyImportService.IMPORT_TIMEOUT_SECONDS > 240,
                 "a budget at or under the platform default is the bug this replaced");
