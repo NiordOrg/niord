@@ -39,6 +39,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
+import org.niord.core.publication.series.IssueArchiveService;
 import org.niord.core.publication.series.IssueAuditEntry;
 import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueCurationService;
@@ -742,6 +743,86 @@ public class PublicationIssueRestService {
                 .header("Content-Disposition", "inline; filename=\"" + p.path().getFileName() + "\"")
                 .header("Cache-Control", "no-store")
                 .build();
+    }
+
+    @Inject
+    IssueArchiveService archives;
+
+    /**
+     * I26. One superseded document, as it was before something overwrote it.
+     *
+     * THE ONLY DOOR TO THE ARCHIVE. The store sits outside the served repository
+     * root so that no anonymous repository read can reach a withdrawn edition,
+     * which means nothing else in the system can reach one either -- until this.
+     * Every generation of every language is kept, so the address is the audit
+     * entry that wrote it plus the language: "the archived Danish file of this
+     * issue" names as many files as the issue has been amended, and only the
+     * entry tells them apart.
+     *
+     * @PermitAll with the role checked in the body, and that is not a weakening.
+     * A one-time ticket does not produce a security identity, so a declarative
+     * gate refuses the request before the ticket is consulted -- and this
+     * response is a document, opened by a top-level navigation that carries no
+     * bearer token. The check below is the gate; @ProgrammaticAdmin is what makes
+     * the tier matrix hold it to that.
+     *
+     * Nothing is audited. Reading the record is not an event in it.
+     */
+    @GET
+    @Path("/issue/{publicId}/archive/{auditEntryId}/{lang}")
+    @Produces("application/pdf")
+    @PermitAll
+    @ProgrammaticAdmin
+    @NoCache
+    public jakarta.ws.rs.core.Response archivedFile(@PathParam("publicId") String publicId,
+                                                    @PathParam("auditEntryId") Integer auditEntryId,
+                                                    @PathParam("lang") String lang) throws Exception {
+        if (!userService.isCallerInRole(Roles.ADMIN)) {
+            throw new jakarta.ws.rs.WebApplicationException(403);
+        }
+        PublicationIssue issue = required(publicId);
+        IssueArchiveService.ArchivedFile file = archives.resolve(issue, auditEntryId, lang);
+
+        // Read rather than streamed from the handle: the resolver has already
+        // decided this file exists and is inside the root, and holding the
+        // decision and the read together is what stops the two disagreeing about
+        // which file is being served.
+        byte[] bytes = java.nio.file.Files.readAllBytes(file.path());
+        return jakarta.ws.rs.core.Response.ok(bytes)
+                .header("Content-Length", file.sizeBytes())
+                // The name it had when it was public, not the stamped name it is
+                // stored under -- the stamp exists to keep generations apart on
+                // disk and names a file nobody ever downloaded.
+                .header("Content-Disposition", disposition(file.fileName()))
+                // A withdrawn edition must not outlive the minute its ticket was
+                // good for. Anything a browser keeps is a copy of a document that
+                // was superseded on purpose, reachable with no credential at all.
+                .header("Cache-Control", "no-store, no-cache, must-revalidate, private")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .build();
+    }
+
+    /**
+     * The disposition header for one archived document.
+     *
+     * The name is data. It was written into the archive column by a release that
+     * may be years old, and a quote, a backslash or a newline in it would end the
+     * quoted string -- or the header -- and leave the client parsing a response
+     * nobody sent. Percent-encoding neutralises all three, and it is what every
+     * other file response in this application already does.
+     *
+     * BOTH FORMS, because the names here are Danish. The plain form is
+     * percent-encoded so it is ASCII and safe, which is also why a browser
+     * reading only that one shows an ugly name; the RFC 6266 form carries the
+     * same encoding as its actual specified syntax, so a browser that reads it --
+     * every current one does -- saves the file as "EfS uge 27, 2026.pdf" rather
+     * than as "EfS%20uge%2027%2C%202026.pdf".
+     */
+    private static String disposition(String fileName) {
+        String name = fileName == null || fileName.isBlank() ? "document.pdf" : fileName;
+        String encoded = WebUtils.encodeURIComponent(name);
+        return "inline; filename=\"" + encoded + "\"; filename*=UTF-8''" + encoded;
     }
 
     /**

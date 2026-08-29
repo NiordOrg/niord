@@ -36,7 +36,17 @@ public class IssueAuditEntryVo implements IJsonSerializable {
 
     private String reason;
 
-    private String archivePath;
+    /**
+     * What this entry preserved before it overwrote something, or null.
+     *
+     * The LOCATION of the archive is deliberately not here. It is a filesystem
+     * path outside the served repository root, and putting one on the wire hands
+     * every reader of the history panel the layout of a store they are not meant
+     * to be able to address -- while telling them nothing they can act on, since
+     * the bytes are reachable only through the gated stream that resolves the
+     * location itself.
+     */
+    private IssueArchiveVo archive;
 
     private Object detail;
 
@@ -88,12 +98,12 @@ public class IssueAuditEntryVo implements IJsonSerializable {
         this.reason = reason;
     }
 
-    public String getArchivePath() {
-        return archivePath;
+    public IssueArchiveVo getArchive() {
+        return archive;
     }
 
-    public void setArchivePath(String archivePath) {
-        this.archivePath = archivePath;
+    public void setArchive(IssueArchiveVo archive) {
+        this.archive = archive;
     }
 
     public Object getDetail() {

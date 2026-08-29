@@ -204,6 +204,13 @@ public class PublicationTierMatrixTest {
         t.put("DELETE /publication-issues/issue/{publicId}", Tier.ADMIN);
         t.put("POST /publication-issues/issue/{publicId}/preview", Tier.ADMIN);
         t.put("GET /publication-issues/issue/{publicId}/preview/{lang}", Tier.ADMIN);
+        // The archive stream. ADMIN like everything else that reaches a
+        // publication document, but gated in code rather than by annotation: a
+        // one-time ticket produces no security identity, so a declarative gate
+        // would refuse the browser navigation this endpoint exists to serve. The
+        // @ProgrammaticAdmin declaration is what lets the matrix below read the
+        // route as admin, and it asserts the body really performs the check.
+        t.put("GET /publication-issues/issue/{publicId}/archive/{auditEntryId}/{lang}", Tier.ADMIN);
         t.put("GET /publication-issues/issue/{publicId}/publish-checklist", Tier.ADMIN);
         t.put("PUT /publication-issues/issue/{publicId}/publish", Tier.ADMIN);
         t.put("PUT /publication-issues/issue/{publicId}/amend", Tier.ADMIN);
@@ -550,6 +557,77 @@ public class PublicationTierMatrixTest {
         }
     }
 
+    /**
+     * A route that declares its gate in code actually asserts the role, and is
+     * @PermitAll for a reason.
+     *
+     * The declaration is the dangerous half on its own: annotate a method
+     * @ProgrammaticAdmin, forget the check, and the matrix above now reports an
+     * open route as admin-gated -- the exact inversion the matrix exists to
+     * prevent. So the source is read, like the domain guard's, and the two facts
+     * that make the exception legitimate are both pinned: the container gate is
+     * open (or the ticket never reaches the method) and the body closes it.
+     *
+     * BOTH DIRECTIONS, like the tier table. The routes that take the exception
+     * are named below, so adding one is a deliberate edit here rather than a
+     * quiet move of a gate out of the annotations and into a method body -- and
+     * an empty scan, which would otherwise pass over nothing at all, fails.
+     */
+    private static final Set<String> PROGRAMMATIC_GATES = Set.of(
+            // The archive stream: the response IS a document, and it is opened by
+            // a top-level navigation carrying a one-time ticket and no bearer.
+            "PublicationIssueRestService#archivedFile");
+
+    @Test
+    public void everyProgrammaticGateIsOpenAtTheContainerAndClosedInTheBody() throws IOException {
+        List<String> offenders = new ArrayList<>();
+        Set<String> found = new TreeSet<>();
+
+        for (Class<?> resource : NEW_RESOURCES) {
+            String src = sourceOf(resource);
+            for (Method m : resource.getDeclaredMethods()) {
+                if (!m.isAnnotationPresent(ProgrammaticAdmin.class)) {
+                    continue;
+                }
+                found.add(resource.getSimpleName() + "#" + m.getName());
+                if (!m.isAnnotationPresent(PermitAll.class)) {
+                    offenders.add(resource.getSimpleName() + "#" + m.getName()
+                            + " declares a programmatic gate but is not @PermitAll, so the container "
+                            + "refuses the ticketed navigation before the check ever runs");
+                }
+                if (m.isAnnotationPresent(RolesAllowed.class)) {
+                    offenders.add(resource.getSimpleName() + "#" + m.getName()
+                            + " carries both @RolesAllowed and @ProgrammaticAdmin; two gates that can "
+                            + "disagree, and a reader cannot tell which one is meant");
+                }
+                String body = bodyOf(src, m.getName());
+                if (body == null) {
+                    offenders.add(resource.getSimpleName() + "#" + m.getName()
+                            + ": the source scan could not find the method body, so it cannot say "
+                            + "whether the role is checked");
+                    continue;
+                }
+                if (!body.contains("isCallerInRole(Roles.ADMIN)")) {
+                    offenders.add(resource.getSimpleName() + "#" + m.getName()
+                            + " is @PermitAll and @ProgrammaticAdmin but never asks "
+                            + "userService.isCallerInRole(Roles.ADMIN); the route is open");
+                }
+            }
+        }
+
+        assertEquals(new TreeSet<>(PROGRAMMATIC_GATES), found,
+                "the routes taking the programmatic-gate exception are not the ones declared above. "
+                        + "An undeclared one has moved its gate out of the annotations and into a "
+                        + "method body, where nothing inspecting the surface can see it; a declared "
+                        + "one that is gone leaves a standing exemption for a route that could be "
+                        + "reused. And an EMPTY result means the scan itself is broken, which would "
+                        + "otherwise pass over everything in silence.");
+
+        if (!offenders.isEmpty()) {
+            fail("a programmatic admin gate is not what it says:\n  " + String.join("\n  ", offenders));
+        }
+    }
+
     /** Whether a body calls the guard, or calls something in the same file that does. */
     private static boolean asksTheGuard(String src, String body, int depth) {
         if (body.contains("domainGuard.")) {
@@ -782,7 +860,8 @@ public class PublicationTierMatrixTest {
 
     /** One routed method, with its full path and its effective gate. */
     private record Endpoint(String key, Method method, PermitAll permitAll,
-                            RolesAllowed rolesAllowed, DenyAll denyAll) {
+                            RolesAllowed rolesAllowed, DenyAll denyAll,
+                            boolean programmaticAdmin) {
 
         boolean admits(Caller caller) {
             if (denyAll != null) {
@@ -790,6 +869,16 @@ public class PublicationTierMatrixTest {
             }
             if (rolesAllowed != null) {
                 return Arrays.stream(rolesAllowed.value()).anyMatch(caller.roles::contains);
+            }
+            // An @PermitAll route that declares the check in code is admitted the
+            // way its body admits: the container lets everyone through so that a
+            // ticketed navigation reaches the method at all, and the first line
+            // of the method is the gate. Reading it as anonymous here would put a
+            // false anonymous route in the matrix; reading it as admin without
+            // holding the body to that would put a false gate in it -- which is
+            // why the source assertion below exists as well.
+            if (programmaticAdmin) {
+                return caller.roles.contains(Roles.ADMIN);
             }
             // No annotation at all is the container's default, which for these
             // resources is "deny" -- but every route here carries one, and the
@@ -803,6 +892,9 @@ public class PublicationTierMatrixTest {
             }
             if (rolesAllowed != null) {
                 return "@RolesAllowed" + Arrays.toString(rolesAllowed.value());
+            }
+            if (programmaticAdmin) {
+                return "@PermitAll + @ProgrammaticAdmin";
             }
             return permitAll != null ? "@PermitAll" : "(none)";
         }
@@ -838,7 +930,8 @@ public class PublicationTierMatrixTest {
             out.add(new Endpoint(verb + " " + path, m,
                     declaresOwn ? m.getAnnotation(PermitAll.class) : classPermit,
                     declaresOwn ? m.getAnnotation(RolesAllowed.class) : classRoles,
-                    declaresOwn ? m.getAnnotation(DenyAll.class) : classDeny));
+                    declaresOwn ? m.getAnnotation(DenyAll.class) : classDeny,
+                    m.isAnnotationPresent(ProgrammaticAdmin.class)));
         }
         return out;
     }

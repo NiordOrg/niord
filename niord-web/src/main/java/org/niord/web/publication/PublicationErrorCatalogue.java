@@ -16,6 +16,7 @@
 
 package org.niord.web.publication;
 
+import org.niord.core.publication.series.IssueArchiveService;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.StaleVersionGuard;
 
@@ -136,6 +137,15 @@ public final class PublicationErrorCatalogue {
         put("SERIES_NOT_FOUND", 404);
         put("ISSUE_NOT_FOUND", 404);
         put("CATEGORY_NOT_FOUND", 404);
+        // The superseded document behind a history line, unreachable -- and 404
+        // whichever of the five reasons it was. The audit entry belongs to
+        // another issue, or preserved nothing, or preserved nothing in the
+        // language asked for, or names a location outside the archive root, or
+        // names a file that is no longer on disk. A 403 for the first of those
+        // would confirm the row exists to somebody who cannot see the issue it
+        // hangs off, and the other four are indistinguishable to a caller who
+        // can do nothing differently on hearing which.
+        put(IssueArchiveService.NOT_FOUND, 404);
 
         // 409 -- the request is well formed, but the thing is in the wrong state.
         // Distinct from 400 because the SAME request may succeed later.

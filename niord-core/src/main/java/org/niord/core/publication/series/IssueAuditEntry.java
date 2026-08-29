@@ -213,7 +213,10 @@ public class IssueAuditEntry extends BaseEntity<Integer> {
         vo.setActorLabel(user == null ? actorLabel : user.getName());
         vo.setCreated(created);
         vo.setReason(reason);
-        vo.setArchivePath(archivePath);
+        // The archive is described, never located. Which languages this entry
+        // superseded is what a history panel offers to open; where the bytes sit
+        // is between the stream endpoint and the disk.
+        vo.setArchive(IssueArchiveService.archiveOf(this));
         vo.setDetail(detail);
         return vo;
     }
