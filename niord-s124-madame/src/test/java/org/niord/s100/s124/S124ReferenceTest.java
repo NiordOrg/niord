@@ -110,8 +110,10 @@ public class S124ReferenceTest extends S124TestBase {
         java.util.List<References> references = findReferences(dataset);
         assertEquals("Should have one reference", 1, references.size());
         
+        // An UPDATE supersedes the referenced warning (ReferenceType.cancelsReferencedMessage), so the reader must
+        // not be left thinking the old warning is still in force.
         References s124Ref = references.get(0);
-        assertFalse(s124Ref.isNoMessageOnHand());
+        assertTrue(s124Ref.isNoMessageOnHand());
     }
     
     @Test
@@ -311,8 +313,9 @@ public class S124ReferenceTest extends S124TestBase {
         java.util.List<References> references = findReferences(dataset);
         assertEquals("Should have one reference", 1, references.size());
         
+        // A REPETITION likewise supersedes the referenced warning
         References s124Ref = references.get(0);
-        assertFalse(s124Ref.isNoMessageOnHand());
+        assertTrue(s124Ref.isNoMessageOnHand());
     }
     
     // Helper methods

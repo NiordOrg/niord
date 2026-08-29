@@ -25,7 +25,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -50,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.CurveProperty;
 import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.DataSetIdentificationType;
 import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.DatasetPurposeType;
+import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.MDTopicCategoryCode;
 import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.PointProperty;
 import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.S100SpatialAttributeType;
 import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.SurfaceProperty;
@@ -77,6 +80,8 @@ import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPreamble;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnTitleType;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnTypeGeneralLabel;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnTypeGeneralType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.ReferenceCategoryLabel;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.ReferenceCategoryType;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.References;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.RestrictionLabel;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.RestrictionType;
@@ -84,6 +89,7 @@ import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.WarningInformationType;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.WarningTypeLabel;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.WarningTypeType;
 import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.impl.DatasetImpl;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.util.S124CodedValues;
 
 /**
  * Maps from a Niord {@link Message} to a S-124 message
@@ -93,6 +99,9 @@ class S124Mapper {
     private static final net.opengis.gml._3.ObjectFactory gmlObjectFactory = new net.opengis.gml._3.ObjectFactory();
     private static final dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory();
     private static final dk.dma.niord.s100.xmlbindings.s124.v2_0_0.ObjectFactory s124ObjectFactory = new dk.dma.niord.s100.xmlbindings.s124.v2_0_0.ObjectFactory();
+
+    /** S-100 Part 10b Table 10b-4: application profile of a base dataset. */
+    private static final String APPLICATION_PROFILE_BASE = "1";
 
     String country = "DK";
 
@@ -110,7 +119,9 @@ class S124Mapper {
 
     private int nextGeomId = 1;
 
-    String productionAgency = "Danish Maritime Authority";
+    // S-124 clause 4.3.3: agencyResponsibleForProduction takes the agency's S-62 producer code from the IHO GI
+    // Registry, not the agency's name
+    String productionAgency = S124Identifiers.PRODUCER_CODE;
 
     dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory profileFactory = new dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory();
 
@@ -179,7 +190,9 @@ class S124Mapper {
         }
 
         Dataset ds = new DatasetImpl();
-        ds.setId(dataset.getDatasetId());
+        // gml:id is of XSD type ID, so the raw dataset id (a Niord short id such as "Local Warning-120-26") has to be
+        // reduced to an NCName first
+        ds.setId(S124Identifiers.toNCName(dataset.getDatasetId()));
 
         // ====================================================================//
         // BOUNDED BY SECTION //
@@ -194,12 +207,19 @@ class S124Mapper {
         datasetIdentificationType.setEncodingSpecificationEdition(dataset.getEncodingSpecificationEdition());
         datasetIdentificationType.setProductIdentifier(dataset.getProductionIdentifier());
         datasetIdentificationType.setProductEdition(dataset.getProductionEdition());
+        // S-100 Part 10b Table 10b-4 defines "1" for base datasets and "2" for update datasets, and pairs the value
+        // with datasetPurpose below
+        datasetIdentificationType.setApplicationProfile(APPLICATION_PROFILE_BASE);
         datasetIdentificationType.setDatasetFileIdentifier(dataset.getFileIdentifier());
         datasetIdentificationType.setDatasetTitle(dataset.getTitle());
         datasetIdentificationType.setDatasetReferenceDate(LocalDate.now());
         datasetIdentificationType.setDatasetLanguage(dataset.getLanguage());
         datasetIdentificationType.setDatasetAbstract(dataset.getAbstractText());
+        // datasetTopicCategory is mandatory (minOccurs=1); navigational warnings are ocean related
+        datasetIdentificationType.getDatasetTopicCategories().add(MDTopicCategoryCode.OCEANS);
         datasetIdentificationType.setDatasetPurpose(DatasetPurposeType.BASE);
+        // updateNumber is mandatory and is 0 for a base dataset
+        datasetIdentificationType.setUpdateNumber(BigInteger.ZERO);
 
         ds.setDatasetIdentificationInformation(datasetIdentificationType);
 
@@ -246,8 +266,8 @@ class S124Mapper {
     private NavwarnPart toDataModelNAVWARNPart(Message message, MessagePart messagePart) {
         NavwarnPart part = s124ObjectFactory.createNavwarnPart();
 
-        // From AbstractGMLType
-        part.setId(toMrn(message) + "." + messagePart.getIndexNo());
+        // From AbstractGMLType. The MRN cannot be used here: gml:id is an NCName and an MRN contains colons.
+        part.setId(toMessageId(message) + "." + messagePart.getIndexNo());
 
         // From AbstractFeatureType
         part.setBoundedBy(S124DatasetBuilder.generateBoundingShape(messagePart));
@@ -262,7 +282,9 @@ class S124Mapper {
             for (Reference ref : message.getReferences()) {
                 if (ref.getMessage() != null && ref.getMessage().getMainType() == NW) {
                     ReferenceType rt = profileFactory.createReferenceType();
-                    rt.setHref("#" + toMessageId(ref.getMessage()));
+                    // Must address the References member, whose id carries the "R." prefix - otherwise the fragment
+                    // has no target in the document and the association cannot be resolved.
+                    rt.setHref("#" + toReferenceId(ref.getMessage()));
                     rt.setRole(ref.getType() != null ? ref.getType().name() : "reference");
                     part.getAffects().add(rt);
                 }
@@ -368,6 +390,19 @@ class S124Mapper {
                 }
             }
         }
+        if (p.getGeneralAreas().isEmpty()) {
+            // generalArea is mandatory, so a message that carries no area would otherwise produce a dataset that the
+            // S-124 schema rejects. Fall back to the vicinity, and failing that to the nationality.
+            MessageDesc md = msg.getDesc(lang);
+            String fallback = (md != null && StringUtils.isNotBlank(md.getVicinity())) ? md.getVicinity() : country;
+            log.warn("Message {} has no area; falling back to generalArea \"{}\"", msg.getShortId(), fallback);
+            GeneralAreaType gat = s124ObjectFactory.createGeneralAreaType();
+            LocationNameType locationName = s124ObjectFactory.createLocationNameType();
+            locationName.setLanguage(lang(lang));
+            locationName.setText(fallback);
+            gat.getLocationNames().add(locationName);
+            p.getGeneralAreas().add(gat);
+        }
 
         /************ locality: locality [0..*] (ordered} ************/
         MessageDesc mdVicinity = msg.getDesc(lang);
@@ -407,43 +442,75 @@ class S124Mapper {
 
         /************ navwarnTypeGeneral: navwarnTypeGeneral ************/
         NavwarnTypeGeneralType ngt = toNavwarnTypeGeneral(msg);
-        if (ngt != null) {
-            p.setNavwarnTypeGeneral(ngt);
+        if (ngt == null) {
+            // navwarnTypeGeneral is mandatory. A message without a mappable category gets the same treatment as one
+            // whose category is not recognised.
+            log.warn("Message {} has no mappable category; falling back to navwarnTypeGeneral \"Other Hazards\"", msg.getShortId());
+            ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.OTHER_HAZARDS);
         }
+        p.setNavwarnTypeGeneral(ngt);
 
         /************ publicationTime: dateTime ************/
-        if (msg.getPublishDateFrom() != null) {
-            p.setPublicationTime(toOtherOffsetDateTime(msg.getPublishDateFrom()));
+        // publicationTime is mandatory, so an unpublished message falls back to its audit dates. Dating a warning
+        // from when its record happened to be touched is a real inference, so say so out loud.
+        if (msg.getPublishDateFrom() == null) {
+            log.warn("Message {} has no publish date; dating publicationTime from {}", msg.getShortId(),
+                    msg.getUpdated() != null ? "the updated timestamp" : msg.getCreated() != null ? "the created timestamp" : "the current time");
         }
+        p.setPublicationTime(toOtherOffsetDateTime(referenceDate(msg)));
         return p;
     }
 
     private List<References> toDataModelReferences(Message message) {
         List<References> result = new ArrayList<>();
         List<Reference> references = message.getReferences();
+        // A message can reference the same message more than once (say a repetition and an update), which would put a
+        // duplicate gml:id in the dataset. Deduplicate on the referenced message itself rather than on the derived id,
+        // so that two genuinely different warnings are never conflated by the id sanitisation.
+        Set<Object> referenced = new HashSet<>();
+        Set<String> emittedIds = new HashSet<>();
         if (references != null) {
             for (Reference r : references) {
                 Message refMessage = r.getMessage();
                 if (refMessage != null && refMessage.getMainType() == NW) {
-                    References gmlreferences = s124ObjectFactory.createReferences();
-                    gmlreferences.setId(toMessageId(refMessage));
-                    gmlreferences.setNoMessageOnHand(false);
-
-                    // Add reference type information if available
-                    if (r.getType() != null) {
-                        switch (r.getType()) {
-                            case CANCELLATION:
-                                // This reference cancels the referenced message
-                                gmlreferences.setNoMessageOnHand(true);
-                                break;
-                            case UPDATE:
-                            case REPETITION:
-                            case REFERENCE:
-                            default:
-                                gmlreferences.setNoMessageOnHand(false);
-                                break;
-                        }
+                    if (!referenced.add(identityOf(refMessage))) {
+                        log.warn("Message {} references {} more than once; keeping only the first", message.getShortId(),
+                                refMessage.getShortId());
+                        continue;
                     }
+                    String referenceId = toReferenceId(refMessage);
+                    if (!emittedIds.add(referenceId)) {
+                        // Two different warnings whose short ids differ only in characters that are not admissible in
+                        // an NCName. Emitting both would produce a duplicate gml:id, i.e. invalid XML.
+                        log.error("Message {} references {}, whose id \"{}\" collides with an earlier reference; skipping it",
+                                message.getShortId(), refMessage.getShortId(), referenceId);
+                        continue;
+                    }
+                    References gmlreferences = s124ObjectFactory.createReferences();
+                    gmlreferences.setId(referenceId);
+
+                    // Niord declares which reference types supersede the referenced message. All of them but a plain
+                    // REFERENCE cancel it, and a consumer that saw WARNING_REFERENCE would keep treating the
+                    // superseded warning as being in force.
+                    // NB: ReferenceType here is the GML association type, so the Niord enum needs qualifying
+                    boolean cancels = r.getType() != null
+                            && org.niord.model.message.ReferenceType.cancelsReferencedMessage().contains(r.getType());
+                    ReferenceCategoryLabel category = cancels ? ReferenceCategoryLabel.WARNING_CANCELLATION
+                            : ReferenceCategoryLabel.WARNING_REFERENCE;
+                    gmlreferences.setNoMessageOnHand(cancels);
+
+                    // referenceCategory is mandatory
+                    ReferenceCategoryType referenceCategory = s124ObjectFactory.createReferenceCategoryType();
+                    referenceCategory.setValue(category);
+                    referenceCategory.setCode(S124CodedValues.codeOf(category));
+                    gmlreferences.setReferenceCategory(referenceCategory);
+
+                    // theWarning is mandatory. The referenced warning lives in its own dataset, so it is addressed by
+                    // its MRN rather than by a local "#id". Clause 10b-9 wants an association to carry a role.
+                    ReferenceType theWarning = profileFactory.createReferenceType();
+                    theWarning.setHref(toMrn(refMessage));
+                    theWarning.setRole("theWarning");
+                    gmlreferences.setTheWarning(theWarning);
 
                     gmlreferences.getMessageSeriesIdentifiers().add(toMessageSeriesIdentifierType(refMessage));
                     result.add(gmlreferences);
@@ -453,6 +520,28 @@ class S124Mapper {
         return result;
     }
 
+    /**
+     * The {@code gml:id} of the References member describing a referenced warning. The prefix keeps it distinct from
+     * the preamble id of the message doing the referencing, which a self-reference would otherwise collide with.
+     * <p>
+     * Every {@code #fragment} pointing at a References member has to be built from this same method, or the
+     * association dangles.
+     */
+    private String toReferenceId(Message refMessage) {
+        return "R." + toMessageId(refMessage);
+    }
+
+    /**
+     * Identifies a message for deduplication purposes, independent of any id sanitisation.
+     */
+    private static Object identityOf(Message msg) {
+        return msg.getUid() != null ? msg.getUid() : msg.getId();
+    }
+
+    /**
+     * Builds the {@code gml:id} identifying a message inside a dataset. The result is an NCName, because gml:id is of
+     * XSD type ID and Niord short ids such as "Local Warning-120-26" contain spaces.
+     */
     private String toMessageId(Message msg) {
         StringBuilder sb = new StringBuilder();
         sb.append(country).append(".");
@@ -461,35 +550,54 @@ class S124Mapper {
         } else {
             sb.append(msg.getId());
         }
-        return sb.toString();
+        return S124Identifiers.toNCName(sb.toString());
     }
 
+    /**
+     * Builds a messageSeriesIdentifier. Every child except interoperabilityIdentifier and nationality is mandatory,
+     * so each one falls back to the best value available rather than being left out.
+     */
     private MessageSeriesIdentifierType toMessageSeriesIdentifierType(Message message) {
         MessageSeriesIdentifierType messageSeriesIdentifer = s124ObjectFactory.createMessageSeriesIdentifierType();
 
-        if (message.getPublishDateFrom() != null) {
-            int refYear = LocalDate.ofInstant(message.getPublishDateFrom().toInstant(), ZoneId.systemDefault()).getYear();
-            messageSeriesIdentifer.setYear(refYear);
-        }
+        // year is mandatory
+        Date reference = referenceDate(message);
+        messageSeriesIdentifer.setYear(LocalDate.ofInstant(reference.toInstant(), ZoneId.systemDefault()).getYear());
 
         messageSeriesIdentifer.setNationality(country);
         messageSeriesIdentifer.setAgencyResponsibleForProduction(productionAgency);
 
-        if (message.getMessageSeries() != null) {
-            messageSeriesIdentifer.setNameOfSeries(message.getMessageSeries().getSeriesId());
+        // nameOfSeries is mandatory
+        String nameOfSeries = message.getMessageSeries() != null ? message.getMessageSeries().getSeriesId() : null;
+        if (StringUtils.isBlank(nameOfSeries)) {
+            nameOfSeries = country + "-" + message.getMainType().name();
+            log.warn("Message {} has no message series; falling back to nameOfSeries \"{}\"", message.getShortId(), nameOfSeries);
         }
+        messageSeriesIdentifer.setNameOfSeries(nameOfSeries);
 
         messageSeriesIdentifer.setInteroperabilityIdentifier(toMrn(message));
 
-        if (message.getNumber() != null) {
-            messageSeriesIdentifer.setWarningNumber(message.getNumber());
-        }
+        // warningNumber is mandatory; 0 is the placeholder a message that has not been numbered yet gets
+        messageSeriesIdentifer.setWarningNumber(message.getNumber() != null ? message.getNumber() : 0);
 
         if (message.getType() != null) {
             messageSeriesIdentifer.setWarningType(toComplexTypeWarningTypeType(message.getType()));
         }
 
         return messageSeriesIdentifer;
+    }
+
+    /**
+     * The date a message should be dated by: its publication date if it has one, else the best audit date available.
+     */
+    private static Date referenceDate(Message message) {
+        if (message.getPublishDateFrom() != null) {
+            return message.getPublishDateFrom();
+        }
+        if (message.getUpdated() != null) {
+            return message.getUpdated();
+        }
+        return message.getCreated() != null ? message.getCreated() : new Date();
     }
 
 
@@ -516,26 +624,28 @@ class S124Mapper {
 
     private WarningTypeType toComplexTypeWarningTypeType(Type type) {
         WarningTypeType result = s124ObjectFactory.createWarningTypeType();
+        WarningTypeLabel label;
         switch (type) {
         case LOCAL_WARNING:
-            result.setValue(WarningTypeLabel.LOCAL_NAVIGATIONAL_WARNING);
-            result.setCode(BigInteger.valueOf(1));
+            label = WarningTypeLabel.LOCAL_NAVIGATIONAL_WARNING;
             break;
         case COASTAL_WARNING:
-            result.setValue(WarningTypeLabel.COASTAL_NAVIGATIONAL_WARNING);
-            result.setCode(BigInteger.valueOf(2));
+            label = WarningTypeLabel.COASTAL_NAVIGATIONAL_WARNING;
             break;
         case SUBAREA_WARNING:
-            result.setValue(WarningTypeLabel.SUB_AREA_NAVIGATIONAL_WARNING);
-            result.setCode(BigInteger.valueOf(3));
+            label = WarningTypeLabel.SUB_AREA_NAVIGATIONAL_WARNING;
             break;
         case NAVAREA_WARNING:
-            result.setValue(WarningTypeLabel.NAVAREA_NAVIGATIONAL_WARNING);
-            result.setCode(BigInteger.valueOf(4));
+            label = WarningTypeLabel.NAVAREA_NAVIGATIONAL_WARNING;
             break;
         default:
-            log.warn("Messages of type {} not mapped.", type.name());
+            // warningType is mandatory and its content is an enumeration, so returning an empty element here would
+            // only produce invalid XML further down. map0 already restricts us to NW messages, whose four types are
+            // all handled above.
+            throw new IllegalArgumentException("Messages of type " + type.name() + " cannot be mapped to an S-124 warning type");
         }
+        result.setValue(label);
+        result.setCode(S124CodedValues.codeOf(label));
         return result;
     }
 
@@ -551,63 +661,66 @@ class S124Mapper {
         return String.format("G.%s.%d", id, nextGeomId++);
     }
 
+    /**
+     * Pairs a navwarnTypeGeneral label with its code. The code is always derived from the label via
+     * {@link S124CodedValues#codeOf}, so the two can never drift apart.
+     */
+    private NavwarnTypeGeneralType navwarnTypeGeneral(NavwarnTypeGeneralLabel label) {
+        NavwarnTypeGeneralType ngt = s124ObjectFactory.createNavwarnTypeGeneralType();
+        ngt.setValue(label);
+        ngt.setCode(S124CodedValues.codeOf(label));
+        return ngt;
+    }
+
     private NavwarnTypeGeneralType toNavwarnTypeGeneral(Message message) {
         // Map based on message categories
         if (message.getCategories() != null && !message.getCategories().isEmpty()) {
             Category primaryCategory = message.getCategories().get(0);
-            NavwarnTypeGeneralType ngt = s124ObjectFactory.createNavwarnTypeGeneralType();
 
-            // Map category name to appropriate code and value based on actual Niord category structure
+            // Map category name to appropriate value based on actual Niord category structure
             // TODO: These are hardcoded to what we have defined in NiordDK.
             // A generic solution would probably be to setup the S-124 Category type when
             // configuring categories on the Sysadmin page
             String categoryName = getCategoryName(primaryCategory);
             if (categoryName != null) {
+                NavwarnTypeGeneralType ngt;
                 switch (categoryName.toLowerCase()) {
                     case "light":
                     case "light buoy":
                     case "buoy":
                     case "beacon":
                         // Aids to navigation changes
-                        ngt.setCode(BigInteger.valueOf(1));
-                        ngt.setValue(NavwarnTypeGeneralLabel.AIDS_TO_NAVIGATION_CHANGES);
+                        ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.AIDS_TO_NAVIGATION_CHANGES);
                         break;
                     case "drifting object":
                         // Drifting hazards
-                        ngt.setCode(BigInteger.valueOf(3));
-                        ngt.setValue(NavwarnTypeGeneralLabel.DRIFTING_HAZARDS);
+                        ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.DRIFTING_HAZARDS);
                         break;
                     case "radio navigation":
                         // Communication or broadcast service changes (closest match for radio navigation issues)
-                        ngt.setCode(BigInteger.valueOf(13));
-                        ngt.setValue(NavwarnTypeGeneralLabel.COMMUNICATION_OR_BROADCAST_SERVICE_CHANGE);
+                        ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.COMMUNICATION_OR_BROADCAST_SERVICE_CHANGE);
                         break;
                     case "firing exercises":
                         // Special operations
-                        ngt.setCode(BigInteger.valueOf(10));
-                        ngt.setValue(NavwarnTypeGeneralLabel.SPECIAL_OPERATIONS);
+                        ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.SPECIAL_OPERATIONS);
                         break;
                     case "obstruction":
                         // Check specific templates for more granular mapping
                         String templateType = getObstructionTemplateType(message);
                         if ("wreck".equals(templateType)) {
-                            ngt.setCode(BigInteger.valueOf(2));
-                            ngt.setValue(NavwarnTypeGeneralLabel.DANGEROUS_NATURAL_PHENOMENA);
+                            ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.DANGEROUS_NATURAL_PHENOMENA);
                         } else if ("uncharted obstruction".equals(templateType) ||
                                    "reduced depth".equals(templateType)) {
-                            ngt.setCode(BigInteger.valueOf(8));
-                            ngt.setValue(NavwarnTypeGeneralLabel.NEWLY_DISCOVERED_DANGERS);
+                            ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.NEWLY_DISCOVERED_DANGERS);
                         } else {
                             // Other underwater operations
-                            ngt.setCode(BigInteger.valueOf(9));
-                            ngt.setValue(NavwarnTypeGeneralLabel.SPECIAL_OPERATIONS);
+                            ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.SPECIAL_OPERATIONS);
                         }
                         break;
                     case "ports":
                     default:
                         // Other hazards
-                        ngt.setCode(BigInteger.valueOf(16));
-                        ngt.setValue(NavwarnTypeGeneralLabel.OTHER_HAZARDS);
+                        ngt = navwarnTypeGeneral(NavwarnTypeGeneralLabel.OTHER_HAZARDS);
                         break;
                 }
                 return ngt;
@@ -700,30 +813,39 @@ class S124Mapper {
         return null;
     }
 
+    /**
+     * Pairs a restriction label with its code, derived via {@link S124CodedValues#codeOf}.
+     */
+    private RestrictionType restriction(RestrictionLabel label) {
+        RestrictionType restriction = s124ObjectFactory.createRestrictionType();
+        restriction.setValue(label);
+        restriction.setCode(S124CodedValues.codeOf(label));
+        return restriction;
+    }
+
     private RestrictionType toRestrictionType(Message message) {
         // Check message tags or categories for restriction information
         if (message.getTags() != null) {
             for (MessageTag tag : message.getTags()) {
                 if ("RESTRICTED".equalsIgnoreCase(tag.getName())) {
-                    RestrictionType restriction = s124ObjectFactory.createRestrictionType();
-                    restriction.setCode(BigInteger.valueOf(1));
-                    restriction.setValue(RestrictionLabel.ENTRY_PROHIBITED);
-                    return restriction;
+                    return restriction(RestrictionLabel.ENTRY_PROHIBITED);
                 } else if ("CAUTION".equalsIgnoreCase(tag.getName())) {
-                    RestrictionType restriction = s124ObjectFactory.createRestrictionType();
-                    restriction.setCode(BigInteger.valueOf(2));
-                    restriction.setValue(RestrictionLabel.ENTRY_RESTRICTED);
-                    return restriction;
+                    return restriction(RestrictionLabel.ENTRY_RESTRICTED);
                 }
             }
         }
         return null;
     }
 
+    /**
+     * Builds the MRN identifying a message. This is used for interoperabilityIdentifier only - an MRN contains colons
+     * and can therefore never serve as a {@code gml:id}.
+     */
     private static String toMrn(Message msg) {
         String internalId = (msg.getShortId() != null && !msg.getShortId().trim().isEmpty())
             ? msg.getShortId() : msg.getId().toString();
-        return "urn:mrn:iho:" + msg.getMainType().name().toLowerCase() + ":dk:" + internalId.toLowerCase();
+        // A space is not admissible anywhere in a URI, so the short id has to be reduced to an MRN-safe segment
+        return "urn:mrn:iho:" + msg.getMainType().name().toLowerCase() + ":dk:" + S124Identifiers.toMrnSegment(internalId);
     }
 
     private static OffsetDateTime toOtherOffsetDateTime(Date date) {
