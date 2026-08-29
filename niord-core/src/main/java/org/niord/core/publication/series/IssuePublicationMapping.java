@@ -190,9 +190,9 @@ public final class IssuePublicationMapping {
         }
         vo.setDescs(descs);
 
-        // LINK when there is somewhere to send a reader, REPOSITORY when the file
-        // is ours, NONE when neither. Derived rather than stored: an issue's file
-        // can arrive after it is created, and the type has to follow.
+        // From the SERIES' content mode, and from nothing else. What kind of
+        // publication this is was declared once on the series; it is not a
+        // property of what one issue happens to be carrying today.
         vo.setType(typeOf(issue));
 
         return vo;
@@ -232,13 +232,20 @@ public final class IssuePublicationMapping {
     /** What the repository serves its files under. */
     static final String REPO_FILE_PREFIX = "/rest/repo/file/";
 
+    /**
+     * The type, derived from the series' content mode by the one bijection.
+     *
+     * NOT from the issue's links or files. Every issue carries a link to its own
+     * document -- a repository file is served over one -- so reading the descs
+     * reported LINK for the whole estate the moment it went live: the weekly
+     * notices stopped being message reports and the annexes stopped being
+     * repository files, without a single id or ordering changing. The message
+     * editor's publication picker narrows on MESSAGE_REPORT and would have found
+     * nothing at all.
+     */
     private static PublicationType typeOf(PublicationIssue issue) {
-        boolean anyLink = descsOf(issue).stream().anyMatch(d -> notBlank(d.getLink()));
-        if (anyLink) {
-            return PublicationType.LINK;
-        }
-        boolean anyFile = descsOf(issue).stream().anyMatch(d -> notBlank(d.getFilePath()));
-        return anyFile ? PublicationType.REPOSITORY : PublicationType.NONE;
+        PublicationSeries series = issue.getSeries();
+        return ContentMode.publicationTypeOf(series == null ? null : series.getContentMode());
     }
 
     /** The descs, never null. One guard, so the callers cannot each forget it differently. */

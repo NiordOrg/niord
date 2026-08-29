@@ -95,6 +95,20 @@ public class PublicationSearchAdapter extends BaseService {
             jpql.append(" AND s.messagePublication = :messagePublication");
             bindings.put("messagePublication", params.getMessagePublication());
         }
+        if (params.getType() != null) {
+            // The INVERSE of the derivation the payload emits, and it has to be
+            // exactly that. The type a row reports comes from its series' content
+            // mode, so a type filter is a content-mode filter; narrowing on
+            // anything else -- or, as this half did, on nothing at all -- returns
+            // rows the caller then reads a different type off.
+            //
+            // The legacy half applies its stored type column, so leaving this out
+            // made ?type= mean two different things in one union: the editor's
+            // message-report picker was served every issue in the estate, link and
+            // uploaded-file publications included.
+            jpql.append(" AND s.contentMode = :contentMode");
+            bindings.put("contentMode", ContentMode.ofPublicationType(params.getType()));
+        }
         if (params.getDomain() != null && !params.getDomain().isBlank()) {
             // A series with NO domain matches every domain, which is what legacy
             // means by a null one: Publication.findRecordingPublications reads

@@ -134,11 +134,11 @@ public class IssuePickerService {
             params.put("messagePublication", query.messagePublication());
         }
         if (query.type() != null) {
-            // The legacy vocabulary maps onto the content mode by a total
+            // The published type vocabulary maps onto the content mode by a total
             // bijection, so a type filter is a content-mode filter and there is
             // nothing to store or maintain for it.
             where.append(" AND s.contentMode = :contentMode");
-            params.put("contentMode", contentModeOf(query.type()));
+            params.put("contentMode", ContentMode.ofPublicationType(query.type()));
         }
         if (query.domain() != null && !query.domain().isBlank()) {
             // A series with NO domain matches every domain. Written as an explicit
@@ -281,7 +281,7 @@ public class IssuePickerService {
         }
         vo.setStatus(issue.getStatus() == null ? null : issue.getStatus().name());
         vo.setPublicFrom(issue.getPublicFrom());
-        vo.setType(legacyTypeOf(series == null ? null : series.getContentMode()));
+        vo.setType(ContentMode.publicationTypeOf(series == null ? null : series.getContentMode()));
         vo.setMessagePublication(series == null ? null : series.getMessagePublication());
         vo.setLanguageSpecific(series == null || series.isLanguageSpecific());
 
@@ -304,38 +304,4 @@ public class IssuePickerService {
         return vo;
     }
 
-    /**
-     * The legacy publication type for a content mode.
-     *
-     * The mapping is total and bijective, which is why nothing stores it: a
-     * second column can disagree with the first, a derivation cannot. Note that
-     * this reads the SERIES' declared content mode, not whether a particular
-     * issue happens to have a file yet -- a picker filtering on MESSAGE_REPORT is
-     * asking what kind of publication this is, and an issue that has not been
-     * rendered yet is still one.
-     */
-    public static PublicationType legacyTypeOf(ContentMode mode) {
-        if (mode == null) {
-            return PublicationType.NONE;
-        }
-        return switch (mode) {
-            case GENERATED_FROM_QUERY -> PublicationType.MESSAGE_REPORT;
-            case UPLOADED_FILE -> PublicationType.REPOSITORY;
-            case EXTERNAL_LINK -> PublicationType.LINK;
-            case NONE -> PublicationType.NONE;
-        };
-    }
-
-    /** The same bijection, read the other way, so a type filter narrows on the stored column. */
-    public static ContentMode contentModeOf(PublicationType type) {
-        if (type == null) {
-            return ContentMode.NONE;
-        }
-        return switch (type) {
-            case MESSAGE_REPORT -> ContentMode.GENERATED_FROM_QUERY;
-            case REPOSITORY -> ContentMode.UPLOADED_FILE;
-            case LINK -> ContentMode.EXTERNAL_LINK;
-            case NONE -> ContentMode.NONE;
-        };
-    }
 }

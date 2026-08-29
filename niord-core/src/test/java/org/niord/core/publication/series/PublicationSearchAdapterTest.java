@@ -29,9 +29,12 @@ import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.user.User;
+import org.niord.model.publication.PublicationType;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -130,6 +133,11 @@ public class PublicationSearchAdapterTest {
 
     /** An issue on a series with the given domain, or with none when null. */
     private PublicationIssue issueOn(Domain domain) {
+        return issueOn(domain, ContentMode.GENERATED_FROM_QUERY);
+    }
+
+    /** An issue on a series publishing the given kind of content. */
+    private PublicationIssue issueOn(Domain domain, ContentMode contentMode) {
         PublicationCategory c = new PublicationCategory();
         c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
         em.persist(c);
@@ -138,10 +146,15 @@ public class PublicationSearchAdapterTest {
         s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
         s.setStatus(SeriesStatus.ACTIVE);
         s.setImportSource(SEEDED_BY);
-        s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setContentMode(contentMode);
         s.setCadence(SeriesCadence.WEEKLY);
-        s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
-        s.setAliveAtCutoff(false);
+        // A time predicate and a liveness flag belong to the query-backed shape
+        // and to nothing else, so the fixture only carries them where a real
+        // series may.
+        if (contentMode == ContentMode.GENERATED_FROM_QUERY) {
+            s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
+            s.setAliveAtCutoff(false);
+        }
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
         s.setPublicAuthority(PublicAuthority.LEGACY);
@@ -222,5 +235,66 @@ public class PublicationSearchAdapterTest {
         List<PublicationIssue> hits = adapter.search(new PublicationSearchParams());
         assertTrue(finds(hits, unscoped));
         assertTrue(finds(hits, scoped));
+    }
+
+    // ------------------------------------------------------------- the type filter
+
+    /**
+     * A type search selects the content mode it is the counterpart of.
+     *
+     * This half had NO type clause at all, while the other half of the union
+     * applies its own stored type column -- so one parameter meant two things in
+     * one result set. The message editor's publication field sends
+     * type=MESSAGE_REPORT and was served every issue in the estate, uploaded
+     * annexes and external links included.
+     *
+     * All four asked for by name, because a mapping that is total on one side and
+     * partial on the other looks correct from whichever side is tested.
+     */
+    @Test
+    @Transactional
+    public void atypeSearchSelectsTheMatchingContentMode() {
+        PublicationIssue generated = issueOn(null, ContentMode.GENERATED_FROM_QUERY);
+        PublicationIssue uploaded = issueOn(null, ContentMode.UPLOADED_FILE);
+        PublicationIssue linked = issueOn(null, ContentMode.EXTERNAL_LINK);
+        PublicationIssue none = issueOn(null, ContentMode.NONE);
+
+        Map<PublicationType, PublicationIssue> expected = new LinkedHashMap<>();
+        expected.put(PublicationType.MESSAGE_REPORT, generated);
+        expected.put(PublicationType.REPOSITORY, uploaded);
+        expected.put(PublicationType.LINK, linked);
+        expected.put(PublicationType.NONE, none);
+
+        for (Map.Entry<PublicationType, PublicationIssue> e : expected.entrySet()) {
+            List<PublicationIssue> hits =
+                    adapter.search(new PublicationSearchParams().type(e.getKey()));
+            assertTrue(finds(hits, e.getValue()),
+                    "?type=" + e.getKey() + " did not find the issue whose series publishes it");
+            for (PublicationIssue other : expected.values()) {
+                if (other != e.getValue()) {
+                    assertFalse(finds(hits, other),
+                            "?type=" + e.getKey() + " also returned an issue of another content mode; "
+                                    + "the row would then report a type the caller did not ask for");
+                }
+            }
+        }
+    }
+
+    /** Omitting the type narrows nothing -- one shipped picker sends none. */
+    @Test
+    @Transactional
+    public void anomittedTypeReachesEveryContentMode() {
+        List<PublicationIssue> all = List.of(
+                issueOn(null, ContentMode.GENERATED_FROM_QUERY),
+                issueOn(null, ContentMode.UPLOADED_FILE),
+                issueOn(null, ContentMode.EXTERNAL_LINK),
+                issueOn(null, ContentMode.NONE));
+
+        List<PublicationIssue> hits = adapter.search(new PublicationSearchParams());
+        for (PublicationIssue issue : all) {
+            assertTrue(finds(hits, issue),
+                    "an unfiltered search dropped an issue; a picker that sends no type at all would "
+                            + "show nothing");
+        }
     }
 }

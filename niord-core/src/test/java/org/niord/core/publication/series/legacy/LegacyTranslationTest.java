@@ -595,4 +595,162 @@ public class LegacyTranslationTest {
                 "aa is the Danish transliteration; dropping the ring loses a letter rather than "
                         + "an accent");
     }
+
+    // ------------------------------------------------- the published type, derived
+
+    /**
+     * Which series each publication is filed onto, keyed by publication id.
+     *
+     * The same three passes the import makes, in the order it makes them: the
+     * templates that are series, then the template-less publications -- grouped,
+     * filed onto an existing series, or standing alone -- and only THEN the
+     * templates that are not series, because one of them is redirected to a
+     * series the orphan pass creates.
+     */
+    private static Map<String, PublicationSeries> seriesByPublication() {
+        Set<String> authored = new LinkedHashSet<>();
+        Map<String, PublicationSeries> byTemplateId = new LinkedHashMap<>();
+        Map<String, PublicationSeries> bySeriesId = new LinkedHashMap<>();
+        List<Publication> redirected = new ArrayList<>();
+
+        for (Publication t : LegacyEstateFixture.templates()) {
+            if (LegacyTemplateRulings.destinationFor(t.getPublicationId()) != null) {
+                redirected.add(t);
+                continue;
+            }
+            PublicationSeries s = LegacySeriesTranslation.translate(
+                    t, LegacySeriesTranslation.authorSeriesId(t, authored), SOURCE);
+            byTemplateId.put(t.getPublicationId(), s);
+            bySeriesId.put(s.getSeriesId(), s);
+        }
+
+        Map<String, PublicationSeries> byPublicationId = new LinkedHashMap<>();
+        Map<String, List<Publication>> shared = new LinkedHashMap<>();
+        List<Publication> standalone = new ArrayList<>();
+        for (Publication p : LegacyEstateFixture.publications()) {
+            if (p.getTemplate() != null) {
+                continue;
+            }
+            LegacyOrphanGrouping.Placement place = LegacyOrphanGrouping.placeOf(p);
+            switch (place.kind()) {
+                case SHARED_SERIES ->
+                        shared.computeIfAbsent(place.seriesId(), k -> new ArrayList<>()).add(p);
+                case OWN_SERIES -> standalone.add(p);
+                case EXISTING_SERIES ->
+                        byPublicationId.put(p.getPublicationId(), byTemplateId.get(place.seriesId()));
+            }
+        }
+        for (Map.Entry<String, List<Publication>> e : shared.entrySet()) {
+            authored.add(e.getKey());
+            PublicationSeries s = LegacySeriesTranslation.translate(
+                    LegacyOrphanGrouping.configurationSource(e.getValue()), e.getKey(), SOURCE);
+            bySeriesId.put(s.getSeriesId(), s);
+            e.getValue().forEach(p -> byPublicationId.put(p.getPublicationId(), s));
+        }
+        Map<String, String> ownIds =
+                LegacySeriesTranslation.authorOrphanSeriesIds(standalone, authored);
+        for (Publication p : standalone) {
+            PublicationSeries s = LegacySeriesTranslation.translate(
+                    p, ownIds.get(p.getPublicationId()), SOURCE);
+            bySeriesId.put(s.getSeriesId(), s);
+            byPublicationId.put(p.getPublicationId(), s);
+        }
+        for (Publication t : redirected) {
+            byTemplateId.put(t.getPublicationId(),
+                    bySeriesId.get(LegacyTemplateRulings.destinationFor(t.getPublicationId())));
+        }
+        for (Publication p : LegacyEstateFixture.publications()) {
+            if (p.getTemplate() != null) {
+                byPublicationId.put(p.getPublicationId(),
+                        byTemplateId.get(p.getTemplate().getPublicationId()));
+            }
+        }
+        return byPublicationId;
+    }
+
+    /**
+     * The derived publication type against the one the estate stores, row by row.
+     *
+     * The type is not imported: it is derived from the series' content mode every
+     * time the payload is built, and this is the measurement that says the
+     * derivation is complete. 1,060 of the 1,077 rows agree exactly, and the
+     * seventeen that do not are all rows the import deliberately files onto a
+     * series that declares something else:
+     *
+     *   nm-annex-ncags and nm-annex-ice-service. Nine NCAGS and five ice-service
+     *   annexes store MESSAGE_REPORT while their series publishes an uploaded
+     *   file. The estate contradicts ITSELF here rather than contradicting the
+     *   mapping: within each group the same annual PDF, with the same repository
+     *   link and the same file name, is stored MESSAGE_REPORT in some years and
+     *   REPOSITORY in others. A series answers once, and the answer is the one its
+     *   own newest edition carries.
+     *
+     *   weekly-ntm. "EfS 51-52 2016", a double week assembled by hand and stored
+     *   REPOSITORY because somebody uploaded the PDF rather than generating it.
+     *   Filed onto the weekly series, it inherits the weekly answer.
+     *
+     *   firing-practice-areas. The 2016 edition, a hand-made PDF from before the
+     *   report template existed, stored LINK. Its series generates the later ones.
+     *
+     *   journal-number. Stored LINK and holding no link in any language -- a
+     *   citation prefix and nothing else. Importing it as a link series would
+     *   produce one that fails validation for a gap nobody can fill, so the
+     *   content mode normalises to NONE and the type follows.
+     *
+     * The set is asserted rather than the count, so a change to the mapping or to
+     * the grouping shows up as a named row instead of a number that moved.
+     */
+    @Test
+    public void theDerivedTypeAgreesWithTheEstateExceptWhereTheGroupingOverrulesIt() {
+        Map<String, PublicationSeries> seriesOf = seriesByPublication();
+        Map<String, Integer> differences = new java.util.TreeMap<>();
+        int compared = 0;
+
+        for (Publication p : LegacyEstateFixture.publications()) {
+            PublicationSeries series = seriesOf.get(p.getPublicationId());
+            assertNotNull(series, p.getPublicationId() + " was filed onto no series at all");
+            compared++;
+
+            org.niord.model.publication.PublicationType derived =
+                    ContentMode.publicationTypeOf(series.getContentMode());
+            if (derived != p.getType()) {
+                differences.merge(series.getSeriesId() + ": " + p.getType() + " -> " + derived,
+                        1, Integer::sum);
+            }
+        }
+        assertEquals(1077, compared, "the captured estate holds 1,077 publications");
+
+        Map<String, Integer> expected = new java.util.TreeMap<>();
+        expected.put("firing-practice-areas: LINK -> MESSAGE_REPORT", 1);
+        expected.put("journal-number: LINK -> NONE", 1);
+        expected.put("nm-annex-ice-service: MESSAGE_REPORT -> REPOSITORY", 5);
+        expected.put("nm-annex-ncags: MESSAGE_REPORT -> REPOSITORY", 9);
+        expected.put("weekly-ntm: REPOSITORY -> MESSAGE_REPORT", 1);
+
+        assertEquals(expected, differences,
+                "the type a row reports changed for a row the grouping does not explain, which "
+                        + "means the derivation and the estate disagree about what a publication is");
+    }
+
+    /** The bulk of the estate: every weekly notice reports as a message report. */
+    @Test
+    public void everyWeeklyIssueReportsAsAMessageReport() {
+        Map<String, PublicationSeries> seriesOf = seriesByPublication();
+        int weeklies = 0;
+
+        for (Publication p : LegacyEstateFixture.publications()) {
+            PublicationSeries series = seriesOf.get(p.getPublicationId());
+            if (series == null || !List.of("weekly-ntm", "weekly-ntm-p-t").contains(series.getSeriesId())) {
+                continue;
+            }
+            weeklies++;
+            assertEquals(org.niord.model.publication.PublicationType.MESSAGE_REPORT,
+                    ContentMode.publicationTypeOf(series.getContentMode()),
+                    p.getPublicationId() + " is a weekly notice and must report as a message report; "
+                            + "the editor's publication field offers nothing else");
+        }
+        assertEquals(1002, weeklies,
+                "the two weekly series are 1,002 of the estate's 1,077 rows; a different number "
+                        + "means the grouping moved rather than the mapping");
+    }
 }

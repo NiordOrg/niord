@@ -87,20 +87,87 @@ public class IssuePublicationMappingTest {
         assertEquals(2, IssuePublicationMapping.toPublicationVo(issue, null).getDescs().size());
     }
 
-    /** The type is derived from what the issue actually has, not stored. */
+    /**
+     * The type is the SERIES' content mode, mapped, and nothing else.
+     *
+     * All four modes and the two absent cases, because the mapping is total: a
+     * mode with no answer here would emit whatever the switch fell through to.
+     */
     @Test
-    public void theTypeFollowsWhatTheIssueHas() {
+    public void theTypeIsDerivedFromTheSeriesContentMode() {
         PublicationIssue issue = issue();
-        assertEquals(PublicationType.NONE, IssuePublicationMapping.toPublicationVo(issue, "da").getType(),
-                "an issue with no file and no link is NONE");
 
+        issue.getSeries().setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        assertEquals(PublicationType.MESSAGE_REPORT, typeOf(issue));
+
+        issue.getSeries().setContentMode(ContentMode.UPLOADED_FILE);
+        assertEquals(PublicationType.REPOSITORY, typeOf(issue));
+
+        issue.getSeries().setContentMode(ContentMode.EXTERNAL_LINK);
+        assertEquals(PublicationType.LINK, typeOf(issue));
+
+        issue.getSeries().setContentMode(ContentMode.NONE);
+        assertEquals(PublicationType.NONE, typeOf(issue));
+
+        // The column is not nullable, so these two are reached only by an issue
+        // that has been handed a half-built series -- and they must still answer
+        // rather than throw out of the middle of a public listing.
+        issue.getSeries().setContentMode(null);
+        assertEquals(PublicationType.NONE, typeOf(issue));
+
+        issue.setSeries(null);
+        assertEquals(PublicationType.NONE, typeOf(issue));
+    }
+
+    /**
+     * A link or a file on the issue does NOT change the type.
+     *
+     * The type used to be read off the descs -- LINK when any of them had a link,
+     * REPOSITORY when any had a file. Every issue has a link: a repository file
+     * is served over one, and an imported issue carries the one it was imported
+     * with. So the whole estate reported LINK, the weekly notices stopped being
+     * message reports and the annexes stopped being repository files, with no id
+     * and no ordering changing to show it. The message editor's publication field
+     * narrows on MESSAGE_REPORT and would have offered nothing.
+     */
+    @Test
+    public void aLinkOnTheIssueDoesNotChangeTheType() {
+        PublicationIssue issue = issue();
+        issue.getSeries().setContentMode(ContentMode.GENERATED_FROM_QUERY);
         desc(issue, "da").setFilePath("publications/efs/efs-33-2017.pdf");
-        assertEquals(PublicationType.REPOSITORY,
-                IssuePublicationMapping.toPublicationVo(issue, "da").getType());
-
         desc(issue, "da").setLink("https://example.org/efs-33-2017.pdf");
-        assertEquals(PublicationType.LINK,
-                IssuePublicationMapping.toPublicationVo(issue, "da").getType());
+
+        PublicationVo vo = IssuePublicationMapping.toPublicationVo(issue, "da");
+        assertEquals(PublicationType.MESSAGE_REPORT, vo.getType(),
+                "a generated issue that has been rendered is still a message report");
+        assertEquals("https://example.org/efs-33-2017.pdf", vo.getDescs().get(0).getLink(),
+                "the link itself still travels; only the TYPE stopped being read off it");
+    }
+
+    /**
+     * The mapping onto the published type vocabulary is a total bijection.
+     *
+     * Which is the reason nothing stores the type: a column can disagree with the
+     * content mode beside it, a round trip cannot. Both directions are asserted
+     * because the search half narrows with the inverse -- if they ever disagreed,
+     * a search would select on one meaning and the payload report another.
+     */
+    @Test
+    public void theContentModeMappingIsATotalBijection() {
+        for (ContentMode mode : ContentMode.values()) {
+            assertEquals(mode, ContentMode.ofPublicationType(ContentMode.publicationTypeOf(mode)),
+                    mode + " does not survive the round trip through the published type");
+        }
+        for (PublicationType type : PublicationType.values()) {
+            assertEquals(type, ContentMode.publicationTypeOf(ContentMode.ofPublicationType(type)),
+                    type + " does not survive the round trip through the content mode");
+        }
+        assertEquals(PublicationType.NONE, ContentMode.publicationTypeOf(null));
+        assertEquals(ContentMode.NONE, ContentMode.ofPublicationType(null));
+    }
+
+    private static PublicationType typeOf(PublicationIssue issue) {
+        return IssuePublicationMapping.toPublicationVo(issue, "da").getType();
     }
 
     // ================================================ the citation format (P6)
