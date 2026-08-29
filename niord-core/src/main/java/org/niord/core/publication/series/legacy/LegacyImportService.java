@@ -27,6 +27,7 @@ import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.CutoffDefault;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssueShape;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
@@ -1108,7 +1109,7 @@ public class LegacyImportService extends BaseService {
                     // The release action's own moment, kept apart from the cut-off and
                     // only where a stage actually witnessed it. A nominal close or a
                     // window boundary is not a moment anybody pressed publish.
-                    issue.setPublishedAt(publishedAtOf(cutoff, legacy, issue));
+                    issue.setPublishedAt(publishedAtOf(cutoff, legacy, issue, series, chain, i));
 
                     List<MemberSnapshotImport.MemberFacts> facts =
                             legacy.getMessageTag() == null || legacy.getMessageTag().getId() == null
@@ -1372,8 +1373,8 @@ public class LegacyImportService extends BaseService {
      * nominal close is the honest answer. For a yearly issue the two can be a
      * year apart, and the public window -- which for every yearly row in the
      * estate is 1 January to 31 December -- is the content period: an in-force
-     * list is decided where the window opens, an accumulated list where it
-     * closes.
+     * list is decided on the day it takes effect, an accumulated list where its
+     * window closes.
      *
      * RETIRED counts as released: it was published and then withdrawn, so a
      * release instant exists. OPEN is the one that never had one.
@@ -1393,12 +1394,24 @@ public class LegacyImportService extends BaseService {
         if (LegacyIssueTranslation.isYearly(legacy, series)) {
             boolean inForce = series != null
                     && series.getTimeRelation() == org.niord.core.publication.series.resolve.TimeRelation.IN_FORCE_AT_CUTOFF;
-            // An in-force annual is decided at the END of the day it takes
-            // effect, because the changeover is a day's work and the window is
-            // opened partway through it; an accumulated one at the instant its
-            // window closes, which is a boundary rather than a working day.
+            // An in-force annual is decided at the END of a day, because the
+            // changeover is a day's work -- and it is the LATER of the day its
+            // window opens and the day it was released, because the window is
+            // opened partway through that sitting on some editions and named
+            // nominally at the turn of the year on others, while the sitting
+            // happens weeks afterwards. An accumulated one is decided at the
+            // instant its window closes, which is a boundary rather than a
+            // working day.
+            //
+            // The release stamp passed here is the one this import already
+            // believes enough to record as the publication moment. Deciding the
+            // day off a stamp the row would not be credited with releasing at
+            // would be two credibility rules for one fact.
             return inForce
-                    ? CutoffRecovery.fromPublicWindowOpen(issue.getPublicFrom(), series.cutoffZone())
+                    ? CutoffRecovery.forAnnualInForce(issue.getPublicFrom(),
+                            annualInForceRelease(legacy, issue, CutoffRecovery.replacedAt(
+                                    chain, i, issue.getPublicFrom(), issue.getPublicTo())),
+                            series.cutoffZone())
                     : CutoffRecovery.fromPublicWindow(issue.getIntervalTo());
         }
 
@@ -1439,26 +1452,126 @@ public class LegacyImportService extends BaseService {
      *
      * A stage that witnessed the release is the answer. Where the cut-off came
      * from the calendar instead, the row's last-write stamp is accepted only if
-     * it falls inside the issue's own public window -- the year an annual was
-     * current -- because a stamp outside it is an edit made some other year.
+     * it falls inside the issue's own public window.
+     *
+     * AN ANNUAL IN-FORCE EDITION IS THE EXCEPTION AND IT IS NOT A SPECIAL CASE
+     * OF CREDIBILITY. Its cut-off is the END of a day rather than a stamp, so
+     * reading the release moment off the cut-off would report every such edition
+     * as released at 23:59:59.999 -- a time nobody worked at, on a row whose
+     * actual stamp is sitting right there. The stamp is the answer, and it is the
+     * same stamp that decided which day the cut-off falls on.
      */
     private static Date publishedAtOf(CutoffRecovery.Recovered cutoff, Publication legacy,
-                                      PublicationIssue issue) {
+                                      PublicationIssue issue, PublicationSeries series,
+                                      List<Publication> chain, int i) {
         if (issue.getStatus() == IssueStatus.OPEN) {
             return null;
+        }
+        if (series != null
+                && CutoffDefault.isAnnualInForce(series.getCadence(), series.getTimeRelation())) {
+            return annualInForceRelease(legacy, issue, CutoffRecovery.replacedAt(
+                    chain, i, issue.getPublicFrom(), issue.getPublicTo()));
         }
         if (CutoffRecovery.witnessesTheRelease(cutoff)) {
             return cutoff.cutoff();
         }
+        return releaseStampInWindow(legacy, issue);
+    }
+
+    /**
+     * The row's last-write stamp, where it is credible as this issue's release.
+     *
+     * Credible means inside the issue's own public window: the span during which
+     * this edition was the current one. A write before the window opened belongs
+     * to whatever the row was before it became this edition, and one after it
+     * closed is an edit made in some other year.
+     *
+     * The shapes whose cut-off is an instant use this. An annual in-force edition
+     * has a different question to answer and {@link #annualInForceRelease} is
+     * where it is answered.
+     */
+    private static Date releaseStampInWindow(Publication legacy, PublicationIssue issue) {
         Date updated = legacy.getUpdated();
         Date from = issue.getPublicFrom();
-        // An open legacy end is not "still current": the derived content end --
-        // the last day of an accumulated year -- is the latest a release could be.
+        // An open end date is not "still current": the derived content end -- the
+        // last day of an accumulated year -- is the latest a release could be.
         Date to = issue.getPublicTo() != null ? issue.getPublicTo() : issue.getIntervalTo();
         if (updated == null || from == null || updated.before(from)) {
             return null;
         }
         return to == null || !updated.after(to) ? updated : null;
+    }
+
+    /**
+     * When an ANNUAL IN-FORCE edition was released, from the two stamps a row of
+     * this shape can carry.
+     *
+     * ONE RULE, TWO READERS. It is what the publication moment is recorded from,
+     * and it is what decides WHICH DAY the cut-off falls on. Those two must not
+     * disagree: an edition dated by a stamp it is not credited with being
+     * released at would be claiming a day nothing witnessed.
+     *
+     * TWO CANDIDATES. The row's last-write time, and the row's own tag creation
+     * -- the moment its member list was assembled. Either can be the one that
+     * survives: the 2025 firing edition was written last (12:12) after its tag
+     * was built (12:11), while the second 2022 edition's row was next written a
+     * year later and only its tag creation falls inside its own window. The LATER
+     * credible one wins, because the release completes with its last credible
+     * write.
+     *
+     * CREDIBLE MEANS THREE THINGS.
+     *
+     * Not before the window opened. A stamp older than the edition belongs to
+     * whatever the row was beforehand -- typically a clone of the year before,
+     * and three rows in the archive carry a tag made a full year early.
+     *
+     * Not after the ceiling. That is the window's own end where the row states
+     * one; where it does not, the moment this edition was REPLACED stands in for
+     * it. Falling back to the content interval instead would be no ceiling at
+     * all for this shape: an in-force edition's interval ends AT its window
+     * open, so the test would collapse to "the stamp equals the window open".
+     *
+     * And before the edition was replaced, where it was -- see
+     * {@link CutoffRecovery#replacedAt}, which is deliberately narrow: only a
+     * re-edition taking over DURING this window replaces it, never next year's
+     * row. The changeover is one sitting: it assembles the incoming edition and
+     * deactivates the outgoing one minutes later, so a write at or after the
+     * incoming tag's creation is this edition's withdrawal rather than its
+     * release. Measured on the 2022 firing pair -- incoming tag 14:46:50,
+     * outgoing row last written 14:52:17 -- and believing that write dated the
+     * outgoing edition to the day its replacement went out, which sorted the
+     * pair backwards.
+     *
+     * Null when neither candidate is credible: nothing witnessed the release, and
+     * the cut-off falls back to the day the window opened.
+     */
+    // Package-visible so the three credibility clauses can be asserted directly.
+    // Reaching them through plan() means reading the whole estate to ask a
+    // question about one row's two timestamps.
+    static Date annualInForceRelease(Publication legacy, PublicationIssue issue, Date replacedAt) {
+        Date from = issue.getPublicFrom();
+        if (from == null) {
+            return null;
+        }
+        Date ceiling = issue.getPublicTo() != null ? issue.getPublicTo() : replacedAt;
+        Date tagCreated = legacy.getMessageTag() == null ? null : legacy.getMessageTag().getCreated();
+
+        Date best = null;
+        for (Date candidate : new Date[] { legacy.getUpdated(), tagCreated }) {
+            if (candidate == null || candidate.before(from)) {
+                continue;
+            }
+            if (ceiling != null && candidate.after(ceiling)) {
+                continue;
+            }
+            if (replacedAt != null && !candidate.before(replacedAt)) {
+                continue;
+            }
+            if (best == null || candidate.after(best)) {
+                best = candidate;
+            }
+        }
+        return best;
     }
 
     /**

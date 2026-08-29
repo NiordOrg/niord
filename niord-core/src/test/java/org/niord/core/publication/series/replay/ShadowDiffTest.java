@@ -424,8 +424,10 @@ public class ShadowDiffTest {
         PublicationIssue issue = importedIssue(series, edition);
         issue.setIntervalFrom(null);
         issue.setIntervalTo(windowOpens);
+        // Released during the sitting the window was opened in, which is the shape
+        // where the window-open day IS the day.
         issue.setCutoffStampedAt(
-                CutoffRecovery.fromPublicWindowOpen(windowOpens, zone).cutoff());
+                CutoffRecovery.forAnnualInForce(windowOpens, publishedAt, zone).cutoff());
         em.flush();
 
         ShadowDiffRun green = shadowDiff.diff(edition);

@@ -359,56 +359,158 @@ public class CutoffRecoveryTest {
         assertNull(CutoffRecovery.nextTagCreated(chain, -1));
     }
 
+    // ------------------------------------------- the annual in-force day rule
+
+    private static final java.time.ZoneId CPH = java.time.ZoneId.of("Europe/Copenhagen");
+
+    private static Date cph(int y, int m, int d, int h, int min) {
+        return Date.from(java.time.ZonedDateTime.of(y, m, d, h, min, 0, 0, CPH).toInstant());
+    }
+
+    private static void assertEndOfDay(Date actual, int y, int m, int d, String why) {
+        assertNotNull(actual, why);
+        java.time.ZonedDateTime at = actual.toInstant().atZone(CPH);
+        assertEquals(y, at.getYear(), why);
+        assertEquals(m, at.getMonthValue(), why);
+        assertEquals(d, at.getDayOfMonth(), why);
+        assertEquals(23, at.getHour(), why);
+        assertEquals(59, at.getMinute(), why);
+        assertEquals(59, at.getSecond(), why);
+        assertEquals(999, at.getNano() / 1_000_000, why);
+    }
+
     /**
-     * An in-force annual is cut off at the END of the day its window opens, in
-     * the series' zone -- and the whole changeover falls inside that.
+     * The window opened during the sitting: the day it opened is the day, and the
+     * whole changeover falls inside it.
      *
-     * The window is opened partway through a day's work: on "EfS A - 2025" it
-     * opened at 10:28:17, the previous year's notices were cancelled at 11:18 and
-     * the new year's published at 11:28. A cut-off at the opening instant resolves
-     * the edition from before its own changeover.
+     * On "EfS A - 2025" the window opened at 10:28:17, the previous year's notices
+     * were cancelled at 11:18 and the new year's published at 11:28, and it was
+     * released the same day. A cut-off at the opening instant resolves the edition
+     * from before its own changeover.
      */
     @Test
-    public void anInForceAnnualIsCutOffAtTheEndOfItsChangeoverDay() {
-        java.time.ZoneId cph = java.time.ZoneId.of("Europe/Copenhagen");
+    public void anInForceAnnualReleasedOnTheDayItOpensIsCutOffAtTheEndOfThatDay() {
         Date opened = Date.from(java.time.ZonedDateTime
-                .of(2025, 2, 7, 10, 28, 17, 0, cph).toInstant());
+                .of(2025, 2, 7, 10, 28, 17, 0, CPH).toInstant());
+        Date released = cph(2025, 2, 7, 12, 3);
 
-        CutoffRecovery.Recovered r = CutoffRecovery.fromPublicWindowOpen(opened, cph);
+        CutoffRecovery.Recovered r = CutoffRecovery.forAnnualInForce(opened, released, CPH);
 
         assertEquals(CutoffRecovery.PUBLIC_WINDOW, r.source(),
-                "the answer is still read off the window, not off a stamp that witnessed a release");
+                "the release is on the same day, so the window-open day is what stands");
         assertTrue(r.reconstructed());
         assertFalse(CutoffRecovery.witnessesTheRelease(r),
                 "a window boundary is not a moment anybody pressed publish");
-
-        java.time.ZonedDateTime at = r.cutoff().toInstant().atZone(cph);
-        assertEquals(2025, at.getYear());
-        assertEquals(2, at.getMonthValue());
-        assertEquals(7, at.getDayOfMonth(), "the same day, never the next one");
-        assertEquals(23, at.getHour());
-        assertEquals(59, at.getMinute());
-        assertEquals(59, at.getSecond());
-        assertEquals(999, at.getNano() / 1_000_000);
+        assertEndOfDay(r.cutoff(), 2025, 2, 7, "the same day, never the next one");
 
         // The whole sequence that day is on the right side of it, which is the
         // point: the cancellations and the new publications both precede the
         // cut-off, so the edition resolves to the list it actually shipped.
-        Date cancelledAt = Date.from(java.time.ZonedDateTime
-                .of(2025, 2, 7, 11, 18, 0, 0, cph).toInstant());
-        Date publishedAt = Date.from(java.time.ZonedDateTime
-                .of(2025, 2, 7, 11, 29, 0, 0, cph).toInstant());
+        Date cancelledAt = cph(2025, 2, 7, 11, 18);
+        Date publishedAt = cph(2025, 2, 7, 11, 29);
         assertTrue(cancelledAt.before(r.cutoff()));
         assertTrue(publishedAt.before(r.cutoff()));
         assertTrue(opened.before(cancelledAt),
                 "and the window opened BEFORE the changeover, which is the whole defect");
     }
 
-    /** No window, no answer -- and a human is told rather than given a date. */
+    /**
+     * The window was named nominally and the sitting happened weeks later: the
+     * RELEASE day is the day.
+     *
+     * "Skydeområder 2025" carries a window from 1 January, its outgoing set was
+     * cancelled and its incoming set published on 7 February, and it was released
+     * on 26 February. At the end of 1 January none of that had happened, so the
+     * edition resolved to the previous year's list.
+     */
     @Test
-    public void anInForceAnnualWithNoWindowIsManual() {
-        CutoffRecovery.Recovered r = CutoffRecovery.fromPublicWindowOpen(
-                null, java.time.ZoneId.of("Europe/Copenhagen"));
+    public void anInForceAnnualReleasedAfterItsWindowOpensIsCutOffAtTheEndOfTheRELEASEDay() {
+        Date opened = cph(2025, 1, 1, 12, 10);
+        Date released = cph(2025, 2, 26, 12, 12);
+
+        CutoffRecovery.Recovered r = CutoffRecovery.forAnnualInForce(opened, released, CPH);
+
+        assertEndOfDay(r.cutoff(), 2025, 2, 26,
+                "the edition is what was in force at the end of the day it went out");
+        assertEquals(CutoffRecovery.FROM_UPDATED, r.source(),
+                "the day was read off a stamp that witnessed the release, so it says so");
+        assertTrue(r.reconstructed());
+
+        // The changeover, three weeks after the window opened, is on the right
+        // side of the cut-off -- which the window-open day could not manage.
+        assertTrue(cph(2025, 2, 7, 11, 20).before(r.cutoff()));
+        assertTrue(cph(2025, 2, 7, 11, 20).after(CutoffRecovery
+                .forAnnualInForce(opened, null, CPH).cutoff()));
+    }
+
+    /** Nothing credible witnessed the release, so the window-open day stands. */
+    @Test
+    public void withoutACredibleReleaseStampTheWindowOpenDayStands() {
+        Date opened = cph(2023, 1, 2, 11, 57);
+
+        CutoffRecovery.Recovered none = CutoffRecovery.forAnnualInForce(opened, null, CPH);
+        assertEndOfDay(none.cutoff(), 2023, 1, 2, "no stamp, so the window is the only witness");
+        assertEquals(CutoffRecovery.PUBLIC_WINDOW, none.source());
+    }
+
+    /**
+     * A stamp EARLIER than the window-open day does not pull the cut-off back.
+     *
+     * The edition cannot have been settled before the day it takes effect, and a
+     * row prepared in advance says when it was prepared, not when it came into
+     * force.
+     */
+    @Test
+    public void aReleaseStampBeforeTheWindowOpensLeavesTheWindowOpenDay() {
+        Date opened = cph(2026, 1, 1, 12, 10);
+        Date early = cph(2025, 12, 30, 10, 40);
+
+        CutoffRecovery.Recovered r = CutoffRecovery.forAnnualInForce(opened, early, CPH);
+
+        assertEndOfDay(r.cutoff(), 2026, 1, 1, "the later of the two days is the window's");
+        assertEquals(CutoffRecovery.PUBLIC_WINDOW, r.source());
+    }
+
+    /** With no window at all, a credible stamp is the only day there is. */
+    @Test
+    public void withNoWindowTheReleaseDayIsTheAnswer() {
+        CutoffRecovery.Recovered r = CutoffRecovery.forAnnualInForce(
+                null, cph(2025, 3, 4, 9, 0), CPH);
+        assertEndOfDay(r.cutoff(), 2025, 3, 4, "the only day anything is known about");
+        assertEquals(CutoffRecovery.FROM_UPDATED, r.source());
+    }
+
+    /**
+     * WHICH day an instant falls on is the zone's answer, and the zone is the
+     * series' own.
+     *
+     * An hour either side of midnight in Copenhagen is the same UTC evening, and
+     * a run on a UTC machine would put the two on one day. Both of these belong
+     * to 2 January, and the second one is a full day past the first's end.
+     */
+    @Test
+    public void theDayIsDecidedInTheSeriesZoneAndNotTheMachines() {
+        Date opened = cph(2026, 1, 1, 12, 10);
+        // 2 January 00:30 in Copenhagen is 1 January 23:30 UTC.
+        Date justAfterMidnight = cph(2026, 1, 2, 0, 30);
+        // 1 January 23:30 in Copenhagen is 1 January 22:30 UTC -- the same day.
+        Date justBeforeMidnight = cph(2026, 1, 1, 23, 30);
+
+        assertEndOfDay(CutoffRecovery.forAnnualInForce(opened, justAfterMidnight, CPH).cutoff(),
+                2026, 1, 2, "half an hour into the 2nd is the 2nd");
+        assertEquals(CutoffRecovery.FROM_UPDATED,
+                CutoffRecovery.forAnnualInForce(opened, justAfterMidnight, CPH).source());
+
+        assertEndOfDay(CutoffRecovery.forAnnualInForce(opened, justBeforeMidnight, CPH).cutoff(),
+                2026, 1, 1, "half an hour before midnight is still the 1st");
+        assertEquals(CutoffRecovery.PUBLIC_WINDOW,
+                CutoffRecovery.forAnnualInForce(opened, justBeforeMidnight, CPH).source());
+    }
+
+    /** No window, no stamp, no answer -- and a human is told rather than given a date. */
+    @Test
+    public void anInForceAnnualWithNoWindowAndNoStampIsManual() {
+        CutoffRecovery.Recovered r = CutoffRecovery.forAnnualInForce(null, null, CPH);
         assertNull(r.cutoff());
         assertEquals(CutoffRecovery.MANUAL, r.source());
     }

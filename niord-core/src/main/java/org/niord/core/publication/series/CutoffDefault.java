@@ -68,13 +68,16 @@ public enum CutoffDefault {
      *
      * The changeover for such an edition is a day's work: the previous year's
      * notices are cancelled and the new year's published in one sitting, and the
-     * public window is opened somewhere in the middle of it. Measured on "EfS A -
+     * public window is opened somewhere in the middle of it, or nominally at the
+     * turn of the year while the sitting happens weeks later. Measured on "EfS A -
      * 2025", the window opened at 10:28:17, the 2024 notices were cancelled at
      * 11:18 and the 2025 notices published at 11:28 -- so a cut-off at the instant
      * the window opened resolves the edition from BEFORE its own changeover, and
      * produced 29 members missing and 29 extra against the tag that recorded it.
      * 2024 and 2022 have the same shape; 2026 and 2023 looked correct only because
      * those years' notices happened to go out before the window was opened.
+     *
+     * Which DAY the cut-off falls on is {@link #annualInForceCutoff}.
      *
      * BOTH HALVES ARE REQUIRED. A weekly in-force list -- the active P&T -- has a
      * release stamp minutes from its close and no day-long changeover to contain,
@@ -89,13 +92,67 @@ public enum CutoffDefault {
     }
 
     /**
+     * THE cut-off of an annual in-force edition: the end of the LATER of two days
+     * -- the day its public window opens, and the day it was released.
+     *
+     * ONE RULE, TWO CALLERS. The archive reader recovers it from a stored window
+     * and a stored release stamp; the publish action reads it from the edition's
+     * own boundary and the clock. They have to agree to the millisecond, because
+     * a recovered edition and a natively published one sit in the same series and
+     * are compared against each other.
+     *
+     * WHY THE LATER OF THE TWO. The changeover of an in-force annual is done by
+     * hand, and the window is opened either during that sitting or nominally at
+     * the turn of the year while the sitting happens weeks afterwards. "EfS A -
+     * 2025" is the first shape: window opened 7 February 10:28, the outgoing
+     * notices cancelled 11:18, the incoming ones published 11:28, released the
+     * same day. "Skydeområder 2025" is the second: window opened 1 January, the
+     * changeover done on 7 February, the edition released on 26 February. What
+     * was in force at the end of the day the edition was RELEASED is the edition;
+     * what was in force at the end of the day its window opened is only the same
+     * answer when those are the same day.
+     *
+     * A null release leaves the window-open day standing, which is the answer
+     * whenever nothing credible witnessed the release. A null window leaves the
+     * release day. Both null is no answer at all.
+     *
+     * WHAT IS COMPARED IS THE DAY, NOT THE INSTANT. Both arguments are instants
+     * and only the day each falls on is read; the release instant itself is a
+     * separate fact, recorded separately, and is never replaced by this.
+     */
+    public static java.util.Date annualInForceCutoff(java.util.Date windowOpen, java.util.Date release,
+                                                     java.time.ZoneId zone) {
+        return releaseDayIsLater(windowOpen, release, zone)
+                ? endOfDay(release, zone)
+                : endOfDay(windowOpen, zone);
+    }
+
+    /**
+     * Which of the two days {@link #annualInForceCutoff} took -- the release day,
+     * or the window-open day it falls back to.
+     *
+     * Exposed because the answer's PROVENANCE differs by branch and the two must
+     * not be decided twice: an edition whose day came off a release stamp was
+     * settled by something that witnessed the release, and one that fell back to
+     * its window was settled by the calendar.
+     */
+    public static boolean releaseDayIsLater(java.util.Date windowOpen, java.util.Date release,
+                                            java.time.ZoneId zone) {
+        java.util.Date releaseDay = endOfDay(release, zone);
+        if (releaseDay == null) {
+            return false;
+        }
+        java.util.Date openDay = endOfDay(windowOpen, zone);
+        return openDay == null || releaseDay.after(openDay);
+    }
+
+    /**
      * The last instant of the day an instant falls in, in the given zone.
      *
-     * The cut-off of an annual in-force edition: "what was in force at the end of
-     * the day it came into force". The end of the day is the smallest bound that
-     * contains the whole changeover -- a wider one starts pulling in the next
-     * day's editing, a narrower one puts the answer back inside a sequence whose
-     * order within the day nobody controlled.
+     * The end of the day is the smallest bound that contains a whole changeover
+     * -- a wider one starts pulling in the next day's editing, a narrower one puts
+     * the answer back inside a sequence whose order within the day nobody
+     * controlled. Which day to take is {@link #annualInForceCutoff}.
      *
      * To the millisecond, because that is the resolution the columns keep and a
      * cut-off rounded up to midnight would belong to the following day, which for

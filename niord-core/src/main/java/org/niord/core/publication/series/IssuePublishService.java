@@ -863,7 +863,8 @@ public class IssuePublishService extends BaseService {
 
     /**
      * Where this series' cut-off falls by default: the release moment, or the
-     * boundary of the period the issue describes.
+     * boundary of the period the issue describes -- and for an annual in-force
+     * edition, the end of the later of that boundary's day and this one.
      */
     static Date defaultCutoff(PublicationIssue issue, PublicationSeries series, Date now) {
         CutoffDefault d = series.getCutoffDefault();
@@ -878,15 +879,22 @@ public class IssuePublishService extends BaseService {
             // day somebody happened to press publish rather than for the boundary
             // it is the edition of.
             //
-            // Taken to the END of that day for an annual, because the changeover
-            // is a day's work: the previous year's notices are cancelled and this
+            // Taken to the END of a DAY for an annual, because the changeover is
+            // a day's work: the previous year's notices are cancelled and this
             // year's published in one sitting, and a cut-off at the instant the
-            // year opens resolves the list from BEFORE that sitting. The importer
-            // reads the archive by the same rule, so a natively published edition
-            // and an imported one describe the same instant.
+            // year opens resolves the list from BEFORE that sitting.
+            //
+            // The LATER of the boundary day and today, because the sitting does
+            // not always happen on the day the boundary names. An edition
+            // published ahead of its boundary keeps the boundary day -- it is
+            // the edition OF that day and nothing later has happened yet -- and
+            // one published after it takes the day it went out, which is when
+            // its content was actually settled. The archive reader applies the
+            // same rule, so a natively published edition and a recovered one
+            // describe the same instant.
             if (issue.getIntervalTo() != null) {
                 return CutoffDefault.isAnnualInForce(series.getCadence(), series.getTimeRelation())
-                        ? CutoffDefault.endOfDay(issue.getIntervalTo(), series.cutoffZone())
+                        ? CutoffDefault.annualInForceCutoff(issue.getIntervalTo(), now, series.cutoffZone())
                         : issue.getIntervalTo();
             }
         }

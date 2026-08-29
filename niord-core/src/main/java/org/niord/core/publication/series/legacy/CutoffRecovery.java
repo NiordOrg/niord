@@ -46,7 +46,23 @@ import java.util.List;
  */
 public final class CutoffRecovery {
 
-    /** Stage 1: the row's own last-write time, taken as the release. */
+    /**
+     * Stage 1: the row's own last-write time, taken as the release.
+     *
+     * Also what an in-force annual records when a credible release stamp decided
+     * which DAY its cut-off falls on -- see {@link #forAnnualInForce}. There the
+     * stamp is the later of the row's last-write time and the row's OWN tag
+     * creation, and this value covers both.
+     *
+     * COVERING BOTH IS DELIBERATE, AND IT IS THE HONEST OPTION AVAILABLE. There
+     * is no value in this vocabulary that names an issue's own tag creation:
+     * FROM_NEXT_TAG is the SUCCESSOR's tag, which is a different event with the
+     * opposite meaning, and FROM_COVER is a date printed on a PDF. Minting a new
+     * one is not free either -- the set is pinned by the readers that render it.
+     * So both candidates report the stage they share, which is "a stamp on this
+     * row, believed as its release", and the distinction between the two is not
+     * recoverable from the column afterwards.
+     */
     public static final String FROM_UPDATED = "RECOVERED_FROM_UPDATED";
 
     /** Stage 2: the NEXT issue's tag creation, which witnesses this issue closing. */
@@ -80,6 +96,10 @@ public final class CutoffRecovery {
      * public window IS that period (verified 2026-08-27: all 46 yearly rows carry
      * 1 January to 31 December). The release moment is kept separately, as
      * publishedAt, where it is credible.
+     *
+     * For an IN-FORCE annual this is the fallback rather than the rule: a
+     * credible release stamp on a later day wins, and the row then records
+     * FROM_UPDATED instead. See {@link #forAnnualInForce}.
      */
     public static final String PUBLIC_WINDOW = "PUBLIC_WINDOW";
 
@@ -297,51 +317,74 @@ public final class CutoffRecovery {
     }
 
     /**
-     * The cut-off of an ANNUAL IN-FORCE issue: the END of the day its window
-     * opens, in the series' own zone.
+     * The cut-off of an ANNUAL IN-FORCE issue: the END of the LATER of two days
+     * -- the day its window opens, and the day it was released -- in the series'
+     * own zone.
      *
-     * WHY NOT THE INSTANT THE WINDOW OPENED, which is what this used to be. The
-     * changeover is a day's work, not a moment's: the previous year's notices are
-     * cancelled and the new year's published in the same sitting, and the window
-     * is opened somewhere in the middle of it. Measured on "EfS A - 2025": the
-     * window opened at 10:28:17, the 2024 notices were cancelled at 11:18 and the
-     * 2025 notices published at 11:28. Resolving at 10:28:17 therefore produced
-     * the 2024 list -- 29 members missing and 29 extra against the legacy tag,
-     * which holds the 2025 list -- and the same shape appeared on 2024 and 2022.
-     * 2026 and 2023 looked correct only because those years' notices happened to
-     * go out before the window was opened.
+     * WHY A DAY AND NOT THE INSTANT THE WINDOW OPENED. The changeover is a day's
+     * work, not a moment's: the previous year's notices are cancelled and the new
+     * year's published in the same sitting, and the window is opened somewhere in
+     * the middle of it. Measured on "EfS A - 2025": the window opened at 10:28:17,
+     * the 2024 notices were cancelled at 11:18 and the 2025 notices published at
+     * 11:28. Resolving at 10:28:17 therefore produced the 2024 list -- 29 members
+     * missing and 29 extra against the tag that holds the 2025 list.
      *
-     * The end of the day is the smallest bound that contains the whole
-     * changeover, and it says what the edition means: what was in force at the
-     * end of the day it came into force. A wider bound would start pulling in the
-     * next day's editing; a narrower one puts the answer back inside a sequence
-     * whose order within the day nobody controlled.
+     * WHY THE LATER OF THE TWO DAYS AND NOT SIMPLY THE WINDOW'S. The window is
+     * opened during the sitting on some editions and named nominally on others,
+     * at the turn of the year, while the sitting happens weeks afterwards.
+     * "Skydeområder 2025" is the second kind: window from 1 January, the outgoing
+     * set cancelled and the incoming set published on 7 February, released on 26
+     * February. At the end of 1 January none of that had happened, and the
+     * edition resolved to the previous year's list -- 32 members missing and 30
+     * extra. What the edition means is what was in force at the end of the day it
+     * was released, and the window-open day is only the same answer when the two
+     * are the same day.
+     *
+     * WHICH RELEASE STAMPS COUNT. Only one that is credible as the release: the
+     * caller passes the stamp it already believed enough to record as the issue's
+     * publication moment, and null where nothing was credible. A stamp written
+     * years after the window closed is an edit, and an edit decides nothing.
+     * Without a credible stamp the window-open day stands.
      *
      * WEEKLY IN-FORCE IS UNTOUCHED. A weekly release has a credible release stamp
      * minutes from its nominal close, and the cascade uses it; there is no
      * day-long changeover to contain. This applies only where the year itself is
      * the period.
      *
-     * The provenance stays PUBLIC_WINDOW: the answer is still read off the
-     * window rather than off any stamp that witnessed a release.
+     * PROVENANCE FOLLOWS THE BRANCH. Where the release stamp decided the day the
+     * answer was read off something that witnessed the release, so it records
+     * FROM_UPDATED; where the window-open day stood it was read off the calendar,
+     * so it records PUBLIC_WINDOW. What is recorded is still a DAY in both cases
+     * -- the release instant is kept separately, as publishedAt, and is never
+     * this.
      *
-     * The instant itself comes from {@link CutoffDefault#endOfDay}, which is
-     * where the native publish default reads it from too -- so an edition this
-     * import recovers and one an admin publishes describe the same instant.
+     * The instant itself comes from {@link CutoffDefault#annualInForceCutoff},
+     * which is where the native publish default reads it from too -- so an
+     * edition this import recovers and one an admin publishes describe the same
+     * instant.
      */
-    public static Recovered fromPublicWindowOpen(Date opened, java.time.ZoneId zone) {
-        Date endOfDay = CutoffDefault.endOfDay(opened, zone);
-        return endOfDay == null ? new Recovered(null, MANUAL, true)
-                : new Recovered(endOfDay, PUBLIC_WINDOW, true);
+    public static Recovered forAnnualInForce(Date windowOpen, Date release, java.time.ZoneId zone) {
+        Date cutoff = CutoffDefault.annualInForceCutoff(windowOpen, release, zone);
+        if (cutoff == null) {
+            return new Recovered(null, MANUAL, true);
+        }
+        return CutoffDefault.releaseDayIsLater(windowOpen, release, zone)
+                ? new Recovered(cutoff, FROM_UPDATED, true)
+                : new Recovered(cutoff, PUBLIC_WINDOW, true);
     }
 
     /**
-     * Whether a stamp is credible as the moment the release action ran.
+     * Whether the SOURCE names something that witnessed the release action.
      *
-     * Only the stamps a stage actually believed as the release qualify. A
-     * nominal close or a public-window boundary is not a moment anybody pressed
-     * anything, and reporting it as one would be the laundering this class
-     * exists to prevent.
+     * Only the stages that read a stamp qualify. A nominal close or a
+     * public-window boundary is not a moment anybody pressed anything, and
+     * reporting it as one would be the laundering this class exists to prevent.
+     *
+     * IT IS THE PROVENANCE THAT IS BEING ASKED ABOUT, NOT THE INSTANT. For every
+     * stage of the cascade the recovered cut-off IS the stamp, so the two amount
+     * to the same thing; for an annual in-force edition the cut-off is the end of
+     * the release DAY and the stamp is hours earlier, so the release moment has
+     * to come from the stamp rather than from here.
      */
     public static boolean witnessesTheRelease(Recovered r) {
         return r != null && r.cutoff() != null
@@ -362,6 +405,77 @@ public final class CutoffRecovery {
         }
         Publication next = chainOrdered.get(i + 1);
         return next.getMessageTag() == null ? null : next.getMessageTag().getCreated();
+    }
+
+    /**
+     * When the edition at position i STOPPED being the current one: the earliest
+     * later tag in its chain that was assembled after this edition's window
+     * opened.
+     *
+     * WHAT IT IS FOR. A write at or after that moment is the edition's
+     * WITHDRAWAL, not its release -- the changeover of an annual is one sitting,
+     * and it deactivates the outgoing edition minutes after it assembles the
+     * incoming one. Measured on the 2022 firing editions: the incoming tag was
+     * created 14:46:50 and the outgoing row was last written 14:52:17, six
+     * minutes later. Believed as a release, that write dates the OUTGOING edition
+     * to the day its replacement went out, and the pair then sorts with the
+     * replacement first.
+     *
+     * WHAT COUNTS AS A REPLACEMENT: a later entry that took over DURING this
+     * edition's window, i.e. one whose own window opens inside it. That is the
+     * re-edition shape -- a second 2022 firing edition opening on the same day as
+     * the first, a second 2017 EfS A edition opening in March of the year the
+     * first was still running -- and it is the only shape that ends an edition
+     * early.
+     *
+     * NEXT PERIOD IS NOT A REPLACEMENT, and this is the clause that costs the
+     * most to get wrong. The 2027 firing row's tag was created on 2 January 2026,
+     * the very instant the 2026 edition was released; read as the 2026 edition's
+     * replacement it rejects that edition's own release stamp and leaves it with
+     * no publication moment at all. Three more rows behave the same way. Each
+     * year's edition ends where the next year's WINDOW opens, not where somebody
+     * first assembled a list for it.
+     *
+     * NOT SIMPLY {@link #nextTagCreated} either. Between the two 2022 firing
+     * editions sits a third row whose title never had its year substituted,
+     * carrying a tag created in January 2020 -- two years before either edition's
+     * window. Taken as the bound it rejects everything, including the outgoing
+     * edition's OWN tag, which is plainly its release. A tag made before this
+     * edition's window even opened cannot be the moment this edition was
+     * replaced, so it is skipped and the scan goes on to the first one that
+     * could be.
+     *
+     * An edition with no stated window end keeps only that second guard: there is
+     * no span for a successor to open inside, so any later tag created after this
+     * window opened is taken as the bound.
+     *
+     * Returns null when nothing later qualifies -- the newest edition of a chain,
+     * and every edition that simply ran its year out, has not been replaced. That
+     * is an answer rather than a gap.
+     */
+    public static Date replacedAt(List<Publication> chainOrdered, int i,
+                                  Date windowOpen, Date windowClose) {
+        if (chainOrdered == null || i < 0 || windowOpen == null) {
+            return null;
+        }
+        Date earliest = null;
+        for (int j = i + 1; j < chainOrdered.size(); j++) {
+            Publication later = chainOrdered.get(j);
+            Date created = later.getMessageTag() == null ? null : later.getMessageTag().getCreated();
+            if (created == null || !created.after(windowOpen)) {
+                continue;
+            }
+            if (windowClose != null) {
+                Date opens = later.getPublishDateFrom();
+                if (opens == null || opens.before(windowOpen) || opens.after(windowClose)) {
+                    continue;
+                }
+            }
+            if (earliest == null || created.before(earliest)) {
+                earliest = created;
+            }
+        }
+        return earliest;
     }
 
     /**
