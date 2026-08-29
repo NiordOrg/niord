@@ -1393,7 +1393,13 @@ public class LegacyImportService extends BaseService {
         if (LegacyIssueTranslation.isYearly(legacy, series)) {
             boolean inForce = series != null
                     && series.getTimeRelation() == org.niord.core.publication.series.resolve.TimeRelation.IN_FORCE_AT_CUTOFF;
-            return CutoffRecovery.fromPublicWindow(inForce ? issue.getPublicFrom() : issue.getIntervalTo());
+            // An in-force annual is decided at the END of the day it takes
+            // effect, because the changeover is a day's work and the window is
+            // opened partway through it; an accumulated one at the instant its
+            // window closes, which is a boundary rather than a working day.
+            return inForce
+                    ? CutoffRecovery.fromPublicWindowOpen(issue.getPublicFrom(), series.cutoffZone())
+                    : CutoffRecovery.fromPublicWindow(issue.getIntervalTo());
         }
 
         if (LegacyIssueTranslation.isCadenced(legacy, series)) {

@@ -17,6 +17,7 @@
 package org.niord.core.publication.series.legacy;
 
 import org.niord.core.publication.Publication;
+import org.niord.core.publication.series.CutoffDefault;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -293,6 +294,45 @@ public final class CutoffRecovery {
     public static Recovered fromPublicWindow(Date boundary) {
         return boundary == null ? new Recovered(null, MANUAL, true)
                 : new Recovered(boundary, PUBLIC_WINDOW, true);
+    }
+
+    /**
+     * The cut-off of an ANNUAL IN-FORCE issue: the END of the day its window
+     * opens, in the series' own zone.
+     *
+     * WHY NOT THE INSTANT THE WINDOW OPENED, which is what this used to be. The
+     * changeover is a day's work, not a moment's: the previous year's notices are
+     * cancelled and the new year's published in the same sitting, and the window
+     * is opened somewhere in the middle of it. Measured on "EfS A - 2025": the
+     * window opened at 10:28:17, the 2024 notices were cancelled at 11:18 and the
+     * 2025 notices published at 11:28. Resolving at 10:28:17 therefore produced
+     * the 2024 list -- 29 members missing and 29 extra against the legacy tag,
+     * which holds the 2025 list -- and the same shape appeared on 2024 and 2022.
+     * 2026 and 2023 looked correct only because those years' notices happened to
+     * go out before the window was opened.
+     *
+     * The end of the day is the smallest bound that contains the whole
+     * changeover, and it says what the edition means: what was in force at the
+     * end of the day it came into force. A wider bound would start pulling in the
+     * next day's editing; a narrower one puts the answer back inside a sequence
+     * whose order within the day nobody controlled.
+     *
+     * WEEKLY IN-FORCE IS UNTOUCHED. A weekly release has a credible release stamp
+     * minutes from its nominal close, and the cascade uses it; there is no
+     * day-long changeover to contain. This applies only where the year itself is
+     * the period.
+     *
+     * The provenance stays PUBLIC_WINDOW: the answer is still read off the
+     * window rather than off any stamp that witnessed a release.
+     *
+     * The instant itself comes from {@link CutoffDefault#endOfDay}, which is
+     * where the native publish default reads it from too -- so an edition this
+     * import recovers and one an admin publishes describe the same instant.
+     */
+    public static Recovered fromPublicWindowOpen(Date opened, java.time.ZoneId zone) {
+        Date endOfDay = CutoffDefault.endOfDay(opened, zone);
+        return endOfDay == null ? new Recovered(null, MANUAL, true)
+                : new Recovered(endOfDay, PUBLIC_WINDOW, true);
     }
 
     /**

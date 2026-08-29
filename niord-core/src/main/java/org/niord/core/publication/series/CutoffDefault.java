@@ -61,4 +61,60 @@ public enum CutoffDefault {
         }
         return RELEASE_MOMENT;
     }
+
+    /**
+     * A publication whose period IS a year and whose content is what stood at the
+     * end of it -- the one shape whose cut-off is a DAY rather than an instant.
+     *
+     * The changeover for such an edition is a day's work: the previous year's
+     * notices are cancelled and the new year's published in one sitting, and the
+     * public window is opened somewhere in the middle of it. Measured on "EfS A -
+     * 2025", the window opened at 10:28:17, the 2024 notices were cancelled at
+     * 11:18 and the 2025 notices published at 11:28 -- so a cut-off at the instant
+     * the window opened resolves the edition from BEFORE its own changeover, and
+     * produced 29 members missing and 29 extra against the tag that recorded it.
+     * 2024 and 2022 have the same shape; 2026 and 2023 looked correct only because
+     * those years' notices happened to go out before the window was opened.
+     *
+     * BOTH HALVES ARE REQUIRED. A weekly in-force list -- the active P&T -- has a
+     * release stamp minutes from its close and no day-long changeover to contain,
+     * and an accumulated annual is decided where its window CLOSES, which is a
+     * calendar boundary rather than a day anybody worked through. Neither is
+     * touched by this.
+     */
+    public static boolean isAnnualInForce(SeriesCadence cadence,
+                                          org.niord.core.publication.series.resolve.TimeRelation relation) {
+        return cadence == SeriesCadence.YEARLY
+                && relation == org.niord.core.publication.series.resolve.TimeRelation.IN_FORCE_AT_CUTOFF;
+    }
+
+    /**
+     * The last instant of the day an instant falls in, in the given zone.
+     *
+     * The cut-off of an annual in-force edition: "what was in force at the end of
+     * the day it came into force". The end of the day is the smallest bound that
+     * contains the whole changeover -- a wider one starts pulling in the next
+     * day's editing, a narrower one puts the answer back inside a sequence whose
+     * order within the day nobody controlled.
+     *
+     * To the millisecond, because that is the resolution the columns keep and a
+     * cut-off rounded up to midnight would belong to the following day, which for
+     * an edition taking effect on 1 January is the following YEAR.
+     *
+     * The zone is required rather than defaulted to the JVM's: which day an
+     * instant belongs to is exactly the question a wrong zone answers wrongly, and
+     * an instant an hour either side of midnight lands on two different days on
+     * two different machines.
+     */
+    public static java.util.Date endOfDay(java.util.Date instant, java.time.ZoneId zone) {
+        if (instant == null) {
+            return null;
+        }
+        java.time.ZoneId z = zone == null ? java.time.ZoneOffset.UTC : zone;
+        return java.util.Date.from(instant.toInstant().atZone(z)
+                .toLocalDate()
+                .atTime(23, 59, 59, 999_000_000)
+                .atZone(z)
+                .toInstant());
+    }
 }

@@ -358,4 +358,58 @@ public class CutoffRecoveryTest {
         assertNull(CutoffRecovery.nextTagCreated(chain, 5));
         assertNull(CutoffRecovery.nextTagCreated(chain, -1));
     }
+
+    /**
+     * An in-force annual is cut off at the END of the day its window opens, in
+     * the series' zone -- and the whole changeover falls inside that.
+     *
+     * The window is opened partway through a day's work: on "EfS A - 2025" it
+     * opened at 10:28:17, the previous year's notices were cancelled at 11:18 and
+     * the new year's published at 11:28. A cut-off at the opening instant resolves
+     * the edition from before its own changeover.
+     */
+    @Test
+    public void anInForceAnnualIsCutOffAtTheEndOfItsChangeoverDay() {
+        java.time.ZoneId cph = java.time.ZoneId.of("Europe/Copenhagen");
+        Date opened = Date.from(java.time.ZonedDateTime
+                .of(2025, 2, 7, 10, 28, 17, 0, cph).toInstant());
+
+        CutoffRecovery.Recovered r = CutoffRecovery.fromPublicWindowOpen(opened, cph);
+
+        assertEquals(CutoffRecovery.PUBLIC_WINDOW, r.source(),
+                "the answer is still read off the window, not off a stamp that witnessed a release");
+        assertTrue(r.reconstructed());
+        assertFalse(CutoffRecovery.witnessesTheRelease(r),
+                "a window boundary is not a moment anybody pressed publish");
+
+        java.time.ZonedDateTime at = r.cutoff().toInstant().atZone(cph);
+        assertEquals(2025, at.getYear());
+        assertEquals(2, at.getMonthValue());
+        assertEquals(7, at.getDayOfMonth(), "the same day, never the next one");
+        assertEquals(23, at.getHour());
+        assertEquals(59, at.getMinute());
+        assertEquals(59, at.getSecond());
+        assertEquals(999, at.getNano() / 1_000_000);
+
+        // The whole sequence that day is on the right side of it, which is the
+        // point: the cancellations and the new publications both precede the
+        // cut-off, so the edition resolves to the list it actually shipped.
+        Date cancelledAt = Date.from(java.time.ZonedDateTime
+                .of(2025, 2, 7, 11, 18, 0, 0, cph).toInstant());
+        Date publishedAt = Date.from(java.time.ZonedDateTime
+                .of(2025, 2, 7, 11, 29, 0, 0, cph).toInstant());
+        assertTrue(cancelledAt.before(r.cutoff()));
+        assertTrue(publishedAt.before(r.cutoff()));
+        assertTrue(opened.before(cancelledAt),
+                "and the window opened BEFORE the changeover, which is the whole defect");
+    }
+
+    /** No window, no answer -- and a human is told rather than given a date. */
+    @Test
+    public void anInForceAnnualWithNoWindowIsManual() {
+        CutoffRecovery.Recovered r = CutoffRecovery.fromPublicWindowOpen(
+                null, java.time.ZoneId.of("Europe/Copenhagen"));
+        assertNull(r.cutoff());
+        assertEquals(CutoffRecovery.MANUAL, r.source());
+    }
 }

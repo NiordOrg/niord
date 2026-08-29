@@ -877,8 +877,17 @@ public class IssuePublishService extends BaseService {
             // falling through to the clock here named every annual edition for the
             // day somebody happened to press publish rather than for the boundary
             // it is the edition of.
+            //
+            // Taken to the END of that day for an annual, because the changeover
+            // is a day's work: the previous year's notices are cancelled and this
+            // year's published in one sitting, and a cut-off at the instant the
+            // year opens resolves the list from BEFORE that sitting. The importer
+            // reads the archive by the same rule, so a natively published edition
+            // and an imported one describe the same instant.
             if (issue.getIntervalTo() != null) {
-                return issue.getIntervalTo();
+                return CutoffDefault.isAnnualInForce(series.getCadence(), series.getTimeRelation())
+                        ? CutoffDefault.endOfDay(issue.getIntervalTo(), series.cutoffZone())
+                        : issue.getIntervalTo();
             }
         }
         if (d == CutoffDefault.PERIOD_END && issue.getIntervalTo() != null) {

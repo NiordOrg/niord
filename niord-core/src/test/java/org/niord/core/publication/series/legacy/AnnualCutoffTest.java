@@ -72,23 +72,67 @@ public class AnnualCutoffTest {
         return issue;
     }
 
-    /** An in-force annual is decided where its window OPENS, however late it was edited. */
+    /**
+     * An in-force annual is decided at the END of the day its window opens.
+     *
+     * NOT AT THE INSTANT IT OPENS, which is what this asserted first. The
+     * changeover is a day's work rather than a moment's: on "EfS A - 2025" the
+     * window was opened at 10:28:17, the 2024 notices were cancelled at 11:18 and
+     * the 2025 notices published at 11:28 -- so resolving at 10:28:17 produced the
+     * 2024 list and the shadow diff reported 29 missing and 29 extra against the
+     * tag that holds the 2025 one. The 2024 and 2022 editions have the same shape;
+     * 2026 and 2023 looked correct only because those years' notices happened to
+     * go out before the window was opened.
+     *
+     * The day, and no more. What the edition means is what was in force at the end
+     * of the day it came into force, and the end of that day is the smallest bound
+     * that contains the whole changeover.
+     */
     @Test
-    public void anInForceAnnualIsCutOffWhereItsWindowOpens() {
+    public void anInForceAnnualIsCutOffAtTheEndOfTheDayItsWindowOpens() {
         PublicationIssue efsA2018 = issue(EFS_A_2018);
-        assertEquals(efsA2018.getPublicFrom(), efsA2018.getCutoffStampedAt(),
-                "EfS A 2018 was in force from 1 January 2018; its 2019 edit is not its cut-off");
+        assertEquals(endOfDayOf(efsA2018, efsA2018.getPublicFrom()), efsA2018.getCutoffStampedAt(),
+                "EfS A 2018 came into force on 1 January 2018; its 2019 edit is not its cut-off");
         assertEquals(CutoffRecovery.PUBLIC_WINDOW, efsA2018.getCutoffSource());
-        assertEquals(efsA2018.getPublicFrom(), efsA2018.getIntervalTo());
         assertNull(efsA2018.getIntervalFrom(), "an in-force list has no lower bound");
 
-        PublicationIssue efsA2024 = issue(EFS_A_2024);
-        assertEquals(efsA2024.getPublicFrom(), efsA2024.getCutoffStampedAt());
+        // The interval's upper bound is still the boundary the window names. It is
+        // what the edition is FOR; the cut-off is when its contents were settled,
+        // and on a changeover day those are hours apart.
+        assertEquals(efsA2018.getPublicFrom(), efsA2018.getIntervalTo());
 
-        // A mid-year edition is decided at its seam, not on 1 January.
+        PublicationIssue efsA2024 = issue(EFS_A_2024);
+        assertEquals(endOfDayOf(efsA2024, efsA2024.getPublicFrom()), efsA2024.getCutoffStampedAt());
+
+        // A mid-year edition is decided at the end of its seam DAY, not on 1 January.
         PublicationIssue efsA2017b = issue(EFS_A_2017_SECOND_EDITION);
-        assertEquals(new Date(1488889914000L), efsA2017b.getCutoffStampedAt(),
+        assertEquals(endOfDayOf(efsA2017b, new Date(1488889914000L)), efsA2017b.getCutoffStampedAt(),
                 "the second 2017 edition took effect on 7 March");
+    }
+
+    /**
+     * The absolute instant, written out once, so the rule is readable without
+     * running the helper in your head.
+     */
+    @Test
+    public void theCutoffOfEfsA2018IsTheLastMillisecondOfNewYearsDay() {
+        PublicationIssue efsA2018 = issue(EFS_A_2018);
+        ZonedDateTime at = efsA2018.getCutoffStampedAt().toInstant()
+                .atZone(efsA2018.getSeries().cutoffZone());
+        assertEquals(2018, at.getYear());
+        assertEquals(1, at.getMonthValue());
+        assertEquals(1, at.getDayOfMonth());
+        assertEquals(23, at.getHour());
+        assertEquals(59, at.getMinute());
+        assertEquals(59, at.getSecond());
+        assertEquals(999, at.getNano() / 1_000_000,
+                "to the millisecond: rounded up to midnight this would be the 2019 edition");
+    }
+
+    /** The end of the day an instant falls in, in the SERIES' own zone. */
+    private static Date endOfDayOf(PublicationIssue issue, Date instant) {
+        return org.niord.core.publication.series.CutoffDefault.endOfDay(
+                instant, issue.getSeries().cutoffZone());
     }
 
     /** The publication moment is kept apart, and only where the stamp is credible. */
@@ -102,8 +146,9 @@ public class AnnualCutoffTest {
                 "edited in February 2022, inside its own window");
         assertNull(issue(FIRING_2022_EDITED_NEXT_YEAR).getPublishedAt(),
                 "edited in January 2023, after its window closed: not a release moment, so unknown");
-        assertEquals(new Date(1641363763000L), issue(FIRING_2022_EDITED_NEXT_YEAR).getCutoffStampedAt(),
-                "and the cut-off is still 5 January 2022, where the window opens");
+        PublicationIssue firing2022 = issue(FIRING_2022_EDITED_NEXT_YEAR);
+        assertEquals(endOfDayOf(firing2022, new Date(1641363763000L)), firing2022.getCutoffStampedAt(),
+                "and the cut-off is still 5 January 2022, the day the window opens");
     }
 
     /** An accumulated annual describes the year its window names, and is decided where it CLOSES. */

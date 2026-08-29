@@ -45,11 +45,14 @@ import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
+import org.niord.core.publication.series.legacy.CutoffRecovery;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -362,6 +365,94 @@ public class ShadowDiffTest {
                 "a null lower bound is the ANSWER for an in-force issue, not a gap to fill "
                         + "from the previous release -- filling it bounds a series that reaches "
                         + "back years to a single week");
+    }
+
+    /**
+     * An annual in-force edition is compared at the END of its changeover day,
+     * and only then does it agree with the tag that recorded it.
+     *
+     * The changeover is a day's work, not a moment's. On "EfS A - 2025" the public
+     * window was opened at 10:28:17, the 2024 notices were cancelled at 11:18 and
+     * the 2025 notices published at 11:28 -- so a cut-off at the opening instant
+     * resolves the list from BEFORE the changeover and the diff reported 29
+     * missing and 29 extra against a tag holding the new list. 2024 and 2022 had
+     * the same shape; 2026 and 2023 were green only because those years' notices
+     * happened to go out before the window was opened, which is luck rather than
+     * correctness.
+     *
+     * BOTH SIDES ARE ASSERTED, on one fixture, because "green" on its own does not
+     * say the rule did anything: the same fixture read at the opening instant is
+     * red with exactly one message missing and one extra, which is the shape the
+     * estate showed at 29x.
+     */
+    @Test
+    @Transactional
+    public void anAnnualInForceEditionIsComparedAtTheEndOfItsChangeoverDay() {
+        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        MessageSeries ms = messageSeries(seriesKey);
+        PublicationSeries series = importedSeries(seriesKey);
+        series.setCadence(SeriesCadence.YEARLY);
+        series.setTimeRelation(TimeRelation.IN_FORCE_AT_CUTOFF);
+        series.setAliveAtCutoff(true);
+        em.flush();
+
+        ZoneId zone = series.cutoffZone();
+        ZonedDateTime day = ZonedDateTime.now(zone).minusYears(1)
+                .withMonth(2).withDayOfMonth(7).withHour(10).withMinute(28).withSecond(17)
+                .withNano(0);
+        Date windowOpens = Date.from(day.toInstant());
+        Date cancelledAt = Date.from(day.withHour(11).withMinute(18).withSecond(0).toInstant());
+        Date publishedAt = Date.from(day.withHour(11).withMinute(29).withSecond(0).toInstant());
+
+        // Last year's notice, withdrawn during the changeover, and this year's,
+        // published fifty minutes later. Both are resolvable -- a cancelled
+        // message stays public -- and which of them is in force is decided
+        // entirely by where the cut-off falls on this one day.
+        Message lastYear = message(ms, Date.from(day.minusYears(1).toInstant()));
+        lastYear.setPublishDateTo(cancelledAt);
+        lastYear.setStatus(Status.CANCELLED);
+        Message thisYear = message(ms, publishedAt);
+        em.flush();
+
+        Publication template = template(series);
+        Publication edition = release(template, windowOpens, tag(thisYear));
+        // The in-force regime, declared on the release itself -- which is where
+        // the diff reads it from, not from the series row.
+        edition.setMessageTagFilter("msg.status == Status.PUBLISHED");
+        em.flush();
+
+        PublicationIssue issue = importedIssue(series, edition);
+        issue.setIntervalFrom(null);
+        issue.setIntervalTo(windowOpens);
+        issue.setCutoffStampedAt(
+                CutoffRecovery.fromPublicWindowOpen(windowOpens, zone).cutoff());
+        em.flush();
+
+        ShadowDiffRun green = shadowDiff.diff(edition);
+
+        assertNull(green.getSkipReason(), "nothing here is uncomparable");
+        assertEquals(issue.getCutoffStampedAt(), green.getCutoffAt(),
+                "the diff must read the issue's own cut-off, which is the end of the changeover day");
+        assertTrue(green.isGreen(),
+                "the edition resolves to the list it shipped: missing " + green.missing()
+                        + ", extra " + green.extra());
+
+        // The counterfactual, on the same fixture: move the cut-off back to the
+        // instant the window opened and the edition resolves to last year's list.
+        shadowDiff.reset();
+        issue.setCutoffStampedAt(windowOpens);
+        em.flush();
+
+        ShadowDiffRun red = shadowDiff.diff(edition);
+
+        assertFalse(red.isGreen(),
+                "at the opening instant the changeover has not happened yet, so this cannot agree");
+        assertEquals(1, red.missing().size(),
+                "this year's notice was published after the window opened, so it is not selected");
+        assertEquals(1, red.extra().size(),
+                "and last year's, cancelled an hour later, still is");
+        assertTrue(red.extra().contains(lastYear.getUid()));
+        assertTrue(red.missing().contains(thisYear.getUid()));
     }
 
     /**
