@@ -41,19 +41,22 @@ import org.niord.core.domain.DomainService;
  * it decides which desk is accountable for what the series publishes, so
  * "belongs to" is a real claim and this is what enforces it.
  *
- * A series with NO domain is writable by ANY admin, and that half is a SAFETY
- * VALVE rather than a rule about how the model works. Every publication names an
- * owner now -- the column is NOT NULL and S-20a refuses a save without one -- so
- * this branch should be unreachable. Where it is reachable, on a database whose
- * owner backfill could not run, a publication nobody can edit is worse than one
- * anybody can: there is no domain to switch to in order to gain the right, so the
- * alternative is a row that is permanently read-only through the UI and only
- * reachable by editing the database.
+ * A series with NO domain is writable by NOBODY through an ordinary write, and
+ * that is the half that changed. It used to be writable by ANY admin, on the
+ * reasoning that a domainless publication was visible everywhere and a shared
+ * publication nobody can edit is worse than one anybody can. That reasoning
+ * belonged to the model where a null domain MEANT "everywhere"; it does not
+ * survive the split. An ownerless row is now an anomaly rather than a state --
+ * the column is NOT NULL and S-20a refuses every save without one -- and letting
+ * the first admin who opened the form write it would be letting them adopt it
+ * silently, which is exactly the claim that is supposed to be deliberate.
  *
- * IT DOES NOT LET A SAVE ADOPT ONE. Being allowed to write an ownerless series is
- * not being allowed to make it yours: the save still fails S-20a, and assigning an
- * owner is the transfer endpoint's job, which asks for a reason and writes an
- * audit entry.
+ * THE WAY TO GIVE AN OWNERLESS ROW AN OWNER IS THE TRANSFER ENDPOINT, acting as a
+ * CLAIM. `PUT /publication-series/series/{id}/owner` skips the source check when
+ * the stored owner is null -- there is no desk to be sitting at -- still requires
+ * admin in the target, still demands a reason, and writes an OWNER_TRANSFERRED
+ * entry with `from = null`. So the row is reachable, and taking it is an act with
+ * a name on it rather than a side effect of saving a title.
  *
  * SHARING NEVER GRANTS A WRITE. A publication available in another domain is
  * read-only there; this guard compares the OWNER and nothing else, so a desk that
@@ -106,11 +109,12 @@ public class PublicationDomainGuard {
      */
     public static boolean writable(Domain seriesDomain, Domain currentDomain) {
         if (seriesDomain == null) {
-            // A row with no owner at all, which the model no longer permits. See
-            // the class note: there is no domain to switch to in order to gain
-            // the right, so refusing here would leave it editable only in the
-            // database. The save still refuses it under S-20a.
-            return true;
+            // A row with no owner at all, which the model no longer permits. NOT
+            // writable: waving it through would let whichever admin opened the
+            // form adopt it by saving, and taking responsibility for a publication
+            // is supposed to be an act with a name on it. The transfer endpoint is
+            // how it is claimed -- see the class note.
+            return false;
         }
         if (currentDomain == null) {
             // A caller sitting at no desk at all. Refused rather than waved

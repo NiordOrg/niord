@@ -47,14 +47,28 @@ public final class TestOwnerDomain {
 
     /** The shared owner, created on first use. */
     public static Domain of(EntityManager em) {
+        return of(em, DOMAIN_ID);
+    }
+
+    /**
+     * A named owner, created on first use.
+     *
+     * For the tests that need TWO desks. A fixture whose publications all belong
+     * to the same domain cannot tell "reads the owner of the first" from "reads
+     * the owner of whichever one it finds" -- both answer the same thing -- so a
+     * second domain is what makes the assertion mean something.
+     */
+    public static Domain of(EntityManager em, String domainId) {
         Domain existing = em.createQuery(
                         "SELECT d FROM Domain d WHERE d.domainId = :id", Domain.class)
-                .setParameter("id", DOMAIN_ID)
+                .setParameter("id", domainId)
                 .getResultStream().findFirst().orElse(null);
         if (existing != null) {
             return existing;
         }
         Domain domain = detached();
+        domain.setDomainId(domainId);
+        domain.setName(domainId);
         em.persist(domain);
         return domain;
     }

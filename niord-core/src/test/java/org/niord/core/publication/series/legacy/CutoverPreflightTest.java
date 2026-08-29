@@ -29,7 +29,10 @@ import org.niord.core.publication.series.PublicationSeries;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -325,32 +328,68 @@ public class CutoverPreflightTest {
     }
 
     /**
-     * The ownerless count is on the sheet, whatever it reads.
+     * The ownerless count is on the sheet, and on this database it reads zero.
      *
      * An absent number and a zero read alike on a checklist somebody ticks, so the
-     * count is written whether or not there is anything to report -- and a
-     * publication with no owner is a violation rather than a note, because the
-     * owner decides which admin list it appears on, who may change it, and the
-     * timezone its cut-offs are reckoned in.
+     * count is written whether or not there is anything to report.
+     *
+     * ZERO IS ALL THIS PATH CAN EVER SEE HERE, and that is worth stating rather
+     * than dressing up: V13 made the owner column NOT NULL on this database, so
+     * the query behind the finding cannot return a row. Running the whole
+     * pre-flight therefore proves the count key exists and nothing else -- the
+     * shape of a finding when there IS one is asserted below, on the builder.
      */
     @Test
     @Transactional
-    public void theOwnerlessCountIsReportedAndIsAViolationWhenItIsNotZero() {
+    public void theOwnerlessCountIsAlwaysOnTheSheet() {
         CutoverPreflightService.Preflight result = preflight.run();
 
-        assertNotNull(result.counts().get("seriesWithoutOwner"),
+        assertNotNull(result.counts().get(CutoverPreflightService.OWNERLESS_COUNT),
                 "the pre-flight does not say how many publications have no owner; an absent number "
                         + "and zero read alike on a sheet somebody ticks");
 
         long ownerless = em.createQuery(
                         "SELECT COUNT(s) FROM PublicationSeries s WHERE s.domain IS NULL", Long.class)
                 .getSingleResult();
-        assertEquals((int) ownerless, result.counts().get("seriesWithoutOwner").intValue(),
+        assertEquals((int) ownerless,
+                result.counts().get(CutoverPreflightService.OWNERLESS_COUNT).intValue(),
                 "the reported count disagrees with the estate it describes");
-        assertEquals(ownerless, result.violations().stream()
-                        .filter(v -> "SERIES_WITHOUT_OWNER".equals(v.code())).count(),
+    }
+
+    /**
+     * And what a finding looks like when the estate really does carry one.
+     *
+     * Driven through the builder with the count supplied, because the real query
+     * cannot produce one on a database whose owner column is NOT NULL -- see
+     * above. Three things are pinned, and each is what somebody downstream depends
+     * on: the CODE, which a runbook greps the report for; the COUNT KEY, which the
+     * checklist reads and compares against an expected number; and the MESSAGE,
+     * because a violation that says a publication is wrong without saying what to
+     * do about it stops a cutover for as long as it takes somebody to work it out.
+     */
+    @Test
+    public void anownerlessPublicationIsAViolationThatSaysWhatToDo() {
+        List<CutoverPreflightService.Violation> violations = new ArrayList<>();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+
+        CutoverPreflightService.reportOwnerless(
+                List.of("stranded-series", "another-stranded-series"), violations, counts);
+
+        assertEquals(2, counts.get(CutoverPreflightService.OWNERLESS_COUNT),
+                "the count key the checklist reads must carry the number of findings");
+        assertEquals(2, violations.size(),
                 "an ownerless publication must be a VIOLATION, not a note: it appears on no admin "
                         + "list, nobody administers it, and it has no timezone to read a cut-off in");
+
+        CutoverPreflightService.Violation first = violations.get(0);
+        assertEquals("SERIES_WITHOUT_OWNER", first.code(),
+                "the code is the external handle a runbook greps for; renaming it silently breaks "
+                        + "the step that reads it");
+        assertEquals(CutoverPreflightService.SERIES_WITHOUT_OWNER, first.code());
+        assertEquals("stranded-series", first.subject(),
+                "the finding must name the publication, or the operator has to find it themselves");
+        assertTrue(first.detail().contains("Assign one before the flip"),
+                "the finding must say what to do about it: " + first.detail());
     }
 
     /** The audit's own pattern, applied the way the audit applies it. */

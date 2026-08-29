@@ -210,33 +210,55 @@ public final class LegacyTemplateRulings {
     }
 
     /**
-     * Who besides the owner may cite an imported series.
+     * Who besides the owner may cite an imported series, BY NAME.
      *
-     * TWO RULES, and the split is by what the publication IS rather than by which
-     * domain it landed in.
+     * A TABLE, NOT A DERIVATION, and that distinction is the whole of this fix.
+     * This used to answer from the content mode -- generated is the owner's,
+     * everything else is everybody's -- which reads as a principle and is wrong on
+     * the estate. Three of the ruled series are UPLOADED_FILE: the accumulated
+     * yearly NTM and the two NM annexes are documents, so the derivation shared
+     * all three with every domain, when each belongs to exactly one desk. Nothing
+     * in the data distinguishes them from the six reference lists, which are ALSO
+     * uploaded files and genuinely are everybody's. The difference is editorial,
+     * so it is recorded rather than computed.
      *
-     * A GENERATED series is assembled from one domain's own messages over one
-     * domain's cut-off calendar. Its weekly edition means the NM desk's week and
-     * nothing else, so it is the owner's and no one else's: OWNER_ONLY.
-     *
-     * EVERYTHING ELSE -- an uploaded document, an external link, a publication with
-     * no content model at all -- is a reference somebody points at. That is how the
-     * old system behaved by construction, because it had no way to narrow one, and
-     * narrowing them now would remove from every citation dialog exactly the
-     * publications that are cited from all of them.
-     *
-     * The six shared references are covered by the same rule and not by an
-     * exception: none of them is generated. They are listed above for the OWNER
-     * decision, which the data really does not contain, and their availability
-     * falls out of what they are.
-     *
-     * Delegated to the model's own default rather than restated, because the
-     * editor applies the identical rule to a publication created by hand -- and an
-     * imported publication that shared differently from an authored one of the
-     * same kind would be a difference nobody could see the reason for.
+     * A series the table does not name falls back to the model's own default,
+     * which is the rule an admin creating a publication by hand gets. That keeps
+     * the unnamed tail -- the dont-use-* clones, the ncags-2021 family -- behaving
+     * as an authored publication of the same kind would.
      */
-    public static SeriesAvailability availabilityFor(ContentMode contentMode) {
-        return SeriesAvailability.defaultFor(contentMode);
+    private static final Map<String, SeriesAvailability> AVAILABILITY_BY_SERIES =
+            new LinkedHashMap<>();
+
+    static {
+        // The three the weekly desks own outright. Each is an UPLOADED_FILE, so
+        // the content mode would have shared all three with every domain.
+        AVAILABILITY_BY_SERIES.put("accumulated-yearly-ntm", SeriesAvailability.OWNER_ONLY);
+        AVAILABILITY_BY_SERIES.put("nm-annex-ice-service", SeriesAvailability.OWNER_ONLY);
+        AVAILABILITY_BY_SERIES.put("nm-annex-ncags", SeriesAvailability.OWNER_ONLY);
+
+        // And the six reference lists, which every desk cites and none owns. Also
+        // uploaded files and links, and that is exactly why the content mode
+        // cannot tell them from the three above.
+        for (String seriesId : SHARED_EVERYWHERE) {
+            AVAILABILITY_BY_SERIES.put(seriesId, SeriesAvailability.ALL_DOMAINS);
+        }
+    }
+
+    /**
+     * The ruled availability for a series, or the default for its content mode.
+     *
+     * The seriesId comes first because it is the ruling; the content mode is only
+     * consulted for a series nobody has ruled on.
+     */
+    public static SeriesAvailability availabilityFor(String seriesId, ContentMode contentMode) {
+        SeriesAvailability ruled = seriesId == null ? null : AVAILABILITY_BY_SERIES.get(seriesId);
+        return ruled != null ? ruled : SeriesAvailability.defaultFor(contentMode);
+    }
+
+    /** Every availability ruling, so a report shows what was applied rather than only what it did. */
+    public static Map<String, SeriesAvailability> availabilities() {
+        return Map.copyOf(AVAILABILITY_BY_SERIES);
     }
 
     /** The six the ruling shares with every domain, for a report that shows what was applied. */

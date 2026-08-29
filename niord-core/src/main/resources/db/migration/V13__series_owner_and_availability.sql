@@ -65,20 +65,24 @@ CALL niord_add_column_if_absent('PublicationSeries', 'availability',
 
 DROP PROCEDURE niord_add_column_if_absent;
 
--- The one-time classification, by the same rule the importer and the create form
--- apply: a GENERATED series is assembled from one domain's messages over that
--- domain's calendar and means that desk's week; anything else -- an uploaded
--- document, an external link, a publication with no content model -- is a
--- reference other desks cite, which is how the whole catalogue behaved before
--- this column existed.
+-- NO BACKFILL OF availability, AND THAT IS THE DECISION. The column default,
+-- OWNER_ONLY, is the safe narrow value: a publication that has not been told who
+-- may cite it is not silently offered to every domain's citation dialog, and
+-- widening one afterwards is an edit somebody makes deliberately.
 --
--- Restricted to rows still holding the column default, like V8's kind: a row that
--- already says something else was decided by a human or by the importer, and this
--- migration has nothing to add to that.
-UPDATE PublicationSeries
-   SET availability = 'ALL_DOMAINS'
- WHERE contentMode <> 'GENERATED_FROM_QUERY'
-   AND availability = 'OWNER_ONLY';
+-- The estates that matter never see the default anyway. Go-live imports from
+-- nothing and the rehearsal database is cleared and re-imported (undo, then
+-- import), and the importer writes availability from the ruling table on every
+-- row it creates -- which is where the decision belongs, because it is named per
+-- series and cannot be derived from any column. What is left for a migration to
+-- fill is a DRIFTED database nobody re-imports, and there the honest answer is
+-- the narrow one.
+--
+-- An earlier version of this file set ALL_DOMAINS on every non-generated row.
+-- It was wrong twice over: it shared three publications that belong to one desk
+-- each (they are uploaded documents, exactly like the six that really are
+-- shared), and being restricted to "rows still holding the default" it would
+-- re-widen, on a re-run, precisely the rows an admin had since narrowed.
 
 -- The availability list. CREATE TABLE IF NOT EXISTS is idempotent on its own, and
 -- the foreign keys are declared INLINE rather than added afterwards so there is no

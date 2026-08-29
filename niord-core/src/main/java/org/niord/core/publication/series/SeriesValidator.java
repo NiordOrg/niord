@@ -544,8 +544,12 @@ public final class SeriesValidator {
      * TimeZone.getTimeZone silently answers GMT for anything it does not
      * recognise, so a misspelt zone does not fail -- it shifts every cut-off of
      * the series by the offset nobody configured, and says nothing.
+     *
+     * Public because the owner transfer asks the same question of the domain a
+     * publication is MOVING to, before it moves. One definition, so a zone S-20
+     * would refuse cannot be reached by another route.
      */
-    private static boolean isReadableZone(String zone) {
+    public static boolean isReadableZone(String zone) {
         if (zone == null || zone.isBlank()) {
             return false;
         }

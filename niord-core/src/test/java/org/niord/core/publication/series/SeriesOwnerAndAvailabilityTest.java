@@ -20,8 +20,11 @@ import org.junit.jupiter.api.Test;
 import org.niord.core.domain.Domain;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -224,6 +227,120 @@ public class SeriesOwnerAndAvailabilityTest {
         SeriesOwnerTransfer.moveTo(s, target);
 
         assertSame(target, s.getDomain());
+    }
+
+    /**
+     * A target with no readable timezone is refused, for a CADENCED publication.
+     *
+     * The owner is the only source of the zone a cut-off is reckoned in, and
+     * TimeZone.getTimeZone answers GMT for anything it does not recognise -- so a
+     * move to a domain with a blank or misspelt zone does not fail, it shifts
+     * every future cut-off by an offset nobody configured and says nothing. At the
+     * year boundary that is a different year printed on the cover.
+     */
+    @Test
+    public void acadencedSeriesIsNotMovedToADomainWithNoReadableZone() {
+        for (String zone : new String[]{null, "", "Europe/Kopenhagen"}) {
+            PublicationSeries s = series("niord-nm", SeriesAvailability.OWNER_ONLY);
+            s.setCadence(SeriesCadence.WEEKLY);
+            Domain target = domain("niord-annex");
+            target.setTimeZone(zone);
+
+            IssueLifecycleService.TransitionRefusedException e =
+                    assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                            () -> SeriesOwnerTransfer.assertTransferable(s, target, true),
+                            "a weekly publication was moved to a domain whose zone is '" + zone + "'");
+            assertEquals("SERIES_INVALID", e.code());
+            assertTrue(e.getMessage().contains("niord-annex"),
+                    "the refusal must name the domain that cannot supply a zone: " + e.getMessage());
+        }
+    }
+
+    /** A readable one is accepted. */
+    @Test
+    public void acadencedSeriesMovesToADomainThatCarriesAZone() {
+        PublicationSeries s = series("niord-nm", SeriesAvailability.OWNER_ONLY);
+        s.setCadence(SeriesCadence.WEEKLY);
+        Domain target = domain("niord-annex");
+        target.setTimeZone("Atlantic/Faeroe");
+
+        SeriesOwnerTransfer.assertTransferable(s, target, true);
+    }
+
+    /**
+     * A CADENCE-LESS publication moves anywhere, exactly as S-20 lets it be saved.
+     *
+     * It has no cut-off to read in any zone, so refusing the move over a blank one
+     * would block a transfer that costs nothing -- and the six shared reference
+     * lists are all cadence-less.
+     */
+    @Test
+    public void acadencelessSeriesIsNotHeldUpByTheTargetsZone() {
+        PublicationSeries s = series("niord-annex", SeriesAvailability.ALL_DOMAINS);
+        s.setCadence(SeriesCadence.NONE);
+        Domain target = domain("niord-nm");
+        target.setTimeZone(null);
+
+        SeriesOwnerTransfer.assertTransferable(s, target, true);
+    }
+
+    /**
+     * Moving a publication to the ONE domain it was shared with collapses the
+     * setting rather than leaving it naming nobody.
+     *
+     * Pruning the target out of the list is right -- it is the owner now -- but on
+     * a single-domain list that leaves SELECTED_DOMAINS empty, which S-20b
+     * refuses. The very next save of that publication would then be rejected for a
+     * state the transfer created, and no control on the form could fix it: an
+     * empty list renders as no rows at all.
+     */
+    @Test
+    public void movingToTheOnlySharedDomainCollapsesTheSetting() {
+        Domain target = domain("niord-annex");
+        PublicationSeries s = series("niord-nm", SeriesAvailability.SELECTED_DOMAINS,
+                domain("niord-annex"));
+
+        SeriesOwnerTransfer.Moved moved = SeriesOwnerTransfer.moveTo(s, target);
+
+        assertTrue(s.getAvailableDomains().isEmpty());
+        assertEquals(SeriesAvailability.OWNER_ONLY, s.getAvailability(),
+                "the publication was left claiming to be shared with domains it names none of, "
+                        + "which S-20b refuses on the next save");
+        assertTrue(moved.availabilityChanged(),
+                "the audit entry has to be able to say the sharing setting moved too, or a reader "
+                        + "sees a publication stop being shared on the day it moved with nothing "
+                        + "connecting the two");
+        assertEquals(SeriesAvailability.SELECTED_DOMAINS, moved.availabilityBefore());
+        assertEquals(SeriesAvailability.OWNER_ONLY, moved.availabilityAfter());
+    }
+
+    /** A list with somebody left on it keeps the setting it had. */
+    @Test
+    public void movingToOneOfSeveralSharedDomainsKeepsTheSetting() {
+        Domain target = domain("niord-annex");
+        PublicationSeries s = series("niord-nm", SeriesAvailability.SELECTED_DOMAINS,
+                domain("niord-annex"), domain("niord-fa"));
+
+        SeriesOwnerTransfer.Moved moved = SeriesOwnerTransfer.moveTo(s, target);
+
+        assertEquals(SeriesAvailability.SELECTED_DOMAINS, s.getAvailability());
+        assertEquals(List.of("niord-fa"),
+                s.getAvailableDomains().stream().map(Domain::getDomainId).toList());
+        assertFalse(moved.availabilityChanged());
+    }
+
+    /** A claim records where it came from as nothing at all. */
+    @Test
+    public void aclaimOfAnOwnerlessPublicationRecordsNoSource() {
+        PublicationSeries s = series("niord-nm", SeriesAvailability.OWNER_ONLY);
+        s.setDomain(null);
+
+        SeriesOwnerTransfer.Moved moved = SeriesOwnerTransfer.moveTo(s, domain("niord-annex"));
+
+        assertNull(moved.fromDomainId(),
+                "'nobody owned this until somebody took it' and 'it came from that desk' are "
+                        + "different histories, and only one of them needs explaining further");
+        assertEquals("niord-annex", moved.toDomainId());
     }
 
     /** And one who is not an admin in the target is refused, by name. */

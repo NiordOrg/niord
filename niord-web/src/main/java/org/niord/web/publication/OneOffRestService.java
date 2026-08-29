@@ -55,6 +55,7 @@ import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.ReleaseMode;
 import org.niord.core.publication.series.SeriesAvailability;
+import org.niord.core.publication.series.SeriesAvailabilityResolver;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
 import org.niord.core.publication.series.SeriesStatus;
@@ -66,10 +67,8 @@ import org.niord.core.publication.vo.MessagePublication;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 /**
  * One-off publications: the surface for something published once.
@@ -123,6 +122,12 @@ public class OneOffRestService {
 
     @Inject
     PublicationDomainGuard domainGuard;
+
+    // The same resolver the full series editor uses. A one-off is a series,
+    // so a sharing list it accepted and that form refused would be two
+    // definitions of a valid publication.
+    @Inject
+    SeriesAvailabilityResolver availabilityResolver;
 
     @Inject
     IssueLifecycleService lifecycle;
@@ -198,8 +203,13 @@ public class OneOffRestService {
      * `domain` narrows by OWNER, exactly as the series lists do, and not by who
      * may cite it. A one-off shared with this desk is read-only here -- every
      * control on the row would answer 403 -- so it belongs in the citation dialog
-     * and not in an administration list. Omitting the parameter returns the
-     * estate, which is what the show-all-domains toggle and every script send.
+     * and not in an administration list.
+     *
+     * Omitting the parameter returns the estate. Not for a control in the admin
+     * area, which has none and should not: a one-off is administered in its owner
+     * domain and listed nowhere else. It is for the readers that really do span
+     * the installation -- the export and the scripts built on it, and the
+     * estate-wide cut-over panels, which must not be cut down to one desk.
      */
     @GET
     @Path("/")
@@ -310,6 +320,13 @@ public class OneOffRestService {
     public OneOffVo update(@PathParam("seriesId") String seriesId, OneOffVo request) {
         PublicationSeries series = required(seriesId);
         SystemPublicationSeriesVo vo = seriesOf(request);
+
+        // An ownerless row is not adopted by a save, and this comes first because
+        // it is a more useful answer than the domain refusal that would follow.
+        // The same rule the full series editor applies, from the same method: a
+        // one-off is a series, and a claim that had to go through the transfer
+        // action on one form and not the other would be no rule at all.
+        PublicationSeriesRestService.refuseOwnerlessSave(series);
 
         // Both ends: the stored domain says whether this one-off is the caller's,
         // and the body's says where they are moving it. This endpoint also
@@ -499,51 +516,7 @@ public class OneOffRestService {
             series.setDomain(domain);
         }
 
-        resolveAvailability(series, vo);
-    }
-
-    /**
-     * Who besides the owner may cite this one-off.
-     *
-     * The same resolution the full series editor performs, and it has to be the
-     * same: a list this form accepted and that one refused would be two
-     * definitions of a valid publication, differing only by which screen it was
-     * typed on. A FULL REPRESENTATION -- an absent list means shared with nobody
-     * -- because unticking the last domain is something an admin means.
-     */
-    private void resolveAvailability(PublicationSeries series, SystemPublicationSeriesVo vo) {
-        String ownerId = series.getDomain() == null ? null : series.getDomain().getDomainId();
-
-        List<Domain> shared = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-        for (String id : vo.getAvailableDomainIds() == null
-                ? List.<String>of() : vo.getAvailableDomainIds()) {
-            if (id == null || id.isBlank()) {
-                continue;
-            }
-            String wanted = id.trim();
-            // The owner is already the strongest form of "visible from here";
-            // storing it would round-trip to a list different from the one saved,
-            // because the read filters it out.
-            if (wanted.equals(ownerId) || !seen.add(wanted)) {
-                continue;
-            }
-            Domain domain = domainService.findByDomainId(wanted);
-            if (domain == null) {
-                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                        "the publication is shared with domain '" + wanted + "', which does not exist");
-            }
-            if (!domain.isActive()) {
-                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                        "the publication is shared with domain '" + wanted + "', which is not active. "
-                                + "Sharing with a switched-off domain shares it with nobody, and the "
-                                + "setting would read as if it did something.");
-            }
-            shared.add(domain);
-        }
-
-        series.getAvailableDomains().clear();
-        series.getAvailableDomains().addAll(shared);
+        availabilityResolver.apply(series, vo);
     }
 
     private void applyLinks(PublicationIssue issue, OneOffVo request) {

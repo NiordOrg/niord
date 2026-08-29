@@ -57,6 +57,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -526,15 +527,27 @@ public class PublicationResolutionTest {
     @Test
     @Transactional
     public void theSortDomainComesFromTheFirstIdAndNoOther() {
+        // TWO DIFFERENT DESKS, and that is what makes this an assertion. Both
+        // publications used to share one owner, so "reads the first" and "reads
+        // whichever it finds" gave the identical answer and a fall-through would
+        // have passed. Now the second names a domain of its own, and reading it
+        // is a visible failure.
         PublicationIssue first = publishedIssueWith(List.of());
         PublicationIssue second = publishedIssueWith(List.of());
+        second.getSeries().setDomain(TestOwnerDomain.of(em, "test-owner-domain-2"));
         em.flush();
 
-        String expected = first.getSeries().getDomain() == null
-                ? null : first.getSeries().getDomain().getDomainId();
+        String firstOwner = first.getSeries().getDomain().getDomainId();
+        String secondOwner = second.getSeries().getDomain().getDomainId();
+        assertNotEquals(firstOwner, secondOwner,
+                "the fixture gave both publications the same owner, so a fall-through to the "
+                        + "second would be indistinguishable from reading the first");
+
         Domain resolved = resolver.sortDomain(ordered(first.getPublicId(), second.getPublicId()));
-        assertEquals(expected, resolved == null ? null : resolved.getDomainId(),
-                "the sort domain did not come from the first publication named");
+        assertNotNull(resolved, "an owned publication must yield a sort domain");
+        assertEquals(firstOwner, resolved.getDomainId(),
+                "the sort domain fell through to a later publication, which silently reorders an "
+                        + "existing mixed request");
 
         assertNull(resolver.sortDomain(Set.of()));
         assertNull(resolver.sortDomain(null));

@@ -170,10 +170,25 @@ public class IssueAuditService extends BaseService {
      * receiving desk reads months later when they wonder why they own it.
      */
     public IssueAuditEntry ownerTransferred(PublicationSeries series, User actor,
-                                            String fromDomainId, String toDomainId, String reason) {
+                                            SeriesOwnerTransfer.Moved moved, String reason) {
         Map<String, Object> detail = new LinkedHashMap<>();
-        detail.put("from", fromDomainId);
-        detail.put("to", toDomainId);
+        // `from` is null for a CLAIM: a publication that belonged to no desk at
+        // all. The entry has to be able to say that, because "who did this come
+        // from" and "nobody owned this until somebody took it" are different
+        // histories and only one of them needs explaining further.
+        detail.put("from", moved == null ? null : moved.fromDomainId());
+        detail.put("to", moved == null ? null : moved.toDomainId());
+        // The sharing setting travels too, because a transfer can change it:
+        // moving a publication to the one domain it was shared with leaves the
+        // list empty and collapses SELECTED_DOMAINS to OWNER_ONLY. Without this,
+        // a reader would see a publication stop being shared on the day it moved
+        // with nothing connecting the two.
+        if (moved != null && moved.availabilityChanged()) {
+            detail.put("availabilityBefore",
+                    moved.availabilityBefore() == null ? null : moved.availabilityBefore().name());
+            detail.put("availabilityAfter",
+                    moved.availabilityAfter() == null ? null : moved.availabilityAfter().name());
+        }
         return writeSeries(series, AuditAction.OWNER_TRANSFERRED, actor, reason, detail);
     }
 

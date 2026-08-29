@@ -669,6 +669,53 @@ public class PublicationTierMatrixTest {
                 "the transfer is not audited on the series, so 'who moved this' has no answer");
     }
 
+    /**
+     * The transfer doubles as a CLAIM for a publication that belongs to nobody.
+     *
+     * The two halves are inseparable and this pins both. Ordinary saves refuse an
+     * ownerless row -- otherwise whichever admin opened the form would adopt the
+     * publication by saving it -- so if the transfer ALSO refused it on the source
+     * check, the row would be reachable only by editing the database. It skips
+     * that check alone: the target-domain role, the reason and the audit entry all
+     * still apply, which is what makes taking the publication a deliberate act
+     * rather than a side effect.
+     */
+    @Test
+    public void theOwnerTransferClaimsAPublicationThatBelongsToNobody() throws IOException {
+        String src = sourceOf(PublicationSeriesRestService.class);
+        String body = bodyOf(src, "transferOwner");
+        assertTrue(body != null, "transferOwner is gone or renamed");
+
+        assertTrue(body.contains("series.getDomain() == null"),
+                "the transfer does not distinguish a MOVE from a CLAIM. An ownerless publication "
+                        + "has no desk for the caller to be sitting at, so running the source check "
+                        + "on it strands the row: no ordinary save may adopt it either, and the only "
+                        + "route left is the database.");
+        assertTrue(body.contains("isAdminIn("),
+                "and a claim must still require admin in the domain taking the publication");
+    }
+
+    /**
+     * And an ordinary save refuses one, on BOTH editors.
+     *
+     * The one-off editor writes the same rows through a different method, so a
+     * rule enforced on the series form alone would be no rule at all -- a one-off
+     * is a series, and adopting one is the same act.
+     */
+    @Test
+    public void neitherEditorLetsAnOrdinarySaveAdoptAnOwnerlessPublication() throws IOException {
+        String seriesUpdate = bodyOf(sourceOf(PublicationSeriesRestService.class), "update");
+        assertTrue(seriesUpdate != null && seriesUpdate.contains("refuseOwnerlessSave("),
+                "the series editor's update does not refuse an ownerless publication, so saving a "
+                        + "title change would quietly hand it to whichever desk had the form open");
+
+        String oneOffUpdate = bodyOf(sourceOf(OneOffRestService.class), "update");
+        assertTrue(oneOffUpdate != null && oneOffUpdate.contains("refuseOwnerlessSave("),
+                "the one-off editor's update does not refuse one. A one-off IS a series, and a "
+                        + "claim that has to go through the transfer action on one form and not the "
+                        + "other is not a rule");
+    }
+
     /** Whether a body calls the guard, or calls something in the same file that does. */
     private static boolean asksTheGuard(String src, String body, int depth) {
         if (body.contains("domainGuard.")) {

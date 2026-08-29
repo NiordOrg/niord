@@ -21,11 +21,15 @@ import org.niord.web.PublicationRestService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.niord.model.publication.PublicationVo;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The publication picker's two halves, merged.
@@ -195,5 +199,70 @@ public class PublicationSearchUnionTest {
 
         assertEquals(2, merged.getData().size(),
                 "a null id matches no issue, so dropping the row would lose data on a guess");
+    }
+
+    // ------------------------------------------- the legacy half's own visibility
+
+    /**
+     * A legacy row whose imported twin is out of scope is dropped.
+     *
+     * THE HOLE THIS CLOSES. The legacy half carries the old nullable domain column
+     * and nothing else, so left to itself it answers by the sharing rule the
+     * redesign replaced. That is invisible while the issue half returns the twin --
+     * the two collide by id and the merge drops the legacy row anyway -- and
+     * becomes visible exactly when the new rule HIDES the twin: the legacy row then
+     * survives and shows the publication that was just hidden.
+     *
+     * The five-argument overload was the only one under test, so every assertion
+     * above ran with an empty hidden set and this parameter was never exercised at
+     * all.
+     */
+    @Test
+    public void alegacyRowWhoseTwinIsHiddenIsDropped() {
+        var merged = PublicationRestService.merge(
+                List.of(), List.of(),
+                legacy(pub("hidden-twin"), pub("visible-1")),
+                0, 100, Set.of("hidden-twin"));
+
+        assertEquals(List.of("visible-1"),
+                merged.getData().stream().map(PublicationVo::getPublicationId).toList(),
+                "the legacy row of a publication the caller's domain may not see survived the "
+                        + "union, so the old sharing rule is still running beside the new one");
+        assertEquals(1L, merged.getTotal(),
+                "and the total must count what the caller may see, or paging stops early");
+    }
+
+    /** A row with no id is never asked of the hidden set, and is kept. */
+    @Test
+    public void alegacyRowWithNoIdSurvivesTheHiddenSet() {
+        var merged = PublicationRestService.merge(
+                List.of(), List.of(), legacy(pub(null)), 0, 100, Set.of("something"));
+
+        assertEquals(1, merged.getData().size(),
+                "a row with no id has no twin to follow. Asking an immutable Set whether it "
+                        + "contains null also throws, which would take a whole search down over a "
+                        + "legacy row that was merely missing a field.");
+    }
+
+    /**
+     * And the endpoint actually asks for that set, scoped to the search's domain.
+     *
+     * A source assertion, because niord-web has no container test that could issue
+     * the request: the merge above is pure and provable, but a merge that is never
+     * handed a hidden set is a correct function nobody calls. Passing the wrong
+     * domain -- the caller's session rather than the search's -- would be just as
+     * invisible, so the argument is pinned too.
+     */
+    @Test
+    public void thesearchWiresTheHiddenSetFromTheSearchDomain() throws IOException {
+        String src = PublicationTierMatrixTest.sourceOf(PublicationRestService.class);
+        String body = PublicationTierMatrixTest.bodyOf(src, "unionWithIssues");
+        assertNotNull(body, "unionWithIssues is gone or renamed; this assertion would pass over "
+                + "nothing");
+
+        assertTrue(body.contains("legacyIdsHiddenFrom(params.getDomain())"),
+                "the union does not ask which legacy rows the search's domain may not see, so the "
+                        + "merge's hidden set is always empty and the legacy half answers by the "
+                        + "rule the redesign replaced");
     }
 }

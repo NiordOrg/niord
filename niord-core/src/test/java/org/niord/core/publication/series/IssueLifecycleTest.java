@@ -338,10 +338,8 @@ public class IssueLifecycleTest {
         em.persist(elsewhere);
 
         // The move, exactly as the transfer endpoint performs one: the owner
-        // changes and the trail records both ends.
-        String fromId = s.getDomain().getDomainId();
-        SeriesOwnerTransfer.moveTo(s, elsewhere);
-        audit.ownerTransferred(s, actor, fromId, elsewhere.getDomainId(),
+        // changes and the trail records what moved.
+        audit.ownerTransferred(s, actor, SeriesOwnerTransfer.moveTo(s, elsewhere),
                 "moved so the delete has a trail to trip over");
 
         // And a real retirement, which writes SERIES_RETIRED.

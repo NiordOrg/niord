@@ -262,13 +262,37 @@ public class CutoverPreflightService extends BaseService {
      * read alike on a checklist, and this is a line somebody ticks.
      */
     private void assertEverySeriesHasAnOwner(List<Violation> violations, Map<String, Integer> counts) {
-        List<String> orphans = em.createQuery(
+        reportOwnerless(em.createQuery(
                         "SELECT s.seriesId FROM PublicationSeries s WHERE s.domain IS NULL",
                         String.class)
-                .getResultList();
-        counts.put("seriesWithoutOwner", orphans.size());
-        for (String seriesId : orphans) {
-            violations.add(new Violation("SERIES_WITHOUT_OWNER", seriesId,
+                .getResultList(), violations, counts);
+    }
+
+    /** The wire code for a publication that belongs to no domain. */
+    public static final String SERIES_WITHOUT_OWNER = "SERIES_WITHOUT_OWNER";
+
+    /** The counts key the checklist reads, whatever the number turns out to be. */
+    public static final String OWNERLESS_COUNT = "seriesWithoutOwner";
+
+    /**
+     * The finding, separated from the query that feeds it.
+     *
+     * SO IT CAN BE ASSERTED AT ALL. The owner column is NOT NULL wherever V13
+     * could apply it -- which includes the test database -- so the real query can
+     * only ever return an empty list there, and a test driving the whole pass
+     * would assert that zero findings look right. That is a test of nothing. What
+     * matters is the shape of a finding when there IS one: the code a checklist
+     * greps for, the key the count lives under, and a message that tells whoever
+     * reads it what to do. Those are asserted here with the count supplied.
+     *
+     * Package-visible rather than public: this is a seam for the test, not a
+     * second way to raise a pre-flight violation.
+     */
+    static void reportOwnerless(List<String> ownerlessSeriesIds,
+                                List<Violation> violations, Map<String, Integer> counts) {
+        counts.put(OWNERLESS_COUNT, ownerlessSeriesIds.size());
+        for (String seriesId : ownerlessSeriesIds) {
+            violations.add(new Violation(SERIES_WITHOUT_OWNER, seriesId,
                     "the publication names no domain. Every publication belongs to exactly one -- "
                             + "the desk that lists and administers it, and the only source of the "
                             + "timezone its cut-offs are read in. Assign one before the flip."));

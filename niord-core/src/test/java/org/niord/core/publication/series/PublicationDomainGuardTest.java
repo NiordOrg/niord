@@ -37,11 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Who may write a publication series, decided by the domain the caller is in.
  *
  * Three cases and they are the whole rule: your own domain writes, another
- * domain does not, and a series belonging to no domain writes from anywhere. The
- * third is the one worth a test of its own, because it is the case somebody
- * "tightens" later on the assumption it was an oversight -- and tightening it
- * strands every shared publication, since there is no domain to switch to in
- * order to gain the right.
+ * domain does not, and a publication belonging to NO domain writes from
+ * nowhere. The third is the one worth a test of its own, and it is the one that
+ * reversed: while a null owner meant "visible from every domain", refusing it
+ * stranded every shared publication, because there was no domain to switch to.
+ * Sharing has its own field now, so an ownerless row is an anomaly rather than a
+ * state -- and letting an ordinary write touch it would let whichever admin
+ * opened the form adopt the publication by saving it. The transfer endpoint is
+ * how such a row is claimed, deliberately and with a reason.
  *
  * Driven through the REAL thread-local the request filter sets, not through a
  * stub, so what is exercised is the same path a request takes.
@@ -107,12 +110,19 @@ public class PublicationDomainGuardTest {
         assertFalse(PublicationDomainGuard.writable(theirs, mine),
                 "a series belonging to another domain is not this caller's to write");
 
-        assertTrue(PublicationDomainGuard.writable(null, mine),
-                "a series with no domain is visible from every domain, so it is writable "
-                        + "from every domain; there is no domain to switch to");
-        assertTrue(PublicationDomainGuard.writable(null, null),
-                "and a domainless series stays writable even by a caller in no domain, or "
-                        + "the shared publications become editable only in the database");
+        // AN OWNERLESS ROW IS WRITABLE BY NOBODY, and this pair used to assert the
+        // opposite. The old reasoning -- a domainless publication is visible
+        // everywhere, so a shared publication nobody can edit is worse than one
+        // anybody can -- belonged to the model where a null domain MEANT
+        // "everywhere". Sharing has its own field now, so a null owner is an
+        // anomaly rather than a state, and waving it through would let the first
+        // admin who opened the form adopt the publication by saving it.
+        assertFalse(PublicationDomainGuard.writable(null, mine),
+                "an ownerless publication was writable, so an ordinary save could adopt it -- "
+                        + "and taking responsibility for a publication is supposed to be an act "
+                        + "with a name on it, not a side effect of editing a title");
+        assertFalse(PublicationDomainGuard.writable(null, null),
+                "and no more so for a caller sitting at no desk at all");
 
         assertFalse(PublicationDomainGuard.writable(mine, null),
                 "a caller sitting at no desk at all is refused; otherwise omitting the "
@@ -172,20 +182,28 @@ public class PublicationDomainGuardTest {
         guard.assertWritable(issue);
     }
 
-    /** A series with no domain is writable by whoever is asking. */
+    /**
+     * A publication with no owner is writable by nobody, through this guard.
+     *
+     * The refusal is what makes claiming one deliberate. An ownerless row is
+     * reachable through the transfer endpoint, which skips the source check for
+     * exactly this case, still demands admin in the target, and records who took
+     * it and why -- so the row is not stranded, it is claimed rather than
+     * absorbed by the next save of an unrelated field.
+     */
     @Test
     @Transactional
-    public void aDomainlessSeriesIsWritableByAnyone() {
+    public void anOwnerlessSeriesIsWritableByNobody() {
         Domain caller = domain();
         PublicationSeries s = series(null);
 
         domainService.setDomainForCurrentThread(caller.getDomainId());
-        assertTrue(guard.isWritable(s));
-        guard.assertWritable(s);
+        assertFalse(guard.isWritable(s), "an ordinary save could adopt an ownerless publication");
+        assertThrows(PublicationDomainGuard.NotInDomainException.class,
+                () -> guard.assertWritable(s));
 
         domainService.removeDomainForCurrentThread();
-        assertTrue(guard.isWritable(s), "and from no domain at all");
-        guard.assertWritable(s);
+        assertFalse(guard.isWritable(s), "and no more so from no domain at all");
     }
 
     /** A create may name the caller's domain, or none, and nobody else's. */

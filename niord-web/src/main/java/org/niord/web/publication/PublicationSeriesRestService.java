@@ -63,6 +63,7 @@ import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.ReleaseMode;
 import org.niord.core.publication.series.SeriesAvailability;
+import org.niord.core.publication.series.SeriesAvailabilityResolver;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesOwnerTransfer;
 import org.niord.core.publication.series.SeriesStatus;
@@ -186,6 +187,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Inject
     PublicationDomainGuard domainGuard;
 
+    // The sharing list, resolved the one way. The one-off editor and the
+    // interchange import write the same field from the same value object, and a
+    // list this form accepted and one of those refused would be two definitions
+    // of a valid publication, differing only by which screen it was typed on.
+    @Inject
+    SeriesAvailabilityResolver availabilityResolver;
+
     @Inject
     IssueLifecycleService lifecycle;
 
@@ -245,11 +253,17 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * on purpose.
      *
      * OMITTING THE PARAMETER RETURNS THE ESTATE, and that is load-bearing rather
-     * than a fallback. The show-all-domains toggle, the sysadmin's estate view,
-     * the export and every script read this list without a domain, and so do the
-     * estate-wide screens -- the import report, the pre-flight, the readiness diff
-     * and the bulk authority flip -- which are estate-wide by rule and must not be
-     * cut down to one desk.
+     * than a fallback -- but NOT because the admin area offers a way to see other
+     * domains' publications. It does not: a publication is listed in its owner
+     * domain and nowhere else, which is the whole point of having an owner.
+     *
+     * The unscoped read has other callers, and each of them genuinely spans the
+     * estate: the JSON export and the scripts that consume it, which describe the
+     * installation rather than one desk; and the cut-over panels -- the import
+     * report, the pre-flight, the readiness and shadow diff, the bulk authority
+     * flip -- which are estate-wide by rule, because a cutover that covered one
+     * domain's publications and silently skipped another's would be worse than
+     * one that did not run.
      */
     private static List<PublicationSeries> ownedBy(List<PublicationSeries> series, String domainId) {
         if (domainId == null || domainId.isBlank()) {
@@ -421,6 +435,29 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     /**
+     * An ordinary save may not give an ownerless publication an owner.
+     *
+     * Shared by the series editor and the one-off editor, because the escape is
+     * the same on both and a rule stated once cannot be enforced on one form and
+     * forgotten on the other. The refusal is S-20a's, so the message the admin
+     * reads is the same one the validator would have produced -- what changes is
+     * only WHEN, and the timing matters: refusing after the body has been read
+     * onto the entity would have applied the caller's domain first.
+     */
+    static void refuseOwnerlessSave(PublicationSeries series) {
+        if (series != null && series.getDomain() == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "S-20a: '" + series.getSeriesId() + "' belongs to no domain, and an ordinary "
+                            + "save cannot give it one -- that would make taking responsibility for "
+                            + "a publication a side effect of editing it. Claim it through the "
+                            + "transfer action, which asks why and records who.",
+                    List.of(new SeriesValidator.FieldError("S-20a", "domainId",
+                            "the publication belongs to no domain; claim it through the transfer "
+                                    + "action rather than by saving")));
+        }
+    }
+
+    /**
      * A draft may be incomplete; it may not be wrong. Asking for a release mode
      * the system cannot honour, or typing a report parameter the issue supplies,
      * is refused on the save that carries it -- as field errors, so the form can
@@ -493,61 +530,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
             series.setDomain(domain);
         }
 
-        resolveAvailability(series, vo);
-    }
-
-    /**
-     * The sharing list, resolved from ids and refused when one names nothing.
-     *
-     * A FULL REPRESENTATION, unlike the owner: an absent list means "shared with
-     * nobody", which is a state the editor has to be able to save -- an admin who
-     * unticks the last domain is saying something, and treating the empty list as
-     * "unchanged" would leave the publication shared with a domain the screen no
-     * longer shows.
-     *
-     * THE OWNER IS DROPPED FROM IT rather than refused. The owner is already the
-     * strongest form of "visible from here"; a client that echoes back what it
-     * read, or one that ticks its own domain, means no harm and gets the same
-     * result either way. Storing it would put a row in the join table that the
-     * read then filters out, so the list would round-trip to something different
-     * from what was saved.
-     *
-     * An UNKNOWN or INACTIVE domain is refused. Unknown is a client naming
-     * something that does not exist. Inactive is subtler and worse: the predicate
-     * ignores an inactive domain, so the row would be stored, shown in the editor,
-     * and share the publication with nobody -- a setting that looks switched on and
-     * is not.
-     */
-    private void resolveAvailability(PublicationSeries series, SystemPublicationSeriesVo vo) {
-        String ownerId = series.getDomain() == null ? null : series.getDomain().getDomainId();
-
-        List<Domain> shared = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-        for (String id : vo.getAvailableDomainIds() == null
-                ? List.<String>of() : vo.getAvailableDomainIds()) {
-            if (id == null || id.isBlank()) {
-                continue;
-            }
-            String wanted = id.trim();
-            if (wanted.equals(ownerId) || !seen.add(wanted)) {
-                continue;
-            }
-            Domain domain = domainService.findByDomainId(wanted);
-            if (domain == null) {
-                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                        "the publication is shared with domain '" + wanted + "', which does not exist");
-            }
-            if (!domain.isActive()) {
-                throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
-                        "the publication is shared with domain '" + wanted + "', which is not active. "
-                                + "Sharing with a switched-off domain shares it with nobody, and the "
-                                + "setting would read as if it did something.");
-            }
-            shared.add(domain);
-        }
-
-        series.getAvailableDomains().clear();
-        series.getAvailableDomains().addAll(shared);
+        availabilityResolver.apply(series, vo);
     }
 
     /**
@@ -861,6 +844,15 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
 
         PublicationSeries series = required(seriesId);
 
+        // AN OWNERLESS ROW IS NOT ADOPTED BY A SAVE, and this comes first because
+        // it is the more useful answer than the domain refusal that would follow.
+        // The importer assigns owners; a save that found one missing and quietly
+        // took it -- from whichever desk happened to open the form, on a body that
+        // may not even mention the domain -- would make claiming a publication a
+        // side effect of editing its title. Claiming one is the transfer
+        // endpoint's job, and it asks for a reason and writes an audit entry.
+        refuseOwnerlessSave(series);
+
         // BOTH ends of the move are checked, and one without the other is an open
         // door. The stored domain says whether this series is the caller's to
         // touch at all; the body's domain says where they are putting it, and a
@@ -1027,9 +1019,24 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                                                    Map<String, Object> body) {
         PublicationSeries series = required(seriesId);
 
-        // The source half of the permission, and it is the guard the whole admin
-        // surface already uses: the caller has to be sitting at the owning desk.
-        domainGuard.assertWritable(series);
+        // THE SOURCE HALF, unless there is no source.
+        //
+        // A publication that already belongs to a desk is moved by somebody
+        // sitting at it -- the guard the whole admin surface uses. An OWNERLESS
+        // row has no desk to be sitting at, and refusing on that ground would
+        // leave it permanently unreachable: no ordinary save may adopt it either,
+        // so the only remaining route would be the database.
+        //
+        // So this endpoint doubles as a CLAIM. The target half still applies in
+        // full -- the caller must be an admin where the publication is going --
+        // and so do the reason and the audit entry, which records `from` as null.
+        // The difference between a move and a claim is visible in the trail, which
+        // is the point: taking responsibility for a publication nobody owned is a
+        // deliberate act with a name on it.
+        boolean claim = series.getDomain() == null;
+        if (!claim) {
+            domainGuard.assertWritable(series);
+        }
         StaleVersionGuard.check(series, StaleVersionGuard.versionOf(body));
 
         // An absent body, an absent key and an explicit null all read the same
@@ -1045,8 +1052,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
                     "no domain '" + targetId + "'");
         }
-        String fromId = series.getDomain() == null ? null : series.getDomain().getDomainId();
-
         // The target half, and every other refusal, decided away from the request.
         // Only the token's per-domain roles can answer whether the caller is an
         // admin THERE: the container's check ran against the domain in the header.
@@ -1059,11 +1064,16 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                 "moving a publication changes which desk lists it, administers it and answers for "
                         + "it; the trail must say why");
 
-        SeriesOwnerTransfer.moveTo(series, target);
+        SeriesOwnerTransfer.Moved moved = SeriesOwnerTransfer.moveTo(series, target);
 
         PublicationSeries saved = seriesService.update(series);
-        audit.ownerTransferred(saved, userService.currentUser(), fromId, targetId, reason);
-        log.info("Series {} owner {} -> {}, reason '{}'", seriesId, fromId, targetId, reason);
+        audit.ownerTransferred(saved, userService.currentUser(), moved, reason);
+        log.info("Series {} owner {} -> {}{}, reason '{}'", seriesId, moved.fromDomainId(), targetId,
+                moved.availabilityChanged()
+                        ? " (availability " + moved.availabilityBefore() + " -> "
+                                + moved.availabilityAfter() + ")"
+                        : "",
+                reason);
         return saved.toVo(SystemPublicationSeriesVo.class);
     }
 

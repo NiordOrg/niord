@@ -695,12 +695,7 @@ public class LegacyImportService extends BaseService {
 
         Domain domain = domainService.findByDomainId(domainId);
         if (domain == null) {
-            problem(plan, "OWNER_DOMAIN_NOT_FOUND", series.getLegacyTemplateId(),
-                    series.getSeriesId(),
-                    "the series would be owned by domain '" + domainId + "', which does not exist "
-                            + "here. Every publication belongs to exactly one domain -- it is the "
-                            + "desk that lists it and the only source of the timezone its cut-offs "
-                            + "are read in -- so there is nothing to import it as.");
+            plan.report().getProblems().add(ownerUnresolvable(series, domainId));
             return;
         }
         series.setDomain(domain);
@@ -709,22 +704,61 @@ public class LegacyImportService extends BaseService {
         // The import is right to fill the gap, and it is also a decision somebody
         // should be able to read back: the estate is far too large to check row by
         // row and the run happens once.
-        plan.report().getNotes().add(new LegacyImportReportVo.ProblemVo(
-                "OWNER_ASSIGNED", series.getLegacyTemplateId(), series.getSeriesId(),
+        plan.report().getNotes().add(ownerAssigned(series, domainId, ruled != null));
+    }
+
+    /** The wire code for a series whose ruled owner this installation does not have. */
+    static final String OWNER_DOMAIN_NOT_FOUND = "OWNER_DOMAIN_NOT_FOUND";
+
+    /** The wire code for an owner the import supplied because the template named none. */
+    static final String OWNER_ASSIGNED = "OWNER_ASSIGNED";
+
+    /**
+     * The problem raised when the domain a series would be owned by is missing.
+     *
+     * Built here rather than inline SO IT CAN BE ASSERTED. Reaching this branch
+     * through the real dry run means running an import against an installation
+     * that lacks niord-annex -- and the moment any test creates that domain, no
+     * later run can reproduce it. What matters is the shape: the code an operator
+     * greps the report for, and a message that says why the row cannot be
+     * imported at all rather than merely imported badly.
+     *
+     * A PROBLEM, not a note, and that distinction is the behaviour. The import is
+     * all-or-nothing, so this refuses the estate -- which is right: the column is
+     * NOT NULL, so a series with no owner does not land DRAFT and wait for
+     * somebody, it takes the write down mid-flush naming a column.
+     */
+    static LegacyImportReportVo.ProblemVo ownerUnresolvable(PublicationSeries series,
+                                                            String domainId) {
+        return new LegacyImportReportVo.ProblemVo(OWNER_DOMAIN_NOT_FOUND,
+                series.getLegacyTemplateId(), series.getSeriesId(),
+                "the series would be owned by domain '" + domainId + "', which does not exist "
+                        + "here. Every publication belongs to exactly one domain -- it is the "
+                        + "desk that lists it and the only source of the timezone its cut-offs "
+                        + "are read in -- so there is nothing to import it as.");
+    }
+
+    /** The note recording an owner the import supplied, and whether a ruling named it. */
+    static LegacyImportReportVo.ProblemVo ownerAssigned(PublicationSeries series, String domainId,
+                                                        boolean byRuling) {
+        return new LegacyImportReportVo.ProblemVo(OWNER_ASSIGNED,
+                series.getLegacyTemplateId(), series.getSeriesId(),
                 "the template named no domain; the series is owned by '" + domainId + "'"
-                        + (ruled == null ? " by default" : " by ruling")));
+                        + (byRuling ? " by ruling" : " by default"));
     }
 
     /**
      * And who besides the owner may cite it.
      *
-     * Decided from what the publication IS, not from where it landed -- see the
-     * ruling. A generated series belongs to the desk whose messages and calendar
-     * make it; a document or a link is a reference anybody may point at, which is
-     * how the old system behaved because it had no way to narrow one.
+     * NAMED, not derived. Nine of the imported series are ruled on by seriesId,
+     * because nothing in the legacy data separates the three the weekly desks own
+     * outright from the six every desk cites -- all nine are uploaded documents or
+     * links. A series nobody ruled on falls back to what an admin creating the
+     * same kind of publication by hand would get.
      */
     private void applyAvailabilityRuling(PublicationSeries series) {
-        series.setAvailability(LegacyTemplateRulings.availabilityFor(series.getContentMode()));
+        series.setAvailability(LegacyTemplateRulings.availabilityFor(
+                series.getSeriesId(), series.getContentMode()));
     }
 
     /**

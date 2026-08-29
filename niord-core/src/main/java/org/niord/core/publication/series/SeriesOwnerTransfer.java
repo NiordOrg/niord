@@ -83,6 +83,49 @@ public final class SeriesOwnerTransfer {
                             + "'. A publication is moved by somebody who is accountable at both "
                             + "ends.");
         }
+
+        // S-20 AGAINST THE DOMAIN IT IS MOVING TO, asked before it moves.
+        //
+        // The owner is the only source of the zone a cut-off is reckoned in, so a
+        // cadenced publication moved to a domain that carries no readable zone
+        // would go on scheduling in whatever the server happens to be set to --
+        // and it would do it silently, because TimeZone.getTimeZone answers GMT
+        // for anything it does not recognise. An hour either way at the year
+        // boundary is a different year printed on the cover.
+        //
+        // Asked ONLY of a cadenced series, exactly as S-20 asks it: a publication
+        // with no cadence has no cut-off to read in any zone, and refusing its
+        // transfer over a blank one would block a move that costs nothing.
+        //
+        // Before rather than after, so a refused transfer leaves nothing behind.
+        // The alternative -- move, validate, roll back -- relies on the caller's
+        // transaction actually rolling back, and this is the endpoint where the
+        // audit entry has already been written by then.
+        if (series.getCadence() != null && series.getCadence() != SeriesCadence.NONE
+                && !SeriesValidator.isReadableZone(target.getTimeZone())) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_INVALID",
+                    "S-20: domain '" + targetId + "' carries no readable timezone ("
+                            + target.getTimeZone() + "), and the owner is the only source of the "
+                            + "zone this publication's cut-offs are reckoned in. Give it one before "
+                            + "moving the publication there.");
+        }
+    }
+
+    /**
+     * What a move changed, for the entry that records it.
+     *
+     * The availability travels because pruning the list can change the SETTING as
+     * well as its contents, and an audit entry that showed only the owner moving
+     * would leave the reader unable to explain why a publication stopped being
+     * shared on the same day.
+     */
+    public record Moved(String fromDomainId, String toDomainId,
+                        SeriesAvailability availabilityBefore, SeriesAvailability availabilityAfter) {
+
+        /** Whether pruning the target collapsed the sharing setting as well. */
+        public boolean availabilityChanged() {
+            return availabilityBefore != availabilityAfter;
+        }
     }
 
     /**
@@ -94,18 +137,35 @@ public final class SeriesOwnerTransfer {
      * editor shows disagree, and unticking a box that is not displayed is not
      * something anybody can do.
      *
+     * AND IF THAT EMPTIES THE LIST, THE SETTING COLLAPSES WITH IT. Moving a
+     * publication to the one domain it was shared with leaves SELECTED_DOMAINS
+     * naming nobody, which S-20b refuses -- so the very next save of that
+     * publication would be rejected for a state the transfer created and no
+     * control on the form can fix, because an empty list renders as no rows. It
+     * becomes OWNER_ONLY, which is what "shared with nobody" means, and the audit
+     * entry says so.
+     *
      * NOTHING STAMPED CHANGES. The zone follows the owner, and it is read when a
      * cut-off is decided rather than when one is displayed -- so future cut-offs
      * move and the archive does not. Re-reading a published issue's stamp in a new
      * zone would silently renumber editions somebody has already cited.
      */
-    public static void moveTo(PublicationSeries series, Domain target) {
+    public static Moved moveTo(PublicationSeries series, Domain target) {
         if (series == null || target == null) {
-            return;
+            return null;
         }
+        String fromId = series.getDomain() == null ? null : series.getDomain().getDomainId();
+        SeriesAvailability before = series.getAvailability();
+
         series.setDomain(target);
         series.getAvailableDomains().removeIf(
                 d -> d != null && d.getDomainId() != null
                         && d.getDomainId().equals(target.getDomainId()));
+
+        if (series.getAvailability() == SeriesAvailability.SELECTED_DOMAINS
+                && series.getAvailableDomains().isEmpty()) {
+            series.setAvailability(SeriesAvailability.OWNER_ONLY);
+        }
+        return new Moved(fromId, target.getDomainId(), before, series.getAvailability());
     }
 }
