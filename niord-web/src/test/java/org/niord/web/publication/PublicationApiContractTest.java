@@ -22,6 +22,7 @@ import jakarta.ws.rs.Path;
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.series.PublicationDomainGuard;
+import org.niord.core.publication.series.PublishChecklistService;
 import org.niord.core.publication.series.vo.PublicationIssueVo;
 import org.niord.core.publication.series.vo.PublicationSeriesVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
@@ -29,6 +30,7 @@ import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -126,6 +128,48 @@ public class PublicationApiContractTest {
         // than a deletion.
         assertTrue(declaredFields(SystemPublicationSeriesVo.class).contains("criteria"));
         assertTrue(declaredFields(SystemPublicationIssueVo.class).contains("snapshotIntervalFrom"));
+    }
+
+    /**
+     * Every field of a release-rail row reaches the wire, under its own name.
+     *
+     * The rail row is mapped into the response by hand, key by key, so a field
+     * added to the record is carried by nothing until somebody adds a line here
+     * too -- and the endpoint keeps answering, one field short, with no failure
+     * anywhere to say so. A client reading the missing key gets `undefined`,
+     * which for `applicable` means every row counts and for `passed` means every
+     * row fails; the shape is the contract, so it is asserted rather than
+     * assumed.
+     *
+     * Matched on the ACCESSOR rather than the key, so a key spelled differently
+     * from the component it carries is caught as well as an absent one.
+     */
+    @Test
+    public void everyRailRowFieldReachesTheWire() throws IOException {
+        String src = Files.readString(
+                Paths.get("src/main/java/org/niord/web/publication/PublicationIssueRestService.java"),
+                StandardCharsets.UTF_8);
+
+        Pattern emitted = Pattern.compile("row\\.put\\(\\s*\"(\\w+)\"\\s*,\\s*r\\.(\\w+)\\(\\)");
+        Map<String, String> keyOf = new LinkedHashMap<>();
+        Matcher m = emitted.matcher(src);
+        while (m.find()) {
+            keyOf.put(m.group(2), m.group(1));
+        }
+
+        for (RecordComponent component : PublishChecklistService.CheckRow.class.getRecordComponents()) {
+            String key = keyOf.get(component.getName());
+            assertNotNull(key, "the rail row declares " + component.getName()
+                    + ", which the checklist endpoint never puts on the wire -- the field exists on the "
+                    + "server and is invisible to every client");
+            assertEquals(component.getName(), key,
+                    "the rail row's " + component.getName() + " goes out as \"" + key
+                            + "\"; one name, or the client is reading a field nobody sends");
+        }
+
+        assertTrue(keyOf.containsKey("applicable"),
+                "the rail no longer says which of its rows this issue can even be in; a verdict counted "
+                        + "over all fifteen rows counts checks that never ran");
     }
 
     /**

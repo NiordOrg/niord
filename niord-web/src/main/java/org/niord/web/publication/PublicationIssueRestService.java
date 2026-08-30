@@ -855,6 +855,13 @@ public class PublicationIssueRestService {
             row.put("code", r.code());
             row.put("severity", r.severity().name());
             row.put("passed", r.passed());
+            // Whether this issue can be in the condition the row describes at
+            // all. Every row is still sent -- a client that renders only what it
+            // received cannot tell "passed" from "does not exist" -- but a check
+            // this issue does not raise is not one of the answers the caller is
+            // counting. No inapplicable row is a BLOCK row that fails, so the
+            // publish gate reads exactly what it always did.
+            row.put("applicable", r.applicable());
             row.put("acknowledgeable", r.acknowledgeable());
             // The warning code the publish gate compares against, said by the row
             // rather than mapped by every client. The rail names a condition and

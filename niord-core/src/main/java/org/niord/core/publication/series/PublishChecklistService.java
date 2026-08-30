@@ -63,9 +63,29 @@ public class PublishChecklistService extends BaseService {
      * string. A frontend translating one into the other by hand is a second
      * definition of the rule, and it goes wrong silently: the publish is refused
      * for a code nobody ticked.
+     *
+     * `applicable` says whether this issue can be in the condition the row
+     * describes at all. All fifteen rows are emitted for every issue -- a client
+     * that renders only the rows it received cannot tell "this check passed" from
+     * "this check does not exist" -- but a row about a question this issue does
+     * not raise is not an answer about this issue, and counting it as one is how
+     * an uploaded issue ends up showing a warning that says "0 members" and
+     * cannot be cleared, because there is no query to run and no curation to fix.
+     *
+     * No inapplicable row is a BLOCK row that fails, and that is the invariant
+     * the publish gate rests on: the gate refuses on BLOCK rows that did not
+     * pass, so nothing it reads changes. The one inapplicable row that can still
+     * report a failure -- MEMBERS_RESOLVED, saying the resolver did not run -- is
+     * a WARN, described rather than enforced.
      */
-    public record CheckRow(String code, Severity severity, boolean passed,
+    public record CheckRow(String code, Severity severity, boolean passed, boolean applicable,
                            boolean acknowledgeable, String acknowledgeCode, String detail) {
+
+        /** A row that applies: the default, and the only shape most callers want. */
+        public CheckRow(String code, Severity severity, boolean passed,
+                        boolean acknowledgeable, String acknowledgeCode, String detail) {
+            this(code, severity, passed, true, acknowledgeable, acknowledgeCode, detail);
+        }
     }
 
     /**
@@ -147,21 +167,25 @@ public class PublishChecklistService extends BaseService {
                         && (series.getStatus() == SeriesStatus.ACTIVE || series.getStatus() == SeriesStatus.RETIRED),
                 "status is " + issue.getStatus() + ", series is " + series.getStatus()));
 
-        // 2
-        boolean intervalOk = !queryBacked
-                || ((interval) == (issue.getIntervalFrom() != null));
-        rows.add(row("INTERVAL_PRESENT", Severity.BLOCK, intervalOk,
-                "intervalFrom " + (issue.getIntervalFrom() == null ? "absent" : "present")
-                        + " under " + series.getTimeRelation()));
+        // 2. The interval is a property of membership: a series that selects
+        // nothing by query has no period for the rail to require.
+        rows.add(queryBacked
+                ? row("INTERVAL_PRESENT", Severity.BLOCK,
+                        (interval) == (issue.getIntervalFrom() != null),
+                        "intervalFrom " + (issue.getIntervalFrom() == null ? "absent" : "present")
+                                + " under " + series.getTimeRelation())
+                : notApplicable("INTERVAL_PRESENT", Severity.BLOCK,
+                        "the series does not select its content by query"));
 
-        // 3. A warning, not a block: a deliberate gap is legitimate.
+        // 3. A warning, not a block: a deliberate gap is legitimate. And there is
+        // no chain to be in when this is the first issue of the series.
         PublicationIssue predecessor = neighbour(issue, series, proposedCutoff, true);
-        boolean chained = predecessor == null
-                || (issue.getIntervalFrom() != null && predecessor.getCutoffStampedAt() != null
-                && issue.getIntervalFrom().equals(predecessor.getCutoffStampedAt()));
-        rows.add(row("INTERVAL_CHAINED", Severity.WARN, chained,
-                predecessor == null ? "no predecessor"
-                        : "predecessor stamped " + at(predecessor.getCutoffStampedAt(), series)));
+        rows.add(predecessor == null
+                ? notApplicable("INTERVAL_CHAINED", Severity.WARN, "no predecessor")
+                : row("INTERVAL_CHAINED", Severity.WARN,
+                        issue.getIntervalFrom() != null && predecessor.getCutoffStampedAt() != null
+                                && issue.getIntervalFrom().equals(predecessor.getCutoffStampedAt()),
+                        "predecessor stamped " + at(predecessor.getCutoffStampedAt(), series)));
 
         // 4. ONLY where bytes must already exist.
         //
@@ -177,53 +201,61 @@ public class PublishChecklistService extends BaseService {
         // site that points nowhere.
         boolean filesRequired = series.getContentMode() == ContentMode.UPLOADED_FILE;
         boolean linkRequired = series.getContentMode() == ContentMode.EXTERNAL_LINK;
-        boolean contentPresent;
         if (filesRequired) {
-            contentPresent = issue.getDescs().stream()
-                    .allMatch(d -> d.getFilePath() != null && !d.getFilePath().isBlank());
+            rows.add(row("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK,
+                    issue.getDescs().stream()
+                            .allMatch(d -> d.getFilePath() != null && !d.getFilePath().isBlank()),
+                    "uploaded content must already have bytes"));
         } else if (linkRequired) {
-            contentPresent = issue.getDescs().stream()
-                    .allMatch(d -> d.getLink() != null && !d.getLink().isBlank());
+            rows.add(row("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK,
+                    issue.getDescs().stream()
+                            .allMatch(d -> d.getLink() != null && !d.getLink().isBlank()),
+                    "link-backed content must already have a link"));
         } else {
-            contentPresent = true;
+            rows.add(notApplicable("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK,
+                    queryBacked ? "publish generates the file" : "the series carries no document"));
         }
-        rows.add(row("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK, contentPresent,
-                filesRequired ? "uploaded content must already have bytes"
-                        : linkRequired ? "link-backed content must already have a link"
-                                : "not applicable: publish generates the file"));
 
         // 5
-        rows.add(row("REPORT_CONFIGURED", Severity.BLOCK,
-                !queryBacked || series.getReportId() != null,
-                "reportId " + series.getReportId()));
+        rows.add(queryBacked
+                ? row("REPORT_CONFIGURED", Severity.BLOCK, series.getReportId() != null,
+                        "reportId " + series.getReportId())
+                : notApplicable("REPORT_CONFIGURED", Severity.BLOCK,
+                        "nothing is rendered for this series"));
 
         // 6
         boolean citable = series.getMessagePublication() != null
                 && series.getMessagePublication() != org.niord.core.publication.vo.MessagePublication.NONE;
-        boolean formatsComplete = !citable || issue.getSeries().getDescs().stream()
-                .allMatch(d -> d.getMessageReferenceFormat() != null && !d.getMessageReferenceFormat().isBlank());
-        rows.add(row("REFERENCE_FORMAT_COMPLETE", Severity.BLOCK, formatsComplete,
-                citable ? "series is citable" : "not applicable: series is not citable"));
+        rows.add(citable
+                ? row("REFERENCE_FORMAT_COMPLETE", Severity.BLOCK,
+                        issue.getSeries().getDescs().stream()
+                                .allMatch(d -> d.getMessageReferenceFormat() != null
+                                        && !d.getMessageReferenceFormat().isBlank()),
+                        "series is citable")
+                : notApplicable("REFERENCE_FORMAT_COMPLETE", Severity.BLOCK,
+                        "series is not citable"));
 
-        // 7 and 8. The neighbour bracket.
+        // 7 and 8. The neighbour bracket -- and an end of the chain is an absent
+        // bound rather than a satisfied one.
         PublicationIssue successor = neighbour(issue, series, proposedCutoff, false);
-        rows.add(row("CUTOFF_AFTER_PREVIOUS", Severity.BLOCK,
-                predecessor == null || predecessor.getCutoffStampedAt() == null
-                        || proposedCutoff.after(predecessor.getCutoffStampedAt()),
-                predecessor == null ? "no predecessor"
-                        : "must be after " + at(predecessor.getCutoffStampedAt(), series)));
+        rows.add(predecessor == null || predecessor.getCutoffStampedAt() == null
+                ? notApplicable("CUTOFF_AFTER_PREVIOUS", Severity.BLOCK, "no predecessor")
+                : row("CUTOFF_AFTER_PREVIOUS", Severity.BLOCK,
+                        proposedCutoff.after(predecessor.getCutoffStampedAt()),
+                        "must be after " + at(predecessor.getCutoffStampedAt(), series)));
 
-        rows.add(row("CUTOFF_BEFORE_SUCCESSOR", Severity.BLOCK,
-                successor == null || successor.getCutoffStampedAt() == null
-                        || proposedCutoff.before(successor.getCutoffStampedAt()),
-                successor == null ? "no successor"
-                        : "must be before " + at(successor.getCutoffStampedAt(), series)));
+        rows.add(successor == null || successor.getCutoffStampedAt() == null
+                ? notApplicable("CUTOFF_BEFORE_SUCCESSOR", Severity.BLOCK, "no successor")
+                : row("CUTOFF_BEFORE_SUCCESSOR", Severity.BLOCK,
+                        proposedCutoff.before(successor.getCutoffStampedAt()),
+                        "must be before " + at(successor.getCutoffStampedAt(), series)));
 
-        // 9
-        rows.add(row("CUTOFF_NOT_FUTURE", Severity.BLOCK,
-                allowFuture || !proposedCutoff.after(new Date()),
-                allowFuture ? "future cut-offs explicitly allowed"
-                        : "cut-off is " + at(proposedCutoff, series)));
+        // 9. Waived means the check was not made, not that it held.
+        rows.add(allowFuture
+                ? notApplicable("CUTOFF_NOT_FUTURE", Severity.BLOCK,
+                        "future cut-offs explicitly allowed")
+                : row("CUTOFF_NOT_FUTURE", Severity.BLOCK, !proposedCutoff.after(new Date()),
+                        "cut-off is " + at(proposedCutoff, series)));
 
         // 10 to 15 need the resolver.
         // The EFFECTIVE document -- criteriaOverride where the issue carries one.
@@ -266,32 +298,58 @@ public class PublishChecklistService extends BaseService {
             resolution = MemberResolutionService.Resolution.curated(curated);
         }
 
+        // Whether this issue HAS a member list to be asked about, which is exactly
+        // the condition under which a resolve was attempted above.
+        //
+        // Without it the five membership rows answered for every issue in the
+        // system, including the ones whose content is a file somebody uploaded.
+        // "0 members" as an outstanding warning on every uploaded and link-backed
+        // issue is a warning nobody can clear and nobody should try to: there is
+        // no query to run and no curation to fix. A resolve that was ATTEMPTED
+        // and failed is a different thing entirely and still warns, which is why
+        // this asks what the series is rather than whether `resolution` is null.
+        boolean membership = (queryBacked && series.getTimeRelation() != null) || !includes.isEmpty();
+        String noMembership = "the series resolves no member list";
+
         int memberCount = resolution == null ? 0 : resolution.members().size();
         rows.add(row("MEMBERS_RESOLVED", resolution == null ? Severity.WARN : Severity.OK,
-                resolution != null, memberCount + " members"));
+                resolution != null, membership,
+                membership ? memberCount + " members" : detailFor(noMembership)));
 
-        rows.add(row("MEMBER_LIMIT", Severity.BLOCK,
-                memberCount <= MemberResolutionService.MEMBER_LIMIT,
-                memberCount + " of " + MemberResolutionService.MEMBER_LIMIT));
+        rows.add(membership
+                ? row("MEMBER_LIMIT", Severity.BLOCK,
+                        memberCount <= MemberResolutionService.MEMBER_LIMIT,
+                        memberCount + " of " + MemberResolutionService.MEMBER_LIMIT)
+                : notApplicable("MEMBER_LIMIT", Severity.BLOCK, noMembership));
 
         rows.add(row("PREVIEW_FRESH", Severity.WARN, !previewStale,
                 previewStale ? "the preview predates the current member set" : "preview is current"));
 
         boolean noStale = resolution == null
                 || resolution.warning(ResolutionWarningCode.STALE_OVERRIDE).isEmpty();
-        rows.add(row("NO_INEFFECTIVE_OVERRIDES", Severity.WARN, noStale,
-                noStale ? "every override applies" : "an override no longer refers to a candidate"));
+        rows.add(membership
+                ? row("NO_INEFFECTIVE_OVERRIDES", Severity.WARN, noStale,
+                        noStale ? "every override applies"
+                                : "an override no longer refers to a candidate")
+                : notApplicable("NO_INEFFECTIVE_OVERRIDES", Severity.WARN, noMembership));
 
         // The one acknowledgeable row. An exclusions panel cannot show this class
         // at all -- those messages ARE members.
+        //
+        // It carries its acknowledgement code whether or not it applies. The gate
+        // compares that code against what the admin ticked, and a row that dropped
+        // it on the way out would be a refusal the dialog has no control for.
         var aliveButWithdrawn = resolution == null
                 ? java.util.Optional.<org.niord.core.publication.series.resolve.ResolutionWarningVo>empty()
                 : resolution.warning(ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE);
         rows.add(new CheckRow("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", Severity.WARN,
-                aliveButWithdrawn.isEmpty(), true,
+                aliveButWithdrawn.isEmpty(), membership, true,
                 ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.name(),
-                aliveButWithdrawn.map(w -> w.count() + " member(s) cancelled or expired but still open at the cut-off")
-                        .orElse("none")));
+                membership
+                        ? aliveButWithdrawn.map(w -> w.count()
+                                        + " member(s) cancelled or expired but still open at the cut-off")
+                                .orElse("none")
+                        : detailFor(noMembership)));
 
         // Purely informational for an in-force series: overlap is what they do.
         //
@@ -301,11 +359,13 @@ public class PublishChecklistService extends BaseService {
         // worse than an absent one, because the screen states an answer nobody
         // computed.
         var overlap = overlapWith(predecessor, resolution);
-        rows.add(row("OVERLAPPING_ISSUE", Severity.WARN, overlap.isEmpty(),
-                overlap.map(w -> w.count() + " member(s) also belong to '"
-                                + predecessor.getPublicId() + "'")
-                        .orElse(interval ? "issues of this series tile"
-                                : "in-force issues overlap by design")));
+        rows.add(membership
+                ? row("OVERLAPPING_ISSUE", Severity.WARN, overlap.isEmpty(),
+                        overlap.map(w -> w.count() + " member(s) also belong to '"
+                                        + predecessor.getPublicId() + "'")
+                                .orElse(interval ? "issues of this series tile"
+                                        : "in-force issues overlap by design"))
+                : notApplicable("OVERLAPPING_ISSUE", Severity.WARN, noMembership));
 
         List<String> blocking = new ArrayList<>();
         for (CheckRow r : rows) {
@@ -339,7 +399,40 @@ public class PublishChecklistService extends BaseService {
     }
 
     private CheckRow row(String code, Severity severity, boolean passed, String detail) {
-        return new CheckRow(code, severity, passed, false, null, detail);
+        return new CheckRow(code, severity, passed, true, false, null, detail);
+    }
+
+    /** The same, saying for itself whether it applies. */
+    private CheckRow row(String code, Severity severity, boolean passed, boolean applicable,
+                         String detail) {
+        return new CheckRow(code, severity, passed, applicable, false, null, detail);
+    }
+
+    /**
+     * A row whose condition this issue cannot be in, and which passes vacuously.
+     *
+     * Still emitted, still rendered, and still passing -- what changes is that it
+     * says so, so a reader counting what the rail actually decided does not count
+     * a check that never ran.
+     *
+     * Not every inapplicable row can be built here: MEMBERS_RESOLVED reports a
+     * resolver that did not run and CANCELLED_MEMBERS_ALIVE_AT_CUTOFF carries an
+     * acknowledgement code it must keep, so both name their own applicability.
+     * What holds for all of them is the one thing the publish gate depends on: no
+     * inapplicable row is a BLOCK row that fails.
+     */
+    private CheckRow notApplicable(String code, Severity severity, String reason) {
+        return new CheckRow(code, severity, true, false, false, null, detailFor(reason));
+    }
+
+    /**
+     * The detail an inapplicable row carries in place of an answer nobody computed.
+     *
+     * The reason is written out rather than left to the code alone, because the
+     * person reading the row is the one deciding whether to release.
+     */
+    private static String detailFor(String reason) {
+        return "not applicable: " + reason;
     }
 
     /**

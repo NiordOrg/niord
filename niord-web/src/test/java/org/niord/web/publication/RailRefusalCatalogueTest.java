@@ -94,6 +94,24 @@ public class RailRefusalCatalogueTest {
     }
 
     /**
+     * A row applies unless it says otherwise.
+     *
+     * The rail is fifteen rows on every issue and only a few of them can be in a
+     * condition this issue is capable of. The default therefore has to be the
+     * safe direction -- counted -- so that a row added later is counted until
+     * somebody deliberately says it does not apply, rather than silently dropping
+     * out of every verdict drawn from the rail.
+     */
+    @Test
+    public void aRowAppliesUnlessItSaysOtherwise() {
+        PublishChecklistService.CheckRow row = new PublishChecklistService.CheckRow(
+                "ISSUE_OPEN", PublishChecklistService.Severity.BLOCK, true, false, null, "status is OPEN");
+
+        assertTrue(row.applicable(),
+                "a row built without saying anything about applicability must count");
+    }
+
+    /**
      * The rail declares no BLOCK row this table has not accounted for.
      *
      * The list of codes the rail can emit is a constant, so a row added without a

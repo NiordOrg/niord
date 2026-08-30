@@ -473,6 +473,250 @@ public class IssueLifecycleTest {
         assertTrue(row.passed(),
                 "a query-backed issue was blocked for lacking the file that publishing generates; no such "
                         + "issue could ever be published");
+        assertFalse(row.applicable(),
+                "the file check does not apply to generated content, and a row reported as an ordinary "
+                        + "pass is counted as one -- every tally drawn from the rail then claims an answer "
+                        + "about a condition this issue cannot be in");
+    }
+
+    /**
+     * And it DOES apply where the bytes are a precondition.
+     *
+     * The pair is the whole point: "does not apply" is a property of the series,
+     * not a way of describing a check that is merely satisfied. An uploaded issue
+     * with no bytes fails this row, so the row has to be counted for it.
+     */
+    @Test
+    @Transactional
+    public void theFileCheckAppliesToUploadedContent() {
+        PublicationSeries uploaded = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        uploaded.setContentMode(ContentMode.UPLOADED_FILE);
+        em.merge(uploaded);
+        PublicationIssue i = lifecycle.create(uploaded, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        PublishChecklistService.CheckRow row =
+                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows().stream()
+                        .filter(r -> r.code().equals("FILE_PRESENT_PER_LANGUAGE"))
+                        .findFirst().orElseThrow();
+
+        assertTrue(row.applicable(), "an uploaded issue's bytes are a precondition; the row applies");
+        assertFalse(row.passed(), "an uploaded issue with no bytes must still be blocked");
+    }
+
+    /**
+     * The reference-format row does not apply to a series nobody can cite.
+     *
+     * The flagship weekly IS citable and the row blocks it until every language
+     * carries a format, so the two halves are asserted together -- an
+     * "inapplicable" that also swallowed the citable case would read identically
+     * on the fixture and hide the block.
+     */
+    @Test
+    @Transactional
+    public void thereferenceFormatRowAppliesOnlyToACitableSeries() {
+        PublicationSeries notCitable = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationIssue plain = lifecycle.create(notCitable, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        PublishChecklistService.CheckRow row = rowOf(plain, "REFERENCE_FORMAT_COMPLETE");
+        assertFalse(row.applicable(), "the series carries MessagePublication.NONE; nothing can cite it");
+        assertTrue(row.passed(), "an inapplicable row must stay a passing one -- the publish gate reads passed");
+
+        PublicationSeries citable = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        citable.setMessagePublication(MessagePublication.EXTERNAL);
+        em.merge(citable);
+        PublicationIssue cited = lifecycle.create(citable, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        PublishChecklistService.CheckRow citableRow = rowOf(cited, "REFERENCE_FORMAT_COMPLETE");
+        assertTrue(citableRow.applicable(), "a citable series must be asked for its reference formats");
+        assertFalse(citableRow.passed(), "no language carries a format, so the row must block");
+    }
+
+    /**
+     * An issue with no member list is not asked about its members.
+     *
+     * The five membership rows are computed from a resolution, and a series whose
+     * content is a file somebody uploaded has none to compute: no query, no
+     * curation, nothing to resolve. Answering them anyway put "0 members" in
+     * front of an admin as an outstanding warning on every uploaded and
+     * link-backed issue -- one nobody can clear, because there is no query to run
+     * and no curation to fix.
+     */
+    @Test
+    @Transactional
+    public void anIssueWithNoMemberListIsNotAskedAboutItsMembers() {
+        PublicationSeries uploaded = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        uploaded.setContentMode(ContentMode.UPLOADED_FILE);
+        em.merge(uploaded);
+        PublicationIssue i = lifecycle.create(uploaded, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        List<PublishChecklistService.CheckRow> rows =
+                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows();
+
+        for (String code : List.of("MEMBERS_RESOLVED", "MEMBER_LIMIT", "NO_INEFFECTIVE_OVERRIDES",
+                "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", "OVERLAPPING_ISSUE")) {
+            PublishChecklistService.CheckRow row = rows.stream()
+                    .filter(r -> r.code().equals(code)).findFirst().orElseThrow();
+            assertFalse(row.applicable(),
+                    code + " was answered for an issue that resolves no member list");
+        }
+
+        // The acknowledgement travels whether or not the row applies: the gate
+        // compares that code, and a row that dropped it would be a refusal the
+        // publish dialog has no control for.
+        PublishChecklistService.CheckRow acknowledgeable = rows.stream()
+                .filter(r -> r.code().equals("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF"))
+                .findFirst().orElseThrow();
+        assertTrue(acknowledgeable.acknowledgeable());
+        assertEquals("CANCELLED_BUT_DATE_ALIVE", acknowledgeable.acknowledgeCode());
+
+        // What is left is what this issue is actually being asked: is it open, are
+        // the bytes there, is the instant sane, is the preview current.
+        assertEquals(List.of("ISSUE_OPEN", "FILE_PRESENT_PER_LANGUAGE", "CUTOFF_NOT_FUTURE",
+                        "PREVIEW_FRESH"),
+                rows.stream().filter(PublishChecklistService.CheckRow::applicable)
+                        .map(PublishChecklistService.CheckRow::code).toList(),
+                "the rows an uploaded issue answers are not the ones expected");
+    }
+
+    /**
+     * And one curated message is a member list.
+     *
+     * Overrides constitute membership on their own -- the annexes hold two live
+     * messages a year with each issue naming one of them -- so the same series
+     * that answers nothing about members before the curation must answer for all
+     * of it afterwards. The pair is what stops "does not apply" from being read
+     * as "this kind of series never has members".
+     */
+    @Test
+    @Transactional
+    public void oneCuratedMessageIsAMemberList() {
+        PublicationSeries uploaded = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        uploaded.setContentMode(ContentMode.UPLOADED_FILE);
+        em.merge(uploaded);
+        PublicationIssue i = lifecycle.create(uploaded, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        curation.include(i, someMessageUid(), user(), "the issue names this message");
+        em.flush();
+
+        List<PublishChecklistService.CheckRow> rows =
+                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows();
+
+        for (String code : List.of("MEMBERS_RESOLVED", "MEMBER_LIMIT", "NO_INEFFECTIVE_OVERRIDES",
+                "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", "OVERLAPPING_ISSUE")) {
+            PublishChecklistService.CheckRow row = rows.stream()
+                    .filter(r -> r.code().equals(code)).findFirst().orElseThrow();
+            assertTrue(row.applicable(),
+                    code + " went unanswered on an issue whose membership is its curation");
+        }
+
+        assertEquals("1 members", rows.stream()
+                        .filter(r -> r.code().equals("MEMBERS_RESOLVED"))
+                        .findFirst().orElseThrow().detail(),
+                "the curated member was not counted");
+    }
+
+    /**
+     * Which rows the fixture issue is actually answering.
+     *
+     * Named as a set rather than counted, because a count agrees with itself
+     * whichever five rows dropped out: a first issue of a generated, non-citable
+     * series has no neighbour to bracket, no chain to join, no file to
+     * pre-exist and nobody to cite it. The remaining ten are the answers, and
+     * every one of the fifteen is still emitted.
+     *
+     * It is also the guard that the query-backed case is UNCHANGED: this series
+     * resolves a member list, so all five membership rows are among the ten.
+     */
+    @Test
+    @Transactional
+    public void theRailSaysWhichRowsThisIssueCanEvenFail() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        List<PublishChecklistService.CheckRow> rows =
+                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows();
+
+        assertEquals(PublishChecklistService.CODES.size(), rows.size(),
+                "every code ships every time, applicable or not -- a client that renders only what it "
+                        + "received cannot tell a passed check from an absent one");
+
+        List<String> inapplicable = rows.stream()
+                .filter(r -> !r.applicable())
+                .map(PublishChecklistService.CheckRow::code).toList();
+        assertEquals(List.of("INTERVAL_CHAINED", "FILE_PRESENT_PER_LANGUAGE",
+                        "REFERENCE_FORMAT_COMPLETE", "CUTOFF_AFTER_PREVIOUS", "CUTOFF_BEFORE_SUCCESSOR"),
+                inapplicable,
+                "the rows this issue cannot be in are not the ones expected");
+
+        assertEquals(PublishChecklistService.CODES.size() - inapplicable.size(),
+                rows.stream().filter(PublishChecklistService.CheckRow::applicable).count(),
+                "applicable and inapplicable must partition the rail");
+    }
+
+    /**
+     * No inapplicable row can refuse a publish.
+     *
+     * The invariant that makes this field safe to add: the gate refuses on BLOCK
+     * rows that did not pass, so as long as no BLOCK row is inapplicable AND
+     * failing, everything reading `passed` is untouched. A row that both blocks
+     * and does not apply would be a refusal nobody counted and nobody could act
+     * on. The WARN rows are free to say the resolver never ran, because a warning
+     * describes the release rather than refusing it.
+     */
+    @Test
+    @Transactional
+    public void noInapplicableRowCanRefuseAPublish() {
+        List<PublicationIssue> shapes = new ArrayList<>();
+
+        PublicationSeries generated = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        shapes.add(lifecycle.create(generated, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user()));
+
+        PublicationSeries uploaded = series(TimeRelation.IN_FORCE_AT_CUTOFF);
+        uploaded.setContentMode(ContentMode.UPLOADED_FILE);
+        em.merge(uploaded);
+        shapes.add(lifecycle.create(uploaded, new Date(1_699_000_000_000L),
+                IntervalBoundSource.MANUAL, user()));
+
+        PublicationSeries linked = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        linked.setContentMode(ContentMode.EXTERNAL_LINK);
+        linked.setMessagePublication(MessagePublication.EXTERNAL);
+        em.merge(linked);
+        shapes.add(lifecycle.create(linked, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user()));
+        em.flush();
+
+        for (PublicationIssue issue : shapes) {
+            for (boolean allowFuture : List.of(false, true)) {
+                List<String> contradictory =
+                        checklist.compute(issue, new Date(1_700_000_000_000L), allowFuture, true).rows()
+                                .stream()
+                                .filter(r -> !r.applicable() && !r.passed()
+                                        && r.severity() == PublishChecklistService.Severity.BLOCK)
+                                .map(PublishChecklistService.CheckRow::code).toList();
+                assertTrue(contradictory.isEmpty(),
+                        "these rows do not apply and yet refuse the publish: " + contradictory);
+            }
+        }
+    }
+
+    /** One row of the rail, for the tests that ask about a single check. */
+    private PublishChecklistService.CheckRow rowOf(PublicationIssue issue, String code) {
+        return checklist.compute(issue, new Date(1_700_000_000_000L), false, false).rows().stream()
+                .filter(r -> r.code().equals(code))
+                .findFirst().orElseThrow();
     }
 
     /**
@@ -525,6 +769,9 @@ public class IssueLifecycleTest {
 
         assertTrue(row.passed(),
                 "a link-backed issue with a link in every language was still blocked");
+        assertTrue(row.applicable(),
+                "the link check applies to a link-backed issue whether or not it currently holds; a pass "
+                        + "is an answer, and only a check that could not have run is not one");
     }
 
     /**
@@ -607,6 +854,15 @@ public class IssueLifecycleTest {
         Date future = new Date(System.currentTimeMillis() + 86_400_000L);
         assertTrue(checklist.compute(i, future, false, false).blockingCodes().contains("CUTOFF_NOT_FUTURE"));
         assertFalse(checklist.compute(i, future, true, false).blockingCodes().contains("CUTOFF_NOT_FUTURE"));
+
+        // And an allowed future cut-off is a check that was waived rather than
+        // one that held: reported as a pass, counted by nobody.
+        PublishChecklistService.CheckRow waived =
+                checklist.compute(i, future, true, false).rows().stream()
+                        .filter(r -> r.code().equals("CUTOFF_NOT_FUTURE"))
+                        .findFirst().orElseThrow();
+        assertFalse(waived.applicable(), "a waived check must not be counted as one the issue passed");
+        assertTrue(waived.passed());
     }
     @jakarta.inject.Inject
     org.niord.core.publication.series.IssuePreviewService previewService;
