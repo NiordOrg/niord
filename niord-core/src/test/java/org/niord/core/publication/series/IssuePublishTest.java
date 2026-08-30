@@ -30,6 +30,7 @@ import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageMainTypeCriterionVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
+import org.niord.core.publication.series.resolve.ResolutionWarningCode;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.model.message.MainType;
@@ -712,6 +713,202 @@ public class IssuePublishTest {
                         + "saw them at all, which is materially different from a human confirming them");
         assertEquals(result.unacknowledgedWarnings().size(),
                 ((List<?>) detail.get("unacknowledgedWarnings")).size());
+    }
+
+    /**
+     * Step 15. The entry also records the release checklist it was published
+     * against, and which of its rows somebody signed off.
+     *
+     * The rail is computed fresh on every read, over a corpus that keeps moving:
+     * ask the same issue next week and rows that warned may pass and rows that
+     * passed may warn. So the state it was in at the moment of release survives
+     * nowhere else, and "this went out with a warning, and somebody ticked it" is
+     * exactly what a history panel is opened to establish.
+     *
+     * Only the APPLICABLE rows. A row about a question this issue never raises is
+     * not an answer about this issue, and recording it as a passing check
+     * overstates what was actually decided.
+     */
+    @Test
+    @Transactional
+    public void thePublishAuditRecordsTheChecklistItWasPublishedAgainst() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        Date intervalFrom = new Date(1_699_000_000_000L);
+        Date stamp = new Date(1_700_000_000_000L);
+        PublicationIssue i = issue(s, intervalFrom);
+
+        // The one acknowledgeable condition there is: selected by the criteria,
+        // withdrawn, and open past the cut-off all the same.
+        cancelledButStillOpen(new Date(intervalFrom.getTime() + 3600_000L),
+                new Date(stamp.getTime() + 86_400_000L));
+        previewFor(i);
+        em.flush();
+
+        var result = publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(false,
+                        Set.of(ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.name()), null, stamp));
+        em.flush();
+        em.clear();
+
+        List<Map<String, Object>> checklist = checklistOf(publishedEntry(i.getId()));
+        assertFalse(checklist.isEmpty(), "the entry records no checklist at all");
+
+        for (Map<String, Object> row : checklist) {
+            assertEquals(Set.of("code", "severity", "passed", "acknowledged"), row.keySet(),
+                    "the recorded row carries something other than the four facts that stay true; "
+                            + "the rail's own detail line names instants and counts that have moved");
+            assertTrue(PublishChecklistService.CODES.contains(row.get("code")),
+                    "the entry records a code the rail cannot emit: " + row.get("code"));
+            assertFalse("BLOCK".equals(row.get("severity")) && Boolean.FALSE.equals(row.get("passed")),
+                    "a failing BLOCK row was recorded on a publish that happened; the gate refuses "
+                            + "those before anything is stamped");
+        }
+
+        // The severity recorded is the row's OWN, which is three values and not
+        // two: a row that neither warns nor blocks says so rather than being
+        // dropped or promoted into a warning.
+        assertEquals("OK", row(checklist, "MEMBERS_RESOLVED").get("severity"),
+                "the resolver ran, so its row is neither a warning nor a block");
+
+        Map<String, Object> acknowledged = row(checklist, "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF");
+        assertEquals("WARN", acknowledged.get("severity"));
+        assertEquals(Boolean.FALSE, acknowledged.get("passed"),
+                "the seeded member is cancelled and still open at the cut-off");
+        assertEquals(Boolean.TRUE, acknowledged.get("acknowledged"),
+                "the row is read against the code the GATE compares, which is the resolution "
+                        + "warning rather than the row's own name");
+
+        for (Map<String, Object> other : checklist) {
+            if (!"CANCELLED_MEMBERS_ALIVE_AT_CUTOFF".equals(other.get("code"))) {
+                assertEquals(Boolean.FALSE, other.get("acknowledged"),
+                        other.get("code") + " reports as acknowledged; nothing ticks a row that "
+                                + "carries no acknowledgement code");
+            }
+        }
+
+        // Only the applicable rows. This issue is the first of its series and its
+        // document is generated by the publish itself, so neither the chaining row
+        // nor the one demanding bytes up front is a question it raises.
+        List<Object> codes = checklist.stream().map(r -> r.get("code")).toList();
+        assertTrue(codes.contains("ISSUE_OPEN"), "an applicable row is missing from the record");
+        assertFalse(codes.contains("INTERVAL_CHAINED"),
+                "an inapplicable row was recorded as a check that passed; there is no predecessor "
+                        + "for this issue to be chained to");
+        assertFalse(codes.contains("FILE_PRESENT_PER_LANGUAGE"),
+                "publish writes the document, so requiring it beforehand is not a question this "
+                        + "issue raises");
+
+        // The half that was already there is untouched by the half that was added.
+        @SuppressWarnings("unchecked")
+        Map<String, Object> detail = (Map<String, Object>) publishedEntry(i.getId()).getDetail();
+        assertTrue(detail.containsKey("unacknowledgedWarnings"));
+        assertTrue(result.unacknowledgedWarnings().isEmpty(),
+                "the only warning was acknowledged, so nothing went unacknowledged");
+        assertEquals(result.unacknowledgedWarnings().size(),
+                ((List<?>) detail.get("unacknowledgedWarnings")).size());
+
+        // And it reaches the panel. The history line carries the detail as the
+        // entry holds it; a mapping that dropped it would leave everything
+        // recorded here readable only from the database.
+        assertEquals(detail, publishedEntry(i.getId()).toVo().getDetail(),
+                "the history line does not carry what the entry recorded");
+    }
+
+    /**
+     * An unattended release records the same row as NOT acknowledged.
+     *
+     * This is the pairing that makes the flag worth storing. Under AUTO_RELEASE
+     * the publish is not refused and the warning still stands -- nobody was there
+     * to tick it -- and a reader who cannot tell that from a human having signed
+     * it off is reading a trail that overstates what happened.
+     */
+    @Test
+    @Transactional
+    public void anUnattendedReleaseRecordsItsWarningAsUnsigned() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.AUTO_RELEASE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        Date intervalFrom = new Date(1_699_000_000_000L);
+        Date stamp = new Date(1_700_000_000_000L);
+        PublicationIssue i = issue(s, intervalFrom);
+
+        cancelledButStillOpen(new Date(intervalFrom.getTime() + 3600_000L),
+                new Date(stamp.getTime() + 86_400_000L));
+        previewFor(i);
+        em.flush();
+
+        var result = publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+        em.flush();
+        em.clear();
+
+        IssueAuditEntry entry = publishedEntry(i.getId());
+        Map<String, Object> acknowledged = row(checklistOf(entry), "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF");
+        assertEquals(Boolean.FALSE, acknowledged.get("passed"));
+        assertEquals(Boolean.FALSE, acknowledged.get("acknowledged"),
+                "an unattended release signed off a warning nobody saw");
+
+        assertEquals(List.of(ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.name()),
+                result.unacknowledgedWarnings(),
+                "the warning stands: AUTO_RELEASE publishes past it rather than acknowledging it");
+    }
+
+    /**
+     * A caller that acknowledges EVERYTHING still signs only what it could sign.
+     *
+     * OVERLAPPING_ISSUE is the name of a rail row and also the name of a warning
+     * nobody can acknowledge, and the two are unrelated facts that happen to
+     * spell the same. A record that matched a row against its own name would badge
+     * that row as confirmed by a caller who was never shown a control for it --
+     * and the trail would then say a human signed off on something no dialog has
+     * ever asked about.
+     */
+    @Test
+    @Transactional
+    public void onlyARowWithAnAcknowledgementCodeCanBeRecordedAsSigned() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        previewFor(i);
+        em.flush();
+
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(false,
+                        IssuePublishService.PublishRequest.ALL_WARNINGS, null,
+                        new Date(1_700_000_000_000L)));
+        em.flush();
+        em.clear();
+
+        List<Map<String, Object>> checklist = checklistOf(publishedEntry(i.getId()));
+        assertEquals(Boolean.FALSE, row(checklist, "OVERLAPPING_ISSUE").get("acknowledged"),
+                "a row with no acknowledgement code was recorded as signed off");
+        assertEquals(Boolean.TRUE, row(checklist, "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF").get("acknowledged"),
+                "the one acknowledgeable row was not recorded as signed off");
+    }
+
+    /** The one PUBLISHED entry of an issue, read back from the database. */
+    private IssueAuditEntry publishedEntry(Integer issueId) {
+        List<IssueAuditEntry> entries = em.createQuery(
+                        "SELECT a FROM IssueAuditEntry a WHERE a.issue.id = :id "
+                                + "AND a.action = org.niord.core.publication.series.AuditAction.PUBLISHED",
+                        IssueAuditEntry.class)
+                .setParameter("id", issueId).getResultList();
+        assertEquals(1, entries.size(), "expected exactly one PUBLISHED entry, got " + entries.size());
+        return entries.get(0);
+    }
+
+    /** The recorded checklist, as it comes back off the wire-shaped detail column. */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> checklistOf(IssueAuditEntry entry) {
+        assertNotNull(entry.getDetail(), "the entry carries no detail");
+        Object checklist = ((Map<String, Object>) entry.getDetail()).get("checklist");
+        assertNotNull(checklist, "the entry does not record the checklist it was published against");
+        return (List<Map<String, Object>>) checklist;
+    }
+
+    private Map<String, Object> row(List<Map<String, Object>> checklist, String code) {
+        return checklist.stream().filter(r -> code.equals(r.get("code"))).findFirst()
+                .orElseThrow(() -> new AssertionError("no recorded checklist row for " + code));
     }
 
     /**

@@ -22,10 +22,12 @@ import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The audit trail. Append-only: never updated, never deleted while its owner
@@ -50,10 +52,32 @@ public class IssueAuditService extends BaseService {
 
     // ------------------------------------------------------------------ writes
 
-    /** Step 15 of publish. Exactly one entry, carrying the warnings nobody acknowledged. */
+    /**
+     * Step 15 of publish. Exactly one entry, carrying the warnings nobody
+     * acknowledged and the release checklist it was published against.
+     *
+     * The checklist is recorded because it is the only evidence of it that
+     * outlives the transaction. It is computed fresh on every read of the rail,
+     * from a corpus that keeps moving -- ask the same issue tomorrow and rows that
+     * warned may pass and rows that passed may warn -- so a week after a release
+     * nobody can reconstruct what the person pressing the button was looking at.
+     * "This went out with two warnings, and somebody ticked both" is exactly the
+     * question a history panel is opened to answer.
+     *
+     * @param checklistRows   the rail as it stood in this transaction; the rows
+     *                        that do not APPLY to this issue are dropped, because a
+     *                        row about a question this issue never raises is not an
+     *                        answer about this issue and counting it as one
+     *                        overstates what was checked
+     * @param acknowledgedSet what the caller ticked, by warning code. Empty under
+     *                        AUTO_RELEASE, where nobody ticked anything because
+     *                        nobody was there
+     */
     public IssueAuditEntry published(PublicationIssue issue, User actor, ReleaseMode releaseMode,
                                      Date stampedAt, int memberCount,
-                                     List<String> unacknowledgedWarnings, List<String> archivePaths) {
+                                     List<String> unacknowledgedWarnings, List<String> archivePaths,
+                                     List<PublishChecklistService.CheckRow> checklistRows,
+                                     Set<String> acknowledgedSet) {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("stampedAt", stampedAt == null ? null : stampedAt.getTime());
         detail.put("memberCount", memberCount);
@@ -61,6 +85,7 @@ public class IssueAuditService extends BaseService {
         // AUTO_RELEASE nobody saw these at all.
         detail.put("unacknowledgedWarnings", unacknowledgedWarnings);
         detail.put("releaseMode", releaseMode == null ? null : releaseMode.name());
+        detail.put("checklist", checklistOf(checklistRows, acknowledgedSet));
 
         IssueAuditEntry entry = write(issue, AuditAction.PUBLISHED,
                 releaseMode == ReleaseMode.AUTO_RELEASE ? ActorKind.SYSTEM : ActorKind.USER,
@@ -73,6 +98,47 @@ public class IssueAuditService extends BaseService {
             entry.setArchivePath(String.join(",", archivePaths));
         }
         return entry;
+    }
+
+    /**
+     * The rail, flattened to what a reader of the trail can act on.
+     *
+     * Four fields per row and no more. The rail's `detail` string is a sentence
+     * written for the dialog that was on screen at the time -- "must be after
+     * 2026-07-29 10:16 (Europe/Copenhagen)" -- and it names instants and counts
+     * that have since moved; kept here it would read as a statement about today.
+     * The code, the severity, whether it passed and whether somebody ticked it are
+     * facts about the release, and they stay true.
+     *
+     * `acknowledged` is read against the code the GATE compares, and ONLY against
+     * that. A rail row names a condition -- "cancelled members alive at the
+     * cut-off" -- while the acknowledgement travels as the resolution warning the
+     * resolver raised, and the two are deliberately different strings. A row that
+     * carries no acknowledgement code cannot be ticked at all and answers false,
+     * whatever the caller sent: OVERLAPPING_ISSUE is the name of a rail row AND of
+     * a warning nobody can sign, so falling back to the row's own name would badge
+     * it as confirmed by a caller that never had a control to confirm it with.
+     */
+    private static List<Map<String, Object>> checklistOf(
+            List<PublishChecklistService.CheckRow> rows, Set<String> acknowledgedSet) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (rows == null) {
+            return out;
+        }
+        Set<String> acknowledged = acknowledgedSet == null ? Set.of() : acknowledgedSet;
+        for (PublishChecklistService.CheckRow row : rows) {
+            if (!row.applicable()) {
+                continue;
+            }
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("code", row.code());
+            entry.put("severity", row.severity() == null ? null : row.severity().name());
+            entry.put("passed", row.passed());
+            entry.put("acknowledged",
+                    row.acknowledgeCode() != null && acknowledged.contains(row.acknowledgeCode()));
+            out.add(entry);
+        }
+        return out;
     }
 
     /** Step 14's successor. There is no separate NEXT_ISSUE_CREATED action. */

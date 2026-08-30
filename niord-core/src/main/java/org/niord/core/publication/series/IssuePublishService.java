@@ -307,8 +307,13 @@ public class IssuePublishService extends BaseService {
         PublicationIssue successor = createSuccessorIfDue(issue, series, stamp);
 
         // --- 15. AUDIT ------------------------------------------------------
+        // The rail travels into the entry: it is the one record of what this
+        // release was checked against. Recomputing it later answers for the corpus
+        // as it stands then, which is a different question from the one the person
+        // pressing the button was shown.
         audit.published(issue, request.actor(), series.getReleaseMode(), stamp,
-                frozen.memberCount(), unacknowledged, frozen.archivePaths());
+                frozen.memberCount(), unacknowledged, frozen.archivePaths(),
+                rail.rows(), request.acknowledgedWarnings());
         if (successor != null) {
             audit.createdFromPreviousPublish(successor, issue);
         }
