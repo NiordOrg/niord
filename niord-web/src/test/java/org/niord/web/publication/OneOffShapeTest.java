@@ -262,4 +262,128 @@ public class OneOffShapeTest {
         assertEquals("en", created.getLang());
         assertEquals(1, issue.getDescs().size());
     }
+
+    // ------------------------------------------------------- the address it lists
+
+    // A loop rather than a stream: the value under test is legitimately null for a
+    // publication with no document, and findFirst() cannot carry one.
+    private static String linkFor(OneOffRestService.OneOffVo vo, String lang) {
+        for (OneOffRestService.LangText row : vo.links) {
+            if (lang.equals(row.lang)) {
+                return row.value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * A document uploaded here lists the URL that serves it.
+     *
+     * The desc has a storage path and no link column, so reading the column
+     * straight left the row with no address at all and the list with nothing to
+     * point at -- while the imported publications beside it linked fine, because
+     * those carry their address verbatim.
+     */
+    @Test
+    public void anuploadedOneOffListsItsRepositoryUrl() {
+        PublicationIssue issue = new PublicationIssue();
+        PublicationIssueDesc desc = issue.createDesc("da");
+        desc.setFilePath("publications/a/8e/3411907/EfS.pdf");
+        desc.setFileName("EfS.pdf");
+
+        OneOffRestService.OneOffVo vo = new OneOffRestService.OneOffVo();
+        OneOffRestService.fillIssueDescs(issue, vo);
+
+        assertEquals("/rest/repo/file/publications/a/8e/3411907/EfS.pdf", linkFor(vo, "da"),
+                "an uploaded one-off must list the URL its file is served from");
+        assertEquals("EfS.pdf", vo.fileNames.get(0).value);
+    }
+
+    /** An external link is listed exactly as it was typed. */
+    @Test
+    public void anexternalLinkOneOffListsItsLinkUnchanged() {
+        PublicationIssue issue = new PublicationIssue();
+        PublicationIssueDesc desc = issue.createDesc("en");
+        desc.setLink("https://example.invalid/handbook.pdf");
+
+        OneOffRestService.OneOffVo vo = new OneOffRestService.OneOffVo();
+        OneOffRestService.fillIssueDescs(issue, vo);
+
+        assertEquals("https://example.invalid/handbook.pdf", linkFor(vo, "en"),
+                "an external link is absolute by definition and is not rewritten");
+    }
+
+    /**
+     * A reference-only one-off lists no address, and still lists its language.
+     *
+     * Three of the five one-offs in the estate carry no document at all: they
+     * exist to be cited. The row stays -- it has a title and a language to show --
+     * and its address is simply absent.
+     */
+    @Test
+    public void areferenceOnlyOneOffListsNoAddress() {
+        PublicationIssue issue = new PublicationIssue();
+        issue.createDesc("da").setName("Reference only");
+
+        OneOffRestService.OneOffVo vo = new OneOffRestService.OneOffVo();
+        OneOffRestService.fillIssueDescs(issue, vo);
+
+        assertEquals(1, vo.links.size(), "the language row is kept");
+        assertNull(linkFor(vo, "da"), "a publication with no file and no link has no address");
+        assertNull(vo.fileNames.get(0).value);
+    }
+
+    // --------------------------------------------------- the address coming back
+
+    /**
+     * The listed address handed straight back does not become a stored link.
+     *
+     * The detail page sends the body back unchanged when it activates or
+     * deactivates the publication -- that is a transition, not an edit. Storing
+     * the derived address would freeze it: replace the document and the storage
+     * path moves while the stored link keeps naming the file that is gone.
+     */
+    @Test
+    public void thederivedAddressSentBackIsNotStoredAsALink() {
+        PublicationIssue issue = new PublicationIssue();
+        PublicationIssueDesc desc = issue.createDesc("da");
+        desc.setFilePath("publications/a/8e/3411907/EfS.pdf");
+        desc.setName("Uploaded");
+
+        OneOffRestService.OneOffVo out = new OneOffRestService.OneOffVo();
+        OneOffRestService.fillIssueDescs(issue, out);
+        OneOffRestService.applyLinks(issue, out);
+
+        assertNull(desc.getLink(), "the derived address is not a link somebody typed");
+    }
+
+    /** A link somebody really did type is stored, file or no file. */
+    @Test
+    public void alinkTypedOnAFileBackedOneOffIsStored() {
+        PublicationIssue issue = new PublicationIssue();
+        PublicationIssueDesc desc = issue.createDesc("da");
+        desc.setFilePath("publications/a/8e/3411907/EfS.pdf");
+        desc.setName("Uploaded");
+
+        OneOffRestService.OneOffVo request = new OneOffRestService.OneOffVo();
+        request.links.add(new OneOffRestService.LangText("da", "https://example.invalid/elsewhere.pdf"));
+        OneOffRestService.applyLinks(issue, request);
+
+        assertEquals("https://example.invalid/elsewhere.pdf", desc.getLink());
+    }
+
+    /** Clearing a stored link still clears it. */
+    @Test
+    public void ablankLinkClearsTheStoredOne() {
+        PublicationIssue issue = new PublicationIssue();
+        PublicationIssueDesc desc = issue.createDesc("da");
+        desc.setLink("https://example.invalid/handbook.pdf");
+        desc.setName("Linked");
+
+        OneOffRestService.OneOffVo request = new OneOffRestService.OneOffVo();
+        request.links.add(new OneOffRestService.LangText("da", "  "));
+        OneOffRestService.applyLinks(issue, request);
+
+        assertNull(desc.getLink());
+    }
 }

@@ -40,6 +40,7 @@ import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.IntervalBoundSource;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.IssuePublicationMapping;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.NextIssueCreation;
@@ -519,7 +520,13 @@ public class OneOffRestService {
         availabilityResolver.apply(series, vo);
     }
 
-    private void applyLinks(PublicationIssue issue, OneOffVo request) {
+    /**
+     * The links from the body, onto the issue's descs.
+     *
+     * Package-private so what a save does and does not store can be asserted: the
+     * body it receives is the body this endpoint just handed out.
+     */
+    static void applyLinks(PublicationIssue issue, OneOffVo request) {
         if (issue == null || request.links == null) {
             return;
         }
@@ -536,8 +543,33 @@ public class OneOffRestService {
             if (desc.getName() == null || desc.getName().isBlank()) {
                 desc.setName(seriesNameFor(request, link.lang));
             }
-            desc.setLink(link.value == null || link.value.isBlank() ? null : link.value.trim());
+            String value = link.value == null || link.value.isBlank() ? null : link.value.trim();
+            if (isDerivedAddress(desc, value)) {
+                // THE VO COMING BACK, not a link somebody typed.
+                //
+                // `links` reports a fetchable address, so a file-backed desc
+                // reports the repository URL derived from its storage path. The
+                // detail page sends the body back unchanged when it activates or
+                // deactivates -- that is a transition and not an edit -- and
+                // storing the derived value would turn it into an explicit link
+                // that outlives the file it names: replace the document and the
+                // path moves while the frozen link keeps pointing at the old one.
+                continue;
+            }
+            desc.setLink(value);
         }
+    }
+
+    /**
+     * Whether the value is this desc's own derived address rather than a link.
+     *
+     * Only when the desc has no link of its own: with one stored, the derived
+     * address IS that link and writing it back is a no-op that keeps saying so.
+     */
+    private static boolean isDerivedAddress(PublicationIssueDesc desc, String value) {
+        return value != null
+                && (desc.getLink() == null || desc.getLink().isBlank())
+                && value.equals(IssuePublicationMapping.linkOf(desc));
     }
 
     /**
@@ -726,10 +758,7 @@ public class OneOffRestService {
         if (issue != null) {
             vo.issuePublicId = issue.getPublicId();
             vo.issueStatus = issue.getStatus() == null ? null : issue.getStatus().name();
-            for (PublicationIssueDesc d : issue.getDescs()) {
-                vo.links.add(new LangText(d.getLang(), d.getLink()));
-                vo.fileNames.add(new LangText(d.getLang(), d.getFileName()));
-            }
+            fillIssueDescs(issue, vo);
             vo.publishable = isPublishable(series, issue);
         }
 
@@ -740,5 +769,33 @@ public class OneOffRestService {
                 && (issue.getPublicFrom() == null || !issue.getPublicFrom().after(now))
                 && (issue.getPublicTo() == null || issue.getPublicTo().after(now));
         return vo;
+    }
+
+    /**
+     * The per-language rows for the issue underneath: an address, and a file name.
+     *
+     * `links` carries an ADDRESS A CLIENT CAN FETCH, not the desc's link column.
+     * A one-off whose document was uploaded here has no link column at all -- it
+     * has a storage path -- so reading the column straight left every natively
+     * uploaded publication with a blank address, and the list with nothing to
+     * point its title at, while the imported rows beside it linked fine because
+     * those carry their address verbatim in the column.
+     *
+     * The rule is the one rule: an explicit link wins, otherwise the repository
+     * URL that serves the file. It belongs to the mapping and is shared with the
+     * public list and the citation picker, so all three name the same document.
+     *
+     * A row per desc either way. A publication that is a reference and nothing
+     * else -- no file, no link -- still has a language and a title to show, and
+     * its address is simply absent.
+     *
+     * Package-private and static so the projection can be asserted without a
+     * database: what an address resolves to is the whole point of the field.
+     */
+    static void fillIssueDescs(PublicationIssue issue, OneOffVo vo) {
+        for (PublicationIssueDesc d : issue.getDescs()) {
+            vo.links.add(new LangText(d.getLang(), IssuePublicationMapping.linkOf(d)));
+            vo.fileNames.add(new LangText(d.getLang(), d.getFileName()));
+        }
     }
 }

@@ -221,8 +221,12 @@ public final class IssuePublicationMapping {
      *
      * An explicit link is returned untouched: that is the EXTERNAL_LINK case, and
      * it is absolute by definition.
+     *
+     * Public because it is the one rule for "where does this document live", and
+     * every surface that hands a desc's address to a client owes the same answer
+     * -- the public list, the citation picker and the administration lists alike.
      */
-    static String linkOf(PublicationIssueDesc desc) {
+    public static String linkOf(PublicationIssueDesc desc) {
         if (notBlank(desc.getLink())) {
             return desc.getLink();
         }
