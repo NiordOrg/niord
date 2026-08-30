@@ -500,4 +500,117 @@ public class IssueMemberDriftTest {
                 "an empty curation block would say a human touched this row and left no reason, "
                         + "which the NOT NULL reason column exists to make impossible");
     }
+
+    // ------------------------------------------------------------------ title
+
+    /**
+     * A frozen row names its message in the language the list was asked for.
+     *
+     * "NM-114-25" identifies a notice to a database and to nobody else. The person
+     * reading a member list is looking for the one about the light at Hals Barre,
+     * and without a title the only way to find it is to open every row.
+     */
+    @Test
+    @Transactional
+    public void theMemberRowNamesItsMessageInTheRequestedLanguage() {
+        PublicationSeries s = series();
+        PublicationIssue i = issue(s, IssueStatus.PUBLISHED);
+        Message m = message(Type.TEMPORARY_NOTICE, Status.PUBLISHED, null);
+        m.createDesc("da").setTitle("Hals Barre. Fyr slukket.");
+        m.createDesc("en").setTitle("Hals Barre. Light extinguished.");
+        em.merge(m);
+        member(i, m, 0);
+        em.flush();
+
+        assertEquals("Hals Barre. Light extinguished.",
+                rowFor(memberList.members(i, "en"), m.getUid()).getTitle());
+        assertEquals("Hals Barre. Fyr slukket.",
+                rowFor(memberList.members(i, "da"), m.getUid()).getTitle());
+    }
+
+    /**
+     * A language the message is not written in falls back to one it is.
+     *
+     * A blank row is worse than the wrong language: it reads as a notice with no
+     * subject, and the reader cannot tell that from a message nobody titled.
+     */
+    @Test
+    @Transactional
+    public void aMessageNotWrittenInTheRequestedLanguageStillNamesItself() {
+        PublicationSeries s = series();
+        PublicationIssue i = issue(s, IssueStatus.PUBLISHED);
+        Message m = message(Type.TEMPORARY_NOTICE, Status.PUBLISHED, null);
+        m.createDesc("da").setTitle("Kun på dansk.");
+        em.merge(m);
+        member(i, m, 0);
+        em.flush();
+
+        assertEquals("Kun på dansk.", rowFor(memberList.members(i, "en"), m.getUid()).getTitle(),
+                "a Danish-only message went unnamed on an English screen");
+        assertEquals("Kun på dansk.", rowFor(memberList.members(i), m.getUid()).getTitle(),
+                "a list asked for no language in particular still has to name its rows");
+    }
+
+    /**
+     * The title is the LIVE one, on a frozen row, and it moves when the message
+     * is re-titled.
+     *
+     * Every other value on this row is a snapshot, so this one is the exception
+     * that has to be asserted: a title frozen alongside them would be a second
+     * copy of something the message owns, disagreeing in silence with every other
+     * screen that names it. What was printed is the archived document, and it is
+     * unaffected by any of this.
+     */
+    @Test
+    @Transactional
+    public void theTitleIsLiveAndIsNotPartOfTheSnapshot() {
+        PublicationSeries s = series();
+        PublicationIssue i = issue(s, IssueStatus.PUBLISHED);
+        Message m = message(Type.TEMPORARY_NOTICE, Status.PUBLISHED, null);
+        m.createDesc("da").setTitle("Første formulering.");
+        em.merge(m);
+        member(i, m, 0);
+        em.flush();
+
+        m.getDesc("da").setTitle("Rettet formulering.");
+        em.merge(m);
+        em.flush();
+
+        IssueMemberVo row = rowFor(memberList.members(i, "da"), m.getUid());
+        assertEquals("Rettet formulering.", row.getTitle(),
+                "the row is still showing a title the message no longer carries");
+        assertNull(row.getDrift(),
+                "a re-titled message is not drift: the title was never frozen, so there is "
+                        + "no frozen value for it to have moved away from");
+    }
+
+    /**
+     * A member whose message is gone has NO title.
+     *
+     * Null, not an empty string and not the short id: the row already says the
+     * message no longer exists, and inventing a name for it would make a deleted
+     * message look like a present one with a blank subject.
+     */
+    @Test
+    @Transactional
+    public void aMemberWhoseMessageIsGoneHasNoTitle() {
+        PublicationSeries s = series();
+        PublicationIssue i = issue(s, IssueStatus.PUBLISHED);
+        Message m = message(Type.TEMPORARY_NOTICE, Status.PUBLISHED, null);
+        m.createDesc("da").setTitle("Findes ikke længere.");
+        em.merge(m);
+        IssueMember member = member(i, m, 0);
+        em.flush();
+
+        member.setMessage(null);
+        em.merge(member);
+        em.flush();
+        em.remove(em.find(Message.class, m.getId()));
+        em.flush();
+
+        IssueMemberVo row = rowFor(memberList.members(i, "da"), m.getUid());
+        assertNull(row.getTitle(), "a member whose message is gone was given a title anyway");
+        assertEquals(List.of("exists"), row.getDrift(),
+                "the absence is stated by the drift, which is where a reader looks for it");
+    }
 }

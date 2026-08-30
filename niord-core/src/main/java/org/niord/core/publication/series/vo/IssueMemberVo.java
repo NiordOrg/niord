@@ -38,6 +38,22 @@ public class IssueMemberVo implements IJsonSerializable {
 
     private String frozenShortId;
 
+    /**
+     * The LIVE title of the message, in the language the list was asked for.
+     *
+     * NEVER FROZEN, and that is the one thing to know about it. Every other
+     * `frozen*` field on this row records what was printed; this one records what
+     * the message is called today, because a row identified only by "NM-114-25"
+     * is unreadable to the person scanning a member list for the notice they
+     * meant to exclude. A title that were snapshotted here would be a second copy
+     * of something the message already owns, going stale silently and disagreeing
+     * with every other screen that names the same message.
+     *
+     * Null when the message no longer exists -- the `drift` entry `exists` is
+     * where that fact is stated -- and null when it carries no title at all.
+     */
+    private String title;
+
     private String frozenType;
 
     private String frozenStatus;
@@ -104,6 +120,14 @@ public class IssueMemberVo implements IJsonSerializable {
 
     public void setFrozenShortId(String frozenShortId) {
         this.frozenShortId = frozenShortId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getFrozenType() {

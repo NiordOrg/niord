@@ -131,6 +131,25 @@ public class IssueMemberListService {
      */
     @Transactional
     public List<IssueMemberVo> members(PublicationIssue issue) {
+        return members(issue, null);
+    }
+
+    /**
+     * The same rows, titled in the language the caller asked for.
+     *
+     * The title is the LIVE one on both halves of the split -- a frozen row names
+     * the message it printed by the name that message has today. It is not a
+     * frozen column and must not become one: the row exists to be recognised by a
+     * human, and a snapshotted title would go stale against every other screen in
+     * the system with nothing saying it had.
+     *
+     * A blank or unknown language falls back to the first description that
+     * carries a title, so a message written only in Danish still names itself on
+     * an English screen. An empty name would be worse than the wrong language:
+     * the row would read as a message with no subject.
+     */
+    @Transactional
+    public List<IssueMemberVo> members(PublicationIssue issue, String lang) {
         boolean frozenList = issue.getStatus() == IssueStatus.PUBLISHED
                 || issue.getStatus() == IssueStatus.RETIRED;
 
@@ -149,7 +168,7 @@ public class IssueMemberListService {
         }
 
         if (!frozenList) {
-            return liveMembers(issue, overrides);
+            return liveMembers(issue, overrides, lang);
         }
 
         List<IssueMember> frozen = em.createQuery(
@@ -159,6 +178,7 @@ public class IssueMemberListService {
                 .getResultList();
 
         Map<String, LiveFacts> live = liveFacts(frozen);
+        Map<String, String> titles = titlesOf(live.keySet(), lang);
 
         List<IssueMemberVo> out = new ArrayList<>();
         for (IssueMember m : frozen) {
@@ -166,6 +186,10 @@ public class IssueMemberListService {
             vo.setMessageUid(m.getMessageUid());
             vo.setSortIndex(m.getSortIndex());
             vo.setFrozenShortId(m.getFrozenShortId());
+            // The live name, never a frozen one: a member row is read by somebody
+            // looking for a notice they can recognise, and a message that has
+            // since been re-titled is still that message.
+            vo.setTitle(titles.get(m.getMessageUid()));
             vo.setFrozenType(m.getFrozenType());
             vo.setFrozenStatus(m.getFrozenStatus());
             vo.setFrozenPublishDateFrom(m.getFrozenPublishDateFrom());
@@ -199,7 +223,8 @@ public class IssueMemberListService {
      * There is no drift half. Drift is the distance between a frozen fact and the
      * live one, and here there is only the live one.
      */
-    private List<IssueMemberVo> liveMembers(PublicationIssue issue, Map<String, IssueOverride> overrides) {
+    private List<IssueMemberVo> liveMembers(PublicationIssue issue, Map<String, IssueOverride> overrides,
+                                            String lang) {
         Set<String> includes = new LinkedHashSet<>();
         Set<String> excludes = new LinkedHashSet<>();
         for (IssueOverride o : overrides.values()) {
@@ -227,6 +252,7 @@ public class IssueMemberListService {
         // carry on a published issue; on a live list they carry today's values,
         // which is what the row is FOR.
         Map<String, LiveFacts> facts = liveFactsOf(sortIndex.keySet());
+        Map<String, String> titles = titlesOf(facts.keySet(), lang);
 
         List<IssueMemberVo> out = new ArrayList<>();
         for (IssueOrdering.Orderable o : ordered) {
@@ -237,6 +263,7 @@ public class IssueMemberListService {
             IssueMemberVo vo = new IssueMemberVo();
             vo.setMessageUid(uid);
             vo.setSortIndex(sortIndex.get(uid));
+            vo.setTitle(titles.get(uid));
             vo.setFrozenShortId(fact == null ? null : fact.shortId());
             vo.setFrozenType(fact == null ? null : fact.type());
             vo.setFrozenStatus(fact == null ? null : fact.status());
@@ -356,6 +383,54 @@ public class IssueMemberListService {
                                 row[3] == null ? null : row[3].toString(),
                                 (Date) row[4],
                                 (Date) row[5]));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Every member's title, in ONE query, resolved to one language per message.
+     *
+     * The same chunked projection the live facts use, and for the same reason: a
+     * member list runs to hundreds of rows, and a title read through the Message
+     * entity would drag that message's parts, areas and geometry along behind it.
+     *
+     * The language rule is the one this row is read under. The requested language
+     * wins, compared without case so a caller saying "DA" is not answered in
+     * English; failing that, the first description that carries a title, which is
+     * what makes a Danish-only message name itself on an English screen. Rows
+     * arrive in description-id order so "the first available" is the same
+     * description on every call rather than whatever the database returned first.
+     *
+     * A message with no titled description at all is absent from the map, which
+     * is a null title on the row. Blank is treated as absent throughout: a row
+     * showing an empty name reads as a message with no subject, and the other
+     * language is the better answer.
+     */
+    private Map<String, String> titlesOf(Collection<String> uids, String lang) {
+        boolean wanted = lang != null && !lang.isBlank();
+        List<String> all = new ArrayList<>(uids);
+        Map<String, String> out = new LinkedHashMap<>();
+        Set<String> exact = new LinkedHashSet<>();
+        for (int from = 0; from < all.size(); from += LOOKUP_CHUNK) {
+            List<String> chunk = all.subList(from, Math.min(from + LOOKUP_CHUNK, all.size()));
+            for (Object[] row : em.createQuery(
+                            "SELECT m.uid, d.lang, d.title FROM Message m JOIN m.descs d "
+                                    + "WHERE m.uid IN (:uids) ORDER BY d.id", Object[].class)
+                    .setParameter("uids", chunk)
+                    .getResultList()) {
+                String uid = (String) row[0];
+                String descLang = (String) row[1];
+                String title = (String) row[2];
+                if (title == null || title.isBlank() || exact.contains(uid)) {
+                    continue;
+                }
+                if (wanted && lang.equalsIgnoreCase(descLang)) {
+                    out.put(uid, title);
+                    exact.add(uid);
+                } else {
+                    out.putIfAbsent(uid, title);
+                }
             }
         }
         return out;

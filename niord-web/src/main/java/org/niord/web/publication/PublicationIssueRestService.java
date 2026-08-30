@@ -642,6 +642,13 @@ public class PublicationIssueRestService {
      *
      * Open to a curator, who otherwise has three endpoints that CHANGE the member
      * set and none that shows it.
+     *
+     * `lang` names the language the rows are TITLED in, and nothing else. It does
+     * not narrow, reorder or otherwise decide the member set -- which messages are
+     * in an issue is not a question about language -- so the same list comes back
+     * whatever is asked for, named differently. A message that has no description
+     * in the requested language falls back to the first one it has, because a row
+     * with no name is unusable and the wrong language is still a name.
      */
     @GET
     @Path("/issue/{publicId}/members")
@@ -649,8 +656,9 @@ public class PublicationIssueRestService {
     @GZIP
     @NoCache
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
-    public List<IssueMemberVo> members(@PathParam("publicId") String publicId) {
-        return memberList.members(required(publicId));
+    public List<IssueMemberVo> members(@PathParam("publicId") String publicId,
+                                       @QueryParam("lang") String lang) {
+        return memberList.members(required(publicId), lang);
     }
 
     /**

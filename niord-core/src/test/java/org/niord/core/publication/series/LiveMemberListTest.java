@@ -263,4 +263,32 @@ public class LiveMemberListTest {
                         .setParameter("i", i).getSingleResult(),
                 "the refused override was written anyway");
     }
+
+    /**
+     * An open issue's rows are titled too, in the language the list was asked for.
+     *
+     * The open list is the one a curator works on -- it is where messages are
+     * included and excluded by hand -- so it is the list where a row identified
+     * only by its short id costs the most. The title comes from the same live
+     * message on both lists; nothing about it is frozen on either.
+     */
+    @Test
+    @Transactional
+    public void aliveRowNamesItsMessageInTheRequestedLanguage() {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        Message m = message("NM-001");
+        m.createDesc("da").setTitle("Hals Barre. Fyr slukket.");
+        m.createDesc("en").setTitle("Hals Barre. Light extinguished.");
+        em.merge(m);
+        em.flush();
+
+        assertEquals("Hals Barre. Light extinguished.",
+                memberList.members(i, "en").get(0).getTitle());
+        assertEquals("Hals Barre. Fyr slukket.",
+                memberList.members(i, "da").get(0).getTitle());
+        assertEquals("Hals Barre. Fyr slukket.",
+                memberList.members(i, "de").get(0).getTitle(),
+                "a language the message is not written in falls back to one it is");
+    }
 }
