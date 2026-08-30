@@ -16,6 +16,7 @@
 
 package org.niord.core.publication.series.legacy;
 
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.TestOwnerDomain;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -297,7 +298,7 @@ public class CutoverPreflightTest {
         }
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("preflight-" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.id("preflight-"));
         s.setStatus(org.niord.core.publication.series.SeriesStatus.ACTIVE);
         s.setKind(org.niord.core.publication.series.SeriesKind.ONE_OFF);
         s.setCadence(org.niord.core.publication.series.SeriesCadence.NONE);

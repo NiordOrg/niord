@@ -22,6 +22,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.BindsRule;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
@@ -74,12 +75,12 @@ public class AmendAndOverlapTest {
 
     private PublicationSeries series(TimeRelation relation) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -113,7 +114,7 @@ public class AmendAndOverlapTest {
 
     private User user() {
         User u = new User();
-        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        u.setUsername(TestIds.user());
         em.persist(u);
         return u;
     }

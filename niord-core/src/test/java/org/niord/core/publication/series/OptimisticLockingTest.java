@@ -25,6 +25,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -85,13 +86,13 @@ public class OptimisticLockingTest {
 
     private PublicationSeries series() {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         c.setPublish(true);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -124,7 +125,7 @@ public class OptimisticLockingTest {
 
     private User user() {
         User u = new User();
-        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        u.setUsername(TestIds.user());
         em.persist(u);
         return u;
     }

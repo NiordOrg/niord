@@ -16,6 +16,7 @@
 
 package org.niord.core.publication.series.replay;
 
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.TestOwnerDomain;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -185,7 +186,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void twoConsecutiveWeeksBothDiffClean() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -230,7 +231,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void aMessageTaggedButNotSelectedIsReportedAsMissing() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -266,7 +267,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void aHandReplacedFileIsSkippedRatherThanDiffed() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -295,7 +296,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void aSkippedRunIsGreenButCarriesItsReason() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -332,7 +333,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void anInForceIssueIsComparedWithNoLowerBound() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
         series.setTimeRelation(TimeRelation.IN_FORCE_AT_CUTOFF);
@@ -389,7 +390,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void anAnnualInForceEditionIsComparedAtTheEndOfItsChangeoverDay() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
         series.setCadence(SeriesCadence.YEARLY);
@@ -468,7 +469,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void anEmptyIntervalIsSkippedWithAReasonRatherThanThrowing() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -501,7 +502,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void anEmptyTagIsSkippedRatherThanReportedAsAllExtra() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -540,7 +541,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void theComparisonUsesTheIssuesOwnCutoffRatherThanTheNominalReleaseTime() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -578,7 +579,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void resetUnsettlesAReleaseSoTheSweepRecomputesIt() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -621,7 +622,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void areleaseStillRecordingIsNotSelected() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -650,7 +651,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void averdictTakenWhileRecordingIsDiscarded() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -678,7 +679,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void aclosedReleaseBecomesComparableAgain() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -721,7 +722,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void aSkippedReleaseIsComparedOnceTheImportedSideExists() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -774,7 +775,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void anorphanReleaseResolvesThroughItsImportedIssue() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -802,7 +803,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void aReleaseThatStillCannotBeComparedDoesNotAccumulateRows() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -832,7 +833,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void theSchedulerRetriesASkippedReleaseAndLeavesAComparedOneAlone() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
 
@@ -887,7 +888,7 @@ public class ShadowDiffTest {
     @Test
     @Transactional
     public void aSkipThatCannotClearIsNotOfferedForDiffingAgain() {
-        String seriesKey = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        String seriesKey = TestIds.id("ms-");
         MessageSeries ms = messageSeries(seriesKey);
         PublicationSeries series = importedSeries(seriesKey);
         // No member list, and never one: the shape of an annex or an uploaded document.
@@ -954,7 +955,7 @@ public class ShadowDiffTest {
     private MessageTag tag(Message... messages) {
         MessageTag t = new MessageTag();
         t.setTagId(UUID.randomUUID().toString());
-        t.setName("shadow-" + UUID.randomUUID().toString().substring(0, 8));
+        t.setName(TestIds.id("shadow-"));
         t.getMessages().addAll(List.of(messages));
         em.persist(t);
         em.flush();
@@ -1002,13 +1003,13 @@ public class ShadowDiffTest {
 
     private PublicationSeries importedSeries(String messageSeriesId) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         c.setPublish(true);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.DRAFT);
         s.setImportSource(SEEDED_BY);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
@@ -1048,7 +1049,7 @@ public class ShadowDiffTest {
         i.setSeries(series);
         i.setPublicId(UUID.randomUUID().toString());
         i.setLegacyPublicationId(release.getPublicationId());
-        i.setRepoPath("shadow/" + UUID.randomUUID().toString().substring(0, 8));
+        i.setRepoPath(TestIds.id("shadow/"));
         em.persist(i);
         em.flush();
         return i;
@@ -1060,7 +1061,7 @@ public class ShadowDiffTest {
         i.setSeries(series);
         i.setPublicId(UUID.randomUUID().toString());
         i.setLegacyPublicationId(release.getPublicationId());
-        i.setRepoPath("shadow/" + UUID.randomUUID().toString().substring(0, 8));
+        i.setRepoPath(TestIds.id("shadow/"));
 
         PublicationIssueDesc d = i.createDesc("da");
         d.setName("Hand-replaced");

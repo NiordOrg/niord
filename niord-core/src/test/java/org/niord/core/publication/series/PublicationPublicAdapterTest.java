@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationMainType;
@@ -239,7 +240,7 @@ public class PublicationPublicAdapterTest {
 
     private PublicationSeries series(PublicAuthority authority) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         // publish defaults to FALSE. Until newHalf read the flag this fixture was
         // silently modelling an INTERNAL category, and every window and ordering
         // test above was asserting against a series that should never have been
@@ -250,7 +251,7 @@ public class PublicationPublicAdapterTest {
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -276,7 +277,7 @@ public class PublicationPublicAdapterTest {
     /** A legacy publication the public list would actually serve. */
     private Publication publishingLegacy(String publicationId, Date from) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("legacy-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.id("legacy-"));
         c.setPublish(true);
         c.setPriority(50);
         em.persist(c);

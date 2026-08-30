@@ -26,6 +26,7 @@ import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationDesc;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.series.PublicationSeries;
@@ -598,7 +599,7 @@ public class LegacyImportServiceTest {
      */
     @Test
     public void aConjuredCategoryKeepsThePublishFlagItWasSeenWith() {
-        String categoryId = "cat-" + UUID.randomUUID().toString().substring(0, 8);
+        String categoryId = TestIds.category();
 
         PublicationCategory source = new PublicationCategory();
         source.setCategoryId(categoryId);

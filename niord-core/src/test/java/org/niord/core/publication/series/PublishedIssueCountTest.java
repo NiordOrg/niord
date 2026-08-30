@@ -23,13 +23,13 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.user.User;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,12 +68,12 @@ public class PublishedIssueCountTest {
 
     private PublicationSeries series() {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -99,7 +99,7 @@ public class PublishedIssueCountTest {
 
     private User user() {
         User u = new User();
-        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        u.setUsername(TestIds.user());
         em.persist(u);
         return u;
     }

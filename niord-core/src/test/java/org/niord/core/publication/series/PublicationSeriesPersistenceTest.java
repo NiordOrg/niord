@@ -23,6 +23,7 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.PublicationSeriesVo;
@@ -64,7 +65,7 @@ public class PublicationSeriesPersistenceTest {
 
     private PublicationCategory aCategory() {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         c.setPublish(true);
         em.persist(c);
@@ -73,7 +74,7 @@ public class PublicationSeriesPersistenceTest {
 
     private PublicationSeries aSeries(String... languages) {
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("series-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.id("series-"));
         s.setStatus(SeriesStatus.DRAFT);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setCadence(SeriesCadence.WEEKLY);

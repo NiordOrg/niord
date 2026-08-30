@@ -709,7 +709,7 @@ public class PublicationResolutionTest {
 
     private PublicationSeries series() {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         // Explicit, because the single public read gates on it: an issue in a
         // non-publishing category reads as missing, so a fixture that left the
         // column at its false default would be testing the gate rather than the
@@ -718,7 +718,7 @@ public class PublicationResolutionTest {
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -778,7 +778,7 @@ public class PublicationResolutionTest {
         // A bare lowercase UUID: publicId is 36 characters and the shape is a
         // one-way decision, so the fixture has to be the real thing.
         issue.setPublicId(UUID.randomUUID().toString());
-        issue.setRepoPath("publications/test/" + UUID.randomUUID().toString().substring(0, 8));
+        issue.setRepoPath(TestIds.id("publications/test/"));
         issue.setStatus(status);
         issue.setIntervalFrom(new Date(1_700_000_000_000L));
         issue.setIntervalTo(new Date(1_700_600_000_000L));
@@ -793,7 +793,7 @@ public class PublicationResolutionTest {
 
     private Publication legacyPublication(PublicationStatus status) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("legacy-cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.id("legacy-cat-"));
         c.setPublish(true);
         em.persist(c);
 

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.domain.Domain;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationSearchParams;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.user.User;
@@ -157,11 +158,11 @@ public class PublicationSearchAdapterTest {
     /** An issue on a series publishing the given kind of content. */
     private PublicationIssue issueOn(Domain domain, ContentMode contentMode) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setImportSource(SEEDED_BY);
         s.setContentMode(contentMode);
@@ -185,7 +186,7 @@ public class PublicationSearchAdapterTest {
         em.persist(s);
 
         User u = new User();
-        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        u.setUsername(TestIds.user());
         em.persist(u);
 
         PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),

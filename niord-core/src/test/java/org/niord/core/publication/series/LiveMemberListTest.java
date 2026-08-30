@@ -25,6 +25,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -84,19 +85,19 @@ public class LiveMemberListTest {
 
     private PublicationSeries series() {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         em.persist(c);
 
         // Its own message series, so the corpus cannot decide the member count.
-        seriesId = "ms-" + UUID.randomUUID().toString().substring(0, 8);
+        seriesId = TestIds.id("ms-");
         MessageSeries ms = new MessageSeries();
         ms.setSeriesId(seriesId);
         ms.setMainType(MainType.NM);
         em.persist(ms);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -145,7 +146,7 @@ public class LiveMemberListTest {
 
     private User user() {
         User u = new User();
-        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        u.setUsername(TestIds.user());
         em.persist(u);
         return u;
     }
@@ -211,7 +212,7 @@ public class LiveMemberListTest {
         // An INCLUDE of something the criteria do NOT select: a different message
         // series, which this issue's query has no way to reach.
         MessageSeries other = new MessageSeries();
-        other.setSeriesId("ms-" + UUID.randomUUID().toString().substring(0, 8));
+        other.setSeriesId(TestIds.id("ms-"));
         other.setMainType(MainType.NM);
         em.persist(other);
         Message named = new Message();

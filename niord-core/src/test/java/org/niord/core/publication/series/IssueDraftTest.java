@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.domain.Domain;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -38,7 +39,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -85,20 +85,20 @@ public class IssueDraftTest {
 
     private PublicationSeries series(TimeRelation relation, String namePattern) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         em.persist(c);
 
         // S-20: the timezone a cut-off is read in is the DOMAIN's, so a series
         // whose weeks must come out right has to have one.
         Domain d = new Domain();
-        d.setDomainId("dom-" + UUID.randomUUID().toString().substring(0, 8));
+        d.setDomainId(TestIds.domain());
         d.setName("Test domain");
         d.setTimeZone("Europe/Copenhagen");
         em.persist(d);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setDomain(d);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
@@ -136,7 +136,7 @@ public class IssueDraftTest {
 
     private User user() {
         User u = new User();
-        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        u.setUsername(TestIds.user());
         em.persist(u);
         return u;
     }

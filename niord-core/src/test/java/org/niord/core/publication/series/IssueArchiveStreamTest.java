@@ -23,6 +23,7 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -36,7 +37,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -89,12 +89,12 @@ public class IssueArchiveStreamTest {
 
     private PublicationSeries series() {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -126,7 +126,7 @@ public class IssueArchiveStreamTest {
 
     private User user() {
         User u = new User();
-        u.setUsername("u-" + UUID.randomUUID().toString().substring(0, 8));
+        u.setUsername(TestIds.user());
         em.persist(u);
         return u;
     }
@@ -314,7 +314,7 @@ public class IssueArchiveStreamTest {
         PublicationIssue issue = publishedIssue("the released edition");
 
         Path outside = paths.repoRoot()
-                .resolve("archive-escape-" + UUID.randomUUID().toString().substring(0, 8))
+                .resolve(TestIds.id("archive-escape-"))
                 .resolve("da").resolve("1700000000000-leaked.pdf");
         Files.createDirectories(outside.getParent());
         Files.writeString(outside, "not the archive");
@@ -333,7 +333,7 @@ public class IssueArchiveStreamTest {
         PublicationIssue issue = publishedIssue("the released edition");
 
         Path escape = paths.archiveRoot().resolve("..")
-                .resolve("archive-escape-" + UUID.randomUUID().toString().substring(0, 8))
+                .resolve(TestIds.id("archive-escape-"))
                 .resolve("da").resolve("1700000000000-leaked.pdf");
         Files.createDirectories(escape.getParent());
         Files.writeString(escape, "not the archive");

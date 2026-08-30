@@ -23,10 +23,10 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.domain.Domain;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -53,7 +53,7 @@ public class SeriesAvailabilityResolverTest {
     EntityManager em;
 
     private Domain domain(String suffix, boolean active) {
-        String id = "avail-" + suffix + "-" + UUID.randomUUID().toString().substring(0, 8);
+        String id = "avail-" + suffix + "-" + TestIds.suffix();
         Domain d = new Domain();
         d.setDomainId(id);
         d.setName(id);

@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.publication.TestIds;
 
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -74,7 +74,7 @@ public class PublicationDomainGuardTest {
 
     private Domain domain() {
         Domain d = new Domain();
-        d.setDomainId("dom-" + UUID.randomUUID().toString().substring(0, 8));
+        d.setDomainId(TestIds.domain());
         d.setName("Test domain");
         d.setTimeZone("Europe/Copenhagen");
         em.persist(d);
@@ -83,7 +83,7 @@ public class PublicationDomainGuardTest {
 
     private PublicationSeries series(Domain domain) {
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.DRAFT);
         s.setDomain(domain);
         return s;

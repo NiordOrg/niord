@@ -16,6 +16,7 @@
 
 package org.niord.core.publication.series.replay;
 
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.TestOwnerDomain;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
@@ -475,7 +476,7 @@ public class LocalEstateReplayTest {
     private Seeded seed(List<EstateSlice.Issue> slice, String seriesId) {
         EstateSlice.Series shape = EstateSlice.series(seriesId);
         MessageSeries ms = new MessageSeries();
-        ms.setSeriesId("dma-nm-" + UUID.randomUUID().toString().substring(0, 8));
+        ms.setSeriesId(TestIds.id("dma-nm-"));
         ms.setMainType(MainType.NM);
         em.persist(ms);
 
@@ -630,13 +631,13 @@ public class LocalEstateReplayTest {
      */
     private PublicationSeries importedSeries(String messageSeriesId, String estateSeriesId) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("slice-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.id("slice-"));
         c.setPriority(100);
         c.setPublish(true);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("slice-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.id("slice-"));
         s.setStatus(SeriesStatus.DRAFT);
         s.setImportSource(SEEDED_BY);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);

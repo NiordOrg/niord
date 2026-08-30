@@ -26,6 +26,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageMainTypeCriterionVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
@@ -90,13 +91,13 @@ public class IssuePublishTest {
     private PublicationSeries series(SeriesCadence cadence, TimeRelation relation,
                                      ReleaseMode release, NextIssueCreation next, SeriesStatus status) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         c.setPublish(true);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(status);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -415,7 +416,7 @@ public class IssuePublishTest {
         em.flush();
 
         org.niord.core.user.User author = new org.niord.core.user.User();
-        author.setUsername("curator-" + UUID.randomUUID().toString().substring(0, 8));
+        author.setUsername(TestIds.id("curator-"));
         em.persist(author);
 
         IssueOverride ghost = new IssueOverride();

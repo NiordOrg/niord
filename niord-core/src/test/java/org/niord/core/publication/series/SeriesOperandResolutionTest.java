@@ -28,6 +28,7 @@ import org.niord.core.chart.Chart;
 import org.niord.core.domain.Domain;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.criteria.AreaCriterionVo;
 import org.niord.core.publication.series.criteria.CategoryCriterionVo;
 import org.niord.core.publication.series.criteria.ChartCriterionVo;
@@ -44,7 +45,6 @@ import org.niord.model.message.MainType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -79,7 +79,7 @@ public class SeriesOperandResolutionTest {
     EntityManager em;
 
     /** Unique per run, so a shared database cannot make one run depend on another. */
-    private final String tag = UUID.randomUUID().toString().substring(0, 8);
+    private final String tag = TestIds.suffix();
 
     // ------------------------------------------------------------------ fixtures
 
@@ -140,12 +140,12 @@ public class SeriesOperandResolutionTest {
      */
     private PublicationSeries seriesWith(IssueCriteriaVo criteria) {
         PublicationCategory pc = new PublicationCategory();
-        pc.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        pc.setCategoryId(TestIds.category());
         pc.setPriority(100);
         em.persist(pc);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.DRAFT);
         s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
         s.setReportId("some-report");
@@ -173,7 +173,7 @@ public class SeriesOperandResolutionTest {
         s.setPageOrientation(PageOrientation.PORTRAIT);
         s.setMapThumbnails(Boolean.TRUE);
         Domain own = new Domain();
-        own.setDomainId("sd-" + UUID.randomUUID().toString().substring(0, 8));
+        own.setDomainId(TestIds.id("sd-"));
         own.setActive(true);
         own.setTimeZone("Europe/Copenhagen");
         em.persist(own);

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.domain.Domain;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.PublicationIssuePickerVo;
 import org.niord.core.publication.vo.MessagePublication;
@@ -122,12 +123,12 @@ public class IssuePickerTest {
 
     private PublicationSeries series(ContentMode mode, Domain domain, MessagePublication publication) {
         PublicationCategory c = new PublicationCategory();
-        c.setCategoryId("cat-" + UUID.randomUUID().toString().substring(0, 8));
+        c.setCategoryId(TestIds.category());
         c.setPriority(100);
         em.persist(c);
 
         PublicationSeries s = new PublicationSeries();
-        s.setSeriesId("s-" + UUID.randomUUID().toString().substring(0, 8));
+        s.setSeriesId(TestIds.series());
         s.setStatus(SeriesStatus.ACTIVE);
         s.setImportSource(SEEDED_BY);
         s.setContentMode(mode);
@@ -314,7 +315,7 @@ public class IssuePickerTest {
         // not about which page of a shared test database the row landed on --
         // the query is deliberately unscoped by series here, which is the whole
         // point of it.
-        String marker = "dmn-" + UUID.randomUUID().toString().substring(0, 8);
+        String marker = TestIds.id("dmn-");
         PublicationIssue everywhereIssue = issue(everywhere, IssueStatus.PUBLISHED,
                 "Everywhere " + marker, 1_700_000_000_000L);
         PublicationIssue namedIssue = issue(named, IssueStatus.PUBLISHED,
@@ -358,7 +359,7 @@ public class IssuePickerTest {
 
         PublicationSeries s = shared(domain("picker-domain-a"),
                 SeriesAvailability.SELECTED_DOMAINS, switchedOff);
-        String marker = "off-" + UUID.randomUUID().toString().substring(0, 8);
+        String marker = TestIds.id("off-");
         PublicationIssue i = issue(s, IssueStatus.PUBLISHED, "Off " + marker, 1_700_000_000_000L);
 
         assertFalse(contains(picker.search(new IssuePickerService.PickerQuery("da", marker, null,

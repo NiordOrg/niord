@@ -29,6 +29,7 @@ import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSeries;
+import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.resolve.Interval;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -103,7 +104,7 @@ public class EntityCriteriaResolutionTest {
     }
 
     private void seedFixture() {
-        tag = UUID.randomUUID().toString().substring(0, 8);
+        tag = TestIds.suffix();
         seriesId = "crit-" + tag;
 
         MessageSeries series = new MessageSeries();
