@@ -90,11 +90,15 @@ public class IssueAuditEntry extends BaseEntity<Integer> {
      * What happened.
      *
      * Stored by name in a varchar column rather than as a native database enum,
-     * so a new action needs no schema change -- see {@link AuditAction}.
+     * so a new action needs no schema change -- see {@link AuditAction}. The
+     * columnDefinition is what pins that, and length alone does not: the
+     * schema-generation default for an enum-typed field on MySQL is a native ENUM
+     * column, which this column is not and must not become -- a native enum needs
+     * an ALTER TABLE before a constant can be added.
      */
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(length = 255, nullable = false)
+    @Column(length = 255, columnDefinition = "varchar(255)", nullable = false)
     private AuditAction action;
 
     @Enumerated(EnumType.STRING)
