@@ -42,7 +42,11 @@ public record CriteriaMissVo(String messageUid, CriteriaMissCode code, Map<Strin
                 detail.put("cutoff", epoch(interval.cutoff()));
             }
             case NOT_ALIVE_AT_CUTOFF -> {
+                // Both instants, because either can be the one that dropped it: a
+                // closed window, or a cancel before the cut-off under a validity end
+                // that lies after it. The reader sees which fell short.
                 detail.put("publishDateTo", epoch(facts.publishDateTo()));
+                detail.put("withdrawnAt", epoch(facts.withdrawnAt()));
                 detail.put("cutoff", epoch(interval.cutoff()));
             }
             case STATUS_NOT_PUBLIC -> detail.put("status", facts.status() == null ? null : facts.status().name());

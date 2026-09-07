@@ -119,6 +119,16 @@ public final class MembershipPredicate {
             return MemberDecision.excluded(m.uid(), MembershipReason.NOT_ALIVE_AT_CUTOFF);
         }
 
+        // RI-4, the status half (R-xxxii). A cancel leaves an editor-set future
+        // publishDateTo alone, so the date says "alive" about a notice withdrawn
+        // weeks before the cut-off. The withdrawal instant decides that case; a
+        // null one -- never withdrawn, or nothing dated it -- leaves the date's
+        // verdict standing rather than refusing. NM-814-26: validity to 23 Sep,
+        // cancelled 28 Aug, cut-off 2 Sep -- out.
+        if (c.aliveAtCutoff() && m.withdrawnAt() != null && m.withdrawnAt().getTime() < cutoff) {
+            return MemberDecision.excluded(m.uid(), MembershipReason.NOT_ALIVE_AT_CUTOFF);
+        }
+
         return MemberDecision.included(m.uid(),
                 c.timeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL
                         ? MembershipReason.IN_INTERVAL

@@ -45,7 +45,10 @@ public enum DivergenceClass {
      *
      * updateStatus() stamps publishDateTo = now only when it is null or already
      * past, so an editor-set future validity end survives cancellation.
-     * Date-alive, status-dead: the query KEEPS a notice legacy dropped.
+     * Date-alive, status-dead: the query KEPT a notice legacy dropped -- until
+     * R-xxxii gave the predicate the withdrawal instant from the message history.
+     * What remains of the class is the message whose cancel no history row
+     * dates.
      */
     CANCELLED_WITH_FUTURE_VALIDITY,
 

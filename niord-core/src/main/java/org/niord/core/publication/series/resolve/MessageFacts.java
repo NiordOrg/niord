@@ -58,6 +58,18 @@ import java.util.Set;
  * ancestors', so a criterion naming a parent matches a message filed under a
  * child -- the hierarchy is expanded into the facts rather than being a lookup
  * the predicate would need a database for.
+ *
+ * WITHDRAWN AT is the status half of liveness. A cancel stamps publishDateTo
+ * only when it is null or already past, so an editor-set future validity end
+ * survives the cancel and the date alone says "alive" about a notice that was
+ * withdrawn weeks earlier. The instant it actually left the public statuses is
+ * the earliest history row carrying CANCELLED or EXPIRED. Null when the message
+ * was never withdrawn, when nothing dated the withdrawal (the message has no
+ * history rows), or when the history was not read -- and unlike the facets those
+ * are collapsed on purpose: every one of them means the date is all there is,
+ * and the predicate falls back to the date rather than refusing. It is not
+ * frozen on the member row because history rows are immutable, so it can be
+ * re-derived exactly, which publishDateTo and type cannot.
  */
 public record MessageFacts(
         String uid,
@@ -69,12 +81,21 @@ public record MessageFacts(
         MainType mainType,
         Set<String> areaMrns,
         Set<String> categoryMrns,
-        Set<String> chartNumbers) {
+        Set<String> chartNumbers,
+        Date withdrawnAt) {
 
     public MessageFacts {
         areaMrns = frozenOrAbsent(areaMrns);
         categoryMrns = frozenOrAbsent(categoryMrns);
         chartNumbers = frozenOrAbsent(chartNumbers);
+    }
+
+    /** The full facets with no withdrawal instant read. */
+    public MessageFacts(String uid, Date publishDateFrom, Date publishDateTo,
+                        Status status, Type type, String messageSeriesId, MainType mainType,
+                        Set<String> areaMrns, Set<String> categoryMrns, Set<String> chartNumbers) {
+        this(uid, publishDateFrom, publishDateTo, status, type, messageSeriesId,
+                mainType, areaMrns, categoryMrns, chartNumbers, null);
     }
 
     /**
@@ -87,7 +108,18 @@ public record MessageFacts(
     public MessageFacts(String uid, Date publishDateFrom, Date publishDateTo,
                         Status status, Type type, String messageSeriesId) {
         this(uid, publishDateFrom, publishDateTo, status, type, messageSeriesId,
-                null, null, null, null);
+                null, null, null, null, null);
+    }
+
+    /** The same facts with the withdrawal instant filled in. */
+    public MessageFacts withWithdrawnAt(Date instant) {
+        return new MessageFacts(uid, publishDateFrom, publishDateTo, status, type, messageSeriesId,
+                mainType, areaMrns, categoryMrns, chartNumbers, instant);
+    }
+
+    /** Whether the message has left the public statuses, whatever its dates say. */
+    public boolean isWithdrawn() {
+        return status == Status.CANCELLED || status == Status.EXPIRED;
     }
 
     /** Null stays null -- "not read" is a fact, and normalising it away loses it. */

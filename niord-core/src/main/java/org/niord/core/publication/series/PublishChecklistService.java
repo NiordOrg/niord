@@ -347,7 +347,7 @@ public class PublishChecklistService extends BaseService {
                 ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.name(),
                 membership
                         ? aliveButWithdrawn.map(w -> w.count()
-                                        + " member(s) cancelled or expired but still open at the cut-off")
+                                        + " member(s) cancelled or expired after the cut-off, still included")
                                 .orElse("none")
                         : detailFor(noMembership)));
 

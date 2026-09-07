@@ -32,6 +32,7 @@ import org.niord.core.category.CategoryService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageHistory;
 import org.niord.core.publication.series.resolve.CriteriaMissCode;
 import org.niord.core.publication.series.resolve.CriteriaMissVo;
 import org.niord.core.publication.series.resolve.Interval;
@@ -240,16 +241,13 @@ public class MemberResolutionService extends BaseService {
         List<ResolutionWarningVo> out = new ArrayList<>();
 
         // The class an exclusions panel is structurally blind to: these messages
-        // ARE members, so a curator scanning exclusions never sees them.
+        // ARE members, so a curator scanning exclusions never sees them. Since
+        // R-xxxii a withdrawn candidate is a member only when it was withdrawn
+        // AFTER the cut-off -- or when nothing dates the withdrawal and the date
+        // half alone kept it -- so membership is the whole test.
         List<String> aliveButWithdrawn = new ArrayList<>();
         for (MessageFacts f : candidates) {
-            if (!members.contains(f.uid())) {
-                continue;
-            }
-            boolean withdrawn = f.status() == Status.CANCELLED || f.status() == Status.EXPIRED;
-            boolean stillOpenAtCutoff = f.publishDateTo() == null
-                    || !f.publishDateTo().before(interval.cutoff());
-            if (withdrawn && stillOpenAtCutoff) {
+            if (members.contains(f.uid()) && f.isWithdrawn()) {
                 aliveButWithdrawn.add(f.uid());
             }
         }
@@ -624,7 +622,8 @@ public class MemberResolutionService extends BaseService {
      * same as "the message has none". For criteria that select on one of them,
      * read through readAll() or allFactsOf() instead; the predicate refuses facts
      * that are missing something it was asked about, rather than deciding on
-     * their absence.
+     * their absence. The withdrawal instant is not read either, so liveness is
+     * decided on publishDateTo alone here.
      */
     static MessageFacts factsOf(Message m) {
         return new MessageFacts(
@@ -663,6 +662,20 @@ public class MemberResolutionService extends BaseService {
         Map<String, Set<String>> categories = criteria.readsCategories() ? categoryMrnsByUid(uids) : null;
         Map<String, Set<String>> charts = criteria.readsCharts() ? chartNumbersByUid(uids) : null;
 
+        // The withdrawal instant is read only for the rows whose status says they
+        // were withdrawn -- on a weekly candidate set that is a handful, on the
+        // whole corpus it is most of it, and either way it is one query per chunk
+        // rather than a history walk per row.
+        List<String> withdrawnUids = new ArrayList<>();
+        for (Message m : rows) {
+            if (m.getStatus() == Status.CANCELLED || m.getStatus() == Status.EXPIRED) {
+                withdrawnUids.add(m.getUid());
+            }
+        }
+        Map<String, Date> withdrawnAt = criteria.aliveAtCutoff() && !withdrawnUids.isEmpty()
+                ? withdrawnAtByUid(withdrawnUids)
+                : Map.of();
+
         List<MessageFacts> out = new ArrayList<>(rows.size());
         for (Message m : rows) {
             out.add(new MessageFacts(
@@ -675,9 +688,64 @@ public class MemberResolutionService extends BaseService {
                     m.getMainType(),
                     facet(areas, m.getUid()),
                     facet(categories, m.getUid()),
-                    facet(charts, m.getUid())));
+                    facet(charts, m.getUid()),
+                    withdrawnAt.get(m.getUid())));
         }
         return out;
+    }
+
+    /**
+     * When each message left the public statuses, keyed by uid (R-xxxii).
+     *
+     * The earliest history row carrying CANCELLED or EXPIRED. Every status change
+     * writes one, so for a message withdrawn through the application this is the
+     * cancel itself, to the second. A message with no such row -- withdrawn
+     * before history was kept, or planted -- is simply absent, and the predicate
+     * then decides on publishDateTo alone, which is what it always did.
+     *
+     * Chunked and read under FLUSH MODE COMMIT for the same reasons as the facets.
+     */
+    private Map<String, Date> withdrawnAtByUid(List<String> uids) {
+        Map<String, Date> out = new HashMap<>();
+        for (int from = 0; from < uids.size(); from += FACET_CHUNK) {
+            List<String> chunk = uids.subList(from, Math.min(from + FACET_CHUNK, uids.size()));
+            for (Object[] row : em.createQuery(
+                            "SELECT h.message.uid, MIN(h.created) FROM MessageHistory h "
+                                    + "WHERE h.message.uid IN :uids AND h.status IN :statuses "
+                                    + "GROUP BY h.message.uid", Object[].class)
+                    .setFlushMode(FlushModeType.COMMIT)
+                    .setParameter("uids", chunk)
+                    .setParameter("statuses", WITHDRAWN_STATUSES)
+                    .getResultList()) {
+                out.put((String) row[0], (Date) row[1]);
+            }
+        }
+        return out;
+    }
+
+    /** The statuses a message carries once it has left the public list. */
+    private static final List<Status> WITHDRAWN_STATUSES = List.of(Status.CANCELLED, Status.EXPIRED);
+
+    /**
+     * The withdrawal instant read off a loaded message's own history.
+     *
+     * For the single-message readers, where one lazy load is the price of a
+     * right answer; the batch readers query it instead.
+     */
+    static Date withdrawnAtOf(Message m) {
+        if (m.getStatus() != Status.CANCELLED && m.getStatus() != Status.EXPIRED) {
+            return null;
+        }
+        Date earliest = null;
+        for (MessageHistory h : m.getHistory()) {
+            if (h.getCreated() == null || !WITHDRAWN_STATUSES.contains(h.getStatus())) {
+                continue;
+            }
+            if (earliest == null || h.getCreated().before(earliest)) {
+                earliest = h.getCreated();
+            }
+        }
+        return earliest;
     }
 
     /** Not read stays not read; read-and-absent is empty. */
@@ -798,7 +866,8 @@ public class MemberResolutionService extends BaseService {
                 m.getType(),
                 m.getMessageSeries() == null ? null : m.getMessageSeries().getSeriesId(),
                 m.getMainType(),
-                areas, categories, charts);
+                areas, categories, charts,
+                withdrawnAtOf(m));
     }
 
     /**

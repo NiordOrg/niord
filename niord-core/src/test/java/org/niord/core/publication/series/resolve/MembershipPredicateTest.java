@@ -543,4 +543,66 @@ public class MembershipPredicateTest {
         for (String x : b) if (!a.contains(x)) n++;
         return n;
     }
+
+    // ------------------------------------------------------ RI-4, the status half
+
+    /**
+     * R-xxxii. A cancel leaves an editor-set future publishDateTo alone, so the
+     * date half alone keeps a notice that was withdrawn weeks before the cut-off.
+     * The withdrawal instant is what decides it, and only when it fell before the
+     * cut-off: a cancel after the cut-off leaves the member where it was, and no
+     * instant at all leaves the date's verdict standing.
+     *
+     * The figures are NM-814-26's: published 27 Aug, validity end 23 Sep,
+     * cancelled 28 Aug, cut-off 2 Sep -- present in the new uge 36/2026, absent
+     * from the legacy tag.
+     */
+    @BindsRule({"RI-4"})
+    @Test
+    public void withdrawnBeforeTheCutoffIsNotAliveWhateverTheDateSays() {
+        Date previous = new Date(1_787_739_689_000L); // 26 Aug 2026 12:21 CEST, uge 35's stamp
+        Date published = new Date(1_787_834_050_000L); // 27 Aug 2026 14:34 CEST
+        Date cancelled = new Date(1_787_905_646_000L); // 28 Aug 2026 10:27 CEST
+        Date cutoff = new Date(1_788_343_200_000L); // 2 Sep 2026 12:00 CEST
+        Date validityEnd = new Date(1_790_157_540_000L); // 23 Sep 2026 11:59 CEST
+        Interval window = new Interval(previous, cutoff);
+
+        MessageFacts dateAliveStatusDead = new MessageFacts("nm-814-26", published, validityEnd,
+                Status.CANCELLED, Type.PERMANENT_NOTICE, "dma-nm").withWithdrawnAt(cancelled);
+
+        MemberDecision out = MembershipPredicate.decide(dateAliveStatusDead, weekly(true), window);
+        assertFalse(out.member(), "cancelled five days before the cut-off, yet kept as a member");
+        assertEquals(MembershipReason.NOT_ALIVE_AT_CUTOFF, out.reason());
+
+        // The miss says which instant fell short: both are carried, the reader compares.
+        CriteriaMissVo miss = CriteriaMissVo.of(dateAliveStatusDead, out.reason(), window);
+        assertEquals(cancelled.getTime(), miss.detail().get("withdrawnAt"));
+        assertEquals(validityEnd.getTime(), miss.detail().get("publishDateTo"));
+        assertEquals(cutoff.getTime(), miss.detail().get("cutoff"));
+
+        // Cancelled AFTER the cut-off: still a member. That is the class the
+        // acknowledgeable warning exists for.
+        MemberDecision after = MembershipPredicate.decide(
+                dateAliveStatusDead.withWithdrawnAt(new Date(cutoff.getTime() + 3600_000L)),
+                weekly(true), window);
+        assertTrue(after.member(), "a cancel after the cut-off must not reach back into the issue");
+        assertEquals(MembershipReason.IN_INTERVAL, after.reason());
+
+        // Cancelled exactly AT the cut-off: alive, by the same closed bound the date half uses.
+        assertTrue(MembershipPredicate.decide(dateAliveStatusDead.withWithdrawnAt(cutoff), weekly(true), window)
+                .member(), "the bound is closed at the cut-off for both halves");
+
+        // No instant at all: the date decides, as it always did.
+        assertTrue(MembershipPredicate.decide(dateAliveStatusDead.withWithdrawnAt(null), weekly(true), window)
+                .member(), "an undated withdrawal must fall back to publishDateTo, not refuse");
+
+        // The sticky regime never applied the alive clause; the status half is part of it.
+        assertTrue(MembershipPredicate.decide(dateAliveStatusDead, weekly(false), window).member(),
+                "aliveAtCutoff = false must ignore the withdrawal instant too");
+
+        // Same rule under the other time relation.
+        ResolvedCriteria inForce = new ResolvedCriteria(TimeRelation.IN_FORCE_AT_CUTOFF, Set.of(), Set.of(), true);
+        assertFalse(MembershipPredicate.decide(dateAliveStatusDead, inForce, Interval.upTo(cutoff)).member(),
+                "an in-force list at the cut-off must not carry a notice cancelled before it");
+    }
 }
