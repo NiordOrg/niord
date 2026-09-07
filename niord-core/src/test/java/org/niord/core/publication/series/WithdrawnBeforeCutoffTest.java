@@ -143,6 +143,55 @@ public class WithdrawnBeforeCutoffTest {
                 "no history row, no instant");
     }
 
+    /**
+     * The asymmetry, written down because it reads as an oversight.
+     *
+     * The candidate query applies the liveness clause in SQL when the series
+     * declares it; the omissions query never does, and must not. These rows have
+     * no publishDateFrom, so the predicate answers NO_PUBLISH_DATE before it
+     * ever reaches liveness -- a liveness conjunct there would silently delete
+     * the omission the rule reports, and the NULL_PUBLISH_FROM_DROPPED warning
+     * with it, for any null-dated message that happens to carry an expired
+     * publishDateTo. The message here carries exactly that shape.
+     */
+    @BindsRule({"RI-3", "RI-4"})
+    @Test
+    @Transactional
+    public void aNullDatedMessageIsStillReportedWhenTheSeriesFiltersOnLiveness() {
+        Date cutoff = new Date(1_788_343_200_000L); // 2 Sep 2026 12:00 CEST
+        Interval window = new Interval(new Date(cutoff.getTime() - 7 * DAY), cutoff);
+
+        MessageSeries series = series("r32-nulldate-" + UUID.randomUUID());
+        ResolvedCriteria filtersOnLiveness = new ResolvedCriteria(
+                TimeRelation.PUBLISHED_IN_INTERVAL, Set.of(series.getSeriesId()), Set.of(), true);
+
+        Message nullDated = new Message();
+        nullDated.setUid(UUID.randomUUID().toString());
+        nullDated.setMessageSeries(series);
+        nullDated.setType(Type.PERMANENT_NOTICE);
+        nullDated.setStatus(Status.PUBLISHED);
+        // Expired a month before the cut-off: the row a SQL alive clause on the
+        // omissions query would remove.
+        nullDated.setPublishDateTo(new Date(cutoff.getTime() - 30 * DAY));
+        em.persist(nullDated);
+        em.flush();
+
+        MemberResolutionService.Resolution r = resolver.resolve(filtersOnLiveness, window, null, null);
+
+        assertEquals(0, r.candidateCount(),
+                "a message with no publishDateFrom cannot be compared to any bound, so it is never a candidate");
+
+        List<CriteriaMissVo> misses = r.missesOf(CriteriaMissCode.NO_PUBLISH_DATE);
+        assertEquals(1, misses.size(),
+                "the omission disappeared; the liveness clause has leaked into the omissions query");
+        assertEquals(nullDated.getUid(), misses.get(0).messageUid());
+
+        Optional<ResolutionWarningVo> warning = r.warning(ResolutionWarningCode.NULL_PUBLISH_FROM_DROPPED);
+        assertTrue(warning.isPresent(),
+                "the warning that says a message was dropped for having no publish date is gone with it");
+        assertEquals(List.of(nullDated.getUid()), warning.get().messageUids());
+    }
+
     // ------------------------------------------------------------------ fixtures
 
     private Message cancelled(MessageSeries series, Date publishedAt, Date validityEnd) {

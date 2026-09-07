@@ -263,6 +263,7 @@ public final class PublicationErrorCatalogue {
         // into an enumeration of the whole catalogue.
         put("NO_SERIES_IDS", 400);
         put("TOO_MANY_SERIES_IDS", 400);
+        put("DOMAIN_REQUIRED", 400);
         // A filter value that is not a member of the enum it names. 400 rather
         // than a 500 from valueOf, which is the pattern this catalogue exists to
         // stop -- and a silently dropped filter would WIDEN a list rather than

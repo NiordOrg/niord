@@ -173,10 +173,69 @@ public class IssueListService {
      * all -- the gate closes on NO_CADENCE and says so.
      */
     public IssueTimelineVo recent(PublicationSeries series, int periods, Date now, String lang) {
-        List<PublicationIssue> issues = issuesOf(series);
+        List<PublicationIssue> issues = newestIssuesOf(series, periods + TIMELINE_WINDOW_SLACK);
         IssueTimelineVo out = buildRecent(series, issues, periods, now, lang);
         liveCountsInto(out, issues);
         return out;
+    }
+
+    /**
+     * How many issues past the requested periods the strip's synthesis can need.
+     *
+     * The strip draws `periods` cells and throws the rest away, but a MISSING cell
+     * inside that window can be produced by a pair of issues whose OLDER member is
+     * arbitrarily far back: two issues thirty weeks apart tile the whole stretch
+     * between them, so dropping the older one takes seven of eight cells with it.
+     * One predecessor beyond the window is therefore required -- and the second row
+     * of slack absorbs the rounding in GapDetection.uncovered, whose last
+     * synthesized gap can close up to half a period past the issue it was measured
+     * from.
+     *
+     * Measured on weekly-ntm: ~503 issues and their descs were hydrated to render
+     * eight cells, at roughly 0.2 s per series on a dashboard that draws a strip
+     * for every series a desk owns.
+     */
+    static final int TIMELINE_WINDOW_SLACK = 2;
+
+    /**
+     * The newest `limit` issues of one series, names included.
+     *
+     * TWO QUERIES, NOT A FETCH JOIN WITH A LIMIT. Hibernate applies
+     * firstResult/maxResults IN MEMORY when a query carries a collection fetch, so
+     * a limit on the joined form looks bounded and still selects the whole
+     * archive. The second query primes the descs of exactly the rows kept, on the
+     * same managed instances, so the labels are read without a select per row.
+     *
+     * THE NULL-LAST TERM IS LOAD-BEARING, not decoration. An issue's effective
+     * cut-off may be null, and the strip's comparator sorts such a row LAST.
+     * MySQL's ORDER BY ... DESC happens to put nulls last too, which is why the
+     * unbounded query has never disagreed -- but under a limit a dialect that put
+     * them first would select null-cut-off rows and drop real ones, and the
+     * dashboard would quietly lose its most recent cells.
+     *
+     * Package-private rather than private so a test can hold the ROWS and check
+     * that their descs came back initialised. Asserted through recent() it cannot
+     * be: a label read inside a transaction succeeds off a lazy load too, so
+     * deleting the second query here would leave every such assertion passing and
+     * the strip reading one select per cell.
+     */
+    List<PublicationIssue> newestIssuesOf(PublicationSeries series, int limit) {
+        List<PublicationIssue> issues = em.createQuery(
+                        "SELECT i FROM PublicationIssue i WHERE i.series = :s "
+                                + "ORDER BY CASE WHEN COALESCE(i.cutoffStampedAt, i.intervalTo) IS NULL "
+                                + "THEN 1 ELSE 0 END, "
+                                + "COALESCE(i.cutoffStampedAt, i.intervalTo) DESC, i.publicId DESC",
+                        PublicationIssue.class)
+                .setParameter("s", series)
+                .setMaxResults(Math.max(1, limit))
+                .getResultList();
+        if (!issues.isEmpty()) {
+            em.createQuery("SELECT DISTINCT i FROM PublicationIssue i LEFT JOIN FETCH i.descs "
+                            + "WHERE i.id IN :ids", PublicationIssue.class)
+                    .setParameter("ids", issues.stream().map(PublicationIssue::getId).toList())
+                    .getResultList();
+        }
+        return issues;
     }
 
     /**

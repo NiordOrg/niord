@@ -16,6 +16,10 @@
 
 package org.niord.web.publication;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
@@ -24,6 +28,7 @@ import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublishChecklistService;
 import org.niord.core.publication.series.vo.PublicationIssueVo;
+import org.niord.core.publication.series.vo.PublishCheckRowVo;
 import org.niord.core.publication.series.vo.PublicationSeriesVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
@@ -133,43 +138,69 @@ public class PublicationApiContractTest {
     /**
      * Every field of a release-rail row reaches the wire, under its own name.
      *
-     * The rail row is mapped into the response by hand, key by key, so a field
-     * added to the record is carried by nothing until somebody adds a line here
-     * too -- and the endpoint keeps answering, one field short, with no failure
-     * anywhere to say so. A client reading the missing key gets `undefined`,
-     * which for `applicable` means every row counts and for `passed` means every
-     * row fails; the shape is the contract, so it is asserted rather than
-     * assumed.
+     * The row is no longer mapped into the response by hand -- the endpoint
+     * returns {@link PublishCheckRowVo} -- but the failure this guards is the same
+     * one and it is still a mapping: a component added to the record is carried by
+     * nothing until somebody adds a property, and the endpoint keeps answering,
+     * one field short, with no failure anywhere to say so. A client reading the
+     * missing key gets `undefined`, which for `applicable` means every row counts
+     * and for `passed` means every row fails.
      *
-     * Matched on the ACCESSOR rather than the key, so a key spelled differently
-     * from the component it carries is caught as well as an absent one.
+     * Asserted on the SERIALISED shape rather than on the accessors alone, because
+     * a property Jackson never emits -- ignored, renamed, suppressed as null -- is
+     * exactly as invisible to the client as one that was never written.
+     *
+     * DB-free and container-free, deliberately: this is the one place the rail's
+     * shape is checked on a build machine with no MySQL.
      */
     @Test
-    public void everyRailRowFieldReachesTheWire() throws IOException {
-        String src = Files.readString(
-                Paths.get("src/main/java/org/niord/web/publication/PublicationIssueRestService.java"),
-                StandardCharsets.UTF_8);
+    public void everyRailRowFieldReachesTheWire() {
+        // A row with a value in every component, so nothing is dropped merely for
+        // being null -- and one component (acknowledgeCode) that is null on
+        // fourteen of the fifteen real rows, checked separately below.
+        PublishChecklistService.CheckRow row = new PublishChecklistService.CheckRow(
+                "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", PublishChecklistService.Severity.WARN,
+                false, true, true, "CANCELLED_BUT_DATE_ALIVE", "2 member(s) cancelled");
 
-        Pattern emitted = Pattern.compile("row\\.put\\(\\s*\"(\\w+)\"\\s*,\\s*r\\.(\\w+)\\(\\)");
-        Map<String, String> keyOf = new LinkedHashMap<>();
-        Matcher m = emitted.matcher(src);
-        while (m.find()) {
-            keyOf.put(m.group(2), m.group(1));
-        }
-
+        JsonNode wire = new ObjectMapper().valueToTree(PublishCheckRowVo.of(row));
         for (RecordComponent component : PublishChecklistService.CheckRow.class.getRecordComponents()) {
-            String key = keyOf.get(component.getName());
-            assertNotNull(key, "the rail row declares " + component.getName()
-                    + ", which the checklist endpoint never puts on the wire -- the field exists on the "
-                    + "server and is invisible to every client");
-            assertEquals(component.getName(), key,
-                    "the rail row's " + component.getName() + " goes out as \"" + key
-                            + "\"; one name, or the client is reading a field nobody sends");
+            assertTrue(wire.has(component.getName()),
+                    "the rail row declares " + component.getName()
+                            + ", which the checklist endpoint never puts on the wire -- the field exists "
+                            + "on the server and is invisible to every client. On the wire: " + wire);
         }
-
-        assertTrue(keyOf.containsKey("applicable"),
+        assertTrue(wire.has("applicable"),
                 "the rail no longer says which of its rows this issue can even be in; a verdict counted "
                         + "over all fifteen rows counts checks that never ran");
+
+        // And the null-valued component keeps its key, UNDER A MAPPER THAT DROPS
+        // NULLS -- which is the project's own default, applied to every
+        // IJsonSerializable VO in this package. The client reads the null as a
+        // value, "this row cannot be acknowledged", and a suppressed key reads as
+        // undefined: a refusal for a code nobody could tick.
+        ObjectMapper compact = new ObjectMapper()
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        JsonNode unacknowledgeable = compact.valueToTree(PublishCheckRowVo.of(
+                new PublishChecklistService.CheckRow("ISSUE_OPEN",
+                        PublishChecklistService.Severity.BLOCK, true, false, null, "status is OPEN")));
+        assertTrue(unacknowledgeable.has("acknowledgeCode")
+                        && unacknowledgeable.get("acknowledgeCode").isNull(),
+                "the rail row dropped its null acknowledgeCode: " + unacknowledgeable);
+        JsonInclude include = PublishCheckRowVo.class.getAnnotation(JsonInclude.class);
+        assertNotNull(include, "the rail row no longer declares @JsonInclude, so it keeps its nulls "
+                + "only for as long as nobody makes it an IJsonSerializable");
+        assertEquals(JsonInclude.Include.ALWAYS, include.value(),
+                "the rail row stopped keeping its null properties");
+
+        // The order is the hand-built map's insertion order and is declared rather
+        // than discovered, so it survives a field being added or moved.
+        JsonPropertyOrder order = PublishCheckRowVo.class.getAnnotation(JsonPropertyOrder.class);
+        assertNotNull(order, "the rail row's key order is no longer pinned");
+        Set<String> ordered = new LinkedHashSet<>(Arrays.asList(order.value()));
+        for (RecordComponent component : PublishChecklistService.CheckRow.class.getRecordComponents()) {
+            assertTrue(ordered.contains(component.getName()),
+                    "the rail row's " + component.getName() + " is missing from @JsonPropertyOrder");
+        }
     }
 
     /**

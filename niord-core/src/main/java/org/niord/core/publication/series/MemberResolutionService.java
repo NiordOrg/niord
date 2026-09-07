@@ -19,12 +19,14 @@ package org.niord.core.publication.series;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.FlushModeType;
+import jakarta.persistence.Tuple;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Selection;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
 import org.niord.core.category.Category;
@@ -33,6 +35,7 @@ import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageHistory;
+import org.niord.core.message.MessageSeries;
 import org.niord.core.publication.series.resolve.CriteriaMissCode;
 import org.niord.core.publication.series.resolve.CriteriaMissVo;
 import org.niord.core.publication.series.resolve.Interval;
@@ -45,6 +48,7 @@ import org.niord.core.publication.series.resolve.ResolutionWarningCode;
 import org.niord.core.publication.series.resolve.ResolutionWarningVo;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.service.BaseService;
+import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
@@ -64,11 +68,42 @@ import java.util.function.Function;
  * Resolves the members of an issue: SQL narrows coarsely, the pure predicate decides.
  *
  * The split is the design, not an implementation detail. SQL is deliberately
- * LOOSER than the rule -- it uses >= where the rule uses >, and it does not
- * apply the liveness clause at all -- so the candidate set is always a superset
- * of the answer and the predicate makes every final call. That puts the pure
- * function on the production path rather than beside it, and it is what the
+ * LOOSER THAN OR EQUAL TO the rule and never tighter -- it uses >= where the
+ * rule uses >, it never narrows on status, and where it does apply a clause it
+ * applies the rule's own clause verbatim -- so the candidate set is always a
+ * superset of the answer and the predicate makes every final call. That puts the
+ * pure function on the production path rather than beside it, and it is what the
  * differential test in B1.2 checks.
+ *
+ * LIVENESS IS THE ONE CLAUSE THAT LIVES IN BOTH PLACES, and the reason is a
+ * measurement rather than a preference. An IN_FORCE_AT_CUTOFF series has no
+ * lower bound by design (RI-7), so its candidate set is the whole published
+ * history of the series: on the P&T list that is ~6,000 rows of which ~5,900 are
+ * long expired, and the predicate rejected every one of them individually after
+ * the database had handed it over. The clause is therefore emitted in SQL as
+ * well, as the exact negation of the predicate's own branch -- publishDateTo IS
+ * NULL OR publishDateTo >= :cutoff, NULL-safe, and only when the criteria
+ * declare aliveAtCutoff. A row it removes is a row the predicate was going to
+ * reject, so the superset property is preserved by construction rather than by
+ * hope, and the aliveAtCutoff differential in B1.2 is what says so out loud.
+ *
+ * Its NULL-safety was the original argument for keeping it out of SQL, and that
+ * argument stands: written the obvious way it discards every still-open notice
+ * -- 123 of P&T uge 28/2026's 165 members carry a NULL publishDateTo, and the
+ * unsafe form keeps 42. The answer is to write it once, NULL-safely, and to
+ * derive the two halves from one another through
+ * MembershipPredicate.dateAliveAt, not to write it in only one place.
+ *
+ * THE STATUS HALF OF RI-4 STAYS IN JAVA ALONE. The withdrawal instant is the
+ * earliest CANCELLED or EXPIRED history row (R-xxxii); expressing it here would
+ * be a correlated aggregate over MessageHistory on every row of the corpus, to
+ * decide a case that can only arise for rows the date half has already kept.
+ *
+ * CANDIDATES ARE PROJECTED, NOT HYDRATED. Both queries select the seven scalars
+ * membership decides on rather than whole entities, because reading a 45-field
+ * Message with seven associations costs about 0.1 s per thousand rows on this
+ * deployment and an in-force series' row count is its whole history. The facets
+ * are still read for the entire batch by uid; that half was never the cost.
  *
  * Four things this deliberately does NOT do:
  *
@@ -303,13 +338,22 @@ public class MemberResolutionService extends BaseService {
      * Messages the criteria would otherwise have matched, but which carry no
      * publishDateFrom. Bounded by the lookback so an open issue does not rescan
      * the whole corpus.
+     *
+     * THE ALIVE CLAUSE IS DELIBERATELY ABSENT HERE, even when the criteria
+     * declare it, and it reads as an omission so it is written down. These rows
+     * have no publishDateFrom, and the predicate answers NO_PUBLISH_DATE before
+     * it ever reaches liveness -- so a liveness conjunct would delete the very
+     * omissions this method exists to report, and the NULL_PUBLISH_FROM_DROPPED
+     * warning with them, for any null-dated message that happens to carry an
+     * expired publishDateTo.
      */
     private List<MessageFacts> messagesWithNoPublishDate(ResolvedCriteria criteria,
                                                          EntityOperands operands,
                                                          Interval interval) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Message> query = cb.createQuery(Message.class);
+        CriteriaQuery<Tuple> query = cb.createTupleQuery();
         Root<Message> message = query.from(Message.class);
+        Join<Message, MessageSeries> series = message.join("messageSeries", JoinType.LEFT);
 
         List<Predicate> where = new ArrayList<>();
         where.add(cb.isNull(message.get("publishDateFrom")));
@@ -329,7 +373,7 @@ public class MemberResolutionService extends BaseService {
                 cb.greaterThanOrEqualTo(message.<Date>get("created"), lookbackFrom)));
 
         if (!criteria.messageSeriesIds().isEmpty()) {
-            where.add(message.get("messageSeries").get("seriesId").in(criteria.messageSeriesIds()));
+            where.add(series.get("seriesId").in(criteria.messageSeriesIds()));
         }
         if (!criteria.types().isEmpty()) {
             where.add(message.get("type").in(criteria.types()));
@@ -340,12 +384,13 @@ public class MemberResolutionService extends BaseService {
         // dropped for the reason being reported.
         boolean joined = applyEntityOperands(cb, message, where, criteria, operands);
 
-        query.select(message).where(cb.and(where.toArray(new Predicate[0])));
+        query.multiselect(candidateScalars(message, series))
+                .where(cb.and(where.toArray(new Predicate[0])));
         if (joined) {
             query.distinct(true);
         }
 
-        return readAll(em.createQuery(query).getResultList(), criteria, interval.cutoff());
+        return readAll(rowFacts(em.createQuery(query).getResultList()), criteria, interval.cutoff());
     }
 
     /** Convenience for callers with no curation. */
@@ -562,14 +607,23 @@ public class MemberResolutionService extends BaseService {
      *  - the lower bound uses >= where the rule uses >, so a message stamped
      *    exactly on the previous cut-off is a CANDIDATE and the predicate is the
      *    thing that rejects it. Never between(), which is closed at both ends.
-     *  - liveness is not applied at all: its NULL-safety is the hazard, and it
-     *    belongs in one place.
+     *  - liveness is applied, and only as the rule states it: publishDateTo IS
+     *    NULL OR publishDateTo >= :cutoff, NULL-safe, and ONLY when the criteria
+     *    declare aliveAtCutoff. It is the negation of the predicate's own branch,
+     *    so it removes only rows the predicate rejects. The status half -- the
+     *    withdrawal instant -- is not here: it needs a history aggregate, and it
+     *    can only change a verdict for rows this clause keeps.
+     *
+     * Seven scalars come back rather than entities. Nothing else on the row can
+     * change a verdict, and for an in-force series this query returns the whole
+     * published history of its message series.
      */
     private List<MessageFacts> narrow(ResolvedCriteria criteria, EntityOperands operands,
                                       Interval interval) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Message> query = cb.createQuery(Message.class);
+        CriteriaQuery<Tuple> query = cb.createTupleQuery();
         Root<Message> message = query.from(Message.class);
+        Join<Message, MessageSeries> series = message.join("messageSeries", JoinType.LEFT);
 
         List<Predicate> where = new ArrayList<>();
 
@@ -590,8 +644,16 @@ public class MemberResolutionService extends BaseService {
                     message.<Date>get("publishDateFrom"), interval.previousCutoff()));
         }
 
+        // RI-4's date half, applied ONLY where the rule applies it. A series that
+        // does not filter on liveness must be shown every candidate, and
+        // aliveAtCutoff is a declared flag rather than something inferred
+        // precisely so that is decidable here.
+        if (criteria.aliveAtCutoff()) {
+            where.add(dateAliveAt(cb, message, interval.cutoff()));
+        }
+
         if (!criteria.messageSeriesIds().isEmpty()) {
-            where.add(message.get("messageSeries").get("seriesId").in(criteria.messageSeriesIds()));
+            where.add(series.get("seriesId").in(criteria.messageSeriesIds()));
         }
         if (!criteria.types().isEmpty()) {
             where.add(message.get("type").in(criteria.types()));
@@ -603,16 +665,96 @@ public class MemberResolutionService extends BaseService {
         // conjunct is how it drifts -- a PUBLISHED-only conjunct empties every
         // historical issue, since most of the corpus is EXPIRED or CANCELLED.
 
-        query.select(message).where(cb.and(where.toArray(new Predicate[0])));
+        query.multiselect(candidateScalars(message, series))
+                .where(cb.and(where.toArray(new Predicate[0])));
         if (joined) {
             query.distinct(true);
         }
 
         // RI-12. No setMaxResults, no paging. The default cap lives in
         // MessageSearchParams.instantiate() and cannot reach a query built here.
-        List<Message> rows = em.createQuery(query).getResultList();
+        List<Tuple> rows = em.createQuery(query).getResultList();
 
-        return readAll(rows, criteria, interval.cutoff());
+        return readAll(rowFacts(rows), criteria, interval.cutoff());
+    }
+
+    /**
+     * RI-4's date half, as SQL: the exact negation of the predicate's own branch.
+     *
+     * NULL-safe by construction, and written that way here because the obvious
+     * forms -- a plain >=, or NOT (publishDateTo before :cutoff) -- discard every
+     * still-open notice: 123 of P&T uge 28/2026's 165 members carry a NULL
+     * publishDateTo, and the unsafe form keeps 42 of the 165. The Java twin is
+     * MembershipPredicate.dateAliveAt, and a row this removes is a row that
+     * branch was going to reject, so the candidate set stays a superset of the
+     * answer by construction rather than by testing.
+     *
+     * THE STATUS HALF STAYS IN JAVA. The withdrawal instant is the earliest
+     * CANCELLED or EXPIRED history row; expressing it here would be a correlated
+     * aggregate over MessageHistory on every row of the corpus, to decide a case
+     * that can only arise for rows this clause has already kept.
+     */
+    private static Predicate dateAliveAt(CriteriaBuilder cb, Root<Message> message, Date cutoff) {
+        return cb.or(
+                cb.isNull(message.get("publishDateTo")),
+                cb.greaterThanOrEqualTo(message.<Date>get("publishDateTo"), cutoff));
+    }
+
+    /**
+     * The seven scalars membership decides on, projected instead of hydrated.
+     *
+     * These are exactly the fields factsOf() reads off an entity, and they are
+     * all of them: nothing else on the row can change a verdict. Hydrating the
+     * whole Message to read seven columns costs about 0.1 s per thousand rows on
+     * this deployment, and an IN_FORCE_AT_CUTOFF series' candidate set is its
+     * entire published history -- 6,079 rows on the P&T list, of which 171 are
+     * members. The facets are still read for the whole batch by uid afterwards;
+     * that half was never the cost.
+     *
+     * THE MESSAGE-SERIES JOIN IS THE CALLER'S, AND IT MUST BE A LEFT JOIN.
+     * Reaching seriesId as message.get("messageSeries").get("seriesId") is an
+     * implicit INNER join. In a WHERE that is harmless, because the IN it feeds
+     * would have rejected a null series anyway; in a SELECT it silently drops
+     * every message with no message series, and the corpus does contain those --
+     * factsOf() and the fact readers all guard for a null series precisely
+     * because of them. Passing the alias in also keeps it to ONE join rather
+     * than one for the projection and another for the predicate.
+     */
+    private static Selection<?>[] candidateScalars(Root<Message> message,
+                                                   Join<Message, MessageSeries> series) {
+        return new Selection<?>[] {
+                message.get("uid").alias("uid"),
+                message.get("publishDateFrom").alias("publishDateFrom"),
+                message.get("publishDateTo").alias("publishDateTo"),
+                message.get("status").alias("status"),
+                message.get("type").alias("type"),
+                series.get("seriesId").alias("seriesId"),
+                message.get("mainType").alias("mainType")};
+    }
+
+    /**
+     * The projected rows as base facts, with every facet left UNREAD.
+     *
+     * Null facets are "not read", which readAll() then fills in for the facets
+     * these criteria actually select on. Handing back empty sets instead would
+     * make every message look area-less to a criteria document that selects by
+     * area, and the issue would resolve empty with every row of it looking
+     * correct -- the tri-state is what turns that into a refusal.
+     */
+    private static List<MessageFacts> rowFacts(List<Tuple> rows) {
+        List<MessageFacts> out = new ArrayList<>(rows.size());
+        for (Tuple row : rows) {
+            out.add(new MessageFacts(
+                    row.get("uid", String.class),
+                    row.get("publishDateFrom", Date.class),
+                    row.get("publishDateTo", Date.class),
+                    row.get("status", Status.class),
+                    row.get("type", Type.class),
+                    row.get("seriesId", String.class),
+                    row.get("mainType", MainType.class),
+                    null, null, null));
+        }
+        return out;
     }
 
     /**
@@ -638,7 +780,13 @@ public class MemberResolutionService extends BaseService {
     }
 
     /**
-     * Reads a batch of messages as the facts THESE criteria decide on.
+     * Completes a batch of base facts into the facts THESE criteria decide on.
+     *
+     * It takes facts rather than entities because the candidate queries project
+     * seven scalars instead of hydrating a 45-field entity with seven
+     * associations for every row of a series' history; the corpus-wide reader
+     * hands in the same seven read off loaded entities, so both paths complete
+     * through one method and cannot disagree about what a fact is.
      *
      * Only the facets the criteria select on are read, and each is read for the
      * WHOLE batch in one pass rather than per row. Both halves matter: the
@@ -652,10 +800,10 @@ public class MemberResolutionService extends BaseService {
      * empty set and NOT a null: null is reserved for "not read", and the
      * predicate raises on it.
      */
-    private List<MessageFacts> readAll(List<Message> rows, ResolvedCriteria criteria, Date cutoff) {
+    private List<MessageFacts> readAll(List<MessageFacts> rows, ResolvedCriteria criteria, Date cutoff) {
         List<String> uids = new ArrayList<>(rows.size());
-        for (Message m : rows) {
-            uids.add(m.getUid());
+        for (MessageFacts f : rows) {
+            uids.add(f.uid());
         }
 
         Map<String, Set<String>> areas = criteria.readsAreas() ? areaMrnsByUid(uids) : null;
@@ -664,19 +812,24 @@ public class MemberResolutionService extends BaseService {
 
         // The withdrawal instant is read only where it can change the verdict: a
         // withdrawn row whose publishDateTo does NOT already fall before the
-        // cut-off. The date half excludes the rest on its own, and on an in-force
-        // series that rest is the whole history -- the P&T list has ~6,000
-        // candidates of which ~5,900 are long expired, so without this bound the
-        // history walk cost more than the resolve itself. With no cut-off in
-        // hand (the corpus-wide readers) every withdrawn row is read.
+        // cut-off -- the same dateAliveAt the rule decides on. What the bound is
+        // worth depends on which caller is asking.
+        //
+        // The omissions query is where it earns its keep: those rows deliberately
+        // carry no liveness clause, because they answer NO_PUBLISH_DATE before
+        // liveness is ever reached, so rows long expired still arrive here and
+        // without the bound the history walk would cover every one of them.
+        //
+        // The candidate path no longer needs it. Under aliveAtCutoff the query
+        // has already emitted this very conjunct, so every row it hands over
+        // passes the test and the loop only confirms what the SQL decided.
+        //
+        // With no cut-off in hand (the corpus-wide readers) nothing reads as
+        // date-dead, so there every withdrawn row is read.
         List<String> withdrawnUids = new ArrayList<>();
-        for (Message m : rows) {
-            boolean withdrawn = m.getStatus() == Status.CANCELLED || m.getStatus() == Status.EXPIRED;
-            boolean dateAlive = cutoff == null
-                    || m.getPublishDateTo() == null
-                    || !m.getPublishDateTo().before(cutoff);
-            if (withdrawn && dateAlive) {
-                withdrawnUids.add(m.getUid());
+        for (MessageFacts f : rows) {
+            if (f.isWithdrawn() && MembershipPredicate.dateAliveAt(f.publishDateTo(), cutoff)) {
+                withdrawnUids.add(f.uid());
             }
         }
         Map<String, Date> withdrawnAt = criteria.aliveAtCutoff() && !withdrawnUids.isEmpty()
@@ -684,19 +837,19 @@ public class MemberResolutionService extends BaseService {
                 : Map.of();
 
         List<MessageFacts> out = new ArrayList<>(rows.size());
-        for (Message m : rows) {
+        for (MessageFacts f : rows) {
             out.add(new MessageFacts(
-                    m.getUid(),
-                    m.getPublishDateFrom(),
-                    m.getPublishDateTo(),
-                    m.getStatus(),
-                    m.getType(),
-                    m.getMessageSeries() == null ? null : m.getMessageSeries().getSeriesId(),
-                    m.getMainType(),
-                    facet(areas, m.getUid()),
-                    facet(categories, m.getUid()),
-                    facet(charts, m.getUid()),
-                    withdrawnAt.get(m.getUid())));
+                    f.uid(),
+                    f.publishDateFrom(),
+                    f.publishDateTo(),
+                    f.status(),
+                    f.type(),
+                    f.messageSeriesId(),
+                    f.mainType(),
+                    facet(areas, f.uid()),
+                    facet(categories, f.uid()),
+                    facet(charts, f.uid()),
+                    withdrawnAt.get(f.uid())));
         }
         return out;
     }
@@ -822,6 +975,9 @@ public class MemberResolutionService extends BaseService {
      * chunk makes Hibernate dirty-check the whole persistence context -- and a
      * resolution over a large candidate set holds thousands of managed entities,
      * so the scan is paid once per chunk and the cost is quadratic in the batch.
+     * The candidate queries no longer hold those entities -- they project scalars
+     * -- but the corpus-wide reader does, and the publish transaction is dirty
+     * whatever the resolve did, so the flush mode stays where it is.
      */
     private Map<String, Set<String>> facetByUid(List<String> uids, String jpql,
                                                 Function<Object, Set<String>> keysOf) {
@@ -886,7 +1042,11 @@ public class MemberResolutionService extends BaseService {
      * side reject everything and the comparison pass for the wrong reason.
      */
     public List<MessageFacts> factsFor(Collection<Message> messages, ResolvedCriteria criteria) {
-        return readAll(new ArrayList<>(messages), criteria, null);
+        List<MessageFacts> base = new ArrayList<>(messages.size());
+        for (Message m : messages) {
+            base.add(factsOf(m));
+        }
+        return readAll(base, criteria, null);
     }
 
     /**

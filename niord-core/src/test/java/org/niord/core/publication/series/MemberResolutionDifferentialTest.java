@@ -32,6 +32,7 @@ import org.niord.core.publication.series.resolve.MessageFacts;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.model.message.MainType;
+import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
 import java.io.InputStream;
@@ -42,11 +43,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -120,8 +123,11 @@ public class MemberResolutionDifferentialTest {
      * finishes and one that trips the transaction timeout.
      */
     private List<MessageFacts> wholeCorpus(List<Message> rows, ResolvedCriteria criteria) {
+        // aliveAtCutoff is part of the shape, not just the facets: it is what
+        // decides whether the withdrawal instant is read at all, and facts read
+        // without it would let the pure side keep a row the SQL side excludes.
         String shape = criteria.readsAreas() + "/" + criteria.readsCategories()
-                + "/" + criteria.readsCharts();
+                + "/" + criteria.readsCharts() + "/" + criteria.aliveAtCutoff();
         return corpusByShape.computeIfAbsent(shape, s -> resolver.factsFor(rows, criteria));
     }
 
@@ -138,6 +144,17 @@ public class MemberResolutionDifferentialTest {
 
     /** Criteria reconstructed from what the fixture's own members actually are. */
     private static ResolvedCriteria criteriaFor(String name, JsonNode fixture) {
+        return criteriaFor(name, fixture, false);
+    }
+
+    /**
+     * The same criteria under either liveness regime.
+     *
+     * The flag is a parameter rather than a constant because the SQL side now
+     * emits a clause for it, and a differential run that only ever passes false
+     * says nothing at all about that clause.
+     */
+    private static ResolvedCriteria criteriaFor(String name, JsonNode fixture, boolean aliveAtCutoff) {
         Set<String> series = new LinkedHashSet<>();
         for (JsonNode m : fixture.path("members")) {
             String s = m.path("seriesId").asText(null);
@@ -155,7 +172,7 @@ public class MemberResolutionDifferentialTest {
                 ? Set.of(Type.TEMPORARY_NOTICE, Type.PRELIMINARY_NOTICE)
                 : Set.of();
 
-        return new ResolvedCriteria(relation, series, types, false);
+        return new ResolvedCriteria(relation, series, types, aliveAtCutoff);
     }
 
     // ------------------------------------------------------ B1.2, the differential
@@ -167,6 +184,32 @@ public class MemberResolutionDifferentialTest {
     @Test
     @Transactional
     public void sqlNarrowingNeverDropsAMatch() throws Exception {
+        runDifferential(false);
+    }
+
+    /**
+     * The same twenty-one fixtures, with the liveness clause turned ON.
+     *
+     * Mandatory, and it is the guard for the clause the candidate query now
+     * emits. Every fixture above declares aliveAtCutoff = false, so the run
+     * above exercises the SQL prefilter exactly zero times; landing the clause
+     * on the strength of that run would ship the highest-consequence narrowing
+     * in the backend with no coverage of the thing it narrows. The P&T fixtures
+     * are the sharpest here -- 123 of uge 28/2026's 165 members carry a NULL
+     * publishDateTo, and a clause written the obvious way keeps 42 of the 165.
+     */
+    @BindsRule({"RI-4"})
+    @Test
+    @Transactional
+    public void theAliveClauseInSqlNeverDropsARowTheRuleKeeps() throws Exception {
+        runDifferential(true);
+    }
+
+    /**
+     * One differential pass: for every fixture, the SQL candidate set contains
+     * everything the rule matches and both paths agree on the membership.
+     */
+    private void runDifferential(boolean aliveAtCutoff) throws Exception {
         List<Message> rows = corpusRows();
         assertTrue(rows.size() > 10_000,
                 "the corpus holds only " + rows.size() + " messages; run scripts/seed-dev-database.mjs");
@@ -175,7 +218,7 @@ public class MemberResolutionDifferentialTest {
 
         for (String name : MEMBER_FIXTURES) {
             JsonNode f = fixture(name);
-            ResolvedCriteria criteria = criteriaFor(name, f);
+            ResolvedCriteria criteria = criteriaFor(name, f, aliveAtCutoff);
             Interval interval = Interval.upTo(cutoffOf(f));
 
             // The rule, applied to everything. This is the answer.
@@ -203,8 +246,68 @@ public class MemberResolutionDifferentialTest {
 
         if (!failures.isEmpty()) {
             org.junit.jupiter.api.Assertions.fail(
-                    "the two implementations of the rule have drifted:\n  " + String.join("\n  ", failures));
+                    "the two implementations of the rule have drifted (aliveAtCutoff = " + aliveAtCutoff
+                            + "):\n  " + String.join("\n  ", failures));
         }
+    }
+
+    /**
+     * The direct guard: the SQL clause removes exactly the rows the predicate's
+     * own branch would have rejected, and nothing else.
+     *
+     * No snapshot of the old behaviour is needed, because aliveAtCutoff = false
+     * still produces it: the same criteria under the two flags give the loose
+     * and the tight candidate set, and the difference between them must be
+     * describable by MembershipPredicate.dateAliveAt alone.
+     *
+     * Run against the P&T list, on the real corpus, because that is where the
+     * clause matters: an IN_FORCE_AT_CUTOFF series has no lower bound, so its
+     * candidate set is the whole published history of the series.
+     */
+    @BindsRule({"RI-4"})
+    @Test
+    @Transactional
+    public void theSqlAliveClauseRemovesExactlyWhatThePredicateWouldHaveRejected() throws Exception {
+        Set<String> series = criteriaFor("nm-pt-w28-2026", fixture("nm-pt-w28-2026")).messageSeriesIds();
+        assertFalse(series.isEmpty(), "the P&T fixture no longer names a message series");
+
+        Interval interval = Interval.upTo(new Date());
+        Set<Type> types = Set.of(Type.TEMPORARY_NOTICE, Type.PRELIMINARY_NOTICE);
+        ResolvedCriteria off =
+                new ResolvedCriteria(TimeRelation.IN_FORCE_AT_CUTOFF, series, types, false);
+        ResolvedCriteria on =
+                new ResolvedCriteria(TimeRelation.IN_FORCE_AT_CUTOFF, series, types, true);
+
+        List<MessageFacts> loose = resolver.candidatesFor(off, interval);
+        List<MessageFacts> tight = resolver.candidatesFor(on, interval);
+        Set<String> tightUids = tight.stream().map(MessageFacts::uid)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        System.out.println("[B1] P&T in-force candidates: " + loose.size() + " without the SQL alive clause, "
+                + tight.size() + " with it");
+
+        assertTrue(loose.size() > tight.size(),
+                "the prefilter removed nothing, so this test proves nothing: " + loose.size()
+                        + " candidates either way");
+
+        for (MessageFacts f : loose) {
+            boolean dropped = !tightUids.contains(f.uid());
+            assertEquals(dropped, !MembershipPredicate.dateAliveAt(f.publishDateTo(), interval.cutoff()),
+                    "the SQL clause and the predicate's own branch disagree about " + f.uid());
+            if (dropped) {
+                assertFalse(MembershipPredicate.decide(f, on, interval).member(),
+                        "the prefilter dropped a row the rule keeps: " + f.uid());
+            }
+        }
+
+        // NULL-safety, stated rather than implied. This is the 123-of-165 class.
+        assertTrue(tight.stream().anyMatch(f -> f.publishDateTo() == null),
+                "every candidate with a null publishDateTo was dropped -- the clause is not NULL-safe");
+
+        // And the gate itself: with the flag off, the date-dead rows stay in.
+        assertTrue(loose.stream().anyMatch(f -> !MembershipPredicate.dateAliveAt(
+                        f.publishDateTo(), interval.cutoff())),
+                "a series that does not filter on liveness must still be shown its expired rows");
     }
 
     /**
@@ -409,6 +512,51 @@ public class MemberResolutionDifferentialTest {
                 () -> resolver.resolve(withBlank, Interval.upTo(new Date())),
                 "a blank operand became a SQL IN over nothing, which is always false -- the issue would "
                         + "have resolved empty while looking perfectly healthy");
+    }
+
+    /**
+     * The message with NO message series is still a candidate.
+     *
+     * The candidate query projects seven scalars, one of which lives on
+     * MessageSeries. Reached through the path expression the WHERE used to use,
+     * that projection is an implicit INNER join and it deletes every series-less
+     * message from the result -- silently, and only for criteria that do not
+     * scope by series, which is why no other test in this class can see it: all
+     * twenty-one fixtures scope by series, so the pure side rejects those rows
+     * too and the superset property holds either way.
+     *
+     * The corpus does contain such rows, and every fact reader in the resolver
+     * guards for a null series because of them. The fixture is planted rather
+     * than discovered so the assertion cannot quietly stop testing anything.
+     */
+    @Test
+    @Transactional
+    public void aMessageWithNoMessageSeriesIsStillACandidate() {
+        Message orphan = new Message();
+        orphan.setUid(UUID.randomUUID().toString());
+        orphan.setType(Type.LOCAL_WARNING);
+        orphan.setStatus(Status.PUBLISHED);
+        orphan.setPublishDateFrom(new Date(System.currentTimeMillis() - 60_000L));
+        em.persist(orphan);
+        em.flush();
+        assertNull(orphan.getMessageSeries(), "the fixture is only meaningful with no message series");
+
+        try {
+            // Unscoped, because a series operand would reject it on the rule's own
+            // terms and the join would never be the thing under test.
+            ResolvedCriteria unscoped =
+                    new ResolvedCriteria(TimeRelation.PUBLISHED_IN_INTERVAL, Set.of(), Set.of(), false);
+            MemberResolutionService.Resolution r = resolver.resolve(unscoped, Interval.upTo(new Date()));
+
+            assertTrue(r.candidateUids().contains(orphan.getUid()),
+                    "a message with no message series never reached the candidate set; the seriesId "
+                            + "projection is joining INNER and deleting every series-less row");
+            assertTrue(r.members().contains(orphan.getUid()),
+                    "the rule matches it, so an unscoped issue must carry it");
+        } finally {
+            em.remove(orphan);
+            em.flush();
+        }
     }
 
     /** RI-12. Nothing caps the result at 100, which is the default in the params object. */

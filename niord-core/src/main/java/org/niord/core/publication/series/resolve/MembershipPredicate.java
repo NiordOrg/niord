@@ -111,11 +111,8 @@ public final class MembershipPredicate {
         // RI-7. IN_FORCE_AT_CUTOFF applies no lower bound and never consults the
         // previous issue. Issues of such a series overlap; they do not tile.
 
-        // RI-4. NULL-safe: a null publishDateTo means "still open", which is alive.
-        // Treating null as though it were a date is what collapses P&T uge 28/2026
-        // to 42 members -- measured on the estate, against the 165 the issue
-        // actually carries.
-        if (c.aliveAtCutoff() && m.publishDateTo() != null && m.publishDateTo().getTime() < cutoff) {
+        // RI-4, the date half. NULL-safe, and written once -- see dateAliveAt.
+        if (c.aliveAtCutoff() && !dateAliveAt(m.publishDateTo(), i.cutoff())) {
             return MemberDecision.excluded(m.uid(), MembershipReason.NOT_ALIVE_AT_CUTOFF);
         }
 
@@ -133,6 +130,30 @@ public final class MembershipPredicate {
                 c.timeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL
                         ? MembershipReason.IN_INTERVAL
                         : MembershipReason.IN_FORCE_AT_CUTOFF);
+    }
+
+    /**
+     * RI-4's date half, as a function of two dates rather than as a branch.
+     *
+     * NULL-safe by construction, and that is the whole reason it exists as a
+     * named thing. A null publishDateTo means "still open", which is alive;
+     * treating it as though it were a date is what collapses P&T uge 28/2026 to
+     * 42 members -- measured on the estate, against the 165 the issue actually
+     * carries, 123 of which carry no publishDateTo at all. A null cut-off is the
+     * corpus-wide readers' "no instant to compare against", which cannot make a
+     * row dead either.
+     *
+     * Extracted because the same comparison is now made in three places: this
+     * rule, the SQL conjunct the candidate query emits for a series that declares
+     * aliveAtCutoff, and the bound on which withdrawn rows are worth a history
+     * read. Three hand transcriptions of a three-valued comparison is exactly
+     * how one of them quietly becomes the obvious NOT (publishDateTo before
+     * cutoff), and the SQL one has to be derivable from this one for the
+     * candidate set to stay a superset of the answer by construction rather
+     * than by hope.
+     */
+    public static boolean dateAliveAt(Date publishDateTo, Date cutoff) {
+        return publishDateTo == null || cutoff == null || !publishDateTo.before(cutoff);
     }
 
     /**

@@ -260,7 +260,7 @@ public class IssuePublishService extends BaseService {
         // through, stamped a cut-off, and could never be un-stamped.
         Date stamp = request.explicitStamp() != null ? request.explicitStamp() : new Date();
         PublishChecklistService.Checklist rail =
-                checklist.compute(issue, stamp, false, previewStale(issue));
+                checklist.compute(issue, stamp, false, previews.isStaleFor(issue));
         refuseBlockingRows(issue, series, rail, stamp);
 
         // --- 2. STAMP, before resolving -----------------------------------
@@ -1148,22 +1148,4 @@ public class IssuePublishService extends BaseService {
         }
     }
 
-    /**
-     * Whether any language's preview predates the current member set.
-     *
-     * The issue's own stamp moves on every edit and every curation, so it is what
-     * "current" is read against. Only meaningful for a series that renders a
-     * document; an uploaded one has no preview to be stale.
-     */
-    private boolean previewStale(PublicationIssue issue) {
-        if (issue.getSeries() == null || issue.getSeries().getReportId() == null) {
-            return false;
-        }
-        for (PublicationIssueDesc desc : issue.getDescs()) {
-            if (previews.isStale(issue, desc.getLang(), issue.getUpdated())) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

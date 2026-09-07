@@ -48,9 +48,12 @@ import org.niord.core.publication.series.IssueListService;
 import org.niord.core.publication.series.IssueMemberListService;
 import org.niord.core.publication.series.IssuePickerService;
 import org.niord.core.publication.series.IssueStatusTokens;
+import org.niord.core.publication.series.IssueWorkbenchService;
 import org.niord.core.publication.series.vo.IssueOverrideVo;
 import org.niord.core.publication.series.vo.IssueTimelineVo;
+import org.niord.core.publication.series.vo.IssueWorkbenchVo;
 import org.niord.core.publication.series.vo.PublicationIssuePickerVo;
+import org.niord.core.publication.series.vo.PublishChecklistVo;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.search.PagedSearchResultVo;
@@ -160,6 +163,9 @@ public class PublicationIssueRestService {
 
     @Inject
     PublishChecklistService checklist;
+
+    @Inject
+    IssueWorkbenchService workbenches;
 
     @Inject
     EntityManager em;
@@ -447,11 +453,82 @@ public class PublicationIssueRestService {
         return out;
     }
 
+    /**
+     * The same strip, for a DESK rather than for a named list.
+     *
+     * The dashboard knows which domain it is sitting at before it knows which
+     * series that domain owns, so naming the series makes the strip WAIT for the
+     * series list -- two round trips for data that is independent. Naming the
+     * domain instead lets the two go out together, which is the 0.28 s of
+     * serialisation this removes.
+     *
+     * ADMIN, unlike /recent, and that is the whole reason this is a second route
+     * rather than a parameter on the first. "Which series does this desk own" is
+     * the series list's question and the series list is admin; adding the
+     * parameter over there would either hand a desk's inventory to any logged-in
+     * caller or bury the decision in a body check the tier matrix cannot read.
+     * The bound is the domain -- there is no unscoped form -- so this cannot
+     * become an enumeration of the estate either.
+     *
+     * An empty domain is an EMPTY ANSWER, never a refusal: a desk that owns no
+     * cadenced publication is a fact about the desk, and the dashboard fires this
+     * before it knows whether the desk owns anything, so a refusal would put an
+     * error banner on a page that is simply empty. A MISSING domain is refused,
+     * because that is the caller failing to bound a scan.
+     *
+     * The series cap is a SLICE here rather than the refusal /recent gives:
+     * refusing because a desk owns fifty-one series would blank its whole
+     * dashboard, where a caller that NAMED fifty-one chose the list itself.
+     */
+    @GET
+    @Path("/recent-by-domain")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
+    @RolesAllowed(Roles.ADMIN)
+    public List<IssueTimelineVo> recentByDomain(@QueryParam("domain") String domain,
+                                                @QueryParam("cadenced") @DefaultValue("true") boolean cadenced,
+                                                @QueryParam("periods") @DefaultValue("8") int periods,
+                                                @QueryParam("lang") String lang) {
+        if (domain == null || domain.isBlank()) {
+            throw new IssueLifecycleService.TransitionRefusedException("DOMAIN_REQUIRED",
+                    "a domain is required; this endpoint never scans the estate");
+        }
+
+        // Clamped rather than refused, as on /recent -- and against the ceiling
+        // that fits the question being asked. A cadence-less series has no periods
+        // at all: its strip IS its archive and the card reports those rows as the
+        // series' whole issue count, so clamping it to a year of weekly cells would
+        // not be a shorter answer but a wrong one.
+        int wanted = Math.min(Math.max(periods, 1),
+                cadenced ? MAX_TIMELINE_PERIODS : MAX_TIMELINE_ISSUES);
+
+        Date now = new Date();
+        List<IssueTimelineVo> out = new ArrayList<>();
+        for (PublicationSeries series
+                : seriesService.findTimelineSeries(domain, cadenced, MAX_TIMELINE_SERIES)) {
+            out.add(issueList.recent(series, wanted, now, lang));
+        }
+        return out;
+    }
+
     /** One group per series, and the dashboard asks for the ones it renders. */
     static final int MAX_TIMELINE_SERIES = 50;
 
     /** A year of weekly cells. Beyond that the strip is an archive, and that is the issue list. */
     static final int MAX_TIMELINE_PERIODS = 52;
+
+    /**
+     * A cadence-less series has no periods; its strip is its archive, and this
+     * bounds it.
+     *
+     * Its own ceiling because the two forms ask different questions of one
+     * endpoint. The dashboard asks a cadence-less series for a hundred rows and
+     * counts what comes back as the series' issue count, so the periods ceiling
+     * silently reported 52 for anything longer -- not bitten today, the longest
+     * unscheduled series has eleven editions, and not a bound to leave hidden.
+     */
+    static final int MAX_TIMELINE_ISSUES = 200;
 
     /**
      * An enum-valued query parameter, or a refusal naming the parameter.
@@ -662,6 +739,42 @@ public class PublicationIssueRestService {
     }
 
     /**
+     * I30. The whole issue screen, in one request.
+     *
+     * It composes five reads -- the issue, its members, its trail, its standing
+     * decisions and its release rail -- plus the omissions the criteria editor's
+     * probe used to answer separately. The screen made all six in SEQUENCE, and
+     * that was not an oversight: this deployment answers 500 under concurrent load
+     * on these routes, so a client-side fan-out is not the alternative. Six
+     * requests at this deployment's 0.13-0.18 s floor is a second of waiting before
+     * a single resolve has run, and three of the six each took their own resolve of
+     * the same issue over the same interval.
+     *
+     * THE CURATOR TIER, which is the least-privileged of the five it composes. The
+     * checklist half is admin, and it is narrowed in the BODY rather than by a
+     * second annotation: a stricter gate here would refuse the whole screen, which
+     * is what a non-admin curator got before -- the rail's 403 had no branch of its
+     * own and blanked the page. Now they get the screen and no rail.
+     *
+     * `lang` names the language the member rows are TITLED in and nothing else,
+     * exactly as on the member list. Every other part is language-independent.
+     */
+    @GET
+    @Path("/issue/{publicId}/workbench")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
+    @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
+    public IssueWorkbenchVo workbench(@PathParam("publicId") String publicId,
+                                      @QueryParam("lang") String lang) {
+        // The assembly is in core: which parts a frozen issue carries and which
+        // instant the omissions answer for are rules, and this module has no
+        // container tests to pin a rule with.
+        return workbenches.forIssue(required(publicId), lang,
+                userService.isCallerInRole(Roles.ADMIN));
+    }
+
+    /**
      * I11. The Historik panel.
      *
      * A curator reads it too: every curation decision writes a line here, and a
@@ -683,23 +796,6 @@ public class PublicationIssueRestService {
 
     @jakarta.inject.Inject
     org.niord.core.publication.series.IssuePreviewService previews;
-
-    /**
-     * Whether any language's preview predates the current member set -- or is
-     * absent -- for a series that renders a document. The issue's own stamp moves
-     * on every edit and every curation, so it is what "current" is read against.
-     */
-    private boolean previewStale(PublicationIssue issue) {
-        if (issue.getSeries() == null || issue.getSeries().getReportId() == null) {
-            return false;
-        }
-        for (PublicationIssueDesc desc : issue.getDescs()) {
-            if (previews.isStale(issue, desc.getLang(), issue.getUpdated())) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     /**
      * Generate a preview of the open issue as it stands, per language.
@@ -849,43 +945,18 @@ public class PublicationIssueRestService {
     @GZIP
     @NoCache
     @RolesAllowed(Roles.ADMIN)
-    public Map<String, Object> publishChecklist(@PathParam("publicId") String publicId,
-                                                @QueryParam("allowFuture") boolean allowFuture,
-                                                @QueryParam("cutoff") Long cutoff) {
+    public PublishChecklistVo publishChecklist(@PathParam("publicId") String publicId,
+                                               @QueryParam("allowFuture") boolean allowFuture,
+                                               @QueryParam("cutoff") Long cutoff) {
         PublicationIssue issue = required(publicId);
         Date proposed = cutoff == null ? new Date() : new Date(cutoff);
-        PublishChecklistService.Checklist result =
-                checklist.compute(issue, proposed, allowFuture, previewStale(issue));
-
-        List<Map<String, Object>> rows = new ArrayList<>();
-        for (PublishChecklistService.CheckRow r : result.rows()) {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("code", r.code());
-            row.put("severity", r.severity().name());
-            row.put("passed", r.passed());
-            // Whether this issue can be in the condition the row describes at
-            // all. Every row is still sent -- a client that renders only what it
-            // received cannot tell "passed" from "does not exist" -- but a check
-            // this issue does not raise is not one of the answers the caller is
-            // counting. No inapplicable row is a BLOCK row that fails, so the
-            // publish gate reads exactly what it always did.
-            row.put("applicable", r.applicable());
-            row.put("acknowledgeable", r.acknowledgeable());
-            // The warning code the publish gate compares against, said by the row
-            // rather than mapped by every client. The rail names a condition and
-            // the acknowledgement travels as the resolver's warning code, and the
-            // two are deliberately different strings -- a client translating one
-            // into the other by hand gets a refusal for a code nobody ticked.
-            row.put("acknowledgeCode", r.acknowledgeCode());
-            row.put("detail", r.detail());
-            rows.add(row);
-        }
-
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("rows", rows);
-        out.put("canPublish", result.canPublish());
-        out.put("blockingCodes", result.blockingCodes());
-        return out;
+        // The VO rather than a map built here key by key. The workbench returns the
+        // same rail, and two hand-written mappings of one record drift the first
+        // time a field is added to only one of them -- with the endpoint answering
+        // one field short and nothing failing to say so. The JSON is unchanged,
+        // nulls included; see PublishCheckRowVo for why it does not suppress them.
+        return PublishChecklistVo.of(
+                checklist.compute(issue, proposed, allowFuture, previews.isStaleFor(issue)));
     }
 
     // ------------------------------------------------------------------ actions

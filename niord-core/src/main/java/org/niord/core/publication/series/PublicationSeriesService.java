@@ -24,6 +24,8 @@ import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +95,89 @@ public class PublicationSeriesService extends BaseService {
                                 + "ORDER BY s.seriesId", PublicationSeries.class)
                 .setParameter("authority", authority)
                 .getResultList();
+    }
+
+    /**
+     * How often a series comes out, as the order its strip is drawn in.
+     *
+     * The SAME order the dashboard reads its cards in -- the weeklies an editor
+     * works every week first, the annuals last, the cadence-less ones after those.
+     *
+     * Ranked in Java rather than in SQL because the cadence is persisted as a
+     * native MySQL ENUM, so ORDER BY on the column orders by whatever the column
+     * orders by. That happens to agree today and would stop agreeing the first
+     * time a constant is inserted rather than appended.
+     */
+    private static final List<SeriesCadence> CADENCE_ORDER = List.of(
+            SeriesCadence.DAILY, SeriesCadence.WEEKLY, SeriesCadence.MONTHLY,
+            SeriesCadence.YEARLY, SeriesCadence.NONE);
+
+    /**
+     * The series one desk's period strip is drawn for.
+     *
+     * The SAME set the admin list shows, narrowed to the ones with a calendar or
+     * to the ones without: the strip and the card grid are two halves of one
+     * screen, and a server that picked a different set would leave cards with no
+     * strip and strips with no card. The rule is written here, once, rather than
+     * copied out of the frontend -- where it lives today -- because the two
+     * drifting apart is a per-desk failure nothing reports.
+     *
+     * Narrowed by OWNER, which is the admin list's rule and not the picker's. A
+     * publication is listed in its owner domain and nowhere else -- that is the
+     * whole point of having an owner -- so a series another desk owns is absent
+     * here even where it is shared and citable from this one. A strip reaching it
+     * would arrive with no card to hang on.
+     *
+     * @param cadenced true for the series with a schedule, false for the ones
+     *                 without -- the dashboard asks each a different question
+     * @param limit    the most series one strip request answers for. A SLICE, not
+     *                 a refusal: a desk owning more than this wants the strips it
+     *                 can have, where a named-series request rightly refuses
+     *                 because the CALLER chose the list
+     */
+    public List<PublicationSeries> findTimelineSeries(String domainId, boolean cadenced, int limit) {
+        if (domainId == null || domainId.isBlank()) {
+            return List.of();
+        }
+        // Selected WITHOUT the descs fetch join, for the same reason the issue
+        // strip's own query is two queries: a collection fetch makes Hibernate
+        // page in memory, and the descs are primed below on the rows that survive
+        // the cap. That also removes the lazy load per series the naming patterns
+        // used to trigger, one round trip each.
+        List<PublicationSeries> found = em.createQuery(
+                        "SELECT s FROM PublicationSeries s WHERE s.domain.domainId = :domain "
+                                + "AND s.kind <> :oneOff "
+                                + "AND (s.status = :active OR (s.status = :draft AND s.importSource IS NULL)) "
+                                + "AND s.cadence " + (cadenced ? "<>" : "=") + " :none",
+                        PublicationSeries.class)
+                .setParameter("domain", domainId.trim())
+                .setParameter("oneOff", SeriesKind.ONE_OFF)
+                .setParameter("active", SeriesStatus.ACTIVE)
+                .setParameter("draft", SeriesStatus.DRAFT)
+                .setParameter("none", SeriesCadence.NONE)
+                .getResultList();
+
+        List<PublicationSeries> ordered = new ArrayList<>(found);
+        // Ties break on the stable id rather than on the localized name the cards
+        // sort by. Below the cap the order is invisible -- the page looks each
+        // series up by id -- and above it the two sides may keep different fifties;
+        // a card whose strip did not arrive renders without one, which is what it
+        // already does for a series beyond the frontend's own slice.
+        ordered.sort(Comparator
+                .comparingInt((PublicationSeries s) -> CADENCE_ORDER.indexOf(
+                        s.getCadence() == null ? SeriesCadence.NONE : s.getCadence()))
+                .thenComparing(PublicationSeries::getSeriesId,
+                        Comparator.nullsLast(Comparator.naturalOrder())));
+
+        List<PublicationSeries> out = limit > 0 && ordered.size() > limit
+                ? new ArrayList<>(ordered.subList(0, limit)) : ordered;
+        if (!out.isEmpty()) {
+            em.createQuery("SELECT DISTINCT s FROM PublicationSeries s LEFT JOIN FETCH s.descs "
+                            + "WHERE s.id IN :ids", PublicationSeries.class)
+                    .setParameter("ids", out.stream().map(PublicationSeries::getId).toList())
+                    .getResultList();
+        }
+        return out;
     }
 
     /**

@@ -187,6 +187,9 @@ public class PublicationTierMatrixTest {
         t.put("GET /publication-issues/issue/{publicId}", Tier.EDITOR);
         t.put("GET /publication-issues/picker", Tier.EDITOR);
         t.put("GET /publication-issues/recent", Tier.EDITOR);
+        // The desk-scoped strip: it answers "which series does this desk own", which
+        // is the admin list's question, so it carries the admin list's tier.
+        t.put("GET /publication-issues/recent-by-domain", Tier.ADMIN);
         t.put("GET /publication-issues/by-message/{messageUid}", Tier.EDITOR);
         // Hydration of ids the caller already holds. Anonymous on purpose: a
         // citation chip for a RETIRED issue has to render its title on the
@@ -197,6 +200,9 @@ public class PublicationTierMatrixTest {
         // the three reads a curator needs to make a decision at all.
         t.put("GET /publication-issues/editable-issue/{publicId}", Tier.CURATOR);
         t.put("GET /publication-issues/issue/{publicId}/members", Tier.CURATOR);
+        // The whole issue screen in one response. Curator like the parts it
+        // composes; the admin-only part (the checklist) is withheld in the body.
+        t.put("GET /publication-issues/issue/{publicId}/workbench", Tier.CURATOR);
         t.put("GET /publication-issues/issue/{publicId}/audit", Tier.CURATOR);
         t.put("GET /publication-issues/issue/{publicId}/overrides", Tier.CURATOR);
         t.put("PUT /publication-issues/issue/{publicId}/overrides/include", Tier.CURATOR);
@@ -240,6 +246,7 @@ public class PublicationTierMatrixTest {
 
         // ---- one-offs ---------------------------------------------------
         t.put("GET /one-off-publications/", Tier.ADMIN);
+        t.put("GET /one-off-publications/{seriesId}", Tier.ADMIN);
         t.put("POST /one-off-publications/", Tier.ADMIN);
         t.put("PUT /one-off-publications/{seriesId}", Tier.ADMIN);
 

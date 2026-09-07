@@ -228,6 +228,50 @@ public class OneOffRestService {
                 .toList();
     }
 
+    /**
+     * One publication, for the screen that shows exactly one.
+     *
+     * The detail page used to reach its publication by asking for the ESTATE and
+     * keeping a single row out of it -- 6,456 B and 113 ms to render one document,
+     * measured 2026-09-07 on a deployment where a request that does almost nothing
+     * costs 0.13-0.18 s. The measurement is repeatable: the "one-off detail"
+     * scenario of the client repository's scripts/perf/publications-requests.mjs
+     * replays that page and prints every request it makes. It went through the
+     * list because `active` is not a field on the series: toVo folds series
+     * ACTIVE, issue PUBLISHED and the public window into the one dot the screen
+     * shows, and any of the three being off is invisible from the other two. A
+     * page that re-derived it would be a second definition of visibility, free to
+     * disagree with the list the publication was reached from -- so the fold gets
+     * a route of its own rather than a copy on the client.
+     *
+     * UNSCOPED, like the list called with no `domain`. A deep link into a one-off
+     * has to resolve from whichever desk the reader is sitting at, and narrowing
+     * by owner here would answer "no such publication" for one that exists and is
+     * open on somebody else's screen.
+     *
+     * A series that is not a one-off is answered SERIES_NOT_FOUND -- a 404 -- and
+     * not the save's SERIES_NOT_ONE_OFF 400. This collection IS the one-off
+     * publications: the list filters the estate by kind, so a weekly series' id
+     * names nothing in it, and 404 is the same answer the list already gives by
+     * leaving the row out. The 400 belongs to the SAVE, where the caller holds a
+     * form that would force cadence NONE onto a scheduled series and has to be
+     * told what it is about to do rather than that the series is missing.
+     */
+    @GET
+    @Path("/{seriesId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
+    @RolesAllowed(Roles.ADMIN)
+    public OneOffVo get(@PathParam("seriesId") String seriesId) {
+        PublicationSeries series = seriesService.findBySeriesId(seriesId);
+        if (series == null || series.getKind() != SeriesKind.ONE_OFF) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
+                    "no one-off publication with id " + seriesId);
+        }
+        return toVo(series);
+    }
+
     // ------------------------------------------------------------------ writes
 
     /**

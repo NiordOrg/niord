@@ -301,4 +301,162 @@ public class IssueTimelineTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("no cell for issue " + publicId));
     }
+
+    // ------------------------------------------------- the bounded read is the same read
+
+    /**
+     * The newest few issues draw the same strip as the whole archive.
+     *
+     * `recent()` used to select every issue a series has ever had -- about five
+     * hundred on weekly-ntm, each with its desc rows -- and then throw all but
+     * eight cells away, at roughly 0.2 s per series on a dashboard that draws one
+     * strip per series a desk owns. It now reads the newest `periods + 2` and
+     * hands those to the same builder.
+     *
+     * This is the assertion that makes the bound safe, and there was nothing else:
+     * every existing test here runs the STATIC builder over a list the caller
+     * supplied, so the query has never been pinned in either module. An off-by-one
+     * in the window silently drops MISSING cells from the dashboard, and nothing
+     * anywhere would fail.
+     *
+     * Pure, and deliberately so -- it must run on a build machine with no MySQL,
+     * which is where a regression in this bound would otherwise land unnoticed.
+     */
+    @Test
+    public void theNewestFewIssuesDrawTheSameStripAsTheWholeArchive() {
+        // A long tidy weekly archive: the ordinary case, and the one whose cost
+        // the bound exists to remove.
+        PublicationSeries tidy = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        List<PublicationIssue> weekly = new ArrayList<>();
+        for (int week = 1; week <= 34; week++) {
+            weekly.add(chained(tidy, "w" + week, wed(week), wed(week + 1)));
+        }
+        assertWindowDrawsTheSameStrip("a tidy weekly archive", tidy, newestFirst(weekly), 8, wed(36));
+
+        // THE CASE THE PREDECESSOR EXISTS FOR: the whole window is filled by cells
+        // produced by ONE pair, and the older member of that pair is twenty-eight
+        // weeks back. A window that kept only the periods it draws would lose it
+        // and seven of the eight cells with it.
+        PublicationSeries wide = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        List<PublicationIssue> sparse = new ArrayList<>();
+        for (int week = 1; week <= 10; week++) {
+            sparse.add(chained(wide, "g" + week, wed(week), wed(week + 1)));
+        }
+        sparse.add(chained(wide, "resumed", wed(39), wed(40)));
+        assertWindowDrawsTheSameStrip("a twenty-eight-week gap", wide, newestFirst(sparse), 8, wed(40));
+
+        // A double-week issue at the window edge: it opened where its predecessor
+        // closed and carried two periods, which is not a gap. The window must not
+        // turn it into one by losing the issue its interval chains from.
+        PublicationSeries doubled = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        List<PublicationIssue> chain = new ArrayList<>();
+        for (int week = 1; week <= 14; week++) {
+            chain.add(chained(doubled, "d" + week, wed(week), wed(week + 1)));
+        }
+        chain.add(chained(doubled, "double", wed(15), wed(17)));
+        assertWindowDrawsTheSameStrip("a double week at the window edge", doubled,
+                newestFirst(chain), 8, wed(17));
+
+        // An OPEN newest issue: the forward pass stays suppressed, because the
+        // period being worked toward is late rather than missing.
+        PublicationSeries working = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        List<PublicationIssue> withOpen = new ArrayList<>();
+        for (int week = 1; week <= 20; week++) {
+            withOpen.add(chained(working, "o" + week, wed(week), wed(week + 1)));
+        }
+        withOpen.add(open(working, "current", wed(21), wed(22)));
+        assertWindowDrawsTheSameStrip("an open newest issue", working,
+                newestFirst(withOpen), 8, wed(22));
+
+        // A dormant series: the gate is closed, so there are no pseudo rows at all
+        // and the strip is the issues themselves.
+        PublicationSeries dormant = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        List<PublicationIssue> stopped = new ArrayList<>();
+        for (int week = 1; week <= 15; week++) {
+            stopped.add(chained(dormant, "s" + week, wed(week), wed(week + 1)));
+        }
+        assertWindowDrawsTheSameStrip("a dormant series", dormant, newestFirst(stopped), 8, wed(90));
+
+        // A cadence-less series at ten periods: no synthesis, and the strip is
+        // simply its newest issues -- the form the unscheduled cards read.
+        PublicationSeries unscheduled = series(SeriesStatus.ACTIVE, SeriesCadence.NONE, null);
+        List<PublicationIssue> editions = new ArrayList<>();
+        for (int week = 1; week <= 14; week++) {
+            editions.add(published(unscheduled, "e" + week, wed(week * 2)));
+        }
+        assertWindowDrawsTheSameStrip("a cadence-less archive", unscheduled,
+                newestFirst(editions), 10, wed(40));
+    }
+
+    /**
+     * The bounded list and the whole archive produce the same cells, one for one.
+     *
+     * Compared on every field a cell carries, not on the count: a window that lost
+     * a predecessor produces the right NUMBER of cells and the wrong ones, because
+     * the synthesizer fills the space with periods it thinks nobody covered.
+     */
+    private static void assertWindowDrawsTheSameStrip(String fixture, PublicationSeries series,
+                                                      List<PublicationIssue> newestFirst,
+                                                      int periods, Date now) {
+        int window = Math.min(newestFirst.size(), periods + IssueListService.TIMELINE_WINDOW_SLACK);
+        // Every fixture here must actually be truncated by the window, or the
+        // comparison below is a list against itself and proves nothing.
+        assertTrue(window < newestFirst.size(),
+                fixture + ": the window (" + window + ") covers the whole fixture ("
+                        + newestFirst.size() + " issues), so this comparison is vacuous");
+        IssueTimelineVo whole = IssueListService.buildRecent(series, newestFirst, periods, now, "en");
+        IssueTimelineVo bounded = IssueListService.buildRecent(series,
+                newestFirst.subList(0, window), periods, now, "en");
+
+        assertEquals(whole.getRows().size(), bounded.getRows().size(),
+                fixture + ": the bounded read drew a different number of cells. The window is "
+                        + window + " issues of " + newestFirst.size());
+        assertEquals(whole.getGapDetection().getReasonCode(), bounded.getGapDetection().getReasonCode(),
+                fixture + ": the bounded read reported a different gap-detection gate");
+
+        for (int i = 0; i < whole.getRows().size(); i++) {
+            IssueTimelineRowVo a = whole.getRows().get(i);
+            IssueTimelineRowVo b = bounded.getRows().get(i);
+            String at = fixture + ": cell " + i + " differs";
+            assertEquals(a.getPublicId(), b.getPublicId(), at + " in publicId");
+            assertEquals(a.getComputedStatus(), b.getComputedStatus(), at + " in computedStatus");
+            assertEquals(a.getLabel(), b.getLabel(), at + " in label");
+            assertEquals(a.getIntervalFrom(), b.getIntervalFrom(), at + " in intervalFrom");
+            assertEquals(a.getIntervalTo(), b.getIntervalTo(), at + " in intervalTo");
+            assertEquals(a.getMemberCount(), b.getMemberCount(), at + " in memberCount");
+            assertEquals(a.getWeek(), b.getWeek(), at + " in week");
+            assertEquals(a.getYear(), b.getYear(), at + " in year");
+        }
+    }
+
+    /** A released issue whose content period opened where the previous one closed. */
+    private static PublicationIssue chained(PublicationSeries series, String publicId,
+                                            Date openedAt, Date cutoff) {
+        PublicationIssue i = published(series, publicId, cutoff);
+        i.setIntervalFrom(openedAt);
+        return i;
+    }
+
+    /** The issue being worked on: no stamp, and the nominal close it is working toward. */
+    private static PublicationIssue open(PublicationSeries series, String publicId,
+                                         Date openedAt, Date nominalClose) {
+        PublicationIssue i = new PublicationIssue();
+        i.setSeries(series);
+        i.setPublicId(publicId);
+        i.setStatus(IssueStatus.OPEN);
+        i.setIntervalFrom(openedAt);
+        i.setIntervalTo(nominalClose);
+        i.setIntervalToSource(IntervalBoundSource.NOMINAL);
+        i.createDesc("en").setName("NtM Week " + publicId);
+        return i;
+    }
+
+    private static List<PublicationIssue> newestFirst(List<PublicationIssue> issues) {
+        return newestFirst(issues.toArray(new PublicationIssue[0]));
+    }
 }

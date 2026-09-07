@@ -19,9 +19,7 @@ package org.niord.core.publication.series;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.niord.core.publication.series.resolve.Interval;
 import org.niord.core.publication.series.resolve.ResolutionWarningCode;
-import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.service.BaseService;
 
@@ -119,13 +117,7 @@ public class PublishChecklistService extends BaseService {
             "OVERLAPPING_ISSUE");
 
     @Inject
-    MemberResolutionService resolver;
-
-    @Inject
-    IssueCurationService curation;
-
-    @Inject
-    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+    IssueResolutionService resolutions;
 
     private static final DateTimeFormatter CHECKLIST_STAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -152,9 +144,35 @@ public class PublishChecklistService extends BaseService {
                 + " (" + zone.getId() + ")";
     }
 
+    /**
+     * The rail for a proposed cut-off, taking its own resolve.
+     *
+     * The publish path and the dialog both call it: they name an instant and
+     * nothing else about the issue is already in hand.
+     */
     @Transactional
     public Checklist compute(PublicationIssue issue, Date proposedCutoff, boolean allowFuture,
                              boolean previewStale) {
+        return compute(issue, allowFuture, previewStale, resolutions.forIssue(issue, proposedCutoff));
+    }
+
+    /**
+     * The same rail, off a resolution the caller already took.
+     *
+     * THE CUT-OFF COMES FROM THE RESOLUTION, which is what makes the two forms one
+     * answer rather than two: a rail computed against a member set taken at a
+     * different instant is a rail describing a release nobody is about to make.
+     * The issue screen resolves once and hands that resolution to the member list
+     * and to this, so the count on the rail and the length of the list beside it
+     * cannot differ.
+     *
+     * @param pre the resolution this rail is answered from; its instant IS the
+     *            proposed cut-off
+     */
+    @Transactional
+    public Checklist compute(PublicationIssue issue, boolean allowFuture, boolean previewStale,
+                             IssueResolutionService.IssueResolution pre) {
+        Date proposedCutoff = pre.at();
         PublicationSeries series = issue.getSeries();
         List<CheckRow> rows = new ArrayList<>();
 
@@ -270,36 +288,14 @@ public class PublishChecklistService extends BaseService {
         // count, and STALE_OVERRIDE -- the warning that only exists when there ARE
         // excludes -- could never be raised, so NO_INEFFECTIVE_OVERRIDES answered
         // "every override applies" on an issue whose overrides applied to nothing.
-        Set<String> includes = new LinkedHashSet<>();
-        Set<String> excludes = new LinkedHashSet<>();
-        for (IssueOverride override : curation.forIssue(issue)) {
-            (override.getKind() == OverrideKind.INCLUDE ? includes : excludes)
-                    .add(override.getMessageUid());
-        }
-
-        MemberResolutionService.Resolution resolution = null;
-        if (queryBacked && series.getTimeRelation() != null) {
-            try {
-                ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue, domains);
-                if (criteria != null) {
-                    resolution = resolver.resolve(criteria,
-                            new Interval(issue.getIntervalFrom(), proposedCutoff), includes, excludes);
-                }
-            } catch (RuntimeException e) {
-                resolution = null;
-            }
-        } else if (!includes.isEmpty()) {
-            // Overrides constitute membership on their own. The annexes are a
-            // series holding two live messages a year with each issue naming one of
-            // them, where no query can select one and not the other -- and gating
-            // the count on queryBacked reported "0 members" for exactly those.
-            Set<String> curated = new LinkedHashSet<>(includes);
-            curated.removeAll(excludes);
-            resolution = MemberResolutionService.Resolution.curated(curated);
-        }
+        //
+        // Both of those now arrive on the resolution rather than being read here:
+        // one resolve per screen, taken at one instant, shared with the member
+        // list it has to agree with.
+        MemberResolutionService.Resolution resolution = pre.resolution();
 
         // Whether this issue HAS a member list to be asked about, which is exactly
-        // the condition under which a resolve was attempted above.
+        // the condition under which a resolve was attempted.
         //
         // Without it the five membership rows answered for every issue in the
         // system, including the ones whose content is a file somebody uploaded.
@@ -308,7 +304,7 @@ public class PublishChecklistService extends BaseService {
         // no query to run and no curation to fix. A resolve that was ATTEMPTED
         // and failed is a different thing entirely and still warns, which is why
         // this asks what the series is rather than whether `resolution` is null.
-        boolean membership = (queryBacked && series.getTimeRelation() != null) || !includes.isEmpty();
+        boolean membership = pre.membership();
         String noMembership = "the series resolves no member list";
 
         int memberCount = resolution == null ? 0 : resolution.members().size();

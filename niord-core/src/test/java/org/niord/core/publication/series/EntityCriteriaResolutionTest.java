@@ -38,6 +38,7 @@ import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -339,5 +340,48 @@ public class EntityCriteriaResolutionTest {
                 membersOf(criteria(Set.of(), Set.of(parentAreaMrn), Set.of(), Set.of())),
                 "a message whose SECOND area matches the criterion was dropped; membership is reading "
                         + "the primary sort area rather than the area list");
+    }
+
+    // ------------------------------------------------------- DISTINCT, exercised
+
+    /**
+     * ONE message, TWO areas, and the SAME criterion matches both of them.
+     *
+     * This is the only shape that makes the to-many join fan out, and until now
+     * nothing produced it: the secondary-area case above gives a message two
+     * areas of which only one matches, so the join yields one row and DISTINCT
+     * is never asked to do anything. Filed under both the parent and its child,
+     * a criterion naming the parent matches both rows by lineage prefix, and
+     * without DISTINCT the message appears twice -- in candidateUids, which is a
+     * List, and therefore in the candidate count the criteria editor prints.
+     *
+     * It also pins the projection change: DISTINCT over the seven scalars is as
+     * correct as DISTINCT over the whole entity row only because uid is in the
+     * tuple and is unique, so no two distinct rows can collapse into one.
+     */
+    @Test
+    @Transactional
+    public void aMessageMatchingOneCriterionThroughTwoAreasIsCountedOnce() {
+        Message m = em.createQuery("SELECT m FROM Message m WHERE m.uid = :uid", Message.class)
+                .setParameter("uid", matchingUid).getSingleResult();
+
+        Area parent = em.createQuery("SELECT a FROM Area a WHERE a.mrn = :mrn", Area.class)
+                .setParameter("mrn", parentAreaMrn).getSingleResult();
+
+        // It is already filed under the CHILD, so both rows now match the criterion.
+        m.getAreas().add(parent);
+        em.merge(m);
+        em.flush();
+        assertEquals(2, m.getAreas().size(), "the fixture did not get a second MATCHING area");
+
+        MemberResolutionService.Resolution r =
+                resolver.resolve(criteria(Set.of(), Set.of(parentAreaMrn), Set.of(), Set.of()), interval);
+
+        assertEquals(1, r.candidateUids().stream().filter(matchingUid::equals).count(),
+                "the message came back once per matching area row, so the candidate count double-counts it");
+        assertEquals(new LinkedHashSet<>(r.candidateUids()).size(), r.candidateCount(),
+                "the candidate list holds duplicates; DISTINCT is not de-duplicating the projection");
+        assertEquals(Set.of(matchingUid), r.members(),
+                "the fan-out must not change WHICH messages are members, only how often they are listed");
     }
 }

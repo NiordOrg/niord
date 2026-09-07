@@ -213,6 +213,45 @@ public class MembershipPredicateTest {
         assertEquals(123, nullTo, "the fixture no longer carries 123 still-open members");
         assertTrue(safe.size() > unsafe * 3,
                 "the collapse should be dramatic: " + safe.size() + " safe against " + unsafe + " unsafe");
+
+        // The extracted half, over the same 165. This is the form the candidate
+        // query emits as SQL, so pinning it here is what makes this fixture the
+        // regression test for the SQL clause too -- in half a second, with no MySQL.
+        for (MessageFacts m : pool) {
+            assertTrue(MembershipPredicate.dateAliveAt(m.publishDateTo(), cutoff),
+                    "dateAliveAt dropped recorded member " + m.uid()
+                            + ", which the rule keeps; the SQL prefilter derived from it would drop it too");
+        }
+        assertEquals(unsafe, pool.stream()
+                        .filter(m -> m.publishDateTo() != null)
+                        .filter(m -> MembershipPredicate.dateAliveAt(m.publishDateTo(), cutoff))
+                        .count(),
+                "on the rows that DO carry a publishDateTo the two forms must agree exactly; they differ "
+                        + "only about null, which is the whole hazard");
+    }
+
+    /**
+     * The extracted date half, in both of its three-valued arguments.
+     *
+     * Four cases, and each of them is a way the clause has been written wrong:
+     * null publishDateTo compared as a date (the 165-to-42 collapse), a null
+     * cut-off treated as the epoch by the corpus-wide readers that pass one, an
+     * open upper bound where the rule's is closed, and the one-millisecond case
+     * that says the comparison is to the instant and not to the day.
+     */
+    @BindsRule({"RI-4"})
+    @Test
+    public void theDateHalfIsNullSafeInBothArguments() {
+        Date cutoff = new Date(1_788_343_200_000L); // 2 Sep 2026 12:00 CEST
+
+        assertTrue(MembershipPredicate.dateAliveAt(null, cutoff),
+                "a still-open notice was read as expired");
+        assertTrue(MembershipPredicate.dateAliveAt(new Date(cutoff.getTime() - 30L * 86_400_000L), null),
+                "with no cut-off in hand nothing can be dead; the corpus-wide readers pass null");
+        assertTrue(MembershipPredicate.dateAliveAt(cutoff, cutoff),
+                "the bound is CLOSED at the cut-off: a notice whose validity ends exactly then is alive");
+        assertFalse(MembershipPredicate.dateAliveAt(new Date(cutoff.getTime() - 1L), cutoff),
+                "one millisecond before the cut-off must be dead, or the comparison is not to the instant");
     }
 
     // ------------------------------------------- RI-3, NULL publishDateFrom

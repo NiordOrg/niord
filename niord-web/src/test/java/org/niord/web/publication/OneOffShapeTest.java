@@ -19,14 +19,19 @@ package org.niord.web.publication;
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.CutoffDay;
+import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
+import org.niord.core.publication.series.PublicationIssueService;
 import org.niord.core.publication.series.PublicationSeriesDesc;
+import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
+import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -36,9 +41,12 @@ import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * What a one-off may and may not carry.
@@ -51,6 +59,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  * The first version of this endpoint got the first half wrong -- it accepted only
  * UPLOADED_FILE and EXTERNAL_LINK, which is narrower than the data it edits:
  * three of the five one-offs in the estate carry contentMode NONE.
+ *
+ * The last section is the other end of the same endpoint: which ids the read of
+ * one publication admits, and with which refusal.
  *
  * No database and no server: this is a shape, and shape tests that need MySQL
  * are shape tests that stop running.
@@ -385,5 +396,146 @@ public class OneOffShapeTest {
         OneOffRestService.applyLinks(issue, request);
 
         assertNull(desc.getLink());
+    }
+
+    // ------------------------------------------------- what the single GET admits
+
+    /**
+     * A lookup that answers whatever the test hands it.
+     *
+     * The read of one publication is a lookup, a gate and a fold, and only the
+     * lookup needs storage. Answering it from a stub leaves the two parts worth
+     * pinning -- which ids this collection admits and with which code, and what
+     * `active` comes out as -- testable with no database at all. The endpoint's
+     * service fields are package-private, which is what makes that possible here.
+     */
+    private static final class SeriesLookup extends PublicationSeriesService {
+
+        private final PublicationSeries answer;
+
+        private SeriesLookup(PublicationSeries answer) {
+            this.answer = answer;
+        }
+
+        @Override
+        public PublicationSeries findBySeriesId(String seriesId) {
+            return answer;
+        }
+    }
+
+    /** The same, for the one issue a one-off has. */
+    private static final class IssueLookup extends PublicationIssueService {
+
+        private final PublicationIssue answer;
+
+        private IssueLookup(PublicationIssue answer) {
+            this.answer = answer;
+        }
+
+        @Override
+        public List<PublicationIssue> findBySeries(PublicationSeries series) {
+            return answer == null ? List.of() : List.of(answer);
+        }
+    }
+
+    private static OneOffRestService endpointFinding(PublicationSeries answer) {
+        return endpointFinding(answer, null);
+    }
+
+    private static OneOffRestService endpointFinding(PublicationSeries answer, PublicationIssue issue) {
+        OneOffRestService endpoint = new OneOffRestService();
+        endpoint.seriesService = new SeriesLookup(answer);
+        endpoint.issueService = new IssueLookup(issue);
+        return endpoint;
+    }
+
+    /** An id that names nothing is a 404, like any other missing thing. */
+    @Test
+    public void anidThatNamesNothingIsNotFound() {
+        OneOffRestService endpoint = endpointFinding(null);
+
+        IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> endpoint.get("no-such-publication"));
+
+        assertEquals("SERIES_NOT_FOUND", refusal.code());
+        assertEquals(404, PublicationErrorCatalogue.statusOf(refusal.code()),
+                "a deep link to an id that was never here has to answer 404, or the detail "
+                        + "page cannot tell 'gone' from 'broken'");
+    }
+
+    /**
+     * A scheduled series is ALSO not found here, and deliberately not the save's 400.
+     *
+     * This collection IS the one-off publications -- the list filters the estate by
+     * kind, so a weekly series' id names nothing in it and 404 is the same answer
+     * the list already gives by leaving the row out. SERIES_NOT_ONE_OFF is a 400
+     * and belongs to the save, where the caller holds a form that would force
+     * cadence NONE onto a scheduled series and has to be told what it is about to
+     * do. Answering the read that way would tell a reader who asked for a document
+     * that their REQUEST was malformed.
+     */
+    @Test
+    public void ascheduledSeriesIsNotFoundEither() {
+        PublicationSeries scheduled = seriesWithEverything();
+        scheduled.setKind(SeriesKind.SCHEDULED);
+
+        OneOffRestService endpoint = endpointFinding(scheduled);
+        IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> endpoint.get("weekly-ntm"));
+
+        assertEquals("SERIES_NOT_FOUND", refusal.code(),
+                "the read has one refusal; SERIES_NOT_ONE_OFF is the save's, and it is a 400");
+        assertEquals(404, PublicationErrorCatalogue.statusOf(refusal.code()));
+        assertEquals(400, PublicationErrorCatalogue.statusOf("SERIES_NOT_ONE_OFF"),
+                "the save keeps its 400: this test is the distinction, so it asserts both sides");
+    }
+
+    /**
+     * A one-off is admitted, and answered with the dot the list would have shown.
+     *
+     * This is why the read has a route of its own rather than a copy on the client:
+     * `active` is not a field on the series. It is series ACTIVE, issue PUBLISHED
+     * and the public window, folded here -- any of the three being off is invisible
+     * from the other two, so a page that re-derived it would be a second definition
+     * of visibility, free to disagree with the list the publication was reached
+     * from.
+     */
+    @Test
+    public void aoneOffIsAnsweredWithTheVisibilityTheListWouldShow() {
+        PublicationSeries oneOff = new PublicationSeries();
+        oneOff.setKind(SeriesKind.ONE_OFF);
+        oneOff.setStatus(SeriesStatus.ACTIVE);
+
+        PublicationIssue issue = new PublicationIssue();
+        issue.setStatus(IssueStatus.PUBLISHED);
+        issue.setPublicFrom(new Date(1_700_000_000_000L));
+
+        OneOffRestService.OneOffVo vo =
+                endpointFinding(oneOff, issue).get("navigation-through-danish-waters");
+
+        assertNotNull(vo, "a one-off's own id is the one id this route exists to answer");
+        assertEquals(IssueStatus.PUBLISHED.name(), vo.issueStatus);
+        assertTrue(vo.active, "ACTIVE series, PUBLISHED issue, window open: this one is public");
+    }
+
+    /** And one of the three being off is enough, which is the part a client cannot see. */
+    @Test
+    public void aoneOffWhoseWindowHasNotOpenedIsNotActive() {
+        PublicationSeries oneOff = new PublicationSeries();
+        oneOff.setKind(SeriesKind.ONE_OFF);
+        oneOff.setStatus(SeriesStatus.ACTIVE);
+
+        PublicationIssue issue = new PublicationIssue();
+        issue.setStatus(IssueStatus.PUBLISHED);
+        issue.setPublicFrom(new Date(System.currentTimeMillis() + 86_400_000L));
+
+        OneOffRestService.OneOffVo vo =
+                endpointFinding(oneOff, issue).get("navigation-through-danish-waters");
+
+        assertFalse(vo.active,
+                "published, but not yet: the series and the issue both say live and the "
+                        + "publication still is not");
     }
 }

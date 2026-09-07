@@ -21,9 +21,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
-import org.niord.core.publication.series.resolve.Interval;
 import org.niord.core.publication.series.resolve.IssueOrdering;
-import org.niord.core.publication.series.resolve.ResolvedCriteria;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueMemberVo;
 import org.niord.core.publication.series.vo.LiveMessageStateVo;
@@ -79,13 +77,10 @@ public class IssueMemberListService {
     EntityManager em;
 
     @Inject
-    IssueCurationService curation;
-
-    @Inject
     MemberResolutionService resolver;
 
     @Inject
-    org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
+    IssueResolutionService resolutions;
 
     /**
      * Every curation decision that STANDS on this issue, include and exclude alike.
@@ -100,11 +95,34 @@ public class IssueMemberListService {
      *
      * CURATOR TIER, like the writes it describes. It carries the author and the
      * reason, which is the admin-only half of a why-line.
+     *
+     * IT TAKES NO RESOLVE. The decisions are rows; answering them needs the
+     * override query and nothing else. Reading them off a full
+     * {@link IssueResolutionService.IssueResolution} would be tidy and would make
+     * this endpoint pay a candidate narrowing -- about a second on an in-force
+     * series -- to list a handful of rows nobody resolved anything for.
      */
     @Transactional
     public List<IssueOverrideVo> standingDecisions(PublicationIssue issue) {
+        return decisionsOf(resolutions.overridesOf(issue).values());
+    }
+
+    /**
+     * The same list, off a resolution the caller already took.
+     *
+     * The decisions are read by the member list too, so a screen showing both
+     * used to read them twice. Sharing one read is also what keeps the two
+     * agreeing: a decision taken between the two queries would otherwise show in
+     * one panel and not in the other.
+     */
+    public List<IssueOverrideVo> standingDecisions(IssueResolutionService.IssueResolution pre) {
+        return decisionsOf(pre.overrides().values());
+    }
+
+    /** One rendering of the decisions, whichever read produced them. */
+    private static List<IssueOverrideVo> decisionsOf(Collection<IssueOverride> overrides) {
         List<IssueOverrideVo> out = new ArrayList<>();
-        for (IssueOverride override : curation.forIssue(issue)) {
+        for (IssueOverride override : overrides) {
             IssueOverrideVo vo = new IssueOverrideVo();
             fillCuration(vo, override);
             vo.setMessageUid(override.getMessageUid());
@@ -150,25 +168,34 @@ public class IssueMemberListService {
      */
     @Transactional
     public List<IssueMemberVo> members(PublicationIssue issue, String lang) {
-        boolean frozenList = issue.getStatus() == IssueStatus.PUBLISHED
-                || issue.getStatus() == IssueStatus.RETIRED;
+        return members(issue, lang, resolutions.forIssue(issue, new Date()));
+    }
 
-        // Every curation decision on this issue, in one query and indexed by uid.
-        // The member's own foreign key answers for rows frozen after the override
-        // was taken; an imported row carries the decision without the link, and a
-        // live list has no member rows to hang a key on at all -- so the uid is
-        // the fallback, and it is the key every one of them shares.
-        Map<String, IssueOverride> overrides = new LinkedHashMap<>();
-        for (IssueOverride o : em.createQuery(
-                        "SELECT o FROM IssueOverride o LEFT JOIN FETCH o.author WHERE o.issue = :i",
-                        IssueOverride.class)
-                .setParameter("i", issue)
-                .getResultList()) {
-            overrides.put(o.getMessageUid(), o);
-        }
+    /**
+     * The same rows, off a resolution the caller already took.
+     *
+     * The overload exists because the issue screen asks three questions of one
+     * issue -- what is in it, what was left out, may it be published -- and each
+     * of them used to take its own resolve of the same document over the same
+     * interval. On an in-force series that is a second of work each, and worse
+     * than the cost: three resolves taken milliseconds apart can disagree, and
+     * then the rail's count and this list's length differ with nothing to say
+     * which one the publish would honour.
+     *
+     * @param pre the resolution the whole screen is being answered from. Its
+     *            instant is the one the rows are decided at
+     */
+    public List<IssueMemberVo> members(PublicationIssue issue, String lang,
+                                       IssueResolutionService.IssueResolution pre) {
+        // Every curation decision on this issue, indexed by uid. The member's own
+        // foreign key answers for rows frozen after the override was taken; an
+        // imported row carries the decision without the link, and a live list has
+        // no member rows to hang a key on at all -- so the uid is the fallback,
+        // and it is the key every one of them shares.
+        Map<String, IssueOverride> overrides = pre.overrides();
 
-        if (!frozenList) {
-            return liveMembers(issue, overrides, lang);
+        if (!pre.frozen()) {
+            return liveMembers(issue, pre, lang);
         }
 
         List<IssueMember> frozen = em.createQuery(
@@ -221,18 +248,13 @@ public class IssueMemberListService {
      * issue has no membership semantics or its criteria cannot resolve.
      */
     public Integer liveMemberCount(PublicationIssue issue) {
-        // Remembered briefly, keyed on the issue's version: the dashboard strip,
-        // the series list and the timeline all ask for the same open issue within
-        // seconds of each other, and an in-force resolve runs over the series'
-        // whole history. Curation bumps the version, so a decision is never served
-        // stale; a message published or withdrawn meanwhile shows up within the
-        // window, which is what a probe count can promise anyway.
-        String key = issue.getId() + ":" + issue.getVersion();
-        long now = System.currentTimeMillis();
-        CountedAt hit = liveCounts.get(key);
-        if (hit != null && now - hit.at() < LIVE_COUNT_TTL_MS) {
-            return hit.count();
-        }
+        // Resolved on every call, and never remembered. Each caller -- the series
+        // list, the strip, the timeline -- answers for the instant it was asked,
+        // and a count served from a moment ago is a count that can disagree with
+        // the member list rendered beside it. The resolve is cheap enough to
+        // afford that: the candidate query hands the rule scalar rows, and on an
+        // in-force series the liveness clause has already removed everything that
+        // could not qualify.
         Set<String> includes = new LinkedHashSet<>();
         Set<String> excludes = new LinkedHashSet<>();
         for (IssueOverride o : em.createQuery(
@@ -241,21 +263,12 @@ public class IssueMemberListService {
                 .getResultList()) {
             (o.getKind() == OverrideKind.INCLUDE ? includes : excludes).add(o.getMessageUid());
         }
-        MemberResolutionService.Resolution resolution = resolve(issue, includes, excludes);
-        Integer count = resolution == null ? null : resolution.members().size();
-        liveCounts.values().removeIf(c -> now - c.at() >= LIVE_COUNT_TTL_MS);
-        liveCounts.put(key, new CountedAt(count, now));
-        return count;
+        // The shared rule, without the author join-fetch the list needs: a count
+        // renders no why-line, and this runs once per open issue on the dashboard.
+        MemberResolutionService.Resolution resolution =
+                resolutions.resolutionOf(issue, new Date(), includes, excludes);
+        return resolution == null ? null : resolution.members().size();
     }
-
-    private record CountedAt(Integer count, long at) {
-    }
-
-    /** How long a live count is served without resolving again. */
-    static final long LIVE_COUNT_TTL_MS = 15_000L;
-
-    private final java.util.concurrent.ConcurrentHashMap<String, CountedAt> liveCounts =
-            new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * What an OPEN issue would contain if it were published now.
@@ -269,15 +282,10 @@ public class IssueMemberListService {
      * There is no drift half. Drift is the distance between a frozen fact and the
      * live one, and here there is only the live one.
      */
-    private List<IssueMemberVo> liveMembers(PublicationIssue issue, Map<String, IssueOverride> overrides,
-                                            String lang) {
-        Set<String> includes = new LinkedHashSet<>();
-        Set<String> excludes = new LinkedHashSet<>();
-        for (IssueOverride o : overrides.values()) {
-            (o.getKind() == OverrideKind.INCLUDE ? includes : excludes).add(o.getMessageUid());
-        }
-
-        MemberResolutionService.Resolution resolution = resolve(issue, includes, excludes);
+    private List<IssueMemberVo> liveMembers(PublicationIssue issue,
+                                            IssueResolutionService.IssueResolution pre, String lang) {
+        Map<String, IssueOverride> overrides = pre.overrides();
+        MemberResolutionService.Resolution resolution = pre.resolution();
         if (resolution == null) {
             return List.of();
         }
@@ -329,43 +337,6 @@ public class IssueMemberListService {
             out.add(vo);
         }
         return out;
-    }
-
-    /**
-     * The live resolution for an open issue, or null where the issue has no
-     * membership semantics at all.
-     *
-     * A null criteria document means NO QUERY, which is a different thing from an
-     * empty one -- resolving it would either raise or match the whole corpus. The
-     * curated branch is what the annexes need: a series with no criteria still has
-     * contents when somebody named them by hand.
-     */
-    private MemberResolutionService.Resolution resolve(PublicationIssue issue,
-                                                       Set<String> includes, Set<String> excludes) {
-        PublicationSeries series = issue.getSeries();
-        boolean queryBacked = series != null
-                && series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
-                && series.getTimeRelation() != null;
-        if (queryBacked) {
-            try {
-                ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue, domains);
-                if (criteria != null) {
-                    return resolver.resolve(criteria,
-                            new Interval(issue.getIntervalFrom(), new Date()), includes, excludes);
-                }
-            } catch (RuntimeException e) {
-                // A document that cannot resolve is a series-configuration problem
-                // and is reported as such by the criteria editor and the release
-                // rail. It is not a reason for this list to fail.
-                return null;
-            }
-        }
-        if (includes.isEmpty()) {
-            return null;
-        }
-        Set<String> curated = new LinkedHashSet<>(includes);
-        curated.removeAll(excludes);
-        return MemberResolutionService.Resolution.curated(curated);
     }
 
     /**

@@ -41,6 +41,7 @@ import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueDraftService;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.vo.IssueDraftVo;
+import org.niord.core.publication.series.vo.IssueOmissionsVo;
 import org.niord.core.user.UserService;
 import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.series.replay.DiagnosticReportService;
@@ -776,8 +777,15 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                                         String timeRelation, Boolean aliveAtCutoff) {
     }
 
-    /** The contract's probe cap: a sample, not a page. */
-    private static final int PROBE_SAMPLE = 50;
+    /**
+     * The contract's probe cap: a sample, not a page.
+     *
+     * Read from core rather than declared here, because the issue workbench's
+     * omissions panel caps the same misses of the same document. Two constants
+     * would show a reader fifty rows on one screen and a different fifty on the
+     * other, with only the counts beside them to say they disagree.
+     */
+    private static final int PROBE_SAMPLE = IssueOmissionsVo.PROBE_SAMPLE;
 
     /**
      * An enum from a client token, or a catalogued 400.

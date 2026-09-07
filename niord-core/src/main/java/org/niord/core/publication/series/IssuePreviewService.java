@@ -112,6 +112,33 @@ public class IssuePreviewService extends BaseService {
         return preview.get().renderedAt().before(memberSetChangedAt);
     }
 
+    /**
+     * Whether ANY of the issue's languages has a preview that predates its
+     * current member set -- or has none at all.
+     *
+     * The issue's own stamp moves on every edit and every curation, so it is what
+     * "current" is read against. Only meaningful for a series that renders a
+     * document: an uploaded or link-backed one has no preview to be stale, and
+     * warning about one nobody can generate is a warning nobody can clear.
+     *
+     * It lives here rather than beside each caller because it feeds the
+     * PREVIEW_FRESH rail row, and the rail is computed on three paths -- the
+     * publish gate, the checklist endpoint and the issue workbench. Three copies
+     * of one definition is three chances for the rail to warn on one screen and
+     * pass on another.
+     */
+    public boolean isStaleFor(PublicationIssue issue) {
+        if (issue.getSeries() == null || issue.getSeries().getReportId() == null) {
+            return false;
+        }
+        for (PublicationIssueDesc desc : issue.getDescs()) {
+            if (isStale(issue, desc.getLang(), issue.getUpdated())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Removes generations past the TTL. */
     public int sweep(Date now) {
         Path root = paths.previewRoot();
