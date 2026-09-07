@@ -221,6 +221,18 @@ public class IssueMemberListService {
      * issue has no membership semantics or its criteria cannot resolve.
      */
     public Integer liveMemberCount(PublicationIssue issue) {
+        // Remembered briefly, keyed on the issue's version: the dashboard strip,
+        // the series list and the timeline all ask for the same open issue within
+        // seconds of each other, and an in-force resolve runs over the series'
+        // whole history. Curation bumps the version, so a decision is never served
+        // stale; a message published or withdrawn meanwhile shows up within the
+        // window, which is what a probe count can promise anyway.
+        String key = issue.getId() + ":" + issue.getVersion();
+        long now = System.currentTimeMillis();
+        CountedAt hit = liveCounts.get(key);
+        if (hit != null && now - hit.at() < LIVE_COUNT_TTL_MS) {
+            return hit.count();
+        }
         Set<String> includes = new LinkedHashSet<>();
         Set<String> excludes = new LinkedHashSet<>();
         for (IssueOverride o : em.createQuery(
@@ -230,8 +242,20 @@ public class IssueMemberListService {
             (o.getKind() == OverrideKind.INCLUDE ? includes : excludes).add(o.getMessageUid());
         }
         MemberResolutionService.Resolution resolution = resolve(issue, includes, excludes);
-        return resolution == null ? null : resolution.members().size();
+        Integer count = resolution == null ? null : resolution.members().size();
+        liveCounts.values().removeIf(c -> now - c.at() >= LIVE_COUNT_TTL_MS);
+        liveCounts.put(key, new CountedAt(count, now));
+        return count;
     }
+
+    private record CountedAt(Integer count, long at) {
+    }
+
+    /** How long a live count is served without resolving again. */
+    static final long LIVE_COUNT_TTL_MS = 15_000L;
+
+    private final java.util.concurrent.ConcurrentHashMap<String, CountedAt> liveCounts =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * What an OPEN issue would contain if it were published now.

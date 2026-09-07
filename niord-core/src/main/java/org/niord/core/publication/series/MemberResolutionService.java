@@ -345,7 +345,7 @@ public class MemberResolutionService extends BaseService {
             query.distinct(true);
         }
 
-        return readAll(em.createQuery(query).getResultList(), criteria);
+        return readAll(em.createQuery(query).getResultList(), criteria, interval.cutoff());
     }
 
     /** Convenience for callers with no curation. */
@@ -612,7 +612,7 @@ public class MemberResolutionService extends BaseService {
         // MessageSearchParams.instantiate() and cannot reach a query built here.
         List<Message> rows = em.createQuery(query).getResultList();
 
-        return readAll(rows, criteria);
+        return readAll(rows, criteria, interval.cutoff());
     }
 
     /**
@@ -652,7 +652,7 @@ public class MemberResolutionService extends BaseService {
      * empty set and NOT a null: null is reserved for "not read", and the
      * predicate raises on it.
      */
-    private List<MessageFacts> readAll(List<Message> rows, ResolvedCriteria criteria) {
+    private List<MessageFacts> readAll(List<Message> rows, ResolvedCriteria criteria, Date cutoff) {
         List<String> uids = new ArrayList<>(rows.size());
         for (Message m : rows) {
             uids.add(m.getUid());
@@ -662,13 +662,20 @@ public class MemberResolutionService extends BaseService {
         Map<String, Set<String>> categories = criteria.readsCategories() ? categoryMrnsByUid(uids) : null;
         Map<String, Set<String>> charts = criteria.readsCharts() ? chartNumbersByUid(uids) : null;
 
-        // The withdrawal instant is read only for the rows whose status says they
-        // were withdrawn -- on a weekly candidate set that is a handful, on the
-        // whole corpus it is most of it, and either way it is one query per chunk
-        // rather than a history walk per row.
+        // The withdrawal instant is read only where it can change the verdict: a
+        // withdrawn row whose publishDateTo does NOT already fall before the
+        // cut-off. The date half excludes the rest on its own, and on an in-force
+        // series that rest is the whole history -- the P&T list has ~6,000
+        // candidates of which ~5,900 are long expired, so without this bound the
+        // history walk cost more than the resolve itself. With no cut-off in
+        // hand (the corpus-wide readers) every withdrawn row is read.
         List<String> withdrawnUids = new ArrayList<>();
         for (Message m : rows) {
-            if (m.getStatus() == Status.CANCELLED || m.getStatus() == Status.EXPIRED) {
+            boolean withdrawn = m.getStatus() == Status.CANCELLED || m.getStatus() == Status.EXPIRED;
+            boolean dateAlive = cutoff == null
+                    || m.getPublishDateTo() == null
+                    || !m.getPublishDateTo().before(cutoff);
+            if (withdrawn && dateAlive) {
                 withdrawnUids.add(m.getUid());
             }
         }
@@ -879,7 +886,7 @@ public class MemberResolutionService extends BaseService {
      * side reject everything and the comparison pass for the wrong reason.
      */
     public List<MessageFacts> factsFor(Collection<Message> messages, ResolvedCriteria criteria) {
-        return readAll(new ArrayList<>(messages), criteria);
+        return readAll(new ArrayList<>(messages), criteria, null);
     }
 
     /**
