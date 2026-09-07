@@ -68,6 +68,7 @@ import org.niord.core.publication.series.IntervalBoundSource;
 import org.niord.core.publication.series.PublicationSeriesService;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.StaleVersionGuard;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueEditService;
@@ -454,13 +455,28 @@ public class PublicationIssueRestService {
     }
 
     /**
-     * The same strip, for a DESK rather than for a named list.
+     * The same strip, for a DESK rather than for a named list -- and for BOTH
+     * kinds of series in one request.
      *
      * The dashboard knows which domain it is sitting at before it knows which
      * series that domain owns, so naming the series makes the strip WAIT for the
      * series list -- two round trips for data that is independent. Naming the
      * domain instead lets the two go out together, which is the 0.28 s of
      * serialisation this removes.
+     *
+     * ONE call, because one desk is one question. The dashboard draws two groups
+     * of card off the same domain -- the series with a calendar and the ones
+     * without -- and asking each separately paid the request floor twice to learn
+     * two halves of the same fact. `cadenced` is therefore OPTIONAL: omitted, the
+     * answer covers every series the desk owns and each series is asked the
+     * question that fits it, cells for the ones with a calendar and archive rows
+     * for the ones without. Given, it narrows to that one kind exactly as before,
+     * so a caller written against the narrower form keeps working unchanged.
+     *
+     * That is also why the two counts are separate parameters. A cadence-less
+     * series has no periods at all: its strip IS its archive and the card reports
+     * those rows as the series' whole issue count, so one number could not mean
+     * "eight weeks" and "a hundred editions" at once.
      *
      * ADMIN, unlike /recent, and that is the whole reason this is a second route
      * rather than a parameter on the first. "Which series does this desk own" is
@@ -471,14 +487,17 @@ public class PublicationIssueRestService {
      * become an enumeration of the estate either.
      *
      * An empty domain is an EMPTY ANSWER, never a refusal: a desk that owns no
-     * cadenced publication is a fact about the desk, and the dashboard fires this
-     * before it knows whether the desk owns anything, so a refusal would put an
-     * error banner on a page that is simply empty. A MISSING domain is refused,
-     * because that is the caller failing to bound a scan.
+     * scheduled publication is a fact about the desk, and the dashboard fires
+     * this before it knows whether the desk owns anything, so a refusal would put
+     * an error banner on a page that is simply empty. A MISSING domain is
+     * refused, because that is the caller failing to bound a scan.
      *
      * The series cap is a SLICE here rather than the refusal /recent gives:
      * refusing because a desk owns fifty-one series would blank its whole
-     * dashboard, where a caller that NAMED fifty-one chose the list itself.
+     * dashboard, where a caller that NAMED fifty-one chose the list itself. It
+     * bounds the ANSWER, so when both kinds come back it is the union that is
+     * sliced -- not each half separately, which would let one request return a
+     * hundred groups.
      */
     @GET
     @Path("/recent-by-domain")
@@ -487,26 +506,39 @@ public class PublicationIssueRestService {
     @NoCache
     @RolesAllowed(Roles.ADMIN)
     public List<IssueTimelineVo> recentByDomain(@QueryParam("domain") String domain,
-                                                @QueryParam("cadenced") @DefaultValue("true") boolean cadenced,
+                                                @QueryParam("cadenced") Boolean cadenced,
                                                 @QueryParam("periods") @DefaultValue("8") int periods,
+                                                @QueryParam("unscheduledIssues") @DefaultValue("100")
+                                                int unscheduledIssues,
                                                 @QueryParam("lang") String lang) {
         if (domain == null || domain.isBlank()) {
             throw new IssueLifecycleService.TransitionRefusedException("DOMAIN_REQUIRED",
                     "a domain is required; this endpoint never scans the estate");
         }
 
-        // Clamped rather than refused, as on /recent -- and against the ceiling
-        // that fits the question being asked. A cadence-less series has no periods
-        // at all: its strip IS its archive and the card reports those rows as the
-        // series' whole issue count, so clamping it to a year of weekly cells would
-        // not be a shorter answer but a wrong one.
-        int wanted = Math.min(Math.max(periods, 1),
-                cadenced ? MAX_TIMELINE_PERIODS : MAX_TIMELINE_ISSUES);
+        // Clamped rather than refused, as on /recent: a viewport width is not an
+        // assertion about the data, and failing the whole dashboard over one that
+        // does not fit would be a worse answer than a shorter strip.
+        //
+        // `periods` keeps the ceiling it is asked against today, which depends on
+        // whether a kind was named: a caller that says cadenced=false is asking
+        // for archive rows through the periods parameter, and clamping those to a
+        // year of weekly cells would not be a shorter answer but a wrong one.
+        int cells = Math.min(Math.max(periods, 1),
+                Boolean.FALSE.equals(cadenced) ? MAX_TIMELINE_ISSUES : MAX_TIMELINE_PERIODS);
+        int archiveRows = Math.min(Math.max(unscheduledIssues, 1), MAX_TIMELINE_ISSUES);
 
         Date now = new Date();
         List<IssueTimelineVo> out = new ArrayList<>();
         for (PublicationSeries series
                 : seriesService.findTimelineSeries(domain, cadenced, MAX_TIMELINE_SERIES)) {
+            // The count follows the SERIES when no kind was named, because the
+            // answer then holds both and one number cannot bound both. When a kind
+            // WAS named every row is that kind, and the caller's own parameter is
+            // the bound it asked with.
+            boolean hasCalendar = series.getCadence() != null
+                    && series.getCadence() != SeriesCadence.NONE;
+            int wanted = cadenced != null || hasCalendar ? cells : archiveRows;
             out.add(issueList.recent(series, wanted, now, lang));
         }
         return out;
@@ -523,10 +555,12 @@ public class PublicationIssueRestService {
      * bounds it.
      *
      * Its own ceiling because the two forms ask different questions of one
-     * endpoint. The dashboard asks a cadence-less series for a hundred rows and
-     * counts what comes back as the series' issue count, so the periods ceiling
-     * silently reported 52 for anything longer -- not bitten today, the longest
-     * unscheduled series has eleven editions, and not a bound to leave hidden.
+     * endpoint, and since they can now be asked in one request the two ceilings
+     * apply within one answer. The dashboard asks a cadence-less series for a
+     * hundred rows and counts what comes back as the series' issue count, so the
+     * periods ceiling would silently report 52 for anything longer -- not bitten
+     * today, the longest unscheduled series has eleven editions, and not a bound
+     * to leave hidden.
      */
     static final int MAX_TIMELINE_ISSUES = 200;
 

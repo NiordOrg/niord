@@ -412,6 +412,74 @@ public class IssueTimelineQueryTest {
                 "a desk that owns nothing must answer an empty list rather than the estate");
         assertTrue(seriesService.findTimelineSeries("  ", true, UNCAPPED).isEmpty(),
                 "a blank domain answered with something; this read never scans the estate");
+
+        // Unnarrowed: the whole desk, in one read. The dashboard draws both groups
+        // of card off one domain, so asking each half separately pays the round
+        // trip twice for one question.
+        List<String> both = seriesService
+                .findTimelineSeries(desk.getDomainId(), null, UNCAPPED).stream()
+                .map(PublicationSeries::getSeriesId).toList();
+        assertTrue(both.containsAll(cadenced),
+                "the unnarrowed read dropped series the scheduled read returns");
+        assertTrue(both.containsAll(unscheduledIds),
+                "the unnarrowed read dropped series the calendar-less read returns");
+        assertEquals(cadenced.size() + unscheduledIds.size(), both.size(),
+                "the unnarrowed read is not exactly the two halves; either a series is listed "
+                        + "twice -- two strips for one card -- or the two rules disagree about one");
+
+        // The cadence rank spans BOTH kinds, so the calendar-less series come last
+        // in one list rather than being a second list appended by the caller.
+        assertTrue(both.indexOf(weekly.getSeriesId()) < both.indexOf(yearly.getSeriesId()),
+                "the unnarrowed read is not ordered by how often the series comes out");
+        assertTrue(both.indexOf(yearly.getSeriesId()) < both.indexOf(unscheduled.getSeriesId()),
+                "a series with no calendar sorted ahead of a scheduled one; the dashboard reads "
+                        + "the scheduled cards first");
+
+        assertFalse(both.contains(imported.getSeriesId()),
+                "the unnarrowed read reaches rows neither narrowed read does");
+        assertFalse(both.contains(retired.getSeriesId()));
+        assertFalse(both.contains(oneOff.getSeriesId()));
+        assertFalse(both.contains(elsewhere.getSeriesId()),
+                "another desk's publication was listed for a desk that does not own it");
+
+        assertTrue(seriesService.findTimelineSeries("no-such-desk", null, UNCAPPED).isEmpty(),
+                "an unnarrowed read of a desk that owns nothing answered with something");
+    }
+
+    /**
+     * One answer, one cap -- not one cap per kind.
+     *
+     * The bound exists so a single request cannot become an enumeration of a
+     * desk's whole inventory. Applying it to each half of an unnarrowed read
+     * instead would quietly double what one request returns, and the caller
+     * receiving twice the documented maximum has no way to tell.
+     */
+    @Test
+    @Transactional
+    public void theSliceAppliesToTheUnionOfBothKinds() {
+        Domain desk = TestOwnerDomain.of(em);
+        series(SeriesCadence.WEEKLY, SeriesStatus.ACTIVE, desk);
+        series(SeriesCadence.YEARLY, SeriesStatus.ACTIVE, desk);
+        series(SeriesCadence.NONE, SeriesStatus.ACTIVE, desk);
+        series(SeriesCadence.NONE, SeriesStatus.ACTIVE, desk);
+        em.flush();
+
+        List<String> all = seriesService
+                .findTimelineSeries(desk.getDomainId(), null, UNCAPPED).stream()
+                .map(PublicationSeries::getSeriesId).toList();
+        assertTrue(all.size() > 2, "the fixture left nothing for the cap to truncate");
+
+        List<PublicationSeries> capped =
+                seriesService.findTimelineSeries(desk.getDomainId(), null, 2);
+        assertEquals(2, capped.size(),
+                "the cap was applied per kind rather than to the answer; one request then returns "
+                        + "twice the documented maximum");
+        assertEquals(all.subList(0, 2),
+                capped.stream().map(PublicationSeries::getSeriesId).toList(),
+                "the cap kept different series than the head of the reading order");
+        assertFalse(capped.get(0).getDescs().isEmpty(),
+                "the capped series lost its descs; the naming patterns are then read one query "
+                        + "per series");
     }
 
     /**

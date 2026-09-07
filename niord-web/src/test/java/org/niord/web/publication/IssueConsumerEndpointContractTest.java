@@ -18,6 +18,7 @@ package org.niord.web.publication;
 
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
@@ -39,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The three consumer endpoints: where they live, who may reach them, and what
@@ -77,6 +79,21 @@ public class IssueConsumerEndpointContractTest {
             }
         }
         return names;
+    }
+
+    /**
+     * The parameter itself, not just its name -- the declared type and the
+     * default are where "optional" is either kept or quietly lost.
+     */
+    private static Parameter queryParam(Method m, String name) {
+        for (Parameter p : m.getParameters()) {
+            QueryParam q = p.getAnnotation(QueryParam.class);
+            if (q != null && name.equals(q.value())) {
+                return p;
+            }
+        }
+        return fail(m.getName() + " declares no query parameter named " + name
+                + "; it has " + queryParams(m));
     }
 
     // ------------------------------------------------------------------ I27
@@ -222,6 +239,77 @@ public class IssueConsumerEndpointContractTest {
     public void theTimelineBoundsAreTheDocumentedOnes() {
         assertEquals(50, PublicationIssueRestService.MAX_TIMELINE_SERIES);
         assertEquals(52, PublicationIssueRestService.MAX_TIMELINE_PERIODS);
+        assertEquals(200, PublicationIssueRestService.MAX_TIMELINE_ISSUES);
+    }
+
+    /**
+     * The desk strip is ADMIN, is bounded by a domain, and carries a bound for
+     * each kind of series it can answer for.
+     *
+     * The two counts mean different things -- weeks of calendar against editions
+     * of an archive -- so one parameter could not bound both, and a desk read that
+     * answers for both kinds in one request has to hold both at once.
+     */
+    @Test
+    public void theDeskStripIsAdminAndBoundsEachKindSeparately() {
+        Method byDomain = endpoint("recentByDomain");
+        assertNotNull(byDomain.getAnnotation(GET.class));
+        assertEquals("/recent-by-domain", byDomain.getAnnotation(Path.class).value());
+
+        assertNull(byDomain.getAnnotation(PermitAll.class),
+                "the desk strip became anonymous; 'which series does this desk own' is an "
+                        + "admin question and this answers it");
+        RolesAllowed roles = byDomain.getAnnotation(RolesAllowed.class);
+        assertNotNull(roles, "an unguarded desk strip is an anonymous one");
+        assertTrue(Arrays.asList(roles.value()).contains(Roles.ADMIN),
+                "expected the admin tier, got " + Arrays.toString(roles.value()));
+
+        Set<String> params = queryParams(byDomain);
+        assertTrue(params.contains("domain"),
+                "the desk strip must be told which desk; without it this scans the estate");
+        assertFalse(params.contains("publicationSeriesId"),
+                "naming the series here reintroduces the wait on the series list this route "
+                        + "exists to remove");
+        assertTrue(params.contains("periods"),
+                "the scheduled half is bounded in periods; got " + params);
+        assertTrue(params.contains("unscheduledIssues"),
+                "the calendar-less half is bounded in editions, and periods cannot mean both; "
+                        + "got " + params);
+    }
+
+    /**
+     * `cadenced` is OPTIONAL, and optional means the parameter has no default.
+     *
+     * A boxed Boolean with no @DefaultValue is the only shape that lets the
+     * endpoint tell "narrow to the scheduled series" apart from "answer for the
+     * whole desk". A primitive, or a default of any kind, silently turns the
+     * unnarrowed request back into a narrowed one -- and the caller gets a
+     * perfectly ordinary answer that is missing half the desk.
+     */
+    @Test
+    public void theDeskStripTreatsAnAbsentKindAsBothKinds() {
+        // Missing entirely fails inside the lookup: old callers that narrow to one
+        // kind send this parameter, and dropping it breaks them.
+        Parameter cadenced = queryParam(endpoint("recentByDomain"), "cadenced");
+
+        assertEquals(Boolean.class, cadenced.getType(),
+                "a primitive cannot be absent, so an unnarrowed request would be read as "
+                        + "cadenced=false and answer for half the desk");
+        assertNull(cadenced.getAnnotation(DefaultValue.class),
+                "a default makes the parameter present on every request, which is the same "
+                        + "defect as a primitive wearing a different annotation");
+    }
+
+    /** The counts that bound the desk strip default to the documented ones. */
+    @Test
+    public void theDeskStripCountsCarryTheirDocumentedDefaults() {
+        Method byDomain = endpoint("recentByDomain");
+        assertEquals("8", queryParam(byDomain, "periods").getAnnotation(DefaultValue.class).value(),
+                "the strip's default width changed; the dashboard renders a different card");
+        assertEquals("100",
+                queryParam(byDomain, "unscheduledIssues").getAnnotation(DefaultValue.class).value(),
+                "the archive default changed; the card counts what comes back as the series' "
+                        + "whole issue count");
     }
 
     // ------------------------------------------------------------------ curation

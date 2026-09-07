@@ -19,6 +19,7 @@ package org.niord.core.publication.series;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.FlushModeType;
+import jakarta.persistence.TypedQuery;
 import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.service.BaseService;
@@ -115,12 +116,16 @@ public class PublicationSeriesService extends BaseService {
     /**
      * The series one desk's period strip is drawn for.
      *
-     * The SAME set the admin list shows, narrowed to the ones with a calendar or
-     * to the ones without: the strip and the card grid are two halves of one
-     * screen, and a server that picked a different set would leave cards with no
-     * strip and strips with no card. The rule is written here, once, rather than
-     * copied out of the frontend -- where it lives today -- because the two
-     * drifting apart is a per-desk failure nothing reports.
+     * The SAME set the admin list shows -- narrowed to the ones with a calendar,
+     * to the ones without, or neither: the strip and the card grid are two halves
+     * of one screen, and a server that picked a different set would leave cards
+     * with no strip and strips with no card. The rule is written here, once,
+     * rather than copied out of the frontend -- where it lives today -- because
+     * the two drifting apart is a per-desk failure nothing reports.
+     *
+     * The reading ORDER already spans both kinds: CADENCE_ORDER ends at NONE, so
+     * an unnarrowed read comes back weeklies first and the calendar-less series
+     * last, which is the order the dashboard draws its two card groups in.
      *
      * Narrowed by OWNER, which is the admin list's rule and not the picker's. A
      * publication is listed in its owner domain and nowhere else -- that is the
@@ -129,13 +134,20 @@ public class PublicationSeriesService extends BaseService {
      * would arrive with no card to hang on.
      *
      * @param cadenced true for the series with a schedule, false for the ones
-     *                 without -- the dashboard asks each a different question
+     *                 without -- the dashboard asks each a different question --
+     *                 and NULL for both in one read. Both is what a dashboard
+     *                 drawing both kinds of card actually wants: asking twice
+     *                 pays the round trip twice for one question, and the two
+     *                 answers are then a union assembled on the client, where
+     *                 the cap below cannot see it
      * @param limit    the most series one strip request answers for. A SLICE, not
      *                 a refusal: a desk owning more than this wants the strips it
      *                 can have, where a named-series request rightly refuses
-     *                 because the CALLER chose the list
+     *                 because the CALLER chose the list. Applied to the UNION when
+     *                 both kinds are asked for, so the bound stays a bound on the
+     *                 answer rather than one per half
      */
-    public List<PublicationSeries> findTimelineSeries(String domainId, boolean cadenced, int limit) {
+    public List<PublicationSeries> findTimelineSeries(String domainId, Boolean cadenced, int limit) {
         if (domainId == null || domainId.isBlank()) {
             return List.of();
         }
@@ -144,18 +156,25 @@ public class PublicationSeriesService extends BaseService {
         // page in memory, and the descs are primed below on the rows that survive
         // the cap. That also removes the lazy load per series the naming patterns
         // used to trigger, one round trip each.
-        List<PublicationSeries> found = em.createQuery(
+        TypedQuery<PublicationSeries> query = em.createQuery(
                         "SELECT s FROM PublicationSeries s WHERE s.domain.domainId = :domain "
                                 + "AND s.kind <> :oneOff "
-                                + "AND (s.status = :active OR (s.status = :draft AND s.importSource IS NULL)) "
-                                + "AND s.cadence " + (cadenced ? "<>" : "=") + " :none",
+                                + "AND (s.status = :active OR (s.status = :draft AND s.importSource IS NULL))"
+                                // No cadence predicate at all when both kinds are wanted --
+                                // rather than the pair of reads concatenated -- so the sort and
+                                // the cap below see one list and the cap bounds the answer.
+                                + (cadenced == null
+                                        ? ""
+                                        : " AND s.cadence " + (cadenced ? "<>" : "=") + " :none"),
                         PublicationSeries.class)
                 .setParameter("domain", domainId.trim())
                 .setParameter("oneOff", SeriesKind.ONE_OFF)
                 .setParameter("active", SeriesStatus.ACTIVE)
-                .setParameter("draft", SeriesStatus.DRAFT)
-                .setParameter("none", SeriesCadence.NONE)
-                .getResultList();
+                .setParameter("draft", SeriesStatus.DRAFT);
+        if (cadenced != null) {
+            query.setParameter("none", SeriesCadence.NONE);
+        }
+        List<PublicationSeries> found = query.getResultList();
 
         List<PublicationSeries> ordered = new ArrayList<>(found);
         // Ties break on the stable id rather than on the localized name the cards
