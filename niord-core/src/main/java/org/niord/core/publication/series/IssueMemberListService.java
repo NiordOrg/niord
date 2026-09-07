@@ -212,6 +212,28 @@ public class IssueMemberListService {
     }
 
     /**
+     * How many members an OPEN issue would have if it were published now.
+     *
+     * The list's count for an open issue. The column holds what the freeze wrote
+     * or what the import copied off a legacy tag, and neither is what the issue
+     * contains today: a native open issue reports 0 while the week fills up, an
+     * imported one reports the tag as it stood at the backup. Null where the
+     * issue has no membership semantics or its criteria cannot resolve.
+     */
+    public Integer liveMemberCount(PublicationIssue issue) {
+        Set<String> includes = new LinkedHashSet<>();
+        Set<String> excludes = new LinkedHashSet<>();
+        for (IssueOverride o : em.createQuery(
+                        "SELECT o FROM IssueOverride o WHERE o.issue = :i", IssueOverride.class)
+                .setParameter("i", issue)
+                .getResultList()) {
+            (o.getKind() == OverrideKind.INCLUDE ? includes : excludes).add(o.getMessageUid());
+        }
+        MemberResolutionService.Resolution resolution = resolve(issue, includes, excludes);
+        return resolution == null ? null : resolution.members().size();
+    }
+
+    /**
      * What an OPEN issue would contain if it were published now.
      *
      * A PROBE, not a record. Nothing is written: no member row, no snapshot, no

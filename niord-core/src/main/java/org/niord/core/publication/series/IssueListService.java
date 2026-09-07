@@ -67,7 +67,63 @@ public class IssueListService {
      * rather than reconciling two.
      */
     public IssueListResultVo forSeries(PublicationSeries series, Date now) {
-        return build(series, issuesOf(series), now);
+        List<PublicationIssue> issues = issuesOf(series);
+        IssueListResultVo out = build(series, issues, now);
+        liveCountsInto(out, issues);
+        return out;
+    }
+
+    @Inject
+    IssueMemberListService memberList;
+
+    /**
+     * An OPEN row reports the live count, as the contract says it does.
+     *
+     * The column holds what the freeze wrote or what the import copied off a
+     * legacy tag. For an open issue neither is today's answer: a native one reads
+     * 0 while the week fills up, an imported one reads the tag as it stood at the
+     * backup -- and the same screen's detail view resolves live, so the two numbers
+     * disagreed on the one issue anybody is working on. Resolved per open issue,
+     * of which a series has one at a time.
+     */
+    private void liveCountsInto(IssueListResultVo out, List<PublicationIssue> issues) {
+        Map<String, Integer> live = liveCounts(issues);
+        if (live.isEmpty()) {
+            return;
+        }
+        for (SystemPublicationIssueVo row : out.getData()) {
+            Integer n = live.get(row.getPublicId());
+            if (n != null) {
+                row.setMemberCount(n);
+            }
+        }
+    }
+
+    private void liveCountsInto(IssueTimelineVo out, List<PublicationIssue> issues) {
+        Map<String, Integer> live = liveCounts(issues);
+        if (live.isEmpty()) {
+            return;
+        }
+        for (IssueTimelineRowVo row : out.getRows()) {
+            Integer n = live.get(row.getPublicId());
+            if (n != null) {
+                row.setMemberCount(n);
+            }
+        }
+    }
+
+    private Map<String, Integer> liveCounts(List<PublicationIssue> issues) {
+        Map<String, Integer> live = new LinkedHashMap<>();
+        for (PublicationIssue issue : issues) {
+            if (issue.getStatus() == IssueStatus.OPEN
+                    && issue.getMembershipProvenance() != MembershipProvenance.NO_MEMBERSHIP) {
+                Integer n = memberList.liveMemberCount(issue);
+                if (n != null) {
+                    live.put(issue.getPublicId(), n);
+                }
+            }
+        }
+        return live;
     }
 
     /**
@@ -90,7 +146,9 @@ public class IssueListService {
         int from = (int) Math.min(offset, all.size());
         int to = (int) Math.min(offset + size, all.size());
 
-        IssueListResultVo out = build(series, all.subList(from, to), now);
+        List<PublicationIssue> slice = all.subList(from, to);
+        IssueListResultVo out = build(series, slice, now);
+        liveCountsInto(out, slice);
         // total is the whole archive, not the page: a pager divides this number
         // into pages, and reporting the page's own length would leave every list
         // claiming to be one page long.
@@ -115,7 +173,10 @@ public class IssueListService {
      * all -- the gate closes on NO_CADENCE and says so.
      */
     public IssueTimelineVo recent(PublicationSeries series, int periods, Date now, String lang) {
-        return buildRecent(series, issuesOf(series), periods, now, lang);
+        List<PublicationIssue> issues = issuesOf(series);
+        IssueTimelineVo out = buildRecent(series, issues, periods, now, lang);
+        liveCountsInto(out, issues);
+        return out;
     }
 
     /**

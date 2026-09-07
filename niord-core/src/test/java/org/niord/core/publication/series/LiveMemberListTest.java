@@ -30,6 +30,8 @@ import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueMemberVo;
+import org.niord.core.publication.series.vo.IssueTimelineRowVo;
+import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.user.User;
 import org.niord.model.message.MainType;
@@ -66,6 +68,9 @@ public class LiveMemberListTest {
 
     @Inject
     IssueMemberListService memberList;
+
+    @Inject
+    IssueListService issueList;
 
     @Inject
     IssueCurationService curation;
@@ -290,5 +295,41 @@ public class LiveMemberListTest {
         assertEquals("Hals Barre. Fyr slukket.",
                 memberList.members(i, "de").get(0).getTitle(),
                 "a language the message is not written in falls back to one it is");
+    }
+
+    /**
+     * The list reports the live count for an open issue, as the contract says.
+     *
+     * The column is what the freeze wrote or what the import copied off a legacy
+     * tag; an open issue has had neither happen to it yet. Left as the column, a
+     * native open issue read 0 while the week filled up and an imported one read
+     * the tag as it stood at the backup -- 9 on uge 36/2026 while the detail view
+     * beside it resolved 10 -- so the same screen gave two answers to one question.
+     */
+    @Test
+    @Transactional
+    public void theListReportsTheLiveCountForAnOpenIssue() {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        message("NM-001");
+        message("NM-002");
+        // A stale column, as an import leaves it.
+        i.setMemberCount(9);
+        em.flush();
+
+        List<SystemPublicationIssueVo> rows = issueList.forSeries(s, new Date(OPENS.getTime() + WEEK)).getData();
+        SystemPublicationIssueVo open = rows.stream()
+                .filter(r -> i.getPublicId().equals(r.getPublicId())).findFirst().orElseThrow();
+        assertEquals(Integer.valueOf(2), open.getMemberCount(),
+                "the open row reported the column, not what the issue contains today");
+        assertEquals(Integer.valueOf(2), memberList.liveMemberCount(i));
+
+        IssueTimelineRowVo cell = issueList.recent(s, 4, new Date(OPENS.getTime() + WEEK), "da").getRows().stream()
+                .filter(r -> i.getPublicId().equals(r.getPublicId())).findFirst().orElseThrow();
+        assertEquals(Integer.valueOf(2), cell.getMemberCount(), "the timeline cell must agree with the list");
+
+        // Nothing was written by asking.
+        assertEquals(0L, em.createQuery("SELECT COUNT(x) FROM IssueMember x WHERE x.issue = :i", Long.class)
+                .setParameter("i", i).getSingleResult());
     }
 }

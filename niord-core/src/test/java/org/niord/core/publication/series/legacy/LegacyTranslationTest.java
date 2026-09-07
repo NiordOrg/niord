@@ -30,6 +30,7 @@ import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.PublicationStatus;
 
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -771,5 +773,63 @@ public class LegacyTranslationTest {
         assertEquals(1002, weeklies,
                 "the two weekly series are 1,002 of the estate's 1,077 rows; a different number "
                         + "means the grouping moved rather than the mapping");
+    }
+
+    // ------------------------------------------------ the regime is the newest edition's
+
+    /**
+     * A series resolves under its NEWEST edition's filter, not its template's.
+     *
+     * The weekly EfS template carries no filter -- the sticky regime it was made
+     * with in 2017, 111 editions -- while the 382 editions since carry the phase
+     * filter. Read off the template the series says aliveAtCutoff = false, and its
+     * open issue keeps every cancelled notice legacy has dropped (uge 36/2026,
+     * NM-814-26). Read off the newest edition it says what the desk does today.
+     * Every other template agrees with its own newest edition, so this is the one
+     * series the rule moves.
+     */
+    @Test
+    public void theSeriesRegimeIsTheNewestEditionsNotTheTemplates() {
+        List<Publication> all = LegacyEstateFixture.publications();
+        Publication weekly = LegacyEstateFixture.templates().stream()
+                .filter(t -> "a8e661ee-49b8-45ea-a176-952e99253fec".equals(t.getPublicationId()))
+                .findFirst().orElseThrow();
+        assertTrue(weekly.getMessageTagFilter() == null || weekly.getMessageTagFilter().isBlank(),
+                "fixture drift: the weekly EfS template now carries a filter of its own");
+
+        PublicationSeries offTemplate = LegacySeriesTranslation.translate(weekly, "weekly-ntm", SOURCE);
+        assertEquals(Boolean.FALSE, offTemplate.getAliveAtCutoff(),
+                "the template alone is the sticky regime; if this moved, the fixture moved");
+
+        Publication regime = LegacySeriesTranslation.regimeSourceOf(weekly, all);
+        assertNotSame(weekly, regime, "the template has editions, so it is not its own regime");
+        assertEquals(PublicationStatus.RECORDING, regime.getStatus(),
+                "the newest edition of the weekly is the one still recording");
+
+        PublicationSeries offNewest = LegacySeriesTranslation.translate(weekly, "weekly-ntm", SOURCE, regime);
+        assertEquals(Boolean.TRUE, offNewest.getAliveAtCutoff(),
+                "the live weekly regime filters on liveness: cancelled before the cut-off means out");
+        assertEquals(TimeRelation.PUBLISHED_IN_INTERVAL, offNewest.getTimeRelation());
+
+        for (Publication t : LegacyEstateFixture.templates()) {
+            // A redirected template produces no series: its editions are filed
+            // under the destination, whose regime is decided by its own editions.
+            if (weekly.getPublicationId().equals(t.getPublicationId())
+                    || LegacyTemplateRulings.destinationFor(t.getPublicationId()) != null) {
+                continue;
+            }
+            PublicationSeries a = LegacySeriesTranslation.translate(t, "id", SOURCE);
+            PublicationSeries b = LegacySeriesTranslation.translate(t, "id", SOURCE,
+                    LegacySeriesTranslation.regimeSourceOf(t, all));
+            assertEquals(a.getAliveAtCutoff(), b.getAliveAtCutoff(),
+                    t.getPublicationId() + ": the template and its newest edition disagree on liveness");
+            assertEquals(a.getTimeRelation(), b.getTimeRelation(),
+                    t.getPublicationId() + ": the template and its newest edition disagree on the relation");
+        }
+
+        // A template with no editions is its own regime.
+        Publication lonely = new Publication();
+        lonely.setPublicationId("no-editions");
+        assertSame(lonely, LegacySeriesTranslation.regimeSourceOf(lonely, all));
     }
 }

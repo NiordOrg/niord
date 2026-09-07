@@ -235,8 +235,52 @@ public final class LegacySeriesTranslation {
         return c.get(java.util.Calendar.YEAR);
     }
 
-    /** Builds the series. Never persists; the caller decides that. */
+    /** Builds the series from the template alone. Never persists; the caller decides that. */
     public static PublicationSeries translate(Publication template, String seriesId, String importSource) {
+        return translate(template, seriesId, importSource, null);
+    }
+
+    /**
+     * The publication whose filter says how the series resolves TODAY.
+     *
+     * A template outlives its own filter. The weekly EfS template carries none --
+     * the sticky regime of 2017 -- while every edition since 2019 carries the
+     * phase filter, so a series read off the template alone resolves its open
+     * issue under a regime the desk left six years ago: cancelled notices stay in
+     * (R-xxxii found it on uge 36/2026, where NM-814-26 was kept while legacy
+     * had dropped it). The regime is the NEWEST edition filed under the template;
+     * a template with no editions is its own regime.
+     *
+     * Newest by publishDateFrom, then created, then id -- a total order, so two
+     * imports of one estate pick the same edition.
+     */
+    public static Publication regimeSourceOf(Publication template, List<Publication> publications) {
+        Publication newest = null;
+        for (Publication p : publications) {
+            if (p.getTemplate() == null
+                    || !template.getPublicationId().equals(p.getTemplate().getPublicationId())) {
+                continue;
+            }
+            if (newest == null || NEWEST.compare(p, newest) > 0) {
+                newest = p;
+            }
+        }
+        return newest == null ? template : newest;
+    }
+
+    private static final java.util.Comparator<Publication> NEWEST = java.util.Comparator
+            .comparing(Publication::getPublishDateFrom, java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder()))
+            .thenComparing(Publication::getCreated, java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder()))
+            .thenComparing(Publication::getPublicationId, java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder()));
+
+    /**
+     * Builds the series. Never persists; the caller decides that.
+     *
+     * @param regime the edition whose filter defines the live query regime (see
+     *               {@link #regimeSourceOf}), or null to read it off the template
+     */
+    public static PublicationSeries translate(Publication template, String seriesId, String importSource,
+                                              Publication regime) {
         PublicationSeries series = new PublicationSeries();
 
         series.setSeriesId(seriesId);
@@ -267,8 +311,12 @@ public final class LegacySeriesTranslation {
         // also what detects a filter nobody has taught the importer about, and that
         // refusal has to hold for every publication -- an unknown filter on a link
         // publication is still an estate the importer does not understand.
-        LegacyFilterTranslator.Translation t =
-                LegacyFilterTranslator.translate(template.getMessageTagFilter());
+        LegacyFilterTranslator.translate(template.getMessageTagFilter());
+        // The regime is the newest edition's, not the template's: the template
+        // is where the series came from, the newest edition is how it resolves
+        // now. Both filters are translated, so an unknown one on either refuses.
+        LegacyFilterTranslator.Translation t = LegacyFilterTranslator.translate(
+                (regime == null ? template : regime).getMessageTagFilter());
         if (series.getContentMode() == ContentMode.GENERATED_FROM_QUERY) {
             series.setTimeRelation(t.timeRelation());
             series.setAliveAtCutoff(t.aliveAtCutoff());

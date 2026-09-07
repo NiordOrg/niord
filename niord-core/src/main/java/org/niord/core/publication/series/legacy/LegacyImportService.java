@@ -490,7 +490,7 @@ public class LegacyImportService extends BaseService {
         planAlreadyImported(plan, templates, publications);
         planCategories(plan, templates, publications);
         long t1 = System.nanoTime();
-        Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates, authored);
+        Map<String, PublicationSeries> seriesByTemplate = planSeries(plan, templates, publications, authored);
         long t2 = System.nanoTime();
         planOrphanSeries(plan, publications, seriesByTemplate, authored);
         long t3 = System.nanoTime();
@@ -775,6 +775,7 @@ public class LegacyImportService extends BaseService {
      * ruling.
      */
     private Map<String, PublicationSeries> planSeries(Plan plan, List<Publication> templates,
+                                                      List<Publication> publications,
                                                       Set<String> authored) {
         Map<String, PublicationSeries> byTemplate = new LinkedHashMap<>();
         List<Publication> redirected = new ArrayList<>();
@@ -786,8 +787,11 @@ public class LegacyImportService extends BaseService {
             }
             try {
                 String seriesId = LegacySeriesTranslation.authorSeriesId(template, authored);
-                PublicationSeries series =
-                        LegacySeriesTranslation.translate(template, seriesId, importSource());
+                // The query regime comes from the newest edition, not the template:
+                // the weekly EfS template still carries 2017's blank filter while
+                // its editions have carried the phase filter since 2019.
+                PublicationSeries series = LegacySeriesTranslation.translate(template, seriesId, importSource(),
+                        LegacySeriesTranslation.regimeSourceOf(template, publications));
                 LegacySeriesTranslation.assertReportSettingsAreComplete(
                         series, template.getPublicationId());
                 assertReferencesResolve(plan, template, series);
