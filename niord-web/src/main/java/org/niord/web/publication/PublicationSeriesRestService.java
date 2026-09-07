@@ -769,8 +769,14 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // -- serialised on a path the editor fires while somebody is still typing,
         // to answer a question nobody asked. Fifty is enough to see the shape of
         // what is being dropped; missCount is what says how much there is.
-        out.put("missCount", resolution.misses().size());
-        out.put("misses", resolution.misses().stream().limit(PROBE_SAMPLE).toList());
+        //
+        // Capped AND labelled by the resolver, which is where the issue workbench's
+        // omissions panel gets its rows too: the short id each row carries is
+        // filled in one query over the capped uids, and building the two lists
+        // separately here is how the two screens would come to disagree.
+        IssueOmissionsVo omissions = memberResolver.omissions(resolution.misses());
+        out.put("missCount", omissions.getMissCount());
+        out.put("misses", omissions.getMisses());
         return out;
     }
 

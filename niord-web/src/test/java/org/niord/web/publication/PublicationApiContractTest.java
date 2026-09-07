@@ -423,6 +423,78 @@ public class PublicationApiContractTest {
                 "DRAFT became public; the derived set feeds an anonymous endpoint");
     }
 
+    /**
+     * A release renders. There is no option not to, and no endpoint reads one.
+     *
+     * The option let a release ship bytes that were rendered at some earlier
+     * moment -- before a member was curated in or out -- so a published document
+     * and the frozen member rows of the same issue could disagree, with nothing
+     * to say which one was the publication. Removing it from the service is only
+     * half the job: an endpoint still reading the key would go on accepting a
+     * body that says something the system no longer does, and a client would
+     * keep sending it believing it meant something.
+     *
+     * Source-level, because this module has no container tests: there is nowhere
+     * else a body key that is read but ignored could be caught.
+     *
+     * CODE only -- the comments are stripped first. What is forbidden is an
+     * endpoint that READS the key, in any of the shapes that can read one: a
+     * quoted key off a map body, a record component, a parameter. Prose is free to
+     * explain why the option is gone, and the sticky-upload note nearby has to.
+     */
+    @Test
+    public void noEndpointReadsARegenerateOption() throws IOException {
+        // Any inflection, because the code has no reason to name the thing at all
+        // -- and "regenerated" reading the same body key would otherwise slip past
+        // a guard that only knew the infinitive.
+        Pattern key = Pattern.compile("\\bregenerat\\w*", Pattern.CASE_INSENSITIVE);
+        for (String file : List.of("src/main/java/org/niord/web/publication/PublicationIssueRestService.java",
+                "src/main/java/org/niord/web/publication/OneOffRestService.java")) {
+            String code = withoutComments(read(file));
+            assertFalse(key.matcher(code).find(),
+                    file + " still reads a regenerate option. A release always renders the member "
+                            + "list it freezes; a body key that is read and ignored is worse than one "
+                            + "that is refused, because the caller cannot tell.");
+        }
+    }
+
+    /**
+     * The source with its comments blanked out, so a source-level guard checks
+     * what the code does rather than how it is spelled in prose.
+     *
+     * The line-comment rule skips a "//" that follows a colon, which is the one
+     * place a scheme in a string literal looks like the start of a comment.
+     */
+    private static String withoutComments(String source) {
+        return source
+                .replaceAll("(?s)/\\*.*?\\*/", " ")
+                .replaceAll("(?m)(?<!:)//.*$", " ");
+    }
+
+    /**
+     * Both dialogs that can name an issue have somewhere to put the name.
+     *
+     * The create dialog prefills the series' suggestions and the release dialog
+     * is the last moment a name can still change -- from there it is on the
+     * document and in every citation. The create body is a record, so its shape
+     * is readable here; the publish body is a map, so what is pinned is that the
+     * endpoint reads the key at all.
+     */
+    @Test
+    public void theCreateAndReleaseBodiesBothCarryNames() throws IOException {
+        List<String> components =
+                Arrays.stream(PublicationIssueRestService.CreateIssueRequest.class.getRecordComponents())
+                        .map(RecordComponent::getName).toList();
+        assertTrue(components.contains("names"),
+                "the create body carries no names, so an issue can only be renamed by a second request "
+                        + "-- and between the two it is listed under a name nobody chose");
+
+        String issues = read("src/main/java/org/niord/web/publication/PublicationIssueRestService.java");
+        assertTrue(issues.contains("nameMap(params)"),
+                "the publish endpoint no longer reads the names off its body, so the release dialog's "
+                        + "name field would be accepted and dropped");
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static String read(String path) throws IOException {

@@ -173,6 +173,54 @@ public class IssueEditTest {
         assertEquals("NO_SUCH_LANGUAGE", e.code());
     }
 
+    /**
+     * The names an admin corrected on the create dialog, applied at create.
+     *
+     * This is the sequence the create endpoint performs: the issue is created,
+     * which derives the suggested name from the series' pattern, and the names
+     * the dialog carried are then applied THROUGH THE RENAME. Applying them any
+     * other way would set the name without marking it as a decision, and the next
+     * interval change would put the suggestion back over a name somebody typed --
+     * silently, and on an issue they had already gone looking for by that name.
+     *
+     * Creating and then renaming as two requests would leave a window in which
+     * the issue is listed under a name nobody chose, which is what the optional
+     * map on the create body removes.
+     */
+    @Test
+    @Transactional
+    public void namesGivenAtCreateAreAppliedThroughTheRenamePath() {
+        PublicationIssue issue = anIssue();
+        String suggested = issue.getDescs().get(0).getName();
+        assertNotNull(suggested, "the create derived no name, so there is nothing to correct");
+
+        editService.applyNames(issue, Map.of("da", "  EfS uge 44 (dobbeltuge)  "), user());
+        em.flush();
+
+        PublicationIssueDesc desc = issue.getDescs().get(0);
+        assertEquals("EfS uge 44 (dobbeltuge)", desc.getName(), "the name was not applied, or not trimmed");
+        assertTrue(desc.isNameOverridden(),
+                "a name corrected at create that does not mark itself as one is put back by the first "
+                        + "interval change");
+        assertTrue(actions(issue).contains(AuditAction.NAME_CHANGED),
+                "the issue was created under a name somebody typed and nothing in the trail says so");
+    }
+
+    /** A blank name at create is refused with the code the edit path answers. */
+    @Test
+    @Transactional
+    public void aBlankNameGivenAtCreateIsRefused() {
+        PublicationIssue issue = anIssue();
+        String suggested = issue.getDescs().get(0).getName();
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> editService.applyNames(issue, Map.of("da", "  "), user()));
+        assertEquals("NAME_BLANK", e.code());
+        assertEquals(suggested, issue.getDescs().get(0).getName(),
+                "the refused name was written anyway");
+    }
+
     /** Renaming to the value it already holds writes no history. */
     @Test
     @Transactional

@@ -21,7 +21,6 @@ import jakarta.inject.Inject;
 import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import org.niord.core.message.Message;
-import org.niord.core.message.MessageService;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.resolve.Interval;
 import org.niord.core.publication.series.resolve.IssueNaming;
@@ -105,7 +104,7 @@ public class IssuePublishService extends BaseService {
     IssuePreviewService previews;
 
     @Inject
-    MessageService messageService;
+    IssueMessageLoader messageLoader;
 
     @Inject
     PublicationPathService paths;
@@ -113,15 +112,33 @@ public class IssuePublishService extends BaseService {
     @Inject
     IssueAuditService audit;
 
-    /** What the caller asked for. */
+    @Inject
+    IssueEditService edits;
+
+    /**
+     * What the caller asked for.
+     *
+     * `names` is lang to name and is optional: the release dialog is the last
+     * place an issue can still be renamed, because the name goes onto the
+     * document and into every citation the moment this runs. Absent, and a
+     * language absent from it, leave the name alone. A name given here is a name
+     * somebody TYPED, so it travels through the ordinary rename path -- it stops
+     * tracking the interval and it is recorded -- rather than being written onto
+     * the desc here, where neither would happen.
+     */
     public record PublishRequest(
-            boolean regenerate,
             Set<String> acknowledgedWarnings,
             User actor,
-            Date explicitStamp) {
+            Date explicitStamp,
+            Map<String, String> names) {
+
+        /** The three-field form, for a caller that is not renaming anything. */
+        public PublishRequest(Set<String> acknowledgedWarnings, User actor, Date explicitStamp) {
+            this(acknowledgedWarnings, actor, explicitStamp, null);
+        }
 
         public static PublishRequest manual(User actor) {
-            return new PublishRequest(true, Set.of(), actor, null);
+            return new PublishRequest(Set.of(), actor, null);
         }
 
         /**
@@ -151,7 +168,6 @@ public class IssuePublishService extends BaseService {
      * the one thing this action must not do.
      */
     public record AmendRequest(
-            boolean regenerate,
             Set<String> acknowledgedWarnings,
             User actor,
             String reason) {
@@ -263,6 +279,15 @@ public class IssuePublishService extends BaseService {
                 checklist.compute(issue, stamp, false, previews.isStaleFor(issue));
         refuseBlockingRows(issue, series, rail, stamp);
 
+        // --- 1c. THE NAMES, JUDGED --------------------------------------------
+        // A name the release dialog carried is APPLIED further down, after the
+        // restamp that would otherwise overwrite it. Whether it is acceptable is
+        // decided here, with every other refusal, because everything below this
+        // line mutates the issue: a blank name found after the stamp would leave a
+        // cut-off written on an entity whose release was refused, and only the
+        // transaction rollback would take it off again.
+        edits.validateNames(issue, request.names());
+
         // --- 2. STAMP, before resolving -----------------------------------
         issue.setCutoffStampedAt(stamp);
         // NOW and an admin-chosen instant are stamped identically, and this column
@@ -281,6 +306,15 @@ public class IssuePublishService extends BaseService {
         // closes five days late, and the header, the file name and the citation
         // format all have to say which week actually went out.
         shape.restamp(issue, series);
+
+        // --- 2b. THE NAMES, where the release dialog carried any ---------------
+        // AFTER the restamp, for the reason the edit path states about its own
+        // ordering: the restamp re-derives the suggested name from the stamped
+        // period, so a rename applied before it would be overwritten by the
+        // derivation it was meant to replace. And BEFORE anything is frozen or
+        // written, because this name is what the document, the audit entry and
+        // every citation of this issue will carry.
+        edits.applyNames(issue, request.names(), request.actor());
 
         Frozen frozen = resolveFreezeAndWrite(issue, series, request, stamp, stamp, rail.resolution());
         List<String> unacknowledged = frozen.unacknowledgedWarnings();
@@ -371,8 +405,7 @@ public class IssuePublishService extends BaseService {
         Date now = new Date();
 
         Frozen frozen = resolveFreezeAndWrite(issue, series,
-                new PublishRequest(request.regenerate(), request.acknowledgedWarnings(),
-                        request.actor(), null),
+                new PublishRequest(request.acknowledgedWarnings(), request.actor(), null),
                 cutoff, now, null);
 
         audit.amended(issue, request.actor(), request.reason(), frozen.archivePaths());
@@ -535,7 +568,7 @@ public class IssuePublishService extends BaseService {
         List<String> archived = archiveExistingFiles(issue, frozenAt);
 
         // --- 10. FILES ----------------------------------------------------
-        writeFiles(issue, series, ordered, request.regenerate(), cutoff);
+        writeFiles(issue, series, ordered, cutoff);
 
         return new Frozen(members.size(), unacknowledged, archived);
     }
@@ -667,10 +700,12 @@ public class IssuePublishService extends BaseService {
      * publish would order it, rendered per language into the preview store.
      *
      * The same renderer and the same request publish uses, over the same member
-     * list it would freeze -- so what the admin sees is what would go out, and
-     * publishing with regenerate=false promotes exactly these bytes. Nothing on
-     * the issue changes; the preview store is outside the repository and the
-     * audit records that a preview was generated.
+     * list it would freeze -- so what the admin sees is what would go out, as
+     * long as nothing about the issue moves in between. The release renders again
+     * from the list it actually freezes rather than shipping these bytes, and the
+     * checklist reports whether this preview is still fresh. Nothing on the issue
+     * changes; the preview store is outside the repository and the audit records
+     * that a preview was generated.
      */
     @Transactional
     public List<IssuePreviewService.Preview> preview(Integer issueId) {
@@ -708,10 +743,15 @@ public class IssuePublishService extends BaseService {
                 series.getDomain() == null ? null : series.getDomain().getMessageSortOrder());
         List<IssueOrdering.Orderable> ordered = IssueOrdering.order(orderablesFor(resolution.members()), sort);
 
+        // Loaded once for the whole preview rather than once per language: the
+        // rows are the same either way, and the second language would otherwise
+        // ask for every one of them again.
+        Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
+
         List<IssuePreviewService.Preview> out = new ArrayList<>();
         for (PublicationIssueDesc desc : issue.getDescs()) {
             String lang = desc.getLang();
-            byte[] bytes = renderService.render(renderRequest(issue, series, ordered, lang));
+            byte[] bytes = renderService.render(renderRequest(issue, series, ordered, members, lang));
             // Named from the cut-off the publish would use, not from the clock: a
             // preview of last year's accumulated list generated in January carries
             // last year's tokens, exactly as the published file will.
@@ -721,22 +761,28 @@ public class IssuePublishService extends BaseService {
     }
 
     /**
-     * Step 10. Render each non-sticky configured language, or promote the newest
-     * preview -- and refuse to finish without a document.
+     * Step 10. Render each non-sticky configured language, and refuse to finish
+     * without a document.
      *
      * 10a renders in-process from the ORDERED, FROZEN member list (R1): the
      * resolver decided what is in the issue and the renderer prints exactly that,
-     * with no query and no cap in between. 10b, when the admin asked not to
-     * regenerate, promotes the newest preview of that language to the official
-     * file -- the preview IS a render of the same list, and re-rendering would
-     * only risk a different one. 10c is the guard the two need: a generated
-     * series that ends PUBLISHED with no file is the failure that looks like
-     * success, and it is refused here rather than discovered on the public site.
+     * with no query and no cap in between. It renders ALWAYS -- there is no
+     * option to ship bytes that were produced earlier. What an admin looked at is
+     * a preview of a member list, and the list is what is authoritative; between
+     * the preview and the release a member can be curated in or out, and a
+     * release that shipped the older bytes would put a document on the public
+     * site that disagrees with its own frozen member rows. The checklist still
+     * reports whether the preview was fresh, because that is a question about
+     * what the admin had in front of them rather than about which bytes go out.
      *
-     * A sticky language (an uploaded replacement) is left alone in every branch.
+     * 10c is the guard 10a needs: a generated series that ends PUBLISHED with no
+     * file is the failure that looks like success, and it is refused here rather
+     * than discovered on the public site.
+     *
+     * A sticky language (an uploaded replacement) is left alone.
      */
     private void writeFiles(PublicationIssue issue, PublicationSeries series,
-                            List<IssueOrdering.Orderable> ordered, boolean regenerate, Date stamp) {
+                            List<IssueOrdering.Orderable> ordered, Date stamp) {
         if (series.getReportId() == null) {
             // A query-backed series with no report has nothing to render and no
             // bytes to fall back on, so returning quietly here left it PUBLISHED
@@ -750,6 +796,11 @@ public class IssuePublishService extends BaseService {
             }
             return; // nothing to generate: an uploaded or link-only issue
         }
+
+        // As on the preview path: the member rows are the same for every
+        // language, so they are read once for the whole release.
+        Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
+
         for (PublicationIssueDesc desc : issue.getDescs()) {
             if (desc.isFileSourceSticky()) {
                 continue; // an uploaded replacement is not regenerated over
@@ -758,23 +809,8 @@ public class IssuePublishService extends BaseService {
             String fileName = fileNameFor(issue, series, desc, stamp);
             Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
 
-            if (regenerate) {
-                // 10a
-                renderService.renderToFile(renderRequest(issue, series, ordered, lang), target);
-            } else {
-                // 10b
-                IssuePreviewService.Preview preview = previews.newest(issue, lang).orElseThrow(() ->
-                        new IssueRenderService.RenderFailedException(
-                                "no preview exists for language " + lang + " to promote; publish with "
-                                        + "regenerate=true or generate a preview first", null));
-                try {
-                    Files.createDirectories(target.getParent());
-                    Files.copy(preview.path(), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    throw new IssueRenderService.RenderFailedException(
-                            "could not promote the preview " + preview.path() + " to " + target, e);
-                }
-            }
+            // 10a
+            renderService.renderToFile(renderRequest(issue, series, ordered, members, lang), target);
 
             desc.setFileName(fileName);
             desc.setFilePath(issue.getRepoPath() + "/" + fileName);
@@ -798,13 +834,19 @@ public class IssuePublishService extends BaseService {
      * MessageVos, the series' print settings, and the report parameters with
      * the issue's own numbers injected. Week, year and edition are never typed
      * by an admin; they are what the issue is.
+     *
+     * The members arrive already loaded, because the caller renders every
+     * configured language from the same rows and reading them per language was
+     * paying for the same issue twice. The value objects are still built per
+     * language: the descs are filtered by it.
      */
     private IssueRenderService.RenderRequest renderRequest(PublicationIssue issue, PublicationSeries series,
-                                                           List<IssueOrdering.Orderable> ordered, String lang) {
+                                                           List<IssueOrdering.Orderable> ordered,
+                                                           Map<String, Message> members, String lang) {
         DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(lang);
         List<MessageVo> messages = new ArrayList<>(ordered.size());
         for (IssueOrdering.Orderable o : ordered) {
-            Message m = messageService.findByUid(o.uid());
+            Message m = members.get(o.uid());
             if (m == null) {
                 throw new IssueRenderService.RenderFailedException(
                         "frozen member " + o.uid() + " no longer exists; the issue cannot be rendered", null);

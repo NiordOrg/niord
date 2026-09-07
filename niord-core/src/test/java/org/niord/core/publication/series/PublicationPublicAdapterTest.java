@@ -191,9 +191,8 @@ public class PublicationPublicAdapterTest {
                 new Date(stamp.getTime() - 86_400_000L), IntervalBoundSource.RECOVERED, null);
         imported.setLegacyPublicationId(sharedId);
         em.flush();
-        previewFor(imported);
         publishService.publish(imported.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(Set.of(), null, stamp));
         em.flush();
 
         assertFalse(adapter.list(now, now).stream()
@@ -295,9 +294,8 @@ public class PublicationPublicAdapterTest {
     private PublicationIssue publishAt(PublicationSeries s, Date intervalFrom, Date stamp) {
         PublicationIssue i = lifecycle.create(s, intervalFrom, IntervalBoundSource.STAMPED, null);
         em.flush();
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(Set.of(), null, stamp));
         em.flush();
         return em.find(PublicationIssue.class, i.getId());
     }
@@ -454,9 +452,8 @@ public class PublicationPublicAdapterTest {
                 new Date(stamp.getTime() - 86_400_000L), IntervalBoundSource.RECOVERED, null);
         imported.setLegacyPublicationId(sharedId);
         em.flush();
-        previewFor(imported);
         publishService.publish(imported.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(Set.of(), null, stamp));
         em.flush();
         em.clear();
 
@@ -650,23 +647,6 @@ public class PublicationPublicAdapterTest {
                 "a DRAFT publication reached the public list");
         assertFalse(ids.contains(internal.getPublicationId()),
                 "a publication in a non-publishing category reached the public list");
-    }
-    @jakarta.inject.Inject
-    org.niord.core.publication.series.IssuePreviewService previewService;
-
-    /**
-     * Records a preview so the publish has bytes to promote.
-     *
-     * A query-backed series names a report and publish refuses to leave a
-     * language without a document, so these fixtures release the way an admin
-     * does after looking at the preview: regenerate = false, promoting exactly
-     * the bytes that were reviewed. The bytes themselves are irrelevant here.
-     */
-    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
-        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
-            previewService.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
     }
 
 }

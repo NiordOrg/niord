@@ -236,17 +236,16 @@ async function main() {
 
     // 4. Publish it.
     //
-    // The endpoint reads exactly two keys: acknowledgedWarnings and regenerate.
-    // This script used to send acknowledgeWarnings, acknowledged and stamp -- none
-    // of which are read -- and then reported PASS without looking at the result.
-    // A step that cannot fail is not a check, so it now reads the issue back.
+    // The endpoint reads three keys: acknowledgedWarnings, cutoff and names. This
+    // script used to send acknowledgeWarnings, acknowledged and stamp -- none of
+    // which are read -- and then reported PASS without looking at the result. A
+    // step that cannot fail is not a check, so it now reads the issue back.
     //
-    // There is no caller-supplied stamp: publish stamps the moment it runs. Step 5
-    // therefore has to ask the public list about the returned stampedAt rather than
-    // about a date chosen here.
+    // No cutoff and no names: the release stamps the moment it runs and keeps the
+    // name the series suggested. Step 5 therefore has to ask the public list about
+    // the returned stampedAt rather than about a date chosen here.
     const published = await call('PUT', `/publication-issues/issue/${issue.publicId}/publish`, {
         acknowledgedWarnings: [],
-        regenerate: true,
     });
 
     // Publish sets PUBLISHED and REPORTS warnings rather than refusing on them, so

@@ -21,7 +21,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import org.niord.core.publication.series.IssueResolutionService.IssueResolution;
-import org.niord.core.publication.series.vo.IssueOmissionsVo;
 import org.niord.core.publication.series.vo.IssueWorkbenchVo;
 import org.niord.core.publication.series.vo.PublishChecklistVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
@@ -62,6 +61,9 @@ public class IssueWorkbenchService {
     @Inject
     IssuePreviewService previews;
 
+    @Inject
+    MemberResolutionService resolver;
+
     /**
      * Everything one issue screen renders.
      *
@@ -101,7 +103,11 @@ public class IssueWorkbenchService {
         // about the release it made, and the answer would be computed against
         // today's corpus rather than against the one it was printed from.
         if (resolved.resolution() != null) {
-            vo.setOmissions(IssueOmissionsVo.of(resolved.resolution().misses()));
+            // Through the resolver rather than off the VO directly: the sample's
+            // short ids are filled there, in one query over the capped rows, and a
+            // panel listing omissions by uid alone is unreadable to the editor who
+            // has to decide whether each one belongs in the issue.
+            vo.setOmissions(resolver.omissions(resolved.resolution().misses()));
         }
         return vo;
     }

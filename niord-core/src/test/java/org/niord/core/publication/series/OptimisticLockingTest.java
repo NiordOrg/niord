@@ -77,9 +77,6 @@ public class OptimisticLockingTest {
     IssuePublishService publishService;
 
     @Inject
-    IssuePreviewService previews;
-
-    @Inject
     EntityManager em;
 
     // ------------------------------------------------------------------ fixtures
@@ -165,13 +162,6 @@ public class OptimisticLockingTest {
         ms.setMainType(MainType.NM);
         em.persist(ms);
         return ms;
-    }
-
-    private void previewFor(PublicationIssue issue) {
-        for (PublicationIssueDesc desc : issue.getDescs()) {
-            previews.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
     }
 
     // =============================================================== the compare
@@ -335,9 +325,8 @@ public class OptimisticLockingTest {
         em.flush();
         int before = issue.getVersion();
 
-        previewFor(issue);
         IssuePublishService.PublishResult result = publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null,
                         new Date(1_700_000_000_000L)));
         em.flush();

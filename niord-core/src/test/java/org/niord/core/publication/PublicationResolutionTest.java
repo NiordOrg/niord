@@ -350,7 +350,7 @@ public class PublicationResolutionTest {
         String citedId = issue.getPublicId();
 
         publishService.amend(issue.getId(),
-                new org.niord.core.publication.series.IssuePublishService.AmendRequest(false, org.niord.core.publication.series.IssuePublishService.PublishRequest.ALL_WARNINGS, null, "typo in the heading"));
+                new org.niord.core.publication.series.IssuePublishService.AmendRequest(org.niord.core.publication.series.IssuePublishService.PublishRequest.ALL_WARNINGS, null, "typo in the heading"));
         assertEquals(citedId, issue.getPublicId(), "amend changed the id");
         assertNotNull(resolver.findIssue(citedId), "the citation stopped resolving after amend");
 

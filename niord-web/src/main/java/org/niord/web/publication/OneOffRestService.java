@@ -681,10 +681,11 @@ public class OneOffRestService {
     /**
      * Publish when there is something to publish.
      *
-     * regenerate is true only for a query-backed publication, which is the one
-     * kind with a report to run. An uploaded publication with no bytes yet is
-     * left OPEN: the checklist would refuse it, and refusing here would turn
-     * "you still need to attach the file" into an error on save.
+     * An uploaded publication with no bytes yet is left OPEN: the checklist
+     * would refuse it, and refusing here would turn "you still need to attach
+     * the file" into an error on save. An uploaded one that HAS its bytes is
+     * left alone by the release's render step -- the file is sticky and no
+     * report is configured -- so the same call serves both kinds.
      *
      * The one-off surface has no release rail to acknowledge resolution
      * warnings on, so it acknowledges them all; the publish audit still records
@@ -695,9 +696,8 @@ public class OneOffRestService {
         if (issue == null || !isPublishable(series, issue)) {
             return;
         }
-        boolean queryBacked = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY;
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(queryBacked,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, userService.currentUser(), null));
     }
 

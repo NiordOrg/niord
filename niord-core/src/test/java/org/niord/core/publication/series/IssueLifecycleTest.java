@@ -138,9 +138,8 @@ public class IssueLifecycleTest {
         String minted = i.getPublicId();
         assertNotNull(minted, "publicId must exist from the moment of create -- message HTML cites it");
 
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -190,9 +189,8 @@ public class IssueLifecycleTest {
         PublicationIssue first = lifecycle.create(s, new Date(1_699_000_000_000L),
                 IntervalBoundSource.MANUAL, user());
         em.flush();
-        previewFor(first);
         publishService.publish(first.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue predecessor = em.find(PublicationIssue.class, first.getId());
@@ -229,9 +227,8 @@ public class IssueLifecycleTest {
         PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
                 IntervalBoundSource.STAMPED, user());
         em.flush();
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, i.getId());
@@ -385,9 +382,8 @@ public class IssueLifecycleTest {
         PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
                 IntervalBoundSource.STAMPED, user());
         em.flush();
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, i.getId());
@@ -832,23 +828,6 @@ public class IssueLifecycleTest {
                         .findFirst().orElseThrow();
         assertFalse(waived.applicable(), "a waived check must not be counted as one the issue passed");
         assertTrue(waived.passed());
-    }
-    @jakarta.inject.Inject
-    org.niord.core.publication.series.IssuePreviewService previewService;
-
-    /**
-     * Records a preview so the publish has bytes to promote.
-     *
-     * A query-backed series names a report and publish refuses to leave a
-     * language without a document, so these fixtures release the way an admin
-     * does after looking at the preview: regenerate = false, promoting exactly
-     * the bytes that were reviewed. The bytes themselves are irrelevant here.
-     */
-    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
-        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
-            previewService.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
     }
 
 }

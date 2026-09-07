@@ -137,9 +137,8 @@ public class OneOffCreateSequenceTest {
         // an issue that has not been written yet.
         em.flush();
 
-        previewFor(issue);
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, null));
+                new IssuePublishService.PublishRequest(Set.of(), null, null));
         em.flush();
 
         PublicationIssue reloaded = em.find(PublicationIssue.class, issue.getId());
@@ -169,9 +168,8 @@ public class OneOffCreateSequenceTest {
         seriesService.update(saved);
         em.flush();
 
-        previewFor(issue);
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, null));
+                new IssuePublishService.PublishRequest(Set.of(), null, null));
         em.flush();
 
         assertEquals(IssueStatus.PUBLISHED, em.find(PublicationIssue.class, issue.getId()).getStatus());
@@ -240,23 +238,6 @@ public class OneOffCreateSequenceTest {
                         + "domain and the column is NOT NULL");
         assertEquals("https://example.invalid/renamed",
                 em.find(PublicationIssue.class, issue.getId()).getDescs().get(0).getLink());
-    }
-    @jakarta.inject.Inject
-    org.niord.core.publication.series.IssuePreviewService previewService;
-
-    /**
-     * Records a preview so the publish has bytes to promote.
-     *
-     * A query-backed series names a report and publish refuses to leave a
-     * language without a document, so these fixtures release the way an admin
-     * does after looking at the preview: regenerate = false, promoting exactly
-     * the bytes that were reviewed. The bytes themselves are irrelevant here.
-     */
-    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
-        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
-            previewService.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
     }
 
 }

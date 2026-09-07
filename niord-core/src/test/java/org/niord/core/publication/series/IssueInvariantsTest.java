@@ -198,15 +198,14 @@ public class IssueInvariantsTest {
                 "publicId " + minted + " is not a lowercase UUID; an unquoted CSS selector is built "
                         + "from it, so a special character silently appends a duplicate citation");
 
-        previewFor(issue);
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         PublicationIssue after = em.find(PublicationIssue.class, issue.getId());
         assertEquals(minted, after.getPublicId(), "publish changed publicId");
 
         publishService.amend(after.getId(),
-                new IssuePublishService.AmendRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, "typo"));
+                new IssuePublishService.AmendRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, "typo"));
         assertEquals(minted, after.getPublicId(), "amend changed publicId");
         lifecycle.retire(after, null, "withdrawn in error");
         assertEquals(minted, after.getPublicId(), "retire changed publicId");
@@ -425,9 +424,8 @@ public class IssueInvariantsTest {
         curation.include(issue, uid, user(), "the ice service message for this year");
         em.flush();
 
-        previewFor(issue);
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -462,9 +460,8 @@ public class IssueInvariantsTest {
         curation.exclude(issue, uids.get(1), user(), "removed again before release");
         em.flush();
 
-        previewFor(issue);
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -543,9 +540,8 @@ public class IssueInvariantsTest {
         PublicationIssue i = lifecycle.create(s, new Date(stamp.getTime() - 7 * 24 * 3600_000L),
                 IntervalBoundSource.STAMPED, null);
         em.flush();
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         em.flush();
         return em.find(PublicationIssue.class, i.getId());
     }
@@ -556,23 +552,6 @@ public class IssueInvariantsTest {
                                 + "ORDER BY m.sortIndex", String.class)
                 .setParameter("id", issue.getId())
                 .getResultList();
-    }
-    @jakarta.inject.Inject
-    org.niord.core.publication.series.IssuePreviewService previewService;
-
-    /**
-     * Records a preview so the publish has bytes to promote.
-     *
-     * A query-backed series names a report and publish refuses to leave a
-     * language without a document, so these fixtures release the way an admin
-     * does after looking at the preview: regenerate = false, promoting exactly
-     * the bytes that were reviewed. The bytes themselves are irrelevant here.
-     */
-    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
-        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
-            previewService.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
     }
 
 }

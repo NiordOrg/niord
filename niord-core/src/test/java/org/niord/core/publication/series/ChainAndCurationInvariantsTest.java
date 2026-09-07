@@ -69,9 +69,6 @@ public class ChainAndCurationInvariantsTest {
     IssueCurationService curation;
 
     @Inject
-    IssuePreviewService previews;
-
-    @Inject
     EntityManager em;
 
     private User user() {
@@ -101,9 +98,8 @@ public class ChainAndCurationInvariantsTest {
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         // A report, because a query-backed series that names none has no document
         // to produce and is refused before it can stamp. These tests are about the
-        // chain and the curation rather than about rendering, so they publish by
-        // PROMOTING a recorded preview -- the same path an admin takes when they
-        // have already looked at the document -- which needs no real report to run.
+        // chain and the curation rather than about rendering, and the renderer is
+        // stubbed in this module, so the id only has to be present.
         s.setReportId("some-report");
         s.setCategory(c);
         // Every publication names the desk that owns it: the column is NOT NULL and
@@ -126,14 +122,12 @@ public class ChainAndCurationInvariantsTest {
     private PublicationIssue publishAt(PublicationSeries s, Date intervalFrom, Date stamp) {
         PublicationIssue i = lifecycle.create(s, intervalFrom, IntervalBoundSource.STAMPED, user());
         em.flush();
-        // Publish by promoting a preview rather than by rendering: step 10 refuses
-        // to leave a language without a document, and these tests have no report
-        // engine behind them. The bytes are irrelevant -- what is being asserted is
-        // the chain the publish writes.
-        previews.record(i, "da", "preview.pdf",
-                "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        // Step 10 refuses to leave a language without a document, and the renderer
+        // is stubbed in this module (see StubIssueRenderService) because the PDF
+        // templates live in the web one. The bytes are irrelevant -- what is being
+        // asserted is the chain the publish writes.
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         em.flush();
         return em.find(PublicationIssue.class, i.getId());
     }

@@ -84,10 +84,11 @@ public class IssueDeleteTest {
     IssuePublishService publishService;
 
     @Inject
-    IssuePreviewService previewService;
-
-    @Inject
     IssueAuditService audit;
+
+    /** Only for the file-cleanup case, which has to leave a real preview behind. */
+    @Inject
+    IssuePreviewService previewStore;
 
     @Inject
     PublicationPathService paths;
@@ -196,17 +197,9 @@ public class IssueDeleteTest {
         em.merge(m);
     }
 
-    private void previewFor(PublicationIssue issue) {
-        for (PublicationIssueDesc desc : issue.getDescs()) {
-            previewService.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(StandardCharsets.UTF_8));
-        }
-    }
-
     private PublicationIssue publish(PublicationIssue issue, long cutoff) {
-        previewFor(issue);
         publishService.publish(issue.getId(), new IssuePublishService.PublishRequest(
-                false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(cutoff)));
+                IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(cutoff)));
         em.flush();
         return em.find(PublicationIssue.class, issue.getId());
     }
@@ -627,9 +620,10 @@ public class IssueDeleteTest {
         Files.write(folder.resolve("publication.pdf"), "bytes".getBytes(StandardCharsets.UTF_8));
         assertTrue(Files.isDirectory(folder));
 
-        // A rendered draft, written by the renderer itself so the location is the
-        // real one rather than one this test decided on.
-        previewFor(withFiles);
+        // A rendered draft, written by the preview store itself so the location is
+        // the real one rather than one this test decided on.
+        previewStore.record(withFiles, "da", "preview.pdf",
+                "a draft nobody released".getBytes(StandardCharsets.UTF_8));
         Path previews = paths.previewRoot().resolve(withFiles.getPublicId());
         assertTrue(Files.isDirectory(previews), "the fixture wrote no preview, so it tests nothing");
 

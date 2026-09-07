@@ -47,6 +47,7 @@ import org.niord.core.publication.series.resolve.MessageFacts;
 import org.niord.core.publication.series.resolve.ResolutionWarningCode;
 import org.niord.core.publication.series.resolve.ResolutionWarningVo;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
+import org.niord.core.publication.series.vo.IssueOmissionsVo;
 import org.niord.core.service.BaseService;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
@@ -317,6 +318,69 @@ public class MemberResolutionService extends BaseService {
             out.add(ResolutionWarningVo.of(ResolutionWarningCode.STALE_OVERRIDE, stale));
         }
 
+        return out;
+    }
+
+    /**
+     * The omissions panel's payload: the count over ALL the misses, the capped
+     * sample of them, and each sampled row's short id.
+     *
+     * ONE PRODUCER for both screens that show omissions -- the issue workbench and
+     * the criteria editor's probe -- so neither can ship rows the other's reader
+     * would find unreadable.
+     *
+     * The short ids are looked up HERE and not during the resolve, and the two
+     * halves of that are equally deliberate. Not during the resolve, because a
+     * decision is taken from facts that carry no short id on purpose: it is not
+     * unique, nothing prevents reuse, and a resolution keyed on it could report
+     * two different messages as one. And here rather than per row, because the
+     * caller shows at most {@link IssueOmissionsVo#PROBE_SAMPLE} of them while a
+     * wide document over a live corpus drops thousands: one query over the capped
+     * uids, on a path the criteria editor fires while somebody is still typing.
+     *
+     * A row whose message has no short id -- a draft, an import that never got one
+     * -- keeps a null there. The uid is the identity and is always present.
+     */
+    public IssueOmissionsVo omissions(List<CriteriaMissVo> misses) {
+        IssueOmissionsVo vo = IssueOmissionsVo.of(misses);
+        vo.setMisses(withMessageIds(vo.getMisses()));
+        return vo;
+    }
+
+    /**
+     * The same rows, carrying the short id a reader recognises. One query.
+     *
+     * Public because the workbench and the probe are not the only two callers it
+     * could ever have, and a second implementation would be the one that reverts
+     * to a lookup per row.
+     */
+    public List<CriteriaMissVo> withMessageIds(List<CriteriaMissVo> sample) {
+        if (sample == null || sample.isEmpty()) {
+            return sample;
+        }
+        Set<String> uids = new LinkedHashSet<>();
+        for (CriteriaMissVo miss : sample) {
+            if (miss.messageUid() != null) {
+                uids.add(miss.messageUid());
+            }
+        }
+        if (uids.isEmpty()) {
+            return sample;
+        }
+
+        Map<String, String> shortIds = new HashMap<>();
+        for (Tuple row : em.createQuery(
+                        "SELECT m.uid AS uid, m.shortId AS shortId FROM Message m WHERE m.uid IN :uids",
+                        Tuple.class)
+                .setParameter("uids", uids)
+                .getResultList()) {
+            shortIds.put(row.get("uid", String.class), row.get("shortId", String.class));
+        }
+
+        List<CriteriaMissVo> out = new ArrayList<>(sample.size());
+        for (CriteriaMissVo miss : sample) {
+            out.add(miss.withMessageId(shortIds.get(miss.messageUid())));
+        }
         return out;
     }
 

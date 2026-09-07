@@ -25,8 +25,30 @@ import java.util.Map;
  * The extra fields are carried per code rather than as a fixed shape, because
  * what makes a miss understandable differs: a date comparison needs both dates,
  * a criterion mismatch needs what was expected against what was found.
+ *
+ * TWO IDENTIFIERS, and only one of them is an identity. `messageUid` is the key
+ * and is always present. `messageId` is the short id an editor reads and cites
+ * -- "NM-815-26" -- and it is DISPLAY TEXT: it is not declared unique, nothing
+ * stops it being reused, and a draft has none at all, so it is null wherever the
+ * message has none. Keying anything on it would let two different messages
+ * compare equal. It is absent from a row until something fills it in, because
+ * the resolution decides membership from facts that deliberately do not carry
+ * it; see {@link #withMessageId}.
  */
-public record CriteriaMissVo(String messageUid, CriteriaMissCode code, Map<String, Object> detail) {
+public record CriteriaMissVo(String messageUid, String messageId, CriteriaMissCode code,
+                             Map<String, Object> detail) {
+
+    /**
+     * The same miss, carrying the short id a reader recognises.
+     *
+     * A copy rather than a setter because the record is a value: the misses are
+     * handed around a resolution that several screens read, and a row that could
+     * be mutated in place would let one reader's display lookup change what
+     * another one already had.
+     */
+    public CriteriaMissVo withMessageId(String shortId) {
+        return new CriteriaMissVo(messageUid, shortId, code, detail);
+    }
 
     public static CriteriaMissVo of(MessageFacts facts, MembershipReason reason, Interval interval) {
         CriteriaMissCode code = CriteriaMissCode.of(reason);
@@ -62,8 +84,10 @@ public record CriteriaMissVo(String messageUid, CriteriaMissCode code, Map<Strin
                 // Nothing to carry: the absence IS the fact.
             }
         }
-        // Keyed on uid alone. shortId is display text, resolved later and never a key.
-        return new CriteriaMissVo(facts.uid(), code, detail);
+        // Keyed on uid alone. shortId is display text, resolved later and never a
+        // key -- and the facts a decision is taken from do not carry it, so there
+        // is nothing to fill it from here even if it were wanted.
+        return new CriteriaMissVo(facts.uid(), null, code, detail);
     }
 
     private static Long epoch(java.util.Date d) {

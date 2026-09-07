@@ -64,6 +64,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
 public class IssueArchiveStreamTest {
 
+    /**
+     * The stubbed renderer is one bean for the whole module, and the bytes it
+     * produces are a static. This class names its own bytes twice to tell one
+     * generation from another, so it has to put them back -- otherwise every later
+     * test in the JVM renders them, which is a failure that depends on the order
+     * the classes happen to run in.
+     */
+    @org.junit.jupiter.api.AfterEach
+    public void restoreTheRenderer() {
+        StubIssueRenderService.reset();
+    }
+
     @Inject
     IssueArchiveService archives;
 
@@ -75,9 +87,6 @@ public class IssueArchiveStreamTest {
 
     @Inject
     IssueAuditService auditService;
-
-    @Inject
-    IssuePreviewService previews;
 
     @Inject
     PublicationPathService paths;
@@ -134,18 +143,18 @@ public class IssueArchiveStreamTest {
     /**
      * A released issue whose Danish document holds the bytes handed in.
      *
-     * Released the way an admin does after reading the preview -- regenerate
-     * false, promoting exactly the reviewed bytes -- which is also what makes the
-     * content of the archived file predictable: it is what went in here.
+     * The release renders, and the renderer is stubbed in this module, so naming
+     * its output is what makes the content of the archived file predictable: it
+     * is what went in here.
      */
     private PublicationIssue publishedIssue(String bytes) {
         PublicationSeries s = series();
         PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
                 IntervalBoundSource.STAMPED, user());
         em.flush();
-        previews.record(i, "da", "preview.pdf", bytes.getBytes(StandardCharsets.UTF_8));
+        StubIssueRenderService.renders(bytes);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, user(),
                         new Date(1_700_000_000_000L)));
         em.flush();
@@ -154,10 +163,9 @@ public class IssueArchiveStreamTest {
 
     /** The entry an amend wrote, which is the one carrying the archive. */
     private IssueAuditEntry amendOf(PublicationIssue issue, String replacementBytes) {
-        previews.record(issue, "da", "preview.pdf",
-                replacementBytes.getBytes(StandardCharsets.UTF_8));
+        StubIssueRenderService.renders(replacementBytes);
         publishService.amend(issue.getId(),
-                new IssuePublishService.AmendRequest(false,
+                new IssuePublishService.AmendRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, user(),
                         "a chart number was wrong in three of the notices"));
         em.flush();

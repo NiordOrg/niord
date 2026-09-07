@@ -213,9 +213,8 @@ public class IssuePreviewAndFileTest {
         files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
 
-        previewFor(issue);
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
@@ -279,9 +278,8 @@ public class IssuePreviewAndFileTest {
 
         files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
-        previewFor(issue);
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
@@ -356,9 +354,8 @@ public class IssuePreviewAndFileTest {
         PublicationIssue issue = anIssue();
         files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
-        previewFor(issue);
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
 
         PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
@@ -468,7 +465,7 @@ public class IssuePreviewAndFileTest {
         files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null,
                         new Date(1_700_000_000_000L)));
         em.flush();
@@ -504,7 +501,7 @@ public class IssuePreviewAndFileTest {
         files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null,
                         new Date(1_700_000_000_000L)));
         em.flush();
@@ -532,7 +529,7 @@ public class IssuePreviewAndFileTest {
         files.upload(issue, "da", "first.pdf", "original".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
         publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null,
                         new Date(1_700_000_000_000L)));
         em.flush();
@@ -553,23 +550,6 @@ public class IssuePreviewAndFileTest {
                 "the entry carries no archive path, so nothing can reach the superseded bytes");
         assertEquals("FILE_REPLACED_MANUALLY", replacement.toVo().getAction(),
                 "the trail has to name the replacement as one on the wire too, not just in memory");
-    }
-    @jakarta.inject.Inject
-    org.niord.core.publication.series.IssuePreviewService previewService;
-
-    /**
-     * Records a preview so the publish has bytes to promote.
-     *
-     * A query-backed series names a report and publish refuses to leave a
-     * language without a document, so these fixtures release the way an admin
-     * does after looking at the preview: regenerate = false, promoting exactly
-     * the bytes that were reviewed. The bytes themselves are irrelevant here.
-     */
-    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
-        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
-            previewService.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
     }
 
 }

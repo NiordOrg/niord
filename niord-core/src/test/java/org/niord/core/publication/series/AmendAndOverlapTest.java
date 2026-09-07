@@ -122,9 +122,8 @@ public class AmendAndOverlapTest {
     private PublicationIssue publishedIssue(PublicationSeries s, Date from, Date stamp) {
         PublicationIssue i = lifecycle.create(s, from, IntervalBoundSource.STAMPED, user());
         em.flush();
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
                         user(), stamp));
         em.flush();
         return em.find(PublicationIssue.class, i.getId());
@@ -160,7 +159,7 @@ public class AmendAndOverlapTest {
         String linkBefore = descBefore.getLink();
 
         publishService.amend(issue.getId(),
-                new IssuePublishService.AmendRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                new IssuePublishService.AmendRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
                         user(), "a chart number was wrong in three of the notices"));
         em.flush();
         em.clear();
@@ -194,7 +193,7 @@ public class AmendAndOverlapTest {
                 new Date(1_700_000_000_000L));
 
         publishService.amend(issue.getId(),
-                new IssuePublishService.AmendRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                new IssuePublishService.AmendRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
                         user(), "the wrong week was printed on the cover"));
         em.flush();
 
@@ -215,7 +214,7 @@ public class AmendAndOverlapTest {
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
                         () -> publishService.amend(issue.getId(),
-                                new IssuePublishService.AmendRequest(false, Set.of(), user(), "  ")));
+                                new IssuePublishService.AmendRequest(Set.of(), user(), "  ")));
         assertEquals("REASON_REQUIRED", e.code());
     }
 
@@ -231,7 +230,7 @@ public class AmendAndOverlapTest {
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
                         () -> publishService.amend(open.getId(),
-                                new IssuePublishService.AmendRequest(false, Set.of(), user(), "why not")));
+                                new IssuePublishService.AmendRequest(Set.of(), user(), "why not")));
         assertEquals("ISSUE_NOT_PUBLISHED", e.code());
     }
 
@@ -329,9 +328,8 @@ public class AmendAndOverlapTest {
                 "the previous edition stays current while its replacement is unpublished");
 
         Date takeover = new Date(stamp.getTime() + 86_400_000L);
-        previewFor(second);
         publishService.publish(second.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
                         user(), takeover));
         em.flush();
 
@@ -368,7 +366,7 @@ public class AmendAndOverlapTest {
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
                         () -> publishService.amend(issue.getId(),
-                                new IssuePublishService.AmendRequest(false, Set.of(), user(), " x ")));
+                                new IssuePublishService.AmendRequest(Set.of(), user(), " x ")));
         assertEquals("REASON_REQUIRED", e.code());
     }
 
@@ -390,7 +388,7 @@ public class AmendAndOverlapTest {
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
                         () -> publishService.amend(issue.getId(),
-                                new IssuePublishService.AmendRequest(false, Set.of(), user(),
+                                new IssuePublishService.AmendRequest(Set.of(), user(),
                                         "the archive had the wrong cover")));
         assertEquals("ISSUE_IMPORTED", e.code());
         assertTrue(auditService.forIssue(issue).stream().noneMatch(a -> AuditAction.AMENDED == a.getAction()),
@@ -415,24 +413,6 @@ public class AmendAndOverlapTest {
 
         lifecycle.retire(issue, user(), "superseded by a corrected edition");
         assertEquals(IssueStatus.RETIRED, issue.getStatus());
-    }
-
-    @jakarta.inject.Inject
-    org.niord.core.publication.series.IssuePreviewService previewService;
-
-    /**
-     * Records a preview so the publish has bytes to promote.
-     *
-     * A query-backed series names a report and publish refuses to leave a
-     * language without a document, so these fixtures release the way an admin
-     * does after looking at the preview: regenerate = false, promoting exactly
-     * the bytes that were reviewed. The bytes themselves are irrelevant here.
-     */
-    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
-        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
-            previewService.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
     }
 
 }

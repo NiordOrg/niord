@@ -60,9 +60,6 @@ public class PublishGateTest {
     IssuePublishService publishService;
 
     @Inject
-    IssuePreviewService previews;
-
-    @Inject
     IssueLifecycleService lifecycle;
 
     @Inject
@@ -117,8 +114,6 @@ public class PublishGateTest {
         i.setIntervalFromSource(IntervalBoundSource.STAMPED);
         i.createDesc("da").setName("Test issue");
         em.persist(i);
-        previews.record(i, "da", "preview.pdf",
-                "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         return i;
     }
 
@@ -142,7 +137,7 @@ public class PublishGateTest {
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
                         () -> publishService.publish(i.getId(),
-                                new IssuePublishService.PublishRequest(false,
+                                new IssuePublishService.PublishRequest(
                                         IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp)));
         assertNull(i.getCutoffStampedAt(),
                 "the cut-off was stamped despite the refusal; a stamp cannot be taken back");
@@ -285,7 +280,7 @@ public class PublishGateTest {
         chosen.setCutoffReconstructed(true);
         em.flush();
         publishService.publish(chosen.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null,
                         new Date(1_700_000_000_000L)));
         assertEquals("STAMPED_MANUAL_TIME", chosen.getCutoffSource(),
@@ -297,7 +292,7 @@ public class PublishGateTest {
         PublicationIssue now = issue(other, new Date(System.currentTimeMillis() - 7 * 24 * 3600_000L));
         em.flush();
         publishService.publish(now.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null, null));
         assertEquals("STAMPED_AT_PUBLISH", now.getCutoffSource());
     }
@@ -322,7 +317,7 @@ public class PublishGateTest {
         em.flush();
 
         var result = publishService.publish(recovered.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null,
                         new Date(1_699_000_000_000L)));
         assertNull(result.successorId(),
@@ -337,7 +332,7 @@ public class PublishGateTest {
         em.flush();
 
         assertNull(publishService.publish(publishing.getId(),
-                        new IssuePublishService.PublishRequest(false,
+                        new IssuePublishService.PublishRequest(
                                 IssuePublishService.PublishRequest.ALL_WARNINGS, null,
                                 new Date(1_700_000_000_000L)))
                 .successorId(),
@@ -379,11 +374,9 @@ public class PublishGateTest {
         // nominal close fell in, and the document has to say which. Five days is
         // still ONE period -- a late week is not a double week -- so the issue is
         // named for a single, later week rather than gaining a second number.
-        previews.record(i, "da", "preview.pdf",
-                "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         Date late = new Date(opens.getTime() + 12 * 24 * 3600_000L);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null, late));
 
         assertEquals(late, i.getCutoffStampedAt());

@@ -255,11 +255,16 @@ public class IssueShape extends BaseService {
             return;
         }
 
-        // A name an admin typed is kept. The per-language flag is the ordinary
-        // record of that; the audit entry is consulted as well because the flag was
-        // added after the trail was, and a rename made before it would otherwise be
-        // silently re-derived away on the issue's first publish.
-        boolean renamedByHand = keepChangedNames && wasRenamedByHand(issue);
+        // A name an admin typed is kept, and the per-language flag is the record of
+        // that. The trail is consulted only where NO language carries the flag: it
+        // exists for issues renamed before the flag did, and asking it issue-wide
+        // would make one corrected language freeze all the others -- correct the
+        // Danish name in the create dialog and the English one would keep the
+        // nominal week forever, while the numbers beside it restamped to the week
+        // that actually went out.
+        boolean renamedByHand = keepChangedNames
+                && issue.getDescs().stream().noneMatch(PublicationIssueDesc::isNameOverridden)
+                && wasRenamedByHand(issue);
         for (PublicationIssueDesc desc : issue.getDescs()) {
             if (desc.isNameOverridden() || renamedByHand) {
                 continue;

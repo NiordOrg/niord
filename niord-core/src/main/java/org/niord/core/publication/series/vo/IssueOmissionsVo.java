@@ -53,7 +53,14 @@ public class IssueOmissionsVo implements IJsonSerializable {
 
     private List<CriteriaMissVo> misses = new ArrayList<>();
 
-    /** The full count, and the first {@link #PROBE_SAMPLE} of the rows behind it. */
+    /**
+     * The full count, and the first {@link #PROBE_SAMPLE} of the rows behind it.
+     *
+     * The rows come back with no short id on them: filling those needs a database
+     * and this is a shape. Every caller that puts omissions on the WIRE goes
+     * through MemberResolutionService.omissions, which does this and then fills
+     * them in one query -- a panel listing UUIDs is one an editor cannot act on.
+     */
     public static IssueOmissionsVo of(List<CriteriaMissVo> misses) {
         IssueOmissionsVo vo = new IssueOmissionsVo();
         vo.setMissCount(misses.size());

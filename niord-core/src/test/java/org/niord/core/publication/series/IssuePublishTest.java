@@ -69,8 +69,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
 public class IssuePublishTest {
 
+    /**
+     * The stubbed renderer is one bean for the whole module, and the bytes it
+     * produces are a static. A test that names its own bytes and does not put them
+     * back leaves every later test in the JVM rendering them, which is a failure
+     * that depends on the order the classes happen to run in.
+     */
+    @org.junit.jupiter.api.AfterEach
+    public void restoreTheRenderer() {
+        StubIssueRenderService.reset();
+    }
+
     @Inject
     IssuePublishService publishService;
+
+    @Inject
+    IssueEditService edits;
 
     @Inject
     IssueAuditService auditService;
@@ -203,7 +217,6 @@ public class IssuePublishTest {
         PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
         PublicationIssue contested = issue(s, new Date(System.currentTimeMillis() - 3600_000L));
-        previewFor(contested);
         issueId = contested.getId();
         tx.commit();
 
@@ -218,7 +231,7 @@ public class IssuePublishTest {
                 try {
                     go.await();
                     var result = publishService.publish(issueId,
-                            new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, null));
+                            new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, null));
                     winners.incrementAndGet();
                     winningStamp.set(result.stampedAt());
                 } catch (IssuePublishService.AlreadyPublishedException e) {
@@ -256,9 +269,8 @@ public class IssuePublishTest {
         PublicationIssue i = issue(s, new Date(pastStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
-        previewFor(i);
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, pastStamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, pastStamp));
 
         assertEquals(pastStamp, result.stampedAt());
 
@@ -281,9 +293,8 @@ public class IssuePublishTest {
         PublicationIssue i = issue(s, from);
         em.flush();
 
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -342,9 +353,8 @@ public class IssuePublishTest {
         i.setCriteriaOverride(override);
         em.flush();
 
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -389,9 +399,8 @@ public class IssuePublishTest {
         i.setCriteriaOverride(override);
         em.flush();
 
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
                         null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
@@ -429,9 +438,8 @@ public class IssuePublishTest {
         em.persist(ghost);
         em.flush();
 
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -452,9 +460,8 @@ public class IssuePublishTest {
         PublicationIssue i = issue(auto, new Date(1_699_000_000_000L));
         em.flush();
 
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -488,9 +495,8 @@ public class IssuePublishTest {
         PublicationIssue recovered = issue(s, new Date(recoveredStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
-        previewFor(recovered);
         publishService.publish(recovered.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, recoveredStamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, recoveredStamp));
         em.flush();
         em.clear();
 
@@ -526,9 +532,8 @@ public class IssuePublishTest {
         PublicationIssue next = issue(s, new Date(newStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
-        previewFor(next);
         publishService.publish(next.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
 
         PublicationIssue after = em.find(PublicationIssue.class, predecessor.getId());
@@ -550,9 +555,8 @@ public class IssuePublishTest {
         PublicationIssue next = issue(s, new Date(newStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
-        previewFor(next);
         publishService.publish(next.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
 
         PublicationIssue after = em.find(PublicationIssue.class, retired.getId());
@@ -575,9 +579,8 @@ public class IssuePublishTest {
         PublicationIssue next = issue(s, new Date(newStamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
-        previewFor(next);
         publishService.publish(next.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, newStamp));
         em.flush();
 
         PublicationIssue after = em.find(PublicationIssue.class, manual.getId());
@@ -605,9 +608,8 @@ public class IssuePublishTest {
         PublicationIssue i = issue(all, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
 
-        previewFor(i);
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNotNull(result.successorId());
 
         em.flush();
@@ -635,9 +637,8 @@ public class IssuePublishTest {
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.ACTIVE);
         PublicationIssue i = issue(all, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
         em.flush();
-        previewFor(i);
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNotNull(result.successorId(), "no successor was created when every clause held");
 
         em.flush();
@@ -673,9 +674,8 @@ public class IssuePublishTest {
         boolean tiles = s.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
         PublicationIssue i = issue(s, tiles ? new Date(stamp.getTime() - 7 * 24 * 3600_000L) : null);
         em.flush();
-        previewFor(i);
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         assertNull(result.successorId(), "a successor was created for a series that " + why);
     }
 
@@ -688,9 +688,8 @@ public class IssuePublishTest {
         PublicationIssue i = issue(auto, new Date(1_699_000_000_000L));
         em.flush();
 
-        previewFor(i);
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, new Date(1_700_000_000_000L)));
+                new IssuePublishService.PublishRequest(Set.of(), null, new Date(1_700_000_000_000L)));
         em.flush();
         em.clear();
 
@@ -742,11 +741,10 @@ public class IssuePublishTest {
         // withdrawn, and open past the cut-off all the same.
         cancelledButStillOpen(new Date(intervalFrom.getTime() + 3600_000L),
                 new Date(stamp.getTime() + 86_400_000L));
-        previewFor(i);
         em.flush();
 
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         Set.of(ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.name()), null, stamp));
         em.flush();
         em.clear();
@@ -834,11 +832,10 @@ public class IssuePublishTest {
 
         cancelledButStillOpen(new Date(intervalFrom.getTime() + 3600_000L),
                 new Date(stamp.getTime() + 86_400_000L));
-        previewFor(i);
         em.flush();
 
         var result = publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp));
+                new IssuePublishService.PublishRequest(Set.of(), null, stamp));
         em.flush();
         em.clear();
 
@@ -869,11 +866,10 @@ public class IssuePublishTest {
         PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
         PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
-        previewFor(i);
         em.flush();
 
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false,
+                new IssuePublishService.PublishRequest(
                         IssuePublishService.PublishRequest.ALL_WARNINGS, null,
                         new Date(1_700_000_000_000L)));
         em.flush();
@@ -960,15 +956,14 @@ public class IssuePublishTest {
         em.flush();
 
         Date stamp = new Date(1_700_000_000_000L);
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, stamp));
         em.flush();
 
         IssuePublishService.AlreadyPublishedException e =
                 assertThrows(IssuePublishService.AlreadyPublishedException.class,
                         () -> publishService.publish(i.getId(),
-                                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date())));
+                                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date())));
         assertEquals("ISSUE_ALREADY_PUBLISHED", e.code());
         assertEquals(stamp, e.stampedAt(), "the refusal did not carry the original stamp");
     }
@@ -1003,13 +998,12 @@ public class IssuePublishTest {
         // sign off rather than one they would notice unaided.
         cancelledButStillOpen(new Date(intervalFrom.getTime() + 3600_000L),
                 new Date(stamp.getTime() + 86_400_000L));
-        previewFor(i);
         em.flush();
 
         IssuePublishService.WarningsNotAcknowledgedException e =
                 assertThrows(IssuePublishService.WarningsNotAcknowledgedException.class,
                         () -> publishService.publish(i.getId(),
-                                new IssuePublishService.PublishRequest(false, Set.of(), null, stamp)));
+                                new IssuePublishService.PublishRequest(Set.of(), null, stamp)));
         assertEquals("WARNING_NOT_ACKNOWLEDGED", e.code());
         assertEquals(List.of("CANCELLED_BUT_DATE_ALIVE"), e.codes(),
                 "only an acknowledgeable warning may refuse a publish: a code with no control to "
@@ -1022,30 +1016,41 @@ public class IssuePublishTest {
                 "a PUBLISHED entry was written despite the refusal");
 
         // Acknowledging exactly those codes is what lets the same publish through.
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, Set.copyOf(e.codes()), null,
+                new IssuePublishService.PublishRequest(Set.copyOf(e.codes()), null,
                         new Date(1_700_000_000_000L)));
         assertEquals(IssueStatus.PUBLISHED, i.getStatus());
     }
 
     // ============================================================ step 10: the document
 
-    /** 10b. Not regenerating promotes the newest preview to the official file. */
+    /**
+     * 10a. A release renders, and it renders even when a preview exists.
+     *
+     * The second half is the one worth having. A release used to be able to
+     * promote the newest preview instead of rendering, and the bytes on the
+     * public site were then whatever had been rendered at some earlier moment --
+     * before a member was curated in or out, before an override was recorded.
+     * The document and the frozen member rows of one issue could disagree with
+     * each other, with nothing to say which was the publication. So a preview is
+     * recorded here with bytes nothing else would produce, and the official file
+     * must NOT be those bytes.
+     */
     @Test
     @Transactional
-    public void notRegeneratingPromotesTheNewestPreview() throws Exception {
+    public void publishingRendersRatherThanShippingAPreview() throws Exception {
         PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
         s.setReportId("some-report");
         PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
         em.flush();
 
-        previews.record(i, "da", "preview.pdf", "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        previews.record(i, "da", "preview.pdf",
+                "the bytes somebody looked at".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        StubIssueRenderService.renders("the bytes the release rendered");
 
-        previewFor(i);
         publishService.publish(i.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
                         null, new Date(1_700_000_000_000L)));
         em.flush();
 
@@ -1055,8 +1060,8 @@ public class IssuePublishTest {
         assertTrue(da.getFilePath().startsWith(i.getRepoPath() + "/"), "the file is not under the issue's repo path");
         java.nio.file.Path official = paths.repoRoot().resolve(da.getFilePath());
         assertTrue(java.nio.file.Files.isRegularFile(official), "the official file does not exist: " + official);
-        assertEquals("preview-bytes", java.nio.file.Files.readString(official),
-                "the official file is not the promoted preview");
+        assertEquals("the bytes the release rendered", java.nio.file.Files.readString(official),
+                "the release shipped the preview instead of rendering the list it froze");
     }
 
     /** 10a/10c. A generated series that cannot produce a document does not publish. */
@@ -1065,40 +1070,175 @@ public class IssuePublishTest {
     public void aGeneratedSeriesThatCannotProduceADocumentIsRefused() {
         PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
-        s.setReportId("no-such-report");
+        s.setReportId(StubIssueRenderService.UNRENDERABLE);
         PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
         em.flush();
 
-        // 10a: the report does not exist, so the render fails and the publish with it.
+        // The render fails, and the publish with it.
         assertThrows(IssueRenderService.RenderFailedException.class,
                 () -> publishService.publish(i.getId(),
-                        new IssuePublishService.PublishRequest(true, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
                                 null, new Date(1_700_000_000_000L))));
         assertEquals(IssueStatus.OPEN, i.getStatus(), "a publish without a document flipped the status");
 
-        // 10b without a preview to promote: equally refused, not silently skipped.
+        // And a preview does not rescue it: there is no path that ships bytes the
+        // release did not produce, so a failing render is a failing release.
+        previews.record(i, "da", "preview.pdf",
+                "a preview".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         assertThrows(IssueRenderService.RenderFailedException.class,
                 () -> publishService.publish(i.getId(),
-                        new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
                                 null, new Date(1_700_000_000_000L))));
         assertEquals(IssueStatus.OPEN, i.getStatus());
     }
-    @jakarta.inject.Inject
-    org.niord.core.publication.series.IssuePreviewService previewService;
+
+    // ============================================================ the names at release
 
     /**
-     * Records a preview so the publish has bytes to promote.
+     * A name typed in the release dialog lands, is marked as a decision, and is
+     * recorded -- through the same path the issue-name edit uses.
      *
-     * A query-backed series names a report and publish refuses to leave a
-     * language without a document, so these fixtures release the way an admin
-     * does after looking at the preview: regenerate = false, promoting exactly
-     * the bytes that were reviewed. The bytes themselves are irrelevant here.
+     * The release dialog is the LAST moment a name can still change: from here it
+     * is on the document and in every citation of this issue. What makes it safe
+     * is that it goes through the rename rather than onto the desc: the flag it
+     * sets is what stops the next interval change quietly putting the suggested
+     * name back, and the trail is what says a human chose this one.
      */
-    private void previewFor(org.niord.core.publication.series.PublicationIssue issue) {
-        for (org.niord.core.publication.series.PublicationIssueDesc desc : issue.getDescs()) {
-            previewService.record(issue, desc.getLang(), "preview.pdf",
-                    "preview-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
+    @Test
+    @Transactional
+    public void aNameGivenAtReleaseIsAppliedMarkedAndAudited() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_700_000_000_000L), java.util.Map.of("da", "  EfS uge 46  ")));
+        em.flush();
+
+        PublicationIssueDesc da = i.getDescs().stream()
+                .filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow();
+        assertEquals("EfS uge 46", da.getName(), "the name given at release was not applied, or not trimmed");
+        assertTrue(da.isNameOverridden(),
+                "a name typed at release that does not mark itself as one is a name the next interval "
+                        + "change silently reverts");
+        assertTrue(auditService.forIssue(i).stream().anyMatch(a -> AuditAction.NAME_CHANGED == a.getAction()),
+                "the release renamed the issue and nothing in the trail says so");
+        assertEquals(IssueStatus.PUBLISHED, i.getStatus());
+    }
+
+    /** No names in the body renames nothing, and writes no rename into the trail. */
+    @Test
+    @Transactional
+    public void aReleaseWithoutNamesLeavesTheNameAlone() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+        PublicationIssueDesc da = i.getDescs().stream()
+                .filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow();
+
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_700_000_000_000L)));
+        em.flush();
+
+        assertFalse(da.isNameOverridden(),
+                "a release that was told nothing about the name marked it as typed by hand, which stops "
+                        + "the name tracking the period it renders");
+        assertTrue(auditService.forIssue(i).stream().noneMatch(a -> AuditAction.NAME_CHANGED == a.getAction()),
+                "a Historik panel listing renames that nobody made buries the ones somebody did");
+    }
+
+    /**
+     * Correcting ONE language's name leaves the others tracking the period.
+     *
+     * The release restamps the numbers to the week that actually went out, and
+     * re-renders every suggested name from it, because an issue labelled "uge 45"
+     * released in week 46 is unfindable by either. A name somebody typed is exempt
+     * -- but per language, which is the whole point: the create dialog offers a
+     * field per language and an admin who fixes the Danish wording has said
+     * nothing about the English one, so leaving English frozen at the week that
+     * did not happen puts a name and a number that disagree on the same document.
+     */
+    @Test
+    @Transactional
+    public void correctingOneLanguageLeavesTheOthersFollowingThePeriod() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        // Two languages, each with a pattern, so a re-derived name is visibly a
+        // rendering of the period rather than a constant.
+        s.getLanguages().add("en");
+        s.getDescs().stream().filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow()
+                .setNameSuggestionPattern("Uge ${week}, ${year}");
+        PublicationSeriesDesc en = s.createDesc("en");
+        en.setName("Test series");
+        en.setNameSuggestionPattern("Week ${week}, ${year}");
+
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        PublicationIssueDesc enDesc = i.createDesc("en");
+        enDesc.setName("Week 44, 2023");
+        em.flush();
+
+        // The create dialog: the Danish wording is corrected, the English field is
+        // left as the series suggested it.
+        edits.applyNames(i, java.util.Map.of("da", "EfS uge 44 (dobbeltuge)"), null);
+        em.flush();
+
+        // And the release happens two weeks later than the issue was nominally for.
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssueDesc da = i.getDescs().stream()
+                .filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow();
+        assertEquals("EfS uge 44 (dobbeltuge)", da.getName(),
+                "the release re-derived over a name somebody typed");
+        assertEquals("Week " + i.getWeek() + ", " + i.getYear(), enDesc.getName(),
+                "the English name stayed at the week that did not go out; a rename in one language "
+                        + "must not freeze the languages nobody touched");
+    }
+
+    /**
+     * A blank name in the release body is refused, and nothing is released.
+     *
+     * With the same code the rename path answers, because a caller that cannot
+     * tell the two apart cannot tell the admin what to fix. The refusal lands
+     * before the members are frozen and before the status flips, which is what
+     * matters: a release is the one action here that cannot be taken back, and an
+     * issue left PUBLISHED under a blank name is unfindable in every list that
+     * shows it.
+     *
+     * And nothing is stamped either. The cut-off is the column a release can never
+     * un-write, so a refusal that lands after it has been set leaves the issue
+     * correct only for as long as the transaction rolls back -- which is not a
+     * property of this refusal, it is a property of the caller.
+     */
+    @Test
+    @Transactional
+    public void aBlankNameAtReleaseIsRefusedAndNothingIsReleased() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> publishService.publish(i.getId(),
+                                new IssuePublishService.PublishRequest(
+                                        IssuePublishService.PublishRequest.ALL_WARNINGS, null,
+                                        new Date(1_700_000_000_000L), java.util.Map.of("da", "   "))));
+        assertEquals("NAME_BLANK", e.code(), "the release refused with a code the rename path does not use");
+
+        assertEquals(IssueStatus.OPEN, i.getStatus(), "a refused release flipped the status anyway");
+        assertNull(i.getPublishedAt(), "a refused release stamped a publication moment");
+        assertNull(i.getCutoffStampedAt(),
+                "a refused release stamped a cut-off; the name is judged with the other refusals, "
+                        + "before anything is written");
+        assertTrue(auditService.forIssue(i).stream().noneMatch(a -> AuditAction.PUBLISHED == a.getAction()),
+                "a PUBLISHED entry was written despite the refusal");
     }
 
 }

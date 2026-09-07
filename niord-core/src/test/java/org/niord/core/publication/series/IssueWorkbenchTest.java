@@ -95,6 +95,9 @@ public class IssueWorkbenchTest {
     IssueLifecycleService lifecycle;
 
     @Inject
+    MemberResolutionService resolver;
+
+    @Inject
     EntityManager em;
 
     private static final Date OPENS = new Date(1_699_000_000_000L);
@@ -452,6 +455,82 @@ public class IssueWorkbenchTest {
         assertEquals(1, composedDecisions.size());
         assertNotNull(vo.getOverrides().get(0).getAuthor(),
                 "the standing decision lost its author, which is half of a why-line");
+    }
+
+    /**
+     * Every omission row carries the short id an editor recognises, and the whole
+     * sample costs ONE query.
+     *
+     * The rows are a work list: somebody reads them and decides whether each
+     * message belongs in the issue after all. A uid is a UUID, and a panel that
+     * lists nothing else is one an editor cannot act on -- they would have to look
+     * every row up somewhere else to find out what it is. The short id is display
+     * text and nothing more, which is why the resolution does not carry it: it is
+     * not unique, nothing prevents reuse, and a membership decision keyed on it
+     * could treat two different messages as one. So it is filled in afterwards,
+     * over the CAPPED sample and in one query -- a wide document drops thousands
+     * of candidates, and a lookup per row would put a thousand queries on a path
+     * the criteria editor fires while somebody is still typing.
+     *
+     * The query is COUNTED rather than described, with the resolving read measured
+     * beside it so the counter is shown to be sensitive to what it claims to
+     * measure.
+     */
+    @Test
+    @Transactional
+    public void everyOmissionRowCarriesItsShortIdAndTheFillIsOneQuery() {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        message("NM-001", Status.PUBLISHED);
+        // Two candidates the query selects and the predicate then drops: one that
+        // has been given its number, and one that has not. The second is why the
+        // field is nullable -- a draft has no short id at all, and a fill that
+        // assumed one would either omit the row or invent an id for it.
+        Message numbered = message("NM-815-26", Status.DRAFT);
+        Message unnumbered = message(null, Status.DRAFT);
+        em.flush();
+
+        IssueResolution resolved = resolutions.forIssue(i, new Date());
+        assertEquals(2, resolved.resolution().misses().size(),
+                "the fixture did not drop the two candidates this test is about");
+
+        Statistics stats = em.unwrap(Session.class).getSessionFactory().getStatistics();
+        boolean wasEnabled = stats.isStatisticsEnabled();
+        stats.setStatisticsEnabled(true);
+        IssueOmissionsVo omissions;
+        try {
+            long before = stats.getQueryExecutionCount();
+            omissions = resolver.omissions(resolved.resolution().misses());
+            long filling = stats.getQueryExecutionCount() - before;
+
+            assertEquals(1L, filling,
+                    "filling the omission rows' short ids ran " + filling + " queries. It is ONE read "
+                            + "over the capped uids; anything more is a lookup per row, and the sample "
+                            + "is fifty rows on a path that fires while somebody is typing");
+        } finally {
+            stats.setStatisticsEnabled(wasEnabled);
+        }
+
+        assertEquals(2, omissions.getMissCount());
+        assertEquals("NM-815-26", messageIdOf(omissions, numbered.getUid()),
+                "the omission row for a numbered message came back without the id an editor reads");
+        assertNull(messageIdOf(omissions, unnumbered.getUid()),
+                "a message with no short id was given one; the uid is the identity and the short id "
+                        + "is display text that may genuinely be absent");
+
+        // And the screen serves the same rows, so the panel is not a second shape.
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true);
+        assertEquals("NM-815-26", messageIdOf(vo.getOmissions(), numbered.getUid()),
+                "the workbench's omissions panel serves rows with no short id on them");
+    }
+
+    /** The short id on the row for one uid, or null. */
+    private static String messageIdOf(IssueOmissionsVo omissions, String uid) {
+        return omissions.getMisses().stream()
+                .filter(m -> uid.equals(m.messageUid()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no omission row for " + uid))
+                .messageId();
     }
 
     /**

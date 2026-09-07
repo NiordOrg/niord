@@ -120,7 +120,7 @@ public class IssueEditService extends BaseService {
         // same call has to land after it -- otherwise the rename is overwritten
         // by the re-derivation it was meant to replace.
         applyInterval(issue, edit, actor);
-        applyNames(issue, edit, actor);
+        applyNames(issue, edit.names(), actor);
         applyCriteriaOverride(issue, edit, actor);
 
         if (edit.reportParams() != null) {
@@ -254,19 +254,29 @@ public class IssueEditService extends BaseService {
 
     // --------------------------------------------------------------------- names
 
-    private void applyNames(PublicationIssue issue, IssueEdit edit, User actor) {
-        if (edit.names() == null || edit.names().isEmpty()) {
+    /**
+     * The names, applied -- the one place a name is written.
+     *
+     * PUBLIC because two other actions offer the same field and must not grow
+     * their own copy of it. The create dialog prefills the series' suggestions and
+     * lets an admin correct them before the issue exists in a list under a name
+     * nobody chose, and the release dialog is the LAST moment a name can still be
+     * changed, because publishing puts it on the document and into every citation.
+     * A second implementation of this would set the name without the flag, and the
+     * next interval change would quietly rename the issue back.
+     *
+     * A null or empty map changes nothing, so a caller with nothing to say sends
+     * nothing rather than reconstructing the current names.
+     */
+    public void applyNames(PublicationIssue issue, Map<String, String> names, User actor) {
+        if (names == null || names.isEmpty()) {
             return;
         }
-        for (Map.Entry<String, String> entry : edit.names().entrySet()) {
+        validateNames(issue, names);
+        for (Map.Entry<String, String> entry : names.entrySet()) {
             String lang = entry.getKey();
             String name = entry.getValue();
 
-            if (name == null || name.isBlank()) {
-                throw new IssueLifecycleService.TransitionRefusedException("NAME_BLANK",
-                        "a nameless issue is unfindable in every list that shows it; clear the "
-                                + "override instead if the series should name it again");
-            }
             PublicationIssueDesc desc = descFor(issue, lang);
             String trimmed = name.trim();
             if (trimmed.equals(desc.getName())) {
@@ -284,6 +294,31 @@ public class IssueEditService extends BaseService {
             desc.setNameOverridden(true);
 
             audit.edited(issue, actor, AuditAction.NAME_CHANGED, detail);
+        }
+    }
+
+    /**
+     * The same two refusals {@link #applyNames} makes, WITHOUT touching the issue.
+     *
+     * A caller that renames as one step of a longer action needs to know the names
+     * are acceptable before it starts changing anything else: the release path
+     * stamps a cut-off and restamps the numbers before it can apply a name, and a
+     * refusal at that point would have written those columns first. Nothing here
+     * mutates, so it is safe to ask early and then ask again by applying.
+     */
+    public void validateNames(PublicationIssue issue, Map<String, String> names) {
+        if (names == null || names.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : names.entrySet()) {
+            String name = entry.getValue();
+            if (name == null || name.isBlank()) {
+                throw new IssueLifecycleService.TransitionRefusedException("NAME_BLANK",
+                        "a nameless issue is unfindable in every list that shows it; clear the "
+                                + "override instead if the series should name it again");
+            }
+            // Throws NO_SUCH_LANGUAGE where the issue has no row to write.
+            descFor(issue, entry.getKey());
         }
     }
 
