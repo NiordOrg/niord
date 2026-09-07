@@ -153,7 +153,20 @@ public final class PublicationErrorCatalogue {
         put("ISSUE_NOT_PUBLISHED", 409);
         put("ISSUE_NOT_RETIRED", 409);
         put("ISSUE_NOT_OPEN", 409);
-        put("ISSUE_NOT_DELETABLE", 409);
+        // There is deliberately no single ISSUE_NOT_DELETABLE. "Not deletable"
+        // covered two refusals with different next steps -- retire this first,
+        // versus these messages point at it -- and one code cannot tell a client
+        // which button to offer.
+        // A released document is not deletable. 409 rather than 400 because the
+        // same request succeeds once the issue is retired -- which is precisely
+        // the next step the refusal names, so a client that stopped retrying on a
+        // 400 would be stopping on the one refusal that has a way forward.
+        put("ISSUE_PUBLISHED_NOT_DELETABLE", 409);
+        // A retired issue that message HTML still points at. 409 for the same
+        // reason: the citations can be moved or withdrawn, and then the identical
+        // request goes through. The response names the citing messages, because
+        // "something cites this" leaves an admin searching the estate by hand.
+        put("ISSUE_CITED", 409);
         put("SERIES_HAS_ISSUES", 409);
         // 409: the series is a one-off and already holds its one issue. A state
         // conflict that CAN clear -- reclassifying the series as UNSCHEDULED makes

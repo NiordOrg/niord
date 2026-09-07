@@ -19,9 +19,12 @@ package org.niord.web.publication;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.PublicationResolver;
+import org.niord.core.publication.series.IssueDeleteService;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueRenderService;
@@ -37,6 +40,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -124,6 +128,8 @@ public class PublicationExceptionMapperContractTest {
                 new IssuePublishService.ArchiveFailedException("…", new RuntimeException()),
                 new IssueRenderService.RenderFailedException("…", new RuntimeException()),
                 new MemberResolutionService.UnresolvableOperandException("…"),
+                new IssueDeleteService.IssueCitedException("…",
+                        List.of(new PublicationResolver.CitingMessage("NM-1-26", "uid-1")), 1),
                 new IssueNaming.UnknownTokenException("yeer"),
                 new CriteriaResolver.EmptyOperandException(CriterionKind.AREA),
                 new CriteriaParseException("…", new RuntimeException()));
@@ -136,6 +142,58 @@ public class PublicationExceptionMapperContractTest {
                             + "to prevent");
             assertEquals(e.code(), PublicationExceptionMapper.codeOf(e));
         }
+    }
+
+    /**
+     * A refused deletion puts the citing messages ON THE WIRE, not only in the
+     * sentence.
+     *
+     * This is the whole deliverable of that refusal. Told "some messages cite
+     * this", an admin has to search the estate by hand for something that is not
+     * in any list -- the citation lives inside message HTML. Told WHICH, the
+     * dialog renders a row per message that opens straight into it.
+     *
+     * The keys are asserted rather than assumed because they are a contract with
+     * a client written in another repository: renaming one here breaks the
+     * dialog, and nothing in either build would say so.
+     *
+     * The count is the true total while the list is bounded, so an issue cited by
+     * three hundred messages produces a response somebody can render and a
+     * sentence somebody can read. Asserted with a total LARGER than the sample,
+     * because a fixture where they happen to be equal would pass just as well
+     * against a body that reported the list length.
+     */
+    @Test
+    public void aCitationRefusalNamesTheMessagesAndCountsThemAll() {
+        Response response = new PublicationExceptionMapper().toResponse(
+                new IssueDeleteService.IssueCitedException("cited by 37 messages",
+                        List.of(new PublicationResolver.CitingMessage("NM-1-26", "uid-1"),
+                                new PublicationResolver.CitingMessage("uid-2", "uid-2")),
+                        37));
+
+        assertEquals(409, response.getStatus(),
+                "a deletion refused because the estate points at the issue is a state conflict, "
+                        + "not a malformed request");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getEntity();
+        assertEquals("ISSUE_CITED", body.get("code"));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> messages = (List<Map<String, Object>>) body.get("citingMessages");
+        assertNotNull(messages, "the refusal carries no citingMessages, so the dialog has nothing "
+                + "to list and the admin is sent to search by hand");
+        assertEquals(2, messages.size());
+        assertEquals("NM-1-26", messages.get(0).get("messageId"));
+        assertEquals("uid-1", messages.get(0).get("uid"));
+        // A message with no number yet is named by its uid, which is still a
+        // thing a person can look up -- a blank row would not be.
+        assertEquals("uid-2", messages.get(1).get("messageId"));
+        assertEquals("uid-2", messages.get(1).get("uid"));
+
+        assertEquals(37L, body.get("citingCount"),
+                "the count must be the true total rather than the length of the bounded list, or "
+                        + "the dialog tells the admin there are two when there are thirty-seven");
     }
 
     /** The field errors survive the move onto the base type. */

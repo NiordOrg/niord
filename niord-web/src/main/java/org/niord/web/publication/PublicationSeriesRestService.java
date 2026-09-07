@@ -37,9 +37,11 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.slf4j.Logger;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.user.Roles;
+import org.niord.core.publication.series.IssueAuditEntry;
 import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueDraftService;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.vo.IssueAuditEntryVo;
 import org.niord.core.publication.series.vo.IssueDraftVo;
 import org.niord.core.publication.series.vo.IssueOmissionsVo;
 import org.niord.core.user.UserService;
@@ -1321,6 +1323,34 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // The audit rows go with the series, so this line is the only thing left
         // that says it was ever there.
         log.info("Deleted series {}", seriesId);
+    }
+
+    /**
+     * The series' own history: the events that belong to the publication rather
+     * than to any one issue.
+     *
+     * There was no way to read these at all. Activation, retirement, the change of
+     * authority, the move to another desk and -- now -- the deletion of an issue
+     * are all recorded on the SERIES, and every one of them was written to a table
+     * whose only endpoint keyed off an issue. The deletion is what makes that
+     * unacceptable rather than merely untidy: the entry it writes is the ONLY
+     * remaining record of a publication that stopped existing, and an
+     * unreadable-only record is not a record.
+     *
+     * Not domain-scoped, because it is a read. Admin tier all the same: the
+     * entries name people and carry reasons written for colleagues.
+     */
+    @GET
+    @Path("/{seriesId}/history")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    @NoCache
+    @RolesAllowed(Roles.ADMIN)
+    public List<IssueAuditEntryVo> history(@PathParam("seriesId") String seriesId) {
+        // The same VO the issue trail returns, and the same per-line mapping: two
+        // history panels rendering two shapes of the same table is how one of them
+        // comes to show an actor the other does not.
+        return audit.forSeries(required(seriesId)).stream().map(IssueAuditEntry::toVo).toList();
     }
 
     // ------------------------------------------------------------------ tools

@@ -194,18 +194,37 @@ public class PublicationUtils {
 
             if (StringUtils.isNotBlank(href)) {
                 result = String.format(
-                        "<a publication=\"%s\" href=\"%s\" target=\"_blank\">%s</a>",
-                        publication.getPublicationId(),
+                        "<a %s href=\"%s\" target=\"_blank\">%s</a>",
+                        citationMarker(publication.getPublicationId()),
                         href,
                         result);
             } else {
                 result = String.format(
-                        "<span publication=\"%s\">%s</span>",
-                        publication.getPublicationId(),
+                        "<span %s>%s</span>",
+                        citationMarker(publication.getPublicationId()),
                         result);
             }
         }
 
         return result;
+    }
+
+
+    /**
+     * The one stored form of a citation: the attribute that names the publication.
+     *
+     * A citation is HTML inside a message, and this attribute is the only part of
+     * it that identifies WHAT is cited -- everything around it is display text an
+     * editor is free to rewrite. It is spelled once, here, because the code that
+     * WRITES a citation and the code that searches for one have to agree
+     * character for character: a search that spelled it differently would find
+     * nothing, and quietly report that nothing cites a publication that is cited
+     * everywhere.
+     *
+     * @param publicationId the id verbatim, or -- for a caller building a search
+     *                      pattern -- the id already escaped for that search
+     */
+    public static String citationMarker(String publicationId) {
+        return "publication=\"" + publicationId + "\"";
     }
 }

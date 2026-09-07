@@ -274,6 +274,95 @@ public class PublicationResolver extends BaseService implements PublicationMembe
     }
 
 
+    // ------------------------------------------------------- the other direction
+
+    /** One message that carries a citation, named the way a person reads it. */
+    public record CitingMessage(String messageId, String uid) {
+    }
+
+    /**
+     * The messages citing a publication: a bounded sample, and the true total.
+     *
+     * @param sample the first few, for naming in a refusal
+     * @param total  how many there are altogether, which is what a sentence counts
+     */
+    public record Citations(List<CitingMessage> sample, long total) {
+
+        public boolean any() {
+            return total > 0;
+        }
+    }
+
+    /**
+     * Which messages cite this publication.
+     *
+     * The reverse of everything above, and it belongs here for the same reason
+     * the forward direction does: a citation has exactly ONE stored form, and a
+     * second place that decided what one looks like would eventually disagree
+     * with {@link PublicationUtils}, which writes them. The stored form is an
+     * anchor or a span carrying {@code publication="<id>"} inside the message's
+     * publication field -- internal citations sit in their own column and count
+     * just as much, because an internal reference dangles as visibly as a public
+     * one to the editor who wrote it.
+     *
+     * One id covers both halves of the estate: an imported issue adopts the
+     * previous system's publication id AS its publicId, so a single lookup finds
+     * citations written before and after the cut-over.
+     *
+     * The pattern is escaped. A publication id may legitimately contain an
+     * underscore -- 'dk-firing-areas_2016' would be an ordinary one -- and an
+     * unescaped underscore is a LIKE wildcard, which would match a DIFFERENT
+     * publication's citations and refuse a delete that should have gone through.
+     *
+     * @param limit how many to name; the count is exact regardless
+     */
+    public Citations citingMessages(String publicationId, int limit) {
+        if (publicationId == null || publicationId.isBlank()) {
+            return new Citations(List.of(), 0);
+        }
+        // The marker comes from the writer's own spelling rather than a second
+        // copy of it: a search that drifted from what is stored would report that
+        // nothing cites a publication that is cited everywhere -- and the delete
+        // it is guarding would go through.
+        String pattern = "%" + PublicationUtils.citationMarker(escapeLike(publicationId)) + "%";
+
+        Long total = em.createQuery(
+                        "SELECT COUNT(DISTINCT m.id) FROM Message m JOIN m.descs d "
+                                + "WHERE d.publication LIKE :p ESCAPE '!' "
+                                + "OR d.internalPublication LIKE :p ESCAPE '!'", Long.class)
+                .setParameter("p", pattern)
+                .getSingleResult();
+
+        if (total == null || total == 0) {
+            return new Citations(List.of(), 0);
+        }
+
+        // shortId first, uid as the fallback: a message that has not been assigned
+        // its number yet still has to be nameable, or the refusal lists a blank.
+        List<Object[]> rows = em.createQuery(
+                        "SELECT DISTINCT m.id, m.shortId, m.uid FROM Message m JOIN m.descs d "
+                                + "WHERE d.publication LIKE :p ESCAPE '!' "
+                                + "OR d.internalPublication LIKE :p ESCAPE '!' "
+                                + "ORDER BY m.id", Object[].class)
+                .setParameter("p", pattern)
+                .setMaxResults(Math.max(1, limit))
+                .getResultList();
+
+        List<CitingMessage> sample = new ArrayList<>();
+        for (Object[] row : rows) {
+            String shortId = (String) row[1];
+            String uid = (String) row[2];
+            sample.add(new CitingMessage(
+                    shortId == null || shortId.isBlank() ? uid : shortId, uid));
+        }
+        return new Citations(List.copyOf(sample), total);
+    }
+
+    /** Neutralises the LIKE wildcards in a value that is data rather than a pattern. */
+    private static String escapeLike(String value) {
+        return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+    }
+
     /** The frozen member uids of an issue, in their stored order. */
     private List<String> memberUids(String publicId) {
         return em.createQuery(

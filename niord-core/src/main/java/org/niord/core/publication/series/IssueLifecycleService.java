@@ -30,7 +30,10 @@ import java.util.UUID;
 
 /**
  * The issue transitions other than publish: create, retro-create, new edition,
- * amend, retire, reactivate, delete.
+ * amend, retire, reactivate. Removing an issue outright is NOT here -- it ends
+ * the row rather than changing its state, and what it has to consult before it
+ * may proceed is the rest of the estate rather than the issue; it lives in
+ * {@link IssueDeleteService}.
  *
  * Two of these carry decisions worth stating rather than inferring.
  *
@@ -393,27 +396,6 @@ public class IssueLifecycleService extends BaseService {
     // ================================================================= delete
 
     /**
-     * T5. An issue may be deleted only while nothing has depended on it.
-     *
-     * C7's literal "no publicId" can never be true, because
-     * publicId is minted at create. The real test is that it was never stamped
-     * and never published -- which preserves C7's intent exactly.
-     */
-    @Transactional
-    public void deleteIssue(PublicationIssue issue, User actor) {
-        if (issue.getStatus() != IssueStatus.OPEN
-                || issue.getCutoffStampedAt() != null
-                || issue.getPublishedAt() != null) {
-            throw new TransitionRefusedException("ISSUE_NOT_DELETABLE",
-                    "an issue that has been stamped or published cannot be deleted; retire it instead");
-        }
-        em.createNamedQuery("IssueMember.deleteByIssue").setParameter("issue", issue).executeUpdate();
-        em.createQuery("DELETE FROM IssueOverride o WHERE o.issue = :i").setParameter("i", issue).executeUpdate();
-        em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.issue = :i").setParameter("i", issue).executeUpdate();
-        em.remove(em.contains(issue) ? issue : em.merge(issue));
-    }
-
-    /**
      * S4 / X-5. A series may be deleted only when it has no issues at all.
      *
      * THE TRAIL GOES WITH IT, and it has to go FIRST. An audit entry owns a
@@ -427,8 +409,8 @@ public class IssueLifecycleService extends BaseService {
      * set: IssueAuditEntry sets either its issue or its series and never both, and
      * this method has already refused a series that still has issues -- so there is
      * no issue-level row of this series left to reach. The issue-level ones are
-     * deleted by whatever deletes the issue: deleteIssue above clears its own, and
-     * the import undo clears both halves before it bulk-deletes.
+     * deleted by whatever deletes the issue: {@link IssueDeleteService} clears an
+     * issue's own, and the import undo clears both halves before it bulk-deletes.
      *
      * Deleting the trail is right rather than regrettable. The entries describe a
      * publication that is about to stop existing, and a deletable series is one

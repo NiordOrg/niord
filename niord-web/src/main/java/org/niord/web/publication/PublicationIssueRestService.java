@@ -43,6 +43,7 @@ import org.niord.core.publication.series.IssueArchiveService;
 import org.niord.core.publication.series.IssueAuditEntry;
 import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueCurationService;
+import org.niord.core.publication.series.IssueDeleteService;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.IssueListService;
 import org.niord.core.publication.series.IssueMemberListService;
@@ -161,6 +162,9 @@ public class PublicationIssueRestService {
 
     @Inject
     IssueAuditService audit;
+
+    @Inject
+    IssueDeleteService deletion;
 
     @Inject
     PublishChecklistService checklist;
@@ -1172,23 +1176,38 @@ public class PublicationIssueRestService {
         return vo;
     }
 
-    /** I9. Delete, guarded. */
+    /**
+     * I9. Delete, guarded.
+     *
+     * The rules are IssueDeleteService's and are stated there: an OPEN issue goes,
+     * a PUBLISHED one never does, a RETIRED one goes only when nothing cites it.
+     * This endpoint adds the two questions that belong to the transport -- is the
+     * caller administering the owning domain, and are they acting on the revision
+     * they were shown -- and nothing else. An endpoint that re-decides the rules
+     * is a second set of them.
+     *
+     * The reason travels as a query parameter, exactly as retire's does, for want
+     * of a body on a DELETE. Optional here where retire's is required: a deletion
+     * is often housekeeping, and a mandatory sentence on one is answered with a
+     * keystroke rather than an explanation.
+     */
     @DELETE
     @Path("/issue/{publicId}")
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
     @VersionChecked
     public void delete(@PathParam("publicId") String publicId,
+                       @QueryParam("reason") String reason,
                        @QueryParam("version") Integer version) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
         StaleVersionGuard.check(issue, version);
         String seriesId = issue.getSeries() == null ? null : issue.getSeries().getSeriesId();
-        lifecycle.deleteIssue(issue, null);
+        deletion.delete(issue, userService.currentUser(), reason);
         // Logged AFTER the guarded delete succeeded, and with the series named:
-        // the audit row goes with the issue, so this line is the only thing left
-        // that says the issue was ever there.
-        log.info("Deleted issue {} of series {}", publicId, seriesId);
+        // the issue's own audit rows go with it, so this line and the series-level
+        // entry the service writes are what remain of it.
+        log.info("Deleted issue {} of series {}, reason '{}'", publicId, seriesId, reason);
     }
 
     /**

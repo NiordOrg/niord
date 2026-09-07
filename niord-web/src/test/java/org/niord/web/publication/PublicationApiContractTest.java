@@ -292,7 +292,7 @@ public class PublicationApiContractTest {
     @Test
     public void stateConflictsAreNotClientErrors() {
         for (String code : List.of("ISSUE_ALREADY_PUBLISHED", "ISSUE_NOT_PUBLISHED", "ISSUE_NOT_OPEN",
-                "ISSUE_NOT_DELETABLE", "SERIES_HAS_ISSUES", "CATEGORY_IN_USE")) {
+                "ISSUE_PUBLISHED_NOT_DELETABLE", "ISSUE_CITED", "SERIES_HAS_ISSUES", "CATEGORY_IN_USE")) {
             assertEquals(409, PublicationErrorCatalogue.statusOf(code),
                     code + " is a state conflict; as a 400 a client would stop retrying something that "
                             + "will succeed once the state changes");

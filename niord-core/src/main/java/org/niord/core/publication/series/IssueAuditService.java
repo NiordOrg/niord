@@ -263,6 +263,25 @@ public class IssueAuditService extends BaseService {
         return writeSeries(series, action, actor, reason, null);
     }
 
+    /**
+     * An issue was deleted, recorded on the SERIES.
+     *
+     * It cannot be recorded anywhere else. Every other entry about an issue hangs
+     * off a foreign key to it, so an entry saying the issue is gone would be
+     * deleted by the same statement that removes the issue -- leaving a
+     * publication that silently stops existing, which is exactly the event an
+     * administrator opens a history looking for.
+     *
+     * The detail is therefore the whole record. The row it describes will not be
+     * there to be read alongside it, so what the issue WAS has to be inside the
+     * entry: its public id, the status it was deleted from, its names, its period.
+     */
+    public IssueAuditEntry deleted(PublicationIssue issue, User actor, String reason,
+                                   Map<String, Object> detail) {
+        return writeSeries(issue == null ? null : issue.getSeries(), AuditAction.DELETED,
+                actor, reason, detail);
+    }
+
     /** The importer's entries: real events, but nobody's action. */
     public IssueAuditEntry imported(PublicationIssue issue, String note) {
         Map<String, Object> detail = new LinkedHashMap<>();
@@ -291,10 +310,23 @@ public class IssueAuditService extends BaseService {
                 .setParameter("i", issue).getResultList();
     }
 
+    /**
+     * The series' own history, newest first.
+     *
+     * SERIES-LEVEL ONLY, and the {@code issue IS NULL} is written out rather than
+     * relied upon. Exactly one of the two owners is set on any row today, so the
+     * series predicate alone happens to be enough -- but that is an invariant of
+     * the writers, and a panel that would start showing every issue's entries the
+     * day one row set both should not depend on remembering it.
+     *
+     * Newest first, unlike the per-issue trail. An issue's trail is a story read
+     * forwards -- created, published, amended -- while a series' is a log, and the
+     * question at a log is "what happened recently".
+     */
     public List<IssueAuditEntry> forSeries(PublicationSeries series) {
         return em.createQuery(
-                        "SELECT a FROM IssueAuditEntry a WHERE a.series = :s "
-                                + "ORDER BY a.created ASC, a.id ASC",
+                        "SELECT a FROM IssueAuditEntry a WHERE a.series = :s AND a.issue IS NULL "
+                                + "ORDER BY a.created DESC, a.id DESC",
                         IssueAuditEntry.class)
                 .setParameter("s", series).getResultList();
     }

@@ -258,39 +258,8 @@ public class IssueLifecycleTest {
 
     // ================================================================= delete
 
-    /**
-     * C7's literal "no publicId" can never be true, because
-     * publicId is minted at create. The real test is never-stamped and
-     * never-published.
-     */
-    @BindsRule({"I-16"})
-    @Test
-    @Transactional
-    public void onlyAnUntouchedIssueCanBeDeleted() {
-        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
-        PublicationIssue fresh = lifecycle.create(s, new Date(1_699_000_000_000L),
-                IntervalBoundSource.STAMPED, user());
-        em.flush();
-
-        assertNotNull(fresh.getPublicId(), "it HAS a publicId, which is why C7's literal wording cannot work");
-        lifecycle.deleteIssue(fresh, user());
-        em.flush();
-        assertNull(em.find(PublicationIssue.class, fresh.getId()), "the untouched issue was not deleted");
-
-        PublicationIssue published = lifecycle.create(s, new Date(1_699_000_000_000L),
-                IntervalBoundSource.STAMPED, user());
-        em.flush();
-        previewFor(published);
-        publishService.publish(published.getId(),
-                new IssuePublishService.PublishRequest(false, IssuePublishService.PublishRequest.ALL_WARNINGS, null, new Date(1_700_000_000_000L)));
-        em.flush();
-
-        PublicationIssue live = em.find(PublicationIssue.class, published.getId());
-        IssueLifecycleService.TransitionRefusedException e =
-                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
-                        () -> lifecycle.deleteIssue(live, user()));
-        assertEquals("ISSUE_NOT_DELETABLE", e.code());
-    }
+    // Removing an issue is IssueDeleteService's, and IssueDeleteTest asserts it:
+    // what may go, what may not, what goes with it and what is left behind.
 
     /** X-5. A series with issues is retired, never deleted. */
     @BindsRule({"X-5"})

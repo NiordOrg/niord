@@ -20,6 +20,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.niord.core.publication.PublicationResolver;
+import org.niord.core.publication.series.IssueDeleteService;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.PublicationException;
 import org.niord.core.publication.series.SeriesValidator;
@@ -88,6 +90,22 @@ public class PublicationExceptionMapper implements ExceptionMapper<PublicationEx
         // rather than send the admin back to the checklist to find out.
         if (e instanceof IssuePublishService.WarningsNotAcknowledgedException warnings) {
             body.put("unacknowledgedWarnings", warnings.codes());
+        }
+        // Which messages cite the issue somebody tried to delete, and how many
+        // there are. The sentence carries the same names, but a dialog has to be
+        // able to render each one as a row somebody can open -- and a client
+        // parsing them back out of the message would break the first time the
+        // wording improved. The count is the true total; the list is bounded.
+        if (e instanceof IssueDeleteService.IssueCitedException cited) {
+            List<Map<String, Object>> messages = new ArrayList<>();
+            for (PublicationResolver.CitingMessage m : cited.citingMessages()) {
+                Map<String, Object> one = new LinkedHashMap<>();
+                one.put("messageId", m.messageId());
+                one.put("uid", m.uid());
+                messages.add(one);
+            }
+            body.put("citingMessages", messages);
+            body.put("citingCount", cited.citingCount());
         }
         // Which fields failed, so a form can put each message beside the control
         // that caused it. The message stays a readable sentence for a log; this

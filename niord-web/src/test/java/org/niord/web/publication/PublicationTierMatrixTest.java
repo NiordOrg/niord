@@ -165,6 +165,11 @@ public class PublicationTierMatrixTest {
         t.put("PUT /publication-series/series/{seriesId}/public-authority", Tier.ADMIN);
         t.put("PUT /publication-series/public-authority", Tier.ADMIN);
         t.put("DELETE /publication-series/series/{seriesId}", Tier.ADMIN);
+        // The series-level trail. ADMIN and not CURATOR, unlike the issue trail:
+        // the entries here name the desk a publication moved between and carry the
+        // reason somebody typed for the administrator receiving it, and one of
+        // them is the only surviving record of a deleted issue.
+        t.put("GET /publication-series/{seriesId}/history", Tier.ADMIN);
         t.put("POST /publication-series/validate", Tier.ADMIN);
         t.put("POST /publication-series/import-legacy/validate", Tier.ADMIN);
         t.put("POST /publication-series/import-legacy", Tier.ADMIN);
