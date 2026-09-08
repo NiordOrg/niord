@@ -46,8 +46,48 @@ public class IssueWorkbenchVo implements IJsonSerializable {
     /** The issue itself, as GET /editable-issue/{publicId} returns it. */
     private SystemPublicationIssueVo issue;
 
+    /**
+     * The instant every part of this response was answered for, epoch milliseconds.
+     *
+     * ECHOED RATHER THAN ASSUMED. An open issue can be read as of now or as of its
+     * planned cut-off, and the two answers differ by exactly the messages
+     * published in between -- so a screen that rendered a member list without
+     * knowing which of the two it received would label one instant's answer with
+     * the other's heading. It is also what a caller compares its own request
+     * against: an instant it named that was not honoured (a frozen issue ignores
+     * it) is visible here rather than silently substituted.
+     *
+     * The whole envelope shares it: the members, the rail and the omissions are
+     * all resolved at this instant, which is what stops the count on one panel
+     * disagreeing with the list on the next.
+     */
+    private long viewedAt;
+
     /** The member rows, live or frozen by status, titled in the requested language. */
     private List<IssueMemberVo> members;
+
+    /**
+     * The members published AFTER the issue's planned cut-off, as of now.
+     *
+     * The one part of this response that is deliberately NOT answered at
+     * {@link #viewedAt}. It is the difference between the two instants an open
+     * issue can be read at, so it has to be the same list in both views -- read as
+     * of now it names what publishing now would add beyond the planned period;
+     * read as of the planned cut-off it names what publishing then would leave
+     * out. A list that moved with the view could not say either.
+     *
+     * The rows are built exactly as {@link #members} are -- same shape, same
+     * titles, same order -- so the two lists can be rendered by one component. The
+     * ones that also appear in `members` do so because the as-of-now member list
+     * genuinely contains them; which of the two lists shows a row is the reader's
+     * decision, not a second membership rule.
+     *
+     * ALWAYS PRESENT, empty where the question does not arise: an issue with no
+     * planned cut-off, one whose planned cut-off has not passed, and a frozen
+     * issue, whose contents are what was printed rather than a question about
+     * today.
+     */
+    private List<IssueMemberVo> afterPlannedCutoff = List.of();
 
     /** The Historik panel. */
     private List<IssueAuditEntryVo> audit;
@@ -82,12 +122,28 @@ public class IssueWorkbenchVo implements IJsonSerializable {
         this.issue = issue;
     }
 
+    public long getViewedAt() {
+        return viewedAt;
+    }
+
+    public void setViewedAt(long viewedAt) {
+        this.viewedAt = viewedAt;
+    }
+
     public List<IssueMemberVo> getMembers() {
         return members;
     }
 
     public void setMembers(List<IssueMemberVo> members) {
         this.members = members;
+    }
+
+    public List<IssueMemberVo> getAfterPlannedCutoff() {
+        return afterPlannedCutoff;
+    }
+
+    public void setAfterPlannedCutoff(List<IssueMemberVo> afterPlannedCutoff) {
+        this.afterPlannedCutoff = afterPlannedCutoff;
     }
 
     public List<IssueAuditEntryVo> getAudit() {

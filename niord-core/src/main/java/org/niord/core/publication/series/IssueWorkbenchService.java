@@ -21,11 +21,13 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import org.niord.core.publication.series.IssueResolutionService.IssueResolution;
+import org.niord.core.publication.series.vo.IssueMemberVo;
 import org.niord.core.publication.series.vo.IssuePreviewVo;
 import org.niord.core.publication.series.vo.IssueWorkbenchVo;
 import org.niord.core.publication.series.vo.PublishChecklistVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -44,6 +46,14 @@ import java.util.List;
  * interval end, so on an open weekly issue whose period closes in the future a
  * message with a future publish date read as a member in one panel and as an
  * AFTER_CUTOFF omission in the other.
+ *
+ * WHICH instant is the caller's to choose, within one bound each way. An open
+ * issue whose planned cut-off has passed has two honest answers -- what it holds
+ * now, and what it held when its period closed -- and they differ by exactly the
+ * messages published in between. Both are answered here at the SAME instant
+ * throughout, so choosing the view moves every panel together; and the one list
+ * that names the difference between them is carried alongside, computed as of
+ * now whichever view was asked for.
  */
 @ApplicationScoped
 public class IssueWorkbenchService {
@@ -80,11 +90,43 @@ public class IssueWorkbenchService {
      */
     @Transactional
     public IssueWorkbenchVo forIssue(PublicationIssue issue, String lang, boolean mayReadChecklist) {
-        IssueResolution resolved = resolutions.forIssue(issue, new Date());
+        return forIssue(issue, lang, mayReadChecklist, null);
+    }
+
+    /**
+     * The same screen, answered as of an instant the caller named.
+     *
+     * @param at the instant to answer for, or null for now. It applies to an OPEN
+     *           issue only -- a frozen one's contents are what was printed, so
+     *           there is no instant to choose between and one named here is
+     *           ignored rather than refused. Otherwise it must fall between the
+     *           issue's period start and now: earlier is a period the issue had
+     *           not opened in, later is a member set that does not exist yet, and
+     *           both would produce an authoritative-looking answer about a state
+     *           of the world that never held
+     */
+    @Transactional
+    public IssueWorkbenchVo forIssue(PublicationIssue issue, String lang, boolean mayReadChecklist,
+                                     Date at) {
+        // Read once and carried, not re-read per use: the instant the screen is
+        // answered at, the bound the caller's instant is checked against and the
+        // instant the late list is computed at are the same "now", and three
+        // separate clock reads make them three instants a few milliseconds apart.
+        Date now = new Date();
+        Date viewed = at == null || IssueResolutionService.isFrozen(issue)
+                ? now : validInstant(issue, at, now);
+
+        IssueResolution resolved = resolutions.forIssue(issue, viewed);
 
         IssueWorkbenchVo vo = new IssueWorkbenchVo();
         vo.setIssue(issue.toVo(SystemPublicationIssueVo.class));
-        vo.setMembers(memberList.members(issue, lang, resolved));
+        // Echoed rather than left to the caller to assume: an instant that was
+        // ignored -- which is what a frozen issue does with one -- would otherwise
+        // be indistinguishable from one that was honoured.
+        vo.setViewedAt(viewed.getTime());
+        List<IssueMemberVo> members = memberList.members(issue, lang, resolved);
+        vo.setMembers(members);
+        vo.setAfterPlannedCutoff(publishedAfterPlannedCutoff(issue, lang, resolved, members, now));
         vo.setAudit(audit.forIssue(issue).stream().map(IssueAuditEntry::toVo).toList());
         // Still read on a frozen issue: an imported one carries standing decisions
         // that were taken before it was ever published here.
@@ -129,5 +171,82 @@ public class IssueWorkbenchService {
             vo.setOmissions(resolver.omissions(resolved.resolution().misses()));
         }
         return vo;
+    }
+
+    /**
+     * The members published after the issue's planned cut-off, as of NOW.
+     *
+     * The difference between the two instants an open issue can be read at, named
+     * message by message. It is what a release at this moment would carry beyond
+     * the period the issue declares, and equally what a release stamped at that
+     * period's close would leave behind -- one list, two readings, which is why it
+     * is computed as of now whichever view was asked for. Answered per view it
+     * would empty itself in the planned view, and the screen would then offer a
+     * choice between two instants without saying what turns on it.
+     *
+     * Built through the member list the screen already uses, so the rows are the
+     * rows: same shape, same titles, same order. A second builder here would be a
+     * second definition of what a member row is, and the two would drift the first
+     * time a field was added to one of them.
+     *
+     * THE AS-OF-NOW RESOLUTION IS REUSED when that is what the screen was answered
+     * from, which is the ordinary case -- the default view. Only a caller asking
+     * for another instant pays a second resolve, and it pays for exactly this
+     * list.
+     *
+     * Empty in the three cases where the question does not arise: no planned
+     * cut-off to be after, a planned cut-off still ahead of us -- nothing can have
+     * been published after an instant that has not happened -- and a frozen issue,
+     * whose contents are a record rather than a question about today.
+     */
+    private List<IssueMemberVo> publishedAfterPlannedCutoff(PublicationIssue issue, String lang,
+                                                            IssueResolution viewed,
+                                                            List<IssueMemberVo> viewedMembers,
+                                                            Date now) {
+        Date planned = issue.getIntervalTo();
+        if (viewed.frozen() || planned == null || !planned.before(now)) {
+            return List.of();
+        }
+
+        List<IssueMemberVo> live = viewed.at().getTime() == now.getTime()
+                ? viewedMembers
+                : memberList.members(issue, lang, resolutions.forIssue(issue, now));
+
+        List<IssueMemberVo> late = new ArrayList<>();
+        for (IssueMemberVo row : live) {
+            // The live publish date, which is what the row carries on an open
+            // issue -- the column is named for what it holds once the issue is
+            // frozen, and there is nothing frozen here to hold.
+            Date published = row.getFrozenPublishDateFrom();
+            if (published != null && published.after(planned)) {
+                late.add(row);
+            }
+        }
+        return late;
+    }
+
+    /**
+     * The caller's instant, or a refusal naming the window it had to fall in.
+     *
+     * Both bounds are refusals rather than clamps. An instant before the period
+     * opened describes a window this issue does not have, and one in the future
+     * describes a member set that does not exist yet -- and either, silently
+     * clamped, would hand back a confident answer under a heading naming the
+     * instant that was asked for. A lower bound is only checked where the issue
+     * has one: an issue that says what stood at an instant carries no period start
+     * to be before.
+     */
+    private static Date validInstant(PublicationIssue issue, Date at, Date now) {
+        Date opens = issue.getIntervalFrom();
+        if (at.after(now) || (opens != null && at.before(opens))) {
+            throw new IssueLifecycleService.TransitionRefusedException("INVALID_INSTANT",
+                    "cannot read this issue as of " + at.getTime() + ": the instant must fall at or "
+                            + "after the start of its period"
+                            + (opens == null ? "" : " (" + opens.getTime() + ")")
+                            + " and at or before now (" + now.getTime() + "). Earlier is a window "
+                            + "this issue does not cover, and later is a member set that does not "
+                            + "exist yet.");
+        }
+        return at;
     }
 }

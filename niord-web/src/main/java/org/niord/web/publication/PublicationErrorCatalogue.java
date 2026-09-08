@@ -277,6 +277,11 @@ public final class PublicationErrorCatalogue {
         put("NO_SERIES_IDS", 400);
         put("TOO_MANY_SERIES_IDS", 400);
         put("DOMAIN_REQUIRED", 400);
+        // An instant to read an open issue as of, outside the window it can be
+        // read at -- before its period opened, or in the future. 400: the instant
+        // is IN the request, so re-sending it unchanged fails identically and
+        // choosing another one succeeds.
+        put("INVALID_INSTANT", 400);
         // A filter value that is not a member of the enum it names. 400 rather
         // than a 500 from valueOf, which is the pattern this catalogue exists to
         // stop -- and a silently dropped filter would WIDEN a list rather than

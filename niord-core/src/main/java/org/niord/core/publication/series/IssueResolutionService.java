@@ -128,6 +128,20 @@ public class IssueResolutionService {
     }
 
     /**
+     * Whether this issue's contents are a record rather than a live question.
+     *
+     * The one definition of it, because more than one reader has to ask before it
+     * has a resolution in hand: a screen deciding whether an instant the caller
+     * named applies at all has to know this BEFORE it resolves anything, and a
+     * second copy of the status test is a second answer that can drift from this
+     * one the day a status is added.
+     */
+    public static boolean isFrozen(PublicationIssue issue) {
+        return issue.getStatus() == IssueStatus.PUBLISHED
+                || issue.getStatus() == IssueStatus.RETIRED;
+    }
+
+    /**
      * The issue's membership as of one instant, resolved once.
      *
      * A frozen issue takes NO resolve. Its member rows are what was printed and
@@ -153,8 +167,7 @@ public class IssueResolutionService {
         // exactly the condition under which a resolve is attempted below.
         boolean membership = queryBacked || !includes.isEmpty();
 
-        boolean frozen = issue.getStatus() == IssueStatus.PUBLISHED
-                || issue.getStatus() == IssueStatus.RETIRED;
+        boolean frozen = isFrozen(issue);
         if (frozen) {
             return new IssueResolution(at, true, overrides, includes, excludes, null, membership);
         }

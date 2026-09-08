@@ -38,10 +38,11 @@ import java.util.List;
  *
  * NOT an {@code IJsonSerializable}, and the order is written out -- see
  * {@link PublishCheckRowVo}: this shape has to serialise byte for byte as the
- * hand-built map it replaced, nulls included.
+ * hand-built map it replaced, nulls included. {@code memberCount} is appended
+ * LAST for that reason: a key added anywhere else moves every key after it.
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonPropertyOrder({"rows", "canPublish", "blockingCodes"})
+@JsonPropertyOrder({"rows", "canPublish", "blockingCodes", "memberCount"})
 public class PublishChecklistVo {
 
     /** All fifteen rows, in the order the rail renders them. */
@@ -52,6 +53,27 @@ public class PublishChecklistVo {
     /** The BLOCK rows that did not pass, which is what the publish gate refuses on. */
     private List<String> blockingCodes = new ArrayList<>();
 
+    /**
+     * How many messages this rail counted, at the cut-off it was computed for.
+     *
+     * THE HEADLINE NUMBER OF THE RELEASE DIALOG, and it has to travel as a number.
+     * The dialog asks for a rail at the instant it is offering to stamp, and the
+     * one thing it says out loud is how many messages that release would carry --
+     * so without this it fell back to the count on the screen behind it, which is
+     * the count for a different instant. An admin moving the cut-off back a week
+     * then watched the list change and the headline stay put.
+     *
+     * The alternative was to read it out of the MEMBER_LIMIT row's detail line,
+     * which is prose written for a person ("214 of 1000"). Parsing that is a
+     * second definition of the count that breaks the day the sentence is reworded
+     * or translated.
+     *
+     * Zero where nothing was resolved -- an uploaded or link-backed issue raises
+     * no membership question at all -- which is the same number MEMBER_LIMIT
+     * reports for those.
+     */
+    private int memberCount;
+
     public static PublishChecklistVo of(PublishChecklistService.Checklist checklist) {
         PublishChecklistVo vo = new PublishChecklistVo();
         List<PublishCheckRowVo> rows = new ArrayList<>();
@@ -61,6 +83,11 @@ public class PublishChecklistVo {
         vo.setRows(rows);
         vo.setCanPublish(checklist.canPublish());
         vo.setBlockingCodes(checklist.blockingCodes());
+        // Off the resolution the rail itself took, so the number the dialog shows
+        // and the rows it renders beside it cannot be answers about two different
+        // member sets.
+        vo.setMemberCount(checklist.resolution() == null
+                ? 0 : checklist.resolution().members().size());
         return vo;
     }
 
@@ -86,5 +113,13 @@ public class PublishChecklistVo {
 
     public void setBlockingCodes(List<String> blockingCodes) {
         this.blockingCodes = blockingCodes;
+    }
+
+    public int getMemberCount() {
+        return memberCount;
+    }
+
+    public void setMemberCount(int memberCount) {
+        this.memberCount = memberCount;
     }
 }

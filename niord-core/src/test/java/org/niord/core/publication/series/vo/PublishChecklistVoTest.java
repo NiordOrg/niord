@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.series.MemberResolutionService;
 import org.niord.core.publication.series.PublishChecklistService;
 
 import java.lang.reflect.Method;
@@ -112,11 +113,38 @@ public class PublishChecklistVoTest {
     @Test
     public void theChecklistEnvelopeCarriesEveryPartOfTheRail() {
         Set<String> onTheVo = accessorsOf(PublishChecklistVo.class);
-        for (String part : List.of("rows", "canPublish", "blockingCodes")) {
+        for (String part : List.of("rows", "canPublish", "blockingCodes", "memberCount")) {
             assertTrue(onTheVo.contains(part),
                     "the checklist envelope no longer carries " + part + "; the publish dialog reads "
-                            + "all three and treats a missing canPublish as a refusal");
+                            + "all four, treats a missing canPublish as a refusal, and has no other "
+                            + "source for the number of messages the release it is offering would carry");
         }
+    }
+
+    /**
+     * The member count is the count of the resolution the rail took.
+     *
+     * The dialog asks for a rail at the instant it is offering to stamp and prints
+     * this number as its headline. Computed from anything but that rail's own
+     * resolution it would be a count for a different instant -- which is what the
+     * dialog did while the field did not exist, showing the count from the screen
+     * behind it and leaving the headline unchanged as an admin moved the cut-off.
+     */
+    @Test
+    public void theEnvelopeCountsTheMembersTheRailItselfResolved() {
+        PublishChecklistService.Checklist noResolve = new PublishChecklistService.Checklist(
+                List.of(), false, List.of(), null);
+        assertEquals(0, PublishChecklistVo.of(noResolve).getMemberCount(),
+                "an issue whose contents raise no membership question reported a member count; the "
+                        + "rail resolved nothing, and any number here is invented");
+
+        MemberResolutionService.Resolution resolved =
+                MemberResolutionService.Resolution.curated(new LinkedHashSet<>(List.of("a", "b", "c")));
+        PublishChecklistService.Checklist rail = new PublishChecklistService.Checklist(
+                List.of(), true, List.of(), resolved);
+        assertEquals(3, PublishChecklistVo.of(rail).getMemberCount(),
+                "the envelope counted a different member set than the resolution the rail was built "
+                        + "from; the dialog's headline and the rows under it would then disagree");
     }
 
     /**
@@ -129,6 +157,11 @@ public class PublishChecklistVoTest {
      * where the project's IJsonSerializable would suppress the key entirely; and a
      * map preserves insertion order where a bean's is whatever Jackson discovers.
      * Both are pinned here against the map itself rather than described.
+     *
+     * The envelope has since gained `memberCount`, and it is APPENDED: the map's
+     * three keys are still emitted first, in their old order and their old
+     * positions, which is asserted separately from the whole-body comparison so
+     * that a key added in the middle fails as the distinct thing it is.
      */
     @Test
     public void theRailSerialisesExactlyAsTheHandBuiltMapDid() throws Exception {
@@ -166,7 +199,14 @@ public class PublishChecklistVoTest {
         String before = json.writeValueAsString(old);
         String after = json.writeValueAsString(PublishChecklistVo.of(checklist));
 
-        assertEquals(before, after,
+        assertTrue(after.startsWith(before.substring(0, before.length() - 1) + ","),
+                "the release rail's original keys moved. Everything the hand-built map emitted must "
+                        + "still come first, in that order and at those positions; anything added to "
+                        + "the envelope is appended after them.\n  was: " + before + "\n  now: " + after);
+
+        // This checklist resolved nothing, so the count it appends is zero.
+        old.put("memberCount", 0);
+        assertEquals(json.writeValueAsString(old), after,
                 "the release rail changed shape on the wire. The publish dialog reads these keys by "
                         + "name and reads a MISSING one as undefined -- which for acknowledgeCode means "
                         + "a refusal for a code nobody could tick");

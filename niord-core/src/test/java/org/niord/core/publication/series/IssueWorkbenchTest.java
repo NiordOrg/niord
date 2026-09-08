@@ -25,6 +25,7 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.TestIds;
@@ -46,6 +47,8 @@ import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -56,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -107,6 +111,10 @@ public class IssueWorkbenchTest {
 
     private static final Date OPENS = new Date(1_699_000_000_000L);
 
+    private static final long HOUR = 3600_000L;
+
+    private static final long DAY = 24 * HOUR;
+
     // ------------------------------------------------------------------ fixtures
 
     private String messageSeriesId;
@@ -154,6 +162,11 @@ public class IssueWorkbenchTest {
     }
 
     private Message message(String shortId, Status status) {
+        return message(shortId, status, new Date(OPENS.getTime() + HOUR));
+    }
+
+    /** The same message, published at an instant the case cares about. */
+    private Message message(String shortId, Status status, Date publishedAt) {
         MessageSeries ms = em.createQuery(
                         "SELECT ms FROM MessageSeries ms WHERE ms.seriesId = :id", MessageSeries.class)
                 .setParameter("id", messageSeriesId).getSingleResult();
@@ -165,9 +178,20 @@ public class IssueWorkbenchTest {
         m.setMainType(MainType.NM);
         m.setType(Type.TEMPORARY_NOTICE);
         m.setStatus(status);
-        m.setPublishDateFrom(new Date(OPENS.getTime() + 3600_000L));
+        m.setPublishDateFrom(publishedAt);
         em.persist(m);
         return m;
+    }
+
+    /** One history row, which is where the instant of a withdrawal is read from. */
+    private void history(Message m, Status status, Date at) {
+        MessageHistory h = new MessageHistory();
+        h.setMessage(m);
+        h.setStatus(status);
+        h.setCreated(at);
+        h.setVersion(m.getHistory().size() + 1);
+        em.persist(h);
+        m.getHistory().add(h);
     }
 
     private User user() {
@@ -711,6 +735,272 @@ public class IssueWorkbenchTest {
                 "a published issue offered the previews rendered while it was still open");
     }
 
+    // ------------------------------------------------------- the view instant
+
+    /**
+     * The whole screen moves to the instant it was asked for, and the list of
+     * what separates the two instants does not.
+     *
+     * An open issue whose planned cut-off has passed has two honest answers, and
+     * they differ by exactly the messages published in between. Read as of now it
+     * holds them; read as of the planned cut-off it does not -- and the rail
+     * beside the list has to be the rail for THAT instant, or the screen offers a
+     * choice between two views while only one of the panels moves.
+     *
+     * `afterPlannedCutoff` is the one part that stays put, and that is what makes
+     * the choice legible: it is the same rows in both views, read once as "what
+     * publishing now would add" and once as "what publishing then would leave
+     * out". A list answered per view would empty itself in the planned view, and
+     * the screen would then be offering a switch with nothing to say what turns
+     * on it.
+     */
+    @Test
+    @Transactional
+    public void theViewInstantMovesTheMemberListAndTheRailButNotTheLateList() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 7 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED);
+        message("NM-002", Status.PUBLISHED);
+        Message late = message("NM-003", Status.PUBLISHED, new Date(OPENS.getTime() + 14 * DAY));
+        em.flush();
+
+        IssueWorkbenchVo asOfNow = workbench.forIssue(i, "da", true);
+        assertEquals(3, asOfNow.getMembers().size(),
+                "the default view is as of now, and now the period has three messages in it");
+        assertEquals(List.of(late.getUid()), uidsOf(asOfNow.getAfterPlannedCutoff()),
+                "the message published after the planned cut-off is not named as such, so the screen "
+                        + "cannot tell an admin what publishing now would add beyond the period");
+        assertTrue(Math.abs(asOfNow.getViewedAt() - System.currentTimeMillis()) < 60_000,
+                "the default read reported a viewed instant that is not now: " + asOfNow.getViewedAt());
+
+        IssueWorkbenchVo asOfPlanned = workbench.forIssue(i, "da", true, planned);
+        assertEquals(planned.getTime(), asOfPlanned.getViewedAt(),
+                "the instant the caller asked for was not the one the screen answered at");
+        assertEquals(2, asOfPlanned.getMembers().size(),
+                "read as of the planned cut-off the issue still held the message published a week "
+                        + "after it");
+        assertFalse(uidsOf(asOfPlanned.getMembers()).contains(late.getUid()));
+        assertEquals(List.of(late.getUid()), uidsOf(asOfPlanned.getAfterPlannedCutoff()),
+                "the late list emptied itself in the planned view; it is the DIFFERENCE between the "
+                        + "two views and must read the same in both");
+
+        // The rail moved with the list, which is the half a client cannot check.
+        // Both places it states a count: the envelope number the publish dialog
+        // prints as its headline, and the MEMBER_LIMIT row an admin reads beside
+        // the list -- compared against each other inside the helper.
+        assertEquals(2, memberCountOf(asOfPlanned.getChecklist()),
+                "the rail counted the as-of-now members beside a list showing the planned ones");
+        assertEquals(3, memberCountOf(asOfNow.getChecklist()));
+
+        String stamp = ZonedDateTime.ofInstant(planned.toInstant(), s.cutoffZone())
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        assertTrue(rowOf(asOfPlanned.getChecklist(), "CUTOFF_NOT_FUTURE").getDetail().contains(stamp),
+                "the rail's cut-off row still names now rather than the instant the screen is "
+                        + "answering for: "
+                        + rowOf(asOfPlanned.getChecklist(), "CUTOFF_NOT_FUTURE").getDetail());
+        assertFalse(rowOf(asOfNow.getChecklist(), "CUTOFF_NOT_FUTURE").getDetail().contains(stamp),
+                "the default read named the planned cut-off; it answers for now");
+
+        // The omissions panel is answered off the same resolution, so it moves
+        // with the rest rather than describing a third instant.
+        assertNotNull(asOfPlanned.getOmissions(),
+                "the planned view carries no omissions panel; it is an open issue and was resolved");
+    }
+
+    /**
+     * A planned cut-off still ahead of us names nothing as late.
+     *
+     * Nothing can have been published after an instant that has not happened, so
+     * the list is empty as a matter of fact rather than as a default -- and the
+     * screen shows no choice of view, because there is nothing for the two views
+     * to differ about.
+     */
+    @Test
+    @Transactional
+    public void aPlannedCutoffStillAheadOfUsNamesNothingAsLate() {
+        PublicationSeries s = series();
+        Date planned = new Date(System.currentTimeMillis() + 7 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED);
+        em.flush();
+
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true);
+        assertEquals(1, vo.getMembers().size(),
+                "the fixture resolved no members, so the emptiness below would prove nothing");
+        assertNotNull(vo.getAfterPlannedCutoff(), "the late list is absent rather than empty");
+        assertTrue(vo.getAfterPlannedCutoff().isEmpty(),
+                "an issue whose period has not closed reported " + vo.getAfterPlannedCutoff().size()
+                        + " messages published after it closed");
+    }
+
+    /**
+     * A frozen issue ignores the instant, and names nothing as late.
+     *
+     * What a published issue contains is what it printed. There is no second
+     * instant to read it at, so one named here is neither honoured nor refused --
+     * it is answered at now, and `viewedAt` says so rather than echoing back a
+     * choice that decided nothing.
+     */
+    @Test
+    @Transactional
+    public void aFrozenIssueIgnoresTheInstantAndNamesNothingAsLate() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 7 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED);
+        message("NM-003", Status.PUBLISHED, new Date(OPENS.getTime() + 14 * DAY));
+        em.flush();
+
+        i.setStatus(IssueStatus.PUBLISHED);
+        i.setCutoffStampedAt(new Date());
+        em.merge(i);
+        em.flush();
+
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true, planned);
+        assertTrue(Math.abs(vo.getViewedAt() - System.currentTimeMillis()) < 60_000,
+                "a published issue was answered as of an instant the caller chose; its contents are "
+                        + "a record, and reading them at another instant describes a document nobody "
+                        + "published");
+        assertTrue(vo.getAfterPlannedCutoff().isEmpty(),
+                "a published issue reported what today's corpus would add to it beyond its period");
+    }
+
+    /**
+     * An instant outside the window the issue can be read at is refused.
+     *
+     * Both bounds, and both as refusals rather than clamps. Before the period
+     * opened is a window this issue does not cover; after now is a member set that
+     * does not exist yet. Silently clamped, either would hand back a confident
+     * answer under a heading naming the instant that was asked for -- which is the
+     * one outcome a view instant must not produce.
+     */
+    @Test
+    @Transactional
+    public void anInstantOutsideTheIssuesWindowIsRefused() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 7 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED);
+        em.flush();
+
+        IssueLifecycleService.TransitionRefusedException tooEarly = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> workbench.forIssue(i, "da", true, new Date(OPENS.getTime() - DAY)),
+                "an instant before the period opened was answered rather than refused");
+        assertEquals("INVALID_INSTANT", tooEarly.code());
+
+        IssueLifecycleService.TransitionRefusedException inTheFuture = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> workbench.forIssue(i, "da", true,
+                        new Date(System.currentTimeMillis() + DAY)),
+                "an instant in the future was answered rather than refused");
+        assertEquals("INVALID_INSTANT", inTheFuture.code());
+    }
+
+    /**
+     * A message cancelled between the planned cut-off and now is a member at the
+     * one instant and not at the other.
+     *
+     * The case that makes the choice of view a decision rather than a preference.
+     * A cancel leaves an editor-set validity end alone, so the date alone still
+     * says "alive"; the withdrawal instant is what decides, and it falls between
+     * the two instants the screen can be read at. So the message belongs to the
+     * issue as its period closed -- and the rail says so, with the one warning an
+     * admin has to acknowledge -- and does not belong to it today.
+     */
+    @Test
+    @Transactional
+    public void amessageCancelledAfterThePlannedCutoffIsAMemberAtItAndNotNow() {
+        PublicationSeries s = series();
+        // The regime where liveness decides at all: a series that carries its
+        // contents forward would keep a withdrawn message in either view.
+        s.setAliveAtCutoff(true);
+        em.merge(s);
+
+        Date planned = new Date(OPENS.getTime() + 7 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED);
+        Message withdrawn = message("NM-002", Status.CANCELLED);
+        history(withdrawn, Status.PUBLISHED, new Date(OPENS.getTime() + HOUR));
+        history(withdrawn, Status.CANCELLED, new Date(planned.getTime() + 7 * DAY));
+        em.flush();
+
+        IssueWorkbenchVo asOfPlanned = workbench.forIssue(i, "da", true, planned);
+        assertTrue(uidsOf(asOfPlanned.getMembers()).contains(withdrawn.getUid()),
+                "a cancel a week after the period closed reached back into the issue that closed "
+                        + "before it");
+        assertFalse(rowOf(asOfPlanned.getChecklist(), "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF").isPassed(),
+                "the issue holds a withdrawn member as of its planned cut-off and the rail does not "
+                        + "say so -- an exclusions panel is structurally blind to this class, because "
+                        + "those messages ARE members");
+
+        IssueWorkbenchVo asOfNow = workbench.forIssue(i, "da", true);
+        assertFalse(uidsOf(asOfNow.getMembers()).contains(withdrawn.getUid()),
+                "the message was withdrawn before now, so today's answer must not carry it");
+        assertEquals(1, asOfNow.getMembers().size(),
+                "the as-of-now list came back empty, so the absence above says nothing about the "
+                        + "withdrawal -- it would hold for any reason the resolve produced nothing");
+        assertTrue(rowOf(asOfNow.getChecklist(), "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF").isPassed(),
+                "the rail warns about a withdrawn member the as-of-now list does not contain");
+    }
+
+    /**
+     * The default view names the late messages without resolving the issue twice.
+     *
+     * The late list is the as-of-now membership, and the default view IS as of now
+     * -- so it is a filter over the rows the screen already built. Resolving again
+     * for it would double the cost of every issue screen anybody opens, and on an
+     * in-force series a resolve is about a second, which is the whole reason this
+     * envelope exists.
+     *
+     * COUNTED rather than described, because the reuse is one equality test in the
+     * middle of a method and a refactor that always re-resolves would pass every
+     * other case here. Measured against the read that legitimately does resolve
+     * twice -- a view instant that is not now has no as-of-now member list to
+     * filter -- so the counter is shown to be sensitive to exactly the work this
+     * pins, rather than against an absolute number that moves whenever an
+     * unrelated query is added to the screen.
+     */
+    @Test
+    @Transactional
+    public void theDefaultViewNamesTheLateMessagesWithoutASecondResolve() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 7 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED);
+        message("NM-002", Status.PUBLISHED);
+        message("NM-003", Status.PUBLISHED, new Date(OPENS.getTime() + 14 * DAY));
+        em.flush();
+
+        Statistics stats = em.unwrap(Session.class).getSessionFactory().getStatistics();
+        boolean wasEnabled = stats.isStatisticsEnabled();
+        stats.setStatisticsEnabled(true);
+        try {
+            long before = stats.getQueryExecutionCount();
+            IssueWorkbenchVo asOfNow = workbench.forIssue(i, "da", true);
+            long defaultRead = stats.getQueryExecutionCount() - before;
+
+            long mid = stats.getQueryExecutionCount();
+            IssueWorkbenchVo asOfPlanned = workbench.forIssue(i, "da", true, planned);
+            long chosenRead = stats.getQueryExecutionCount() - mid;
+
+            assertEquals(1, asOfNow.getAfterPlannedCutoff().size(),
+                    "the default read named nothing as late, so it had nothing to build the list from "
+                            + "and the counts below would prove nothing");
+            assertEquals(1, asOfPlanned.getAfterPlannedCutoff().size(),
+                    "the read at another instant lost the late list, which is the list it pays a "
+                            + "second resolve for");
+            assertTrue(chosenRead > defaultRead,
+                    "the default view ran " + defaultRead + " queries and the read at a chosen instant "
+                            + "ran " + chosenRead + ". The default view answers as of now and the late "
+                            + "list is as of now, so it is a filter over rows already in hand; equal "
+                            + "counts mean it resolved the issue a second time to produce them");
+        } finally {
+            stats.setStatisticsEnabled(wasEnabled);
+        }
+    }
+
     // The rail's WIRE SHAPE -- every CheckRow component reaching a property, and
     // the byte-identity with the hand-built map it replaced -- is pinned in
     // PublishChecklistVoTest. It needs no database, and a guard that only runs
@@ -718,18 +1008,49 @@ public class IssueWorkbenchTest {
 
     // ------------------------------------------------------------------ helpers
 
+    /** The member uids of a list, in the order it came back. */
+    private static List<String> uidsOf(List<IssueMemberVo> rows) {
+        return rows.stream().map(IssueMemberVo::getMessageUid).toList();
+    }
+
     /** One rail row by code, so a test names the check it is asserting about. */
-    private static PublishCheckRowVo rowOf(PublishChecklistService.Checklist rail, String code) {
-        return PublishChecklistVo.of(rail).getRows().stream()
+    private static PublishCheckRowVo rowOf(PublishChecklistVo rail, String code) {
+        return rail.getRows().stream()
                 .filter(r -> code.equals(r.getCode()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("the rail has no " + code + " row at all"));
     }
 
-    /** The member count the MEMBER_LIMIT row reports, read off its detail line. */
-    private static int memberCountOf(PublishChecklistService.Checklist rail) {
+    /** The same, off a rail that has not been rendered yet. */
+    private static PublishCheckRowVo rowOf(PublishChecklistService.Checklist rail, String code) {
+        return rowOf(PublishChecklistVo.of(rail), code);
+    }
+
+    /**
+     * The member count the rail reports -- and the two places it is reported.
+     *
+     * The envelope's number is what the publish dialog prints as its headline; the
+     * MEMBER_LIMIT row's detail line is what an admin reads on the rail beside it.
+     * They are one answer, so they are compared here rather than in one more case:
+     * a screen whose headline and whose rail state different counts for the same
+     * release is a disagreement with nothing to say which is right.
+     *
+     * The row's detail is prose ("214 of 1000"), and an inapplicable row carries a
+     * sentence with no number in it at all -- which is the zero the envelope
+     * reports for an issue that raises no membership question.
+     */
+    private static int memberCountOf(PublishChecklistVo rail) {
         String detail = rowOf(rail, "MEMBER_LIMIT").getDetail();
         int of = detail.indexOf(" of ");
-        return of < 0 ? 0 : Integer.parseInt(detail.substring(0, of));
+        int onTheRow = of < 0 ? 0 : Integer.parseInt(detail.substring(0, of));
+        assertEquals(onTheRow, rail.getMemberCount(),
+                "the rail's envelope counts " + rail.getMemberCount() + " members and its MEMBER_LIMIT "
+                        + "row says \"" + detail + "\". The dialog prints the first and the admin reads "
+                        + "the second, on one screen, about one release");
+        return rail.getMemberCount();
+    }
+
+    private static int memberCountOf(PublishChecklistService.Checklist rail) {
+        return memberCountOf(PublishChecklistVo.of(rail));
     }
 }

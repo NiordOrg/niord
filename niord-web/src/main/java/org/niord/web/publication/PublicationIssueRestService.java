@@ -810,6 +810,14 @@ public class PublicationIssueRestService {
      *
      * `lang` names the language the member rows are TITLED in and nothing else,
      * exactly as on the member list. Every other part is language-independent.
+     *
+     * `at` is the instant the whole screen is answered for, epoch milliseconds,
+     * and it is the caller's only choice here. An open issue whose planned
+     * cut-off has passed has two honest answers -- what it holds now, and what it
+     * held when its period closed -- and every part moves together between them.
+     * Absent means now; on a frozen issue it is ignored, because what that issue
+     * contains is what it printed. The instant actually used comes back as
+     * `viewedAt`, so a caller never has to assume its own was honoured.
      */
     @GET
     @Path("/issue/{publicId}/workbench")
@@ -818,12 +826,14 @@ public class PublicationIssueRestService {
     @NoCache
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public IssueWorkbenchVo workbench(@PathParam("publicId") String publicId,
-                                      @QueryParam("lang") String lang) {
-        // The assembly is in core: which parts a frozen issue carries and which
-        // instant the omissions answer for are rules, and this module has no
-        // container tests to pin a rule with.
+                                      @QueryParam("lang") String lang,
+                                      @QueryParam("at") Long at) {
+        // The assembly is in core: which parts a frozen issue carries, which
+        // instant the omissions answer for, and which instants may be asked about
+        // at all are rules, and this module has no container tests to pin a rule
+        // with. So the bounds on `at` are checked there rather than here.
         return workbenches.forIssue(required(publicId), lang,
-                userService.isCallerInRole(Roles.ADMIN));
+                userService.isCallerInRole(Roles.ADMIN), at == null ? null : new Date(at));
     }
 
     /**
