@@ -383,7 +383,7 @@ public class AmendAndOverlapTest {
         // replacement against the issue it replaces.
         Date corrected = new Date(w34Close.getTime() - 3600_000L);
         PublishChecklistService.Checklist rail =
-                checklist.compute(replacement, corrected, false, false);
+                checklist.compute(replacement, corrected, false);
         assertTrue(rail.canPublish(),
                 "the release rail refuses the correction: " + rail.blockingCodes());
 

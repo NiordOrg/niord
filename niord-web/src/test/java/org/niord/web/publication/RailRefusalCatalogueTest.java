@@ -96,7 +96,7 @@ public class RailRefusalCatalogueTest {
     /**
      * A row applies unless it says otherwise.
      *
-     * The rail is fifteen rows on every issue and only a few of them can be in a
+     * The rail is fourteen rows on every issue and only a few of them can be in a
      * condition this issue is capable of. The default therefore has to be the
      * safe direction -- counted -- so that a row added later is counted until
      * somebody deliberately says it does not apply, rather than silently dropping
@@ -126,7 +126,7 @@ public class RailRefusalCatalogueTest {
         }
         // The rows this table deliberately omits are the ones that never block: a
         // WARN describes the release rather than refusing it.
-        List<String> warnings = List.of("INTERVAL_CHAINED", "MEMBERS_RESOLVED", "PREVIEW_FRESH",
+        List<String> warnings = List.of("INTERVAL_CHAINED", "MEMBERS_RESOLVED",
                 "NO_INEFFECTIVE_OVERRIDES", "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", "OVERLAPPING_ISSUE");
         for (String code : declared) {
             assertTrue(REFUSALS.containsKey(code) || warnings.contains(code),

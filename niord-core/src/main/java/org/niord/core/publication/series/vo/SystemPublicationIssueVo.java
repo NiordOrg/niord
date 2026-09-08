@@ -79,9 +79,6 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     private String repoPath;
 
-    /** Computed, never stored. */
-    private boolean previewStale;
-
     private String intervalToSource;
 
     /** Derived: cutoffStampedAt ?? intervalTo. Emitted so no client re-implements the coalesce. */
@@ -279,14 +276,6 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     public void setRepoPath(String repoPath) {
         this.repoPath = repoPath;
-    }
-
-    public boolean isPreviewStale() {
-        return previewStale;
-    }
-
-    public void setPreviewStale(boolean previewStale) {
-        this.previewStale = previewStale;
     }
 
     public String getIntervalToSource() {

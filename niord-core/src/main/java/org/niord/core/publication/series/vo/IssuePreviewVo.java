@@ -23,16 +23,12 @@ import org.niord.model.IJsonSerializable;
  *
  * The bytes are never addressed from a payload -- the document endpoint is
  * role-guarded and a URL handed out here would only open for a request carrying
- * the bearer, which a top-level navigation does not. What travels is the three
- * facts a reader needs to decide whether to open it: which language it is, when
- * it was rendered, and whether the issue has moved since.
+ * the bearer, which a top-level navigation does not. What travels is the two
+ * facts a reader needs to decide whether to open it: which language it is and
+ * when it was rendered.
  *
  * {@code renderedAt} is epoch milliseconds, the same encoding every other
  * instant on these payloads uses.
- *
- * {@code stale} is COMPUTED on every read and never stored. A stored flag has to
- * be invalidated by everything that could invalidate it, and the one path that
- * forgets leaves a preview claiming to be current when it is not.
  */
-public record IssuePreviewVo(String lang, long renderedAt, boolean stale) implements IJsonSerializable {
+public record IssuePreviewVo(String lang, long renderedAt) implements IJsonSerializable {
 }

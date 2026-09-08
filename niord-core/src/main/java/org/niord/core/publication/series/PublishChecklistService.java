@@ -39,7 +39,7 @@ import java.util.Set;
  * disagrees with the thing that actually enforces it, and the disagreement only
  * shows up when somebody is trying to release.
  *
- * Fifteen codes, and all fifteen ship together. Shipping a subset means the UI
+ * Fourteen codes, and all fourteen ship together. Shipping a subset means the UI
  * renders and translates rows the backend never emits, which reads as "this
  * check passed" rather than "this check does not exist".
  */
@@ -63,7 +63,7 @@ public class PublishChecklistService extends BaseService {
      * for a code nobody ticked.
      *
      * `applicable` says whether this issue can be in the condition the row
-     * describes at all. All fifteen rows are emitted for every issue -- a client
+     * describes at all. All fourteen rows are emitted for every issue -- a client
      * that renders only the rows it received cannot tell "this check passed" from
      * "this check does not exist" -- but a row about a question this issue does
      * not raise is not an answer about this issue, and counting it as one is how
@@ -111,7 +111,6 @@ public class PublishChecklistService extends BaseService {
             "CUTOFF_NOT_FUTURE",
             "MEMBERS_RESOLVED",
             "MEMBER_LIMIT",
-            "PREVIEW_FRESH",
             "NO_INEFFECTIVE_OVERRIDES",
             "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF",
             "OVERLAPPING_ISSUE");
@@ -151,9 +150,8 @@ public class PublishChecklistService extends BaseService {
      * nothing else about the issue is already in hand.
      */
     @Transactional
-    public Checklist compute(PublicationIssue issue, Date proposedCutoff, boolean allowFuture,
-                             boolean previewStale) {
-        return compute(issue, allowFuture, previewStale, resolutions.forIssue(issue, proposedCutoff));
+    public Checklist compute(PublicationIssue issue, Date proposedCutoff, boolean allowFuture) {
+        return compute(issue, allowFuture, resolutions.forIssue(issue, proposedCutoff));
     }
 
     /**
@@ -170,7 +168,7 @@ public class PublishChecklistService extends BaseService {
      *            proposed cut-off
      */
     @Transactional
-    public Checklist compute(PublicationIssue issue, boolean allowFuture, boolean previewStale,
+    public Checklist compute(PublicationIssue issue, boolean allowFuture,
                              IssueResolutionService.IssueResolution pre) {
         Date proposedCutoff = pre.at();
         PublicationSeries series = issue.getSeries();
@@ -275,7 +273,7 @@ public class PublishChecklistService extends BaseService {
                 : row("CUTOFF_NOT_FUTURE", Severity.BLOCK, !proposedCutoff.after(new Date()),
                         "cut-off is " + at(proposedCutoff, series)));
 
-        // 10 to 15 need the resolver.
+        // 10 to 14 need the resolver.
         // The EFFECTIVE document -- criteriaOverride where the issue carries one.
         // The rail's whole claim is "this is what would go out if you pressed
         // publish", so resolving the series' document while publish resolves the
@@ -317,9 +315,6 @@ public class PublishChecklistService extends BaseService {
                         memberCount <= MemberResolutionService.MEMBER_LIMIT,
                         memberCount + " of " + MemberResolutionService.MEMBER_LIMIT)
                 : notApplicable("MEMBER_LIMIT", Severity.BLOCK, noMembership));
-
-        rows.add(row("PREVIEW_FRESH", Severity.WARN, !previewStale,
-                previewStale ? "the preview predates the current member set" : "preview is current"));
 
         boolean noStale = resolution == null
                 || resolution.warning(ResolutionWarningCode.STALE_OVERRIDE).isEmpty();

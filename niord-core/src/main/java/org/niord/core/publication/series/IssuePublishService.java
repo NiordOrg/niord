@@ -293,8 +293,7 @@ public class IssuePublishService extends BaseService {
         // the way in, so a publish that the screen said could not happen went
         // through, stamped a cut-off, and could never be un-stamped.
         Date stamp = request.explicitStamp() != null ? request.explicitStamp() : new Date();
-        PublishChecklistService.Checklist rail =
-                checklist.compute(issue, stamp, false, previews.isStaleFor(issue));
+        PublishChecklistService.Checklist rail = checklist.compute(issue, stamp, false);
         refuseBlockingRows(issue, series, rail, stamp);
 
         // --- 1c. THE NAMES, JUDGED --------------------------------------------

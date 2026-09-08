@@ -157,7 +157,7 @@ public class PublicationApiContractTest {
     public void everyRailRowFieldReachesTheWire() {
         // A row with a value in every component, so nothing is dropped merely for
         // being null -- and one component (acknowledgeCode) that is null on
-        // fourteen of the fifteen real rows, checked separately below.
+        // thirteen of the fourteen real rows, checked separately below.
         PublishChecklistService.CheckRow row = new PublishChecklistService.CheckRow(
                 "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", PublishChecklistService.Severity.WARN,
                 false, true, true, "CANCELLED_BUT_DATE_ALIVE", "2 member(s) cancelled");
@@ -171,7 +171,7 @@ public class PublicationApiContractTest {
         }
         assertTrue(wire.has("applicable"),
                 "the rail no longer says which of its rows this issue can even be in; a verdict counted "
-                        + "over all fifteen rows counts checks that never ran");
+                        + "over all fourteen rows counts checks that never ran");
 
         // And the null-valued component keeps its key, UNDER A MAPPER THAT DROPS
         // NULLS -- which is the project's own default, applied to every

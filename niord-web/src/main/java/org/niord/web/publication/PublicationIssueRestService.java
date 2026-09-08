@@ -1045,8 +1045,7 @@ public class PublicationIssueRestService {
         // time a field is added to only one of them -- with the endpoint answering
         // one field short and nothing failing to say so. The JSON is unchanged,
         // nulls included; see PublishCheckRowVo for why it does not suppress them.
-        return PublishChecklistVo.of(
-                checklist.compute(issue, proposed, allowFuture, previews.isStaleFor(issue)));
+        return PublishChecklistVo.of(checklist.compute(issue, proposed, allowFuture));
     }
 
     // ------------------------------------------------------------------ actions

@@ -32,7 +32,7 @@ import org.niord.core.publication.series.PublishChecklistService;
  * and for `passed` means every row fails.
  *
  * DELIBERATELY NOT an {@code IJsonSerializable}. That interface suppresses null
- * properties, and `acknowledgeCode` is null on fourteen of the fifteen rows: the
+ * properties, and `acknowledgeCode` is null on thirteen of the fourteen rows: the
  * client reads it as a value -- "this row cannot be acknowledged" -- and dropping
  * the key would change the wire shape the publish dialog is built on. The order
  * is written out for the same reason: it is the order the hand-built map emitted.

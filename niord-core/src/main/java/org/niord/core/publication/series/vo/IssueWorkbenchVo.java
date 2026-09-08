@@ -146,10 +146,10 @@ public class IssueWorkbenchVo implements IJsonSerializable {
      * ALWAYS PRESENT, empty where there is nothing stored -- unlike the two
      * conditional parts below, which are absent. The screen seeds its preview
      * rows from this on every read, and an absent key would have to be read as
-     * "unknown", which is the state that makes a refresh offer to generate a
-     * preview again while the rail beside it reports the one on disk as current.
-     * Empty for a frozen issue: what it printed is the archived document, and a
-     * preview of it is a document nobody can produce or need.
+     * "unknown", which is indistinguishable from "none" and leaves a refresh
+     * dropping rows for generations the server still holds. Empty for a frozen
+     * issue: what it printed is the archived document, and a preview of it is a
+     * document nobody can produce or need.
      */
     private List<IssuePreviewVo> previews = List.of();
 

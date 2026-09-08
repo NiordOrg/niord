@@ -22,7 +22,6 @@ import jakarta.transaction.Transactional;
 
 import org.niord.core.publication.series.IssueResolutionService.IssueResolution;
 import org.niord.core.publication.series.vo.IssueMemberVo;
-import org.niord.core.publication.series.vo.IssuePreviewVo;
 import org.niord.core.publication.series.vo.IssueWorkbenchVo;
 import org.niord.core.publication.series.vo.PublishChecklistVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
@@ -204,9 +203,8 @@ public class IssueWorkbenchService {
         // And only for a reader who may also render and open one: the preview
         // endpoints are admin-only, so a row handed to anybody else would offer a
         // download that is refused. Narrowed exactly as the checklist below is.
-        List<IssuePreviewVo> stored = (!resolved.frozen() && mayReadChecklist)
-                ? previews.stored(issue) : List.of();
-        vo.setPreviews(stored);
+        vo.setPreviews((!resolved.frozen() && mayReadChecklist)
+                ? previews.stored(issue) : List.of());
 
         if (!resolved.frozen() && mayReadChecklist) {
             // allowFuture is false: the rail here is the reading screen's, not the
@@ -214,12 +212,7 @@ public class IssueWorkbenchService {
             // the publish dialog, which asks for its own rail at the instant it is
             // offering, and a screen that waived it by default would show a check
             // as satisfied that nobody had made.
-            // The PREVIEW_FRESH row is answered off the rows just read rather than
-            // from a second pass over the store: the rail and the preview badges
-            // beside it are then one answer by construction, and the screen reads
-            // each language's directory once.
-            vo.setChecklist(PublishChecklistVo.of(
-                    checklist.compute(issue, false, previews.isStaleFor(issue, stored), resolved)));
+            vo.setChecklist(PublishChecklistVo.of(checklist.compute(issue, false, resolved)));
         }
 
         // A frozen issue takes no resolve at all, so this is also the "not on a

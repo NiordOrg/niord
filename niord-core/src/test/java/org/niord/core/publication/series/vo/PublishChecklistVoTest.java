@@ -76,7 +76,7 @@ public class PublishChecklistVoTest {
         }
         assertTrue(onTheVo.contains("applicable"),
                 "the rail no longer says which of its rows this issue can even be in; a verdict "
-                        + "counted over all fifteen rows counts checks that never ran");
+                        + "counted over all fourteen rows counts checks that never ran");
     }
 
     /**
@@ -85,7 +85,7 @@ public class PublishChecklistVoTest {
      * Both are one annotation away from being lost by an ordinary tidy-up.
      * Dropping {@code @JsonInclude(ALWAYS)} -- or making the type an
      * {@code IJsonSerializable}, which the rest of this package is -- suppresses
-     * `acknowledgeCode` on the fourteen rows where it is null, and the client
+     * `acknowledgeCode` on the thirteen rows where it is null, and the client
      * reads that key's absence as a different fact than its null. Dropping the
      * order leaves Jackson emitting whatever it discovers.
      */
@@ -152,7 +152,7 @@ public class PublishChecklistVoTest {
      *
      * The checklist endpoint used to compose a LinkedHashMap key by key. Replacing
      * it with a VO is only safe if the JSON does not move, and two details make
-     * that non-obvious: `acknowledgeCode` is NULL on fourteen of the fifteen rows
+     * that non-obvious: `acknowledgeCode` is NULL on thirteen of the fourteen rows
      * and the client reads that as a value -- "this row cannot be acknowledged" --
      * where the project's IJsonSerializable would suppress the key entirely; and a
      * map preserves insertion order where a bean's is whatever Jackson discovers.

@@ -395,7 +395,7 @@ public class IssueLifecycleTest {
 
     // ================================================================= checklist
 
-    /** All fifteen rail codes are emitted, every time. */
+    /** All fourteen rail codes are emitted, every time. */
     @Test
     @Transactional
     public void theRailEmitsEveryCodeItDeclares() {
@@ -405,9 +405,9 @@ public class IssueLifecycleTest {
         em.flush();
 
         PublishChecklistService.Checklist result =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false);
+                checklist.compute(i, new Date(1_700_000_000_000L), false);
 
-        assertEquals(15, PublishChecklistService.CODES.size(), "the rail is not fifteen codes");
+        assertEquals(14, PublishChecklistService.CODES.size(), "the rail is not fourteen codes");
         assertEquals(PublishChecklistService.CODES.size(), result.rows().size(),
                 "the rail emitted " + result.rows().size() + " rows; the UI renders and translates all "
                         + PublishChecklistService.CODES.size());
@@ -431,7 +431,7 @@ public class IssueLifecycleTest {
         em.flush();
 
         PublishChecklistService.CheckRow row =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows().stream()
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows().stream()
                         .filter(r -> r.code().equals("FILE_PRESENT_PER_LANGUAGE"))
                         .findFirst().orElseThrow();
 
@@ -462,7 +462,7 @@ public class IssueLifecycleTest {
         em.flush();
 
         PublishChecklistService.CheckRow row =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows().stream()
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows().stream()
                         .filter(r -> r.code().equals("FILE_PRESENT_PER_LANGUAGE"))
                         .findFirst().orElseThrow();
 
@@ -523,7 +523,7 @@ public class IssueLifecycleTest {
         em.flush();
 
         List<PublishChecklistService.CheckRow> rows =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows();
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows();
 
         for (String code : List.of("MEMBERS_RESOLVED", "MEMBER_LIMIT", "NO_INEFFECTIVE_OVERRIDES",
                 "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", "OVERLAPPING_ISSUE")) {
@@ -543,9 +543,8 @@ public class IssueLifecycleTest {
         assertEquals("CANCELLED_BUT_DATE_ALIVE", acknowledgeable.acknowledgeCode());
 
         // What is left is what this issue is actually being asked: is it open, are
-        // the bytes there, is the instant sane, is the preview current.
-        assertEquals(List.of("ISSUE_OPEN", "FILE_PRESENT_PER_LANGUAGE", "CUTOFF_NOT_FUTURE",
-                        "PREVIEW_FRESH"),
+        // the bytes there, is the instant sane.
+        assertEquals(List.of("ISSUE_OPEN", "FILE_PRESENT_PER_LANGUAGE", "CUTOFF_NOT_FUTURE"),
                 rows.stream().filter(PublishChecklistService.CheckRow::applicable)
                         .map(PublishChecklistService.CheckRow::code).toList(),
                 "the rows an uploaded issue answers are not the ones expected");
@@ -574,7 +573,7 @@ public class IssueLifecycleTest {
         em.flush();
 
         List<PublishChecklistService.CheckRow> rows =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows();
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows();
 
         for (String code : List.of("MEMBERS_RESOLVED", "MEMBER_LIMIT", "NO_INEFFECTIVE_OVERRIDES",
                 "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", "OVERLAPPING_ISSUE")) {
@@ -596,11 +595,11 @@ public class IssueLifecycleTest {
      * Named as a set rather than counted, because a count agrees with itself
      * whichever five rows dropped out: a first issue of a generated, non-citable
      * series has no neighbour to bracket, no chain to join, no file to
-     * pre-exist and nobody to cite it. The remaining ten are the answers, and
-     * every one of the fifteen is still emitted.
+     * pre-exist and nobody to cite it. The remaining nine are the answers, and
+     * every one of the fourteen is still emitted.
      *
      * It is also the guard that the query-backed case is UNCHANGED: this series
-     * resolves a member list, so all five membership rows are among the ten.
+     * resolves a member list, so all five membership rows are among the nine.
      */
     @Test
     @Transactional
@@ -611,7 +610,7 @@ public class IssueLifecycleTest {
         em.flush();
 
         List<PublishChecklistService.CheckRow> rows =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows();
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows();
 
         assertEquals(PublishChecklistService.CODES.size(), rows.size(),
                 "every code ships every time, applicable or not -- a client that renders only what it "
@@ -666,7 +665,7 @@ public class IssueLifecycleTest {
         for (PublicationIssue issue : shapes) {
             for (boolean allowFuture : List.of(false, true)) {
                 List<String> contradictory =
-                        checklist.compute(issue, new Date(1_700_000_000_000L), allowFuture, true).rows()
+                        checklist.compute(issue, new Date(1_700_000_000_000L), allowFuture).rows()
                                 .stream()
                                 .filter(r -> !r.applicable() && !r.passed()
                                         && r.severity() == PublishChecklistService.Severity.BLOCK)
@@ -679,7 +678,7 @@ public class IssueLifecycleTest {
 
     /** One row of the rail, for the tests that ask about a single check. */
     private PublishChecklistService.CheckRow rowOf(PublicationIssue issue, String code) {
-        return checklist.compute(issue, new Date(1_700_000_000_000L), false, false).rows().stream()
+        return checklist.compute(issue, new Date(1_700_000_000_000L), false).rows().stream()
                 .filter(r -> r.code().equals(code))
                 .findFirst().orElseThrow();
     }
@@ -704,7 +703,7 @@ public class IssueLifecycleTest {
         em.flush();
 
         PublishChecklistService.CheckRow row =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows().stream()
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows().stream()
                         .filter(r -> r.code().equals("FILE_PRESENT_PER_LANGUAGE"))
                         .findFirst().orElseThrow();
 
@@ -728,7 +727,7 @@ public class IssueLifecycleTest {
         em.flush();
 
         PublishChecklistService.CheckRow row =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows().stream()
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows().stream()
                         .filter(r -> r.code().equals("FILE_PRESENT_PER_LANGUAGE"))
                         .findFirst().orElseThrow();
 
@@ -760,7 +759,7 @@ public class IssueLifecycleTest {
                 IntervalBoundSource.STAMPED, user());
         em.flush();
 
-        List<String> leaked = checklist.compute(i, new Date(1_700_000_000_000L), false, false)
+        List<String> leaked = checklist.compute(i, new Date(1_700_000_000_000L), false)
                 .rows().stream()
                 .map(PublishChecklistService.CheckRow::detail)
                 .filter(d -> d != null)
@@ -782,7 +781,7 @@ public class IssueLifecycleTest {
                 IntervalBoundSource.STAMPED, user());
         em.flush();
 
-        String detail = checklist.compute(i, new Date(1_700_000_000_000L), false, false)
+        String detail = checklist.compute(i, new Date(1_700_000_000_000L), false)
                 .rows().stream()
                 .filter(r -> r.code().equals("CUTOFF_NOT_FUTURE"))
                 .findFirst().orElseThrow().detail();
@@ -801,7 +800,7 @@ public class IssueLifecycleTest {
         em.flush();
 
         List<PublishChecklistService.CheckRow> acknowledgeable =
-                checklist.compute(i, new Date(1_700_000_000_000L), false, false).rows().stream()
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows().stream()
                         .filter(PublishChecklistService.CheckRow::acknowledgeable).toList();
 
         assertEquals(1, acknowledgeable.size(), "expected exactly one acknowledgeable row");
@@ -817,13 +816,13 @@ public class IssueLifecycleTest {
         em.flush();
 
         Date future = new Date(System.currentTimeMillis() + 86_400_000L);
-        assertTrue(checklist.compute(i, future, false, false).blockingCodes().contains("CUTOFF_NOT_FUTURE"));
-        assertFalse(checklist.compute(i, future, true, false).blockingCodes().contains("CUTOFF_NOT_FUTURE"));
+        assertTrue(checklist.compute(i, future, false).blockingCodes().contains("CUTOFF_NOT_FUTURE"));
+        assertFalse(checklist.compute(i, future, true).blockingCodes().contains("CUTOFF_NOT_FUTURE"));
 
         // And an allowed future cut-off is a check that was waived rather than
         // one that held: reported as a pass, counted by nobody.
         PublishChecklistService.CheckRow waived =
-                checklist.compute(i, future, true, false).rows().stream()
+                checklist.compute(i, future, true).rows().stream()
                         .filter(r -> r.code().equals("CUTOFF_NOT_FUTURE"))
                         .findFirst().orElseThrow();
         assertFalse(waived.applicable(), "a waived check must not be counted as one the issue passed");

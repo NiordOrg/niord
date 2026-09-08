@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -36,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code @QuarkusTest} gated on a local MySQL -- so on a machine without one
  * these guards would be skipped silently while reading as green.
  *
- * Both properties below are what a client actually binds to. Three keys and a
+ * Both properties below are what a client actually binds to. Two keys and a
  * list that is empty rather than absent is the whole contract; either one moving
  * leaves the issue screen offering to render a preview the server already holds.
  */
@@ -45,22 +44,22 @@ public class IssuePreviewVoWireTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**
-     * Exactly three keys, spelled the way the preview endpoints spell them.
+     * Exactly two keys, spelled the way the preview endpoints spell them.
      *
      * The generating endpoint builds its rows by hand as `lang` and `renderedAt`,
-     * and this row is that shape plus `stale`. A client reads the two responses
-     * with one type, so a key renamed on this side -- by a record component
-     * renamed in an ordinary tidy-up, which is all it takes -- silently produces
-     * rows whose language and timestamp are both undefined.
+     * and this row is that same shape. A client reads the two responses with one
+     * type, so a key renamed on this side -- by a record component renamed in an
+     * ordinary tidy-up, which is all it takes -- silently produces rows whose
+     * language and timestamp are both undefined.
      */
     @Test
-    public void thePreviewRowCarriesExactlyLangRenderedAtAndStale() throws Exception {
-        JsonNode json = MAPPER.valueToTree(new IssuePreviewVo("da", 1_755_424_218_000L, false));
+    public void thePreviewRowCarriesExactlyLangAndRenderedAt() throws Exception {
+        JsonNode json = MAPPER.valueToTree(new IssuePreviewVo("da", 1_755_424_218_000L));
 
         Set<String> keys = new LinkedHashSet<>();
         json.fieldNames().forEachRemaining(keys::add);
-        assertEquals(Set.of("lang", "renderedAt", "stale"), keys,
-                "the preview row's keys are " + keys + "; the issue screen binds these three by name");
+        assertEquals(Set.of("lang", "renderedAt"), keys,
+                "the preview row's keys are " + keys + "; the issue screen binds these two by name");
 
         assertEquals("da", json.get("lang").asText());
         assertTrue(json.get("renderedAt").isNumber(),
@@ -68,7 +67,6 @@ public class IssuePreviewVoWireTest {
                         + "these payloads is a number and a client parsing one field differently is a "
                         + "date that renders as Invalid Date");
         assertEquals(1_755_424_218_000L, json.get("renderedAt").asLong());
-        assertFalse(json.get("stale").asBoolean());
     }
 
     /**
@@ -78,8 +76,7 @@ public class IssuePreviewVoWireTest {
      * absent -- so a previews list left null would vanish from the response
      * entirely. The screen seeds its preview rows from every read: an absent key
      * is "unknown" and a client cannot tell it from "none", which is the state
-     * that has it offer to generate a preview beside a rail reporting the stored
-     * one as current.
+     * that has a refresh drop the rows for generations the server still holds.
      */
     @Test
     public void anIssueWithNoPreviewsStillCarriesTheKey() throws Exception {
@@ -92,7 +89,7 @@ public class IssuePreviewVoWireTest {
         assertEquals(0, json.get("previews").size());
 
         IssueWorkbenchVo filled = new IssueWorkbenchVo();
-        filled.setPreviews(List.of(new IssuePreviewVo("da", 1_755_424_218_000L, true)));
+        filled.setPreviews(List.of(new IssuePreviewVo("da", 1_755_424_218_000L)));
         assertEquals(1, MAPPER.valueToTree(filled).get("previews").size(),
                 "the envelope did not carry the rows it was given");
     }

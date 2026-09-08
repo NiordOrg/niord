@@ -25,6 +25,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.core.publication.series.vo.IssuePreviewVo;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.user.User;
 
@@ -133,25 +134,25 @@ public class IssuePreviewAndFileTest {
 
     // ================================================================= previews
 
-    /** Staleness is computed, so it cannot go stale itself. */
+    /** Nothing rendered is no row at all, so a caller cannot mistake an absence for a file. */
     @Test
     @Transactional
-    public void previewStalenessIsComputedFromTimestamps() {
+    public void anIssueWithNothingRenderedReportsNoPreviewRows() {
         PublicationIssue issue = anIssue();
 
-        // No preview at all is stale: "nothing to compare" and "current" are
-        // different answers and only one should let a release proceed quietly.
-        assertTrue(previews.isStale(issue, "da", new Date()),
-                "an issue with no preview reported a fresh one");
+        assertTrue(previews.newest(issue, "da").isEmpty(),
+                "a language with nothing on disk answered with a generation");
+        assertTrue(previews.stored(issue).isEmpty(),
+                "an issue nobody has previewed reported a row the download endpoint cannot serve");
 
         previews.record(issue, "da", "test.pdf", "first".getBytes(StandardCharsets.UTF_8));
 
-        assertFalse(previews.isStale(issue, "da", null),
-                "a preview with no known change should be current");
-        assertFalse(previews.isStale(issue, "da", new Date(1_600_000_000_000L)),
-                "a change older than the preview does not make it stale");
-        assertTrue(previews.isStale(issue, "da", new Date(System.currentTimeMillis() + 60_000L)),
-                "a change newer than the preview must make it stale");
+        List<IssuePreviewVo> stored = previews.stored(issue);
+        assertEquals(1, stored.size(), "the recorded generation did not reach the stored rows");
+        assertEquals("da", stored.get(0).lang());
+        assertEquals(previews.newest(issue, "da").orElseThrow().renderedAt().getTime(),
+                stored.get(0).renderedAt(),
+                "the row names an instant other than the generation it stands for");
     }
 
     /** Generations accumulate rather than overwrite, so preview-then-compare works. */

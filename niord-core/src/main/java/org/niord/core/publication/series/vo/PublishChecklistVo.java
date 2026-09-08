@@ -45,7 +45,7 @@ import java.util.List;
 @JsonPropertyOrder({"rows", "canPublish", "blockingCodes", "memberCount"})
 public class PublishChecklistVo {
 
-    /** All fifteen rows, in the order the rail renders them. */
+    /** All fourteen rows, in the order the rail renders them. */
     private List<PublishCheckRowVo> rows = new ArrayList<>();
 
     private boolean canPublish;

@@ -32,17 +32,15 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Previews: the same render, written where the public cannot reach it.
  *
- * Staleness is COMPUTED, never stored. A stored flag has to be invalidated by
- * everything that could invalidate it -- an override, a criteria edit, a message
- * changing status -- and the one path that forgets leaves a preview claiming to
- * be current when it is not. Comparing two timestamps cannot forget.
+ * A preview is a convenience for reading the document before releasing it and
+ * nothing more. Releasing renders the document from the frozen member list, so
+ * what is stored here never becomes the published bytes and its age carries no
+ * consequence: there is no freshness to compute and none is offered.
  *
  * Generations are kept rather than overwritten, so that preview, compare,
  * publish is a sequence somebody can actually follow. The sweep bounds the cost
@@ -99,44 +97,12 @@ public class IssuePreviewService extends BaseService {
     }
 
     /**
-     * Whether the preview predates the thing it is a preview of.
-     *
-     * No preview at all counts as stale: "nothing to compare" and "current" are
-     * different answers, and only one of them should let a release proceed
-     * quietly.
-     */
-    public boolean isStale(PublicationIssue issue, String lang, Date memberSetChangedAt) {
-        return newest(issue, lang)
-                .map(preview -> isStale(preview, memberSetChangedAt))
-                .orElse(true);
-    }
-
-    /**
-     * The same question asked about a generation already in hand.
-     *
-     * The comparison itself, in one place, so that the rail's answer and the row
-     * the issue screen puts a "stale" badge on cannot be two different rules. It
-     * takes the preview rather than looking it up because the listing above is a
-     * directory read: a caller that has already paid for it must not pay again to
-     * find out whether what it holds is current.
-     */
-    private static boolean isStale(Preview preview, Date memberSetChangedAt) {
-        return memberSetChangedAt != null && preview.renderedAt().before(memberSetChangedAt);
-    }
-
-    /**
      * What is stored for an issue: the newest generation of each of its
-     * languages, with staleness answered against the issue's own stamp.
+     * languages.
      *
-     * A language with nothing stored yields no row at all. "No preview" and "a
-     * preview that is stale" are different states -- one offers something to
-     * open and the other does not -- and a row standing in for the absence would
-     * have to be told apart by its own flag on every reader.
-     *
-     * The issue's stamp moves on every edit and every curation, which is what
-     * makes it what "current" is read against; it is the same instant
-     * {@link #isStaleFor} compares to for the rail, so a screen cannot show a
-     * fresh badge on a row beside a rail warning that the preview is stale.
+     * A language with nothing stored yields no row at all, so the list is what
+     * can actually be opened rather than one entry per configured language with
+     * an absence to be told apart by a flag.
      *
      * ONE directory read per language, the same one answering a single language
      * costs.
@@ -146,59 +112,9 @@ public class IssuePreviewService extends BaseService {
         for (PublicationIssueDesc desc : issue.getDescs()) {
             newest(issue, desc.getLang()).ifPresent(preview -> out.add(new IssuePreviewVo(
                     preview.lang(),
-                    preview.renderedAt().getTime(),
-                    isStale(preview, issue.getUpdated()))));
+                    preview.renderedAt().getTime())));
         }
         return out;
-    }
-
-    /**
-     * Whether ANY of the issue's languages has a preview that predates its
-     * current member set -- or has none at all.
-     *
-     * The issue's own stamp moves on every edit and every curation, so it is what
-     * "current" is read against. Only meaningful for a series that renders a
-     * document: an uploaded or link-backed one has no preview to be stale, and
-     * warning about one nobody can generate is a warning nobody can clear.
-     *
-     * It lives here rather than beside each caller because it feeds the
-     * PREVIEW_FRESH rail row, and the rail is computed on three paths -- the
-     * publish gate, the checklist endpoint and the issue workbench. Three copies
-     * of one definition is three chances for the rail to warn on one screen and
-     * pass on another.
-     */
-    public boolean isStaleFor(PublicationIssue issue) {
-        // Asked before the store is read: a series that renders nothing has no
-        // preview to be stale, and listing its directories to find that out costs
-        // a read per language for an answer that was already fixed.
-        return rendersADocument(issue) && isStaleFor(issue, stored(issue));
-    }
-
-    /**
-     * The same answer, off rows a caller has already read.
-     *
-     * The issue screen ships those rows and computes this rail row in one
-     * response, and reading the store twice for the two would be one directory
-     * listing per language spent on a question already answered. It is the same
-     * rule either way: a language is current only if it has a row and the row is
-     * not stale -- having no row at all is the "nothing to compare" half, and it
-     * is what makes an issue nobody has previewed report a warning rather than a
-     * pass.
-     */
-    public boolean isStaleFor(PublicationIssue issue, List<IssuePreviewVo> stored) {
-        if (!rendersADocument(issue)) {
-            return false;
-        }
-        Set<String> current = stored.stream()
-                .filter(p -> !p.stale())
-                .map(IssuePreviewVo::lang)
-                .collect(Collectors.toSet());
-        return issue.getDescs().stream().anyMatch(desc -> !current.contains(desc.getLang()));
-    }
-
-    /** Whether there is anything to preview: an uploaded or link-backed issue renders nothing. */
-    private static boolean rendersADocument(PublicationIssue issue) {
-        return issue.getSeries() != null && issue.getSeries().getReportId() != null;
     }
 
     /** Removes generations past the TTL. */

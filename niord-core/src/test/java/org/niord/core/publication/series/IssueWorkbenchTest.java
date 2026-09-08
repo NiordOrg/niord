@@ -231,7 +231,7 @@ public class IssueWorkbenchTest {
         em.flush();
 
         IssueResolution pre = resolutions.forIssue(i, new Date());
-        PublishChecklistService.Checklist rail = checklist.compute(i, false, false, pre);
+        PublishChecklistService.Checklist rail = checklist.compute(i, false, pre);
 
         assertEquals(2, rail.resolution().members().size(),
                 "the shared resolution did not reach the rail's member count");
@@ -322,7 +322,7 @@ public class IssueWorkbenchTest {
         em.merge(i);
         em.flush();
 
-        PublishChecklistService.Checklist rail = checklist.compute(i, new Date(), false, false);
+        PublishChecklistService.Checklist rail = checklist.compute(i, new Date(), false);
         assertNull(rail.resolution(),
                 "the standalone rail resolved a published issue live; the archived document is the "
                         + "record, and this pays a full narrowing on every published issue anybody opens");
@@ -360,9 +360,9 @@ public class IssueWorkbenchTest {
         em.flush();
 
         Date at = new Date();
-        PublishChecklistService.Checklist alone = checklist.compute(i, at, false, false);
+        PublishChecklistService.Checklist alone = checklist.compute(i, at, false);
         PublishChecklistService.Checklist shared =
-                checklist.compute(i, false, false, resolutions.forIssue(i, at));
+                checklist.compute(i, false, resolutions.forIssue(i, at));
 
         for (PublishChecklistService.Checklist rail : List.of(alone, shared)) {
             assertNotNull(rail.resolution(),
@@ -645,19 +645,17 @@ public class IssueWorkbenchTest {
     }
 
     /**
-     * A stored preview reaches the screen, and moving the member set makes it say
-     * so.
+     * A stored preview reaches the screen, and stays there while the issue moves.
      *
-     * The row is what the screen offers to open, and its staleness is the same
-     * question the rail answers -- computed here off the issue's stamp rather
-     * than remembered from the moment the preview was generated. A curation
-     * moves that stamp, and the row has to follow: a screen still badging the
-     * preview as current after somebody has excluded a message would have an
-     * admin release against a document they read before the change.
+     * The row is what the screen offers to open, and the generation on disk is
+     * what it names. Curating the issue does not withdraw the offer: the file is
+     * still there and still readable, and the release renders its own document
+     * from the frozen member list, so nothing about a preview's age changes what
+     * goes out.
      */
     @Test
     @Transactional
-    public void aStoredPreviewIsReportedAndGoesStaleWhenTheMemberSetMoves() throws Exception {
+    public void aStoredPreviewIsReportedAndSurvivesACuration() throws Exception {
         PublicationSeries s = series();
         PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
         message("NM-001", Status.PUBLISHED);
@@ -673,34 +671,15 @@ public class IssueWorkbenchTest {
         assertEquals("da", fresh.get(0).lang());
         assertTrue(fresh.get(0).renderedAt() > 0,
                 "the preview row came back without the instant it was rendered at");
-        assertFalse(fresh.get(0).stale(),
-                "a preview generated after the last change to the issue was reported stale");
-        assertTrue(previewFreshRowOf(before).isPassed(),
-                "the rail warned that the preview is stale beside a row reporting it current; the "
-                        + "badge and the rail answer the same question and must not disagree");
 
-        // The stamp and the generation are both milliseconds, so a curation taken
-        // inside the same one would be indistinguishable from no change at all.
-        Thread.sleep(5);
         curation.exclude(i, dropped.getUid(), user(), "held over to the next edition");
         em.flush();
 
         IssueWorkbenchVo moved = workbench.forIssue(i, "da", true);
         List<IssuePreviewVo> after = moved.getPreviews();
         assertEquals(1, after.size(), "the stored preview vanished when the member set moved");
-        assertTrue(after.get(0).stale(),
-                "the member set moved after the preview was rendered and the row still claims to be "
-                        + "current");
-        assertFalse(previewFreshRowOf(moved).isPassed(),
-                "the row went stale and the rail beside it still reports the preview as current");
-    }
-
-    /** The PREVIEW_FRESH row off a workbench response, so the badge and the rail are compared. */
-    private static PublishCheckRowVo previewFreshRowOf(IssueWorkbenchVo vo) {
-        return vo.getChecklist().getRows().stream()
-                .filter(r -> "PREVIEW_FRESH".equals(r.getCode()))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("the rail has no PREVIEW_FRESH row at all"));
+        assertEquals(fresh.get(0), after.get(0),
+                "the row changed although the generation on disk is the same file");
     }
 
     /**
