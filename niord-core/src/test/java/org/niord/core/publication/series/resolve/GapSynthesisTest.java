@@ -68,6 +68,17 @@ public class GapSynthesisTest {
         return new GapSynthesis.Issue(id, nominalClose, IntervalBoundSource.NOMINAL, openedAt, true);
     }
 
+    /** A released weekly issue closing in the named ISO week. */
+    private static GapSynthesis.Issue week(String id, int isoWeek) {
+        return chained(id, wed(isoWeek - 1), wed(isoWeek));
+    }
+
+    /** The same week, withdrawn. */
+    private static GapSynthesis.Issue retiredWeek(String id, int isoWeek) {
+        return new GapSynthesis.Issue(id, wed(isoWeek), IntervalBoundSource.STAMPED,
+                wed(isoWeek - 1), false, true);
+    }
+
     // ------------------------------------------------------------------ coverage
 
     /**
@@ -113,6 +124,94 @@ public class GapSynthesisTest {
                 WEEK, CPH, PATTERNS, null, new Date(wed(43).getTime() + 3600_000L));
 
         assertEquals(0, rows.size(), "an open issue three weeks late is late, and is its own row");
+    }
+
+    // ------------------------------------------------------------------ retired
+
+    /**
+     * A retired week is uncovered again, and the row that says so is the one an
+     * admin can act on.
+     *
+     * This is the whole of how a wrong published issue gets corrected. An issue
+     * carried over from the previous system can never be amended -- its members
+     * were frozen from the archive and its document is the one people cited -- so
+     * the remedy is to withdraw it and publish a new issue for the same period.
+     * The retro-create affordance lives on a MISSING row, so a retired week that
+     * still counted as covered offered no way to make its replacement.
+     */
+    @Test
+    public void aRetiredWeeksPeriodComesBackAsMissing() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(week("w33", 33), retiredWeek("w34", 34), week("w35", 35)),
+                WEEK, CPH, PATTERNS, null, wed(35));
+
+        List<GapSynthesis.Row> missing = rows.stream()
+                .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).toList();
+
+        assertEquals(1, missing.size(), "expected exactly the withdrawn week, got " + rows);
+        assertEquals(wed(33), missing.get(0).intervalFrom(),
+                "the recovered period must open where the week before it closed");
+        assertEquals(wed(34), missing.get(0).intervalTo(),
+                "and close where the week after it opened -- the retired issue's own period");
+        assertEquals("w33", missing.get(0).precedingPublicId());
+        assertEquals("w35", missing.get(0).followingPublicId(),
+                "the pseudo-row chains between the issues that still cover their periods, not "
+                        + "to the withdrawn one");
+    }
+
+    /** The control: the same three weeks with nothing withdrawn have no gap at all. */
+    @Test
+    public void aPublishedWeekBetweenTwoOthersIsNotMissing() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(week("w33", 33), week("w34", 34), week("w35", 35)),
+                WEEK, CPH, PATTERNS, null, wed(35));
+
+        assertEquals(0, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
+                "a tidy chain reported a gap: " + rows);
+    }
+
+    /**
+     * Retiring the NEWEST issue leaves its period missing too.
+     *
+     * The forward pass anchors on the newest issue that still covers its period,
+     * so withdrawing the head of the chain moves the anchor back one week and the
+     * withdrawn week is tiled like any other overdue one. Anchoring on the retired
+     * row instead would leave the head of the list showing nothing missing at all,
+     * which is the one case somebody who has just retired an issue is looking at.
+     */
+    @Test
+    public void retiringTheNewestIssueLeavesItsOwnPeriodMissing() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(week("w33", 33), week("w34", 34), retiredWeek("w35", 35)),
+                WEEK, CPH, PATTERNS, null, new Date(wed(35).getTime() + 3600_000L));
+
+        List<GapSynthesis.Row> missing = rows.stream()
+                .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).toList();
+
+        assertEquals(1, missing.size(), "expected the withdrawn head week, got " + rows);
+        assertEquals(wed(34), missing.get(0).intervalFrom());
+        assertEquals(wed(35), missing.get(0).intervalTo());
+        assertEquals("w34", missing.get(0).precedingPublicId(),
+                "the row chains off the newest issue that still covers its period");
+        assertEquals(1, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.UPCOMING).count(),
+                "and the period being worked toward is still the only upcoming one");
+    }
+
+    /**
+     * A series whose every issue has been withdrawn falls back to its declared
+     * start, exactly as one that never published anything does.
+     *
+     * Nothing covers any period, so there is no issue to anchor on -- and the
+     * anchor S-4 requires of every interval-based series is the one that is left.
+     */
+    @Test
+    public void aSeriesWhoseOnlyIssueIsRetiredSynthesizesFromItsDeclaredStart() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(retiredWeek("w11", 11)), WEEK, CPH, PATTERNS, wed(10), wed(13));
+
+        assertEquals(3, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
+                "weeks 11, 12 and 13 are uncovered, got " + rows);
+        assertEquals(wed(10), rows.get(0).intervalFrom());
     }
 
     private static GapDetection.Gate tiling() {

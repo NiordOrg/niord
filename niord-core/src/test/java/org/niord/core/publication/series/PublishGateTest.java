@@ -249,6 +249,42 @@ public class PublishGateTest {
                 refused(i, new Date(successorStamp.getTime() + 1)).code());
     }
 
+    /**
+     * A RETIRED neighbour is not in the bracket, and the same stamp goes through.
+     *
+     * The contrast with the test above is the point: at that instant a PUBLISHED
+     * neighbour refuses, and a withdrawn one does not. Retiring an issue says that
+     * what went out for that period should not stand, and where the issue cannot be
+     * amended -- every issue carried over from the previous system -- the remedy is
+     * a new issue for the same period. Braced against the issue it replaces, that
+     * new issue could never be released at any instant inside the period the two
+     * share, which is every instant it can sensibly be stamped at.
+     */
+    @Test
+    @Transactional
+    public void aRetiredNeighbourDoesNotBraceTheIssueThatReplacesIt() {
+        PublicationSeries s = series(SeriesStatus.ACTIVE);
+        Date withdrawnStamp = new Date(1_700_600_000_000L);
+        PublicationIssue withdrawn = released(s, withdrawnStamp);
+        em.flush();
+        lifecycle.retire(withdrawn, null, "the week that went out named the wrong charts");
+        em.flush();
+
+        PublicationIssue replacement = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        publishService.publish(replacement.getId(),
+                new IssuePublishService.PublishRequest(
+                        IssuePublishService.PublishRequest.ALL_WARNINGS, null, withdrawnStamp));
+
+        assertEquals(IssueStatus.PUBLISHED, replacement.getStatus(),
+                "the replacement for a withdrawn week could not be released at its own period's end");
+        assertEquals(withdrawnStamp, replacement.getCutoffStampedAt());
+        assertNull(replacement.getPublicTo(),
+                "the replacement's window was capped against the issue it replaces, which is off "
+                        + "the public list and cannot be the publication it yields to");
+    }
+
     /** A cut-off in the future freezes the list before its window closed. */
     @Test
     @Transactional

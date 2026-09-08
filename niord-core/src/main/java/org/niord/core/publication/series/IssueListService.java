@@ -506,7 +506,16 @@ public class IssueListService {
                 .getResultList();
     }
 
-    /** What the synthesizer needs, oldest first, as it expects. */
+    /**
+     * What the synthesizer needs, oldest first, as it expects.
+     *
+     * A RETIRED issue is handed over marked as such rather than dropped. It stays
+     * a real row in the list either way -- what changes is that the synthesizer
+     * stops counting it as coverage, so the period it was withdrawn from comes
+     * back as a MISSING row with the retro-create the correction is made through.
+     * Dropping it here instead would work for the gaps and lose the marker the
+     * neighbour lookups read.
+     */
     private static List<GapSynthesis.Issue> ascending(List<PublicationIssue> newestFirst) {
         List<GapSynthesis.Issue> out = new ArrayList<>();
         for (int i = newestFirst.size() - 1; i >= 0; i--) {
@@ -518,7 +527,8 @@ public class IssueListService {
                 continue;
             }
             out.add(new GapSynthesis.Issue(issue.getPublicId(), cutoff, cutoffSourceOf(issue),
-                    issue.getIntervalFrom(), issue.getStatus() == IssueStatus.OPEN));
+                    issue.getIntervalFrom(), issue.getStatus() == IssueStatus.OPEN,
+                    issue.getStatus() == IssueStatus.RETIRED));
         }
         return out;
     }

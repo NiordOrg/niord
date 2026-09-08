@@ -24,6 +24,7 @@ import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueListResultVo;
 import org.niord.core.publication.series.vo.IssueTimelineRowVo;
 import org.niord.core.publication.series.vo.IssueTimelineVo;
+import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -129,6 +130,106 @@ public class IssueTimelineTest {
                 "the strip and the list disagree about which periods are missing. They are one fact "
                         + "produced by one synthesizer, and two answers means a second one crept in");
         assertEquals(list.getGapDetection().getReasonCode(), strip.getGapDetection().getReasonCode());
+    }
+
+    // ------------------------------------------------------ a withdrawn period
+
+    /**
+     * A retired week is BOTH: still its own row, and a period that is missing again.
+     *
+     * That pair is how a wrong published issue gets corrected. An issue carried
+     * over from the previous system can never be amended, so the remedy is to
+     * withdraw it and publish a new issue for the same period -- and the affordance
+     * that creates one lives on a MISSING row. The withdrawn issue itself changes
+     * in no way: it keeps its file, its window and every citation of it, and it
+     * stays in the list as a RETIRED row so the record of what went out survives.
+     *
+     * Asserted on the list AND the strip, because they are the two screens an admin
+     * reaches for after retiring something and they run off one synthesizer.
+     */
+    @Test
+    public void aRetiredWeekStaysARowAndItsPeriodComesBackAsMissing() {
+        PublicationSeries s = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        List<PublicationIssue> issues = newestFirst(
+                week(s, "w33", 33), retiredWeek(s, "w34", 34), week(s, "w35", 35));
+
+        IssueListResultVo list = IssueListService.build(s, issues, wed(35));
+        IssueTimelineVo strip = IssueListService.buildRecent(s, issues, 52, wed(35), "en");
+
+        SystemPublicationIssueVo withdrawn = list.getData().stream()
+                .filter(r -> "w34".equals(r.getPublicId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(
+                        "the retired issue left the list; retiring withdraws a document from the "
+                                + "workflow, it does not unmake it"));
+        assertEquals("RETIRED", withdrawn.getComputedStatus());
+        assertNull(withdrawn.getPseudo(), "the retired issue is a real row, not a synthesized one");
+
+        List<SystemPublicationIssueVo> missing = list.getData().stream()
+                .filter(r -> "MISSING".equals(r.getComputedStatus()))
+                .toList();
+        assertEquals(1, missing.size(),
+                "the withdrawn week is still counted as covered, so there is no row to "
+                        + "retro-create its replacement from");
+        assertEquals(wed(33), missing.get(0).getIntervalFrom(),
+                "the recovered period must open where the week before it closed");
+        assertEquals(wed(34), missing.get(0).getIntervalTo(),
+                "and close where the week after it opened -- the retired issue's own period");
+        assertNull(missing.get(0).getPublicId(), "a synthesized row has no entity behind it");
+        assertEquals("w33", missing.get(0).getPrecedingPublicId());
+        assertEquals("w35", missing.get(0).getFollowingPublicId(),
+                "the row chains between the issues that still cover their periods");
+        assertEquals(Integer.valueOf(1), list.getGapCount());
+
+        IssueTimelineRowVo cell = strip.getRows().stream()
+                .filter(r -> "w34".equals(r.getPublicId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("the retired issue has no cell on the strip"));
+        assertEquals("RETIRED", cell.getComputedStatus());
+        List<IssueTimelineRowVo> stripMissing = strip.getRows().stream()
+                .filter(r -> "MISSING".equals(r.getComputedStatus()))
+                .toList();
+        assertEquals(1, stripMissing.size(),
+                "the strip and the list disagree about the withdrawn week");
+        assertEquals(wed(34), stripMissing.get(0).getIntervalTo());
+    }
+
+    /** The control: with nothing withdrawn, the same three weeks have no gap. */
+    @Test
+    public void aPublishedWeekBetweenTwoOthersIsNotMissing() {
+        PublicationSeries s = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        IssueListResultVo list = IssueListService.build(s,
+                newestFirst(week(s, "w33", 33), week(s, "w34", 34), week(s, "w35", 35)), wed(35));
+
+        assertEquals(Integer.valueOf(0), list.getGapCount(), "a tidy chain reported a gap");
+    }
+
+    /**
+     * Retiring the NEWEST issue leaves its period missing too.
+     *
+     * The forward pass anchors on the newest issue that still covers its period,
+     * so withdrawing the head of the chain moves the anchor back a week and the
+     * withdrawn period is tiled like any other overdue one. Anchored on the
+     * retired row instead, the head of the list would show nothing missing -- which
+     * is exactly where somebody who has just retired an issue is looking.
+     */
+    @Test
+    public void retiringTheNewestIssueLeavesItsOwnPeriodMissing() {
+        PublicationSeries s = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        IssueListResultVo list = IssueListService.build(s,
+                newestFirst(week(s, "w33", 33), week(s, "w34", 34), retiredWeek(s, "w35", 35)),
+                new Date(wed(35).getTime() + 3600_000L));
+
+        List<SystemPublicationIssueVo> missing = list.getData().stream()
+                .filter(r -> "MISSING".equals(r.getComputedStatus()))
+                .toList();
+        assertEquals(1, missing.size(), "the withdrawn head week is still counted as covered");
+        assertEquals(wed(34), missing.get(0).getIntervalFrom());
+        assertEquals(wed(35), missing.get(0).getIntervalTo());
+        assertEquals("w34", missing.get(0).getPrecedingPublicId());
     }
 
     /**
@@ -439,6 +540,18 @@ public class IssueTimelineTest {
                                             Date openedAt, Date cutoff) {
         PublicationIssue i = published(series, publicId, cutoff);
         i.setIntervalFrom(openedAt);
+        return i;
+    }
+
+    /** A released weekly issue closing in the named ISO week. */
+    private static PublicationIssue week(PublicationSeries series, String publicId, int isoWeek) {
+        return chained(series, publicId, wed(isoWeek - 1), wed(isoWeek));
+    }
+
+    /** The same week, withdrawn: still a row, no longer coverage. */
+    private static PublicationIssue retiredWeek(PublicationSeries series, String publicId, int isoWeek) {
+        PublicationIssue i = week(series, publicId, isoWeek);
+        i.setStatus(IssueStatus.RETIRED);
         return i;
     }
 

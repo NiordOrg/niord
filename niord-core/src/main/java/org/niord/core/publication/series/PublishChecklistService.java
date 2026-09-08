@@ -432,7 +432,16 @@ public class PublishChecklistService extends BaseService {
     }
 
     /**
-     * The bracket this issue sits in: the released issues either side of it.
+     * The bracket this issue sits in: the issues still covering the periods either
+     * side of it.
+     *
+     * A RETIRED neighbour is not in the bracket. It no longer covers its period --
+     * that is what withdrawing it said -- so it neither raises the floor a cut-off
+     * has to clear nor lowers the ceiling it has to stay under. Counting it did
+     * both: an issue created to replace a withdrawn one was refused
+     * CUTOFF_AFTER_SUCCESSOR against the very issue it was replacing, at any
+     * instant inside the period the two share, which is every instant such an
+     * issue can sensibly be stamped at.
      *
      * PIVOTED ON THE ISSUE'S PLACE IN THE CHAIN, and the place is where its period
      * opens -- not the instant somebody is proposing to stamp. That distinction is
@@ -465,7 +474,7 @@ public class PublishChecklistService extends BaseService {
                                 + "AND i.id <> :self AND i.cutoffStampedAt " + comparison + " :pivot "
                                 + "ORDER BY i.cutoffStampedAt " + order, PublicationIssue.class)
                 .setParameter("s", series)
-                .setParameter("st", IssuePublishService.NEIGHBOUR_STATUSES)
+                .setParameter("st", IssuePublishService.COVERING_STATUSES)
                 .setParameter("self", issue.getId() == null ? -1 : issue.getId())
                 .setParameter("pivot", pivot)
                 .setMaxResults(1)

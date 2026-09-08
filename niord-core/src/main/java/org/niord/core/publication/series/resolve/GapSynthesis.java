@@ -92,13 +92,24 @@ public final class GapSynthesis {
      * covered both weeks. null where nothing records it (the head of a chain).
      * open says the issue is still being worked on: its period is not missing,
      * it is late, and it is its own row.
+     *
+     * retired says the issue no longer covers its period. It is carried here
+     * rather than left to the caller to filter, because the two screens that ask
+     * this question hand their lists to one synthesizer, and a filter applied on
+     * one side of that would be a second answer.
      */
     public record Issue(String publicId, Date effectiveCutoff, IntervalBoundSource cutoffSource,
-                        Date intervalFrom, boolean open) {
+                        Date intervalFrom, boolean open, boolean retired) {
 
         /** A released issue whose open is unknown: the shape older callers and tests used. */
         public Issue(String publicId, Date effectiveCutoff, IntervalBoundSource cutoffSource) {
-            this(publicId, effectiveCutoff, cutoffSource, null, false);
+            this(publicId, effectiveCutoff, cutoffSource, null, false, false);
+        }
+
+        /** An issue that still covers its period, open or released. */
+        public Issue(String publicId, Date effectiveCutoff, IntervalBoundSource cutoffSource,
+                     Date intervalFrom, boolean open) {
+            this(publicId, effectiveCutoff, cutoffSource, intervalFrom, open, false);
         }
     }
 
@@ -114,7 +125,9 @@ public final class GapSynthesis {
      * nobody checked, which is why every caller reports gate state alongside the
      * rows rather than the count alone.
      *
-     * @param issues ordered ASCENDING by effective cut-off
+     * @param issues ordered ASCENDING by effective cut-off. A retired one is
+     *               passed in like any other and ignored for coverage: it no
+     *               longer covers its period, and its period becomes a row here.
      * @param patterns the naming patterns per language; may be empty
      */
     public static List<Row> synthesize(GapDetection.Gate gate,
@@ -130,6 +143,28 @@ public final class GapSynthesis {
             return out;
         }
 
+        // A RETIRED ISSUE DOES NOT COVER ITS PERIOD, and everything below reads
+        // the list that remains.
+        //
+        // Withdrawing an issue is the statement that what went out for that period
+        // should not stand. The period is therefore uncovered again, and the row
+        // that says so is a MISSING one -- which is where the retro-create
+        // affordance lives, and retro-creating is how the correction gets made: a
+        // wrong issue that can never be amended is replaced by a new issue for the
+        // same period. The withdrawn issue stays in the list beside it as a RETIRED
+        // row; it keeps its file, its window and its citations, and nothing about
+        // it changes.
+        //
+        // Filtered once, here, rather than at each use. The gap arithmetic, the
+        // two neighbour lookups and the trailing forward pass all have to agree
+        // about which issues count, and three copies of that test would not.
+        List<Issue> covering = new ArrayList<>();
+        for (Issue issue : issues) {
+            if (!issue.retired()) {
+                covering.add(issue);
+            }
+        }
+
         // A series that has been ACTIVATED and has produced nothing yet.
         //
         // Everything below anchors on an issue that already exists, so with none
@@ -140,7 +175,7 @@ public final class GapSynthesis {
         //
         // firstIssueStartsAt is exactly the anchor needed and the series already
         // carries it: S-4 requires it of every interval-based series, for this.
-        if (issues.isEmpty()) {
+        if (covering.isEmpty()) {
             if (firstIssueStartsAt != null && now != null) {
                 forward(out, seriesId, firstIssueStartsAt, null, periodMillis, zone, patterns, now);
             }
@@ -153,7 +188,7 @@ public final class GapSynthesis {
         // leaves nothing uncovered, however long its window. Only where the
         // start is unknown does the release-slot arithmetic stand in, because
         // an unknown start cannot prove coverage.
-        List<Issue> dated = issues.stream()
+        List<Issue> dated = covering.stream()
                 .filter(i -> i.effectiveCutoff() != null)
                 .toList();
         for (int i = 1; i < dated.size(); i++) {
@@ -165,7 +200,7 @@ public final class GapSynthesis {
                             periodMillis);
             for (GapDetection.Gap gap : gaps) {
                 out.add(row(RowKind.MISSING, seriesId, gap.from(), gap.to(),
-                        latestAtOrBefore(issues, gap.from()), earliestAfter(issues, gap.to()),
+                        latestAtOrBefore(covering, gap.from()), earliestAfter(covering, gap.to()),
                         zone, patterns));
             }
         }
@@ -184,7 +219,11 @@ public final class GapSynthesis {
         // missing -- it is the one being worked on, late if its nominal close has
         // passed, and it is its own row in the list. Synthesizing MISSING rows
         // behind it offered a retro-create for weeks the open issue will carry.
-        Issue newest = issues.get(issues.size() - 1);
+        //
+        // The newest issue that still COVERS its period, which is why a retired
+        // newest one produces a MISSING row for its own period here: the forward
+        // pass anchors on the issue before it and tiles across everything since.
+        Issue newest = covering.get(covering.size() - 1);
         if (!newest.open() && newest.effectiveCutoff() != null && now != null
                 && newest.effectiveCutoff().getTime() <= now.getTime()) {
             forward(out, seriesId, newest.effectiveCutoff(), newest, periodMillis, zone,

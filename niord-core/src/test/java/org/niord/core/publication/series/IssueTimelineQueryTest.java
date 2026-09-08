@@ -215,6 +215,51 @@ public class IssueTimelineQueryTest {
     }
 
     /**
+     * A withdrawn week is a cell of its own AND a period that is missing again.
+     *
+     * Through the QUERY, because that is where the status has to survive: the
+     * synthesizer is told which rows still cover their periods, and a bounded read
+     * that dropped the marker would draw a tidy strip over a week nobody covers.
+     * The retired cell stays because retiring withdraws a document from the
+     * workflow rather than unmaking it, and the MISSING cell beside it is where the
+     * replacement gets created.
+     */
+    @Test
+    @Transactional
+    public void theStripShowsARetiredWeekAndTheGapItLeaves() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, SeriesStatus.ACTIVE, TestOwnerDomain.of(em));
+        for (int week = 1; week <= 6; week++) {
+            released(s, week);
+        }
+        PublicationIssue withdrawn = released(s, 7);
+        released(s, 8);
+        em.flush();
+
+        lifecycle.retire(withdrawn, user(), "the week that went out named the wrong charts");
+        em.flush();
+        em.clear();
+
+        PublicationSeries reloaded = seriesService.findBySeriesId(s.getSeriesId());
+        IssueTimelineVo strip = issueList.recent(reloaded, 8,
+                new Date(FIRST.getTime() + 8 * WEEK + 3600_000L), "da");
+
+        IssueTimelineRowVo cell = strip.getRows().stream()
+                .filter(r -> withdrawn.getPublicId().equals(r.getPublicId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("the retired issue lost its cell on the strip"));
+        assertEquals("RETIRED", cell.getComputedStatus());
+
+        List<IssueTimelineRowVo> missing = strip.getRows().stream()
+                .filter(r -> "MISSING".equals(r.getComputedStatus()))
+                .toList();
+        assertEquals(1, missing.size(),
+                "the withdrawn week is still drawn as covered, so the strip and the list offer no "
+                        + "way to create its replacement");
+        assertEquals(new Date(FIRST.getTime() + 7 * WEEK), missing.get(0).getIntervalTo(),
+                "the missing cell must cover exactly the withdrawn week's period");
+    }
+
+    /**
      * The live count still lands on the OPEN row.
      *
      * The overlay resolves every OPEN issue in the list it is handed and writes the

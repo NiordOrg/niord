@@ -76,14 +76,32 @@ public class IssuePublishService extends BaseService {
     private static final Logger log = LoggerFactory.getLogger(IssuePublishService.class);
 
     /**
-     * The neighbour filter, stated once and used at every site that needs it.
+     * The neighbours that still COVER their period.
      *
-     * RETIRED is included deliberately. Retiring leaves the file and the public
-     * window in place, so a retired issue still occupies its bracket. Skipping it
-     * would leave the predecessor uncapped and two issues would claim the same
-     * window.
+     * PUBLISHED alone, and the omission is the point. Retiring an issue is the
+     * statement that what went out for that period should not stand, so the period
+     * is open again and the correction is a new issue for it -- which is the only
+     * remedy there is for a document that cannot be amended. A withdrawn issue
+     * that kept claiming its period would refuse, or refuse to release, exactly
+     * the issue that replaces it.
+     *
+     * This is the set every question about the CHAIN reads: which periods are
+     * still covered, which released issues bracket a proposed cut-off, and whether
+     * a later issue has taken over from this one.
      */
-    static final List<IssueStatus> NEIGHBOUR_STATUSES = List.of(IssueStatus.PUBLISHED, IssueStatus.RETIRED);
+    static final List<IssueStatus> COVERING_STATUSES = List.of(IssueStatus.PUBLISHED);
+
+    /**
+     * The neighbours that still hold a public WINDOW, which is a different set.
+     *
+     * Retiring leaves the file at its link and the window as it stood, so the row
+     * whose window a new release closes may perfectly well be a retired one.
+     * Reaching PAST it to the published issue before would re-open that older
+     * window across the withdrawn period and put a superseded document back on the
+     * site as the current one.
+     */
+    static final List<IssueStatus> WINDOWED_STATUSES =
+            List.of(IssueStatus.PUBLISHED, IssueStatus.RETIRED);
 
     @Inject
     MemberResolutionService resolver;
@@ -966,6 +984,13 @@ public class IssuePublishService extends BaseService {
      * The retro-create case: recovering a missing 2024 week into a series whose
      * later issues are out. Without this, the recovered issue has a NULL publicTo
      * and the public site's "current" publication becomes a two-year-old one.
+     *
+     * A LATER RETIRED ISSUE DOES NOT DISPLACE THIS ONE. It is off the public list,
+     * so it is not the publication this release would have to yield to -- and
+     * capping against it is what broke the correction flow: an issue published to
+     * replace a withdrawn one whose stamp lay a few hours later got a window
+     * ending at that stamp, so the period it was created to cover stayed empty on
+     * the public site while the row said PUBLISHED.
      */
     private void capSelfAgainstSuccessor(PublicationIssue issue, PublicationSeries series, User actor) {
         List<PublicationIssue> laters = em.createQuery(
@@ -973,7 +998,7 @@ public class IssuePublishService extends BaseService {
                                 + "AND i.cutoffStampedAt > :stamp ORDER BY i.cutoffStampedAt ASC",
                         PublicationIssue.class)
                 .setParameter("s", series)
-                .setParameter("st", NEIGHBOUR_STATUSES)
+                .setParameter("st", COVERING_STATUSES)
                 .setParameter("stamp", issue.getCutoffStampedAt())
                 .setMaxResults(1)
                 .getResultList();
@@ -992,6 +1017,11 @@ public class IssuePublishService extends BaseService {
      * alone -- somebody decided that. One with a NULL end is capped regardless,
      * manual or not, because an uncapped predecessor is what leaves two issues
      * claiming to be current.
+     *
+     * A RETIRED predecessor counts here, unlike everywhere else: this is about the
+     * window a row still holds rather than about the period it covers. Skipping it
+     * would carry the search back to the published issue before and re-open that
+     * older window across the withdrawn period.
      */
     private void capPredecessor(PublicationIssue issue, PublicationSeries series, Date stamp, User actor) {
         List<PublicationIssue> earlier = em.createQuery(
@@ -999,7 +1029,7 @@ public class IssuePublishService extends BaseService {
                                 + "AND i.cutoffStampedAt < :stamp ORDER BY i.cutoffStampedAt DESC",
                         PublicationIssue.class)
                 .setParameter("s", series)
-                .setParameter("st", NEIGHBOUR_STATUSES)
+                .setParameter("st", WINDOWED_STATUSES)
                 .setParameter("stamp", stamp)
                 .setMaxResults(1)
                 .getResultList();

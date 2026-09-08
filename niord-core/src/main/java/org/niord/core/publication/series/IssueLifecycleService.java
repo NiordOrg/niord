@@ -139,7 +139,7 @@ public class IssueLifecycleService extends BaseService {
     }
 
     /**
-     * A new issue may not claim a period a released one already covered.
+     * A new issue may not claim a period a PUBLISHED one still covers.
      *
      * Only where issues TILE. An IN_FORCE_AT_CUTOFF series' issues overlap by
      * construction -- the 2026 and 2027 firing-area editions share thirty-one of
@@ -151,13 +151,23 @@ public class IssueLifecycleService extends BaseService {
      * fine" from its own copy of the test and then hit a refusal on save would be
      * worse than no preview at all.
      *
-     * The test is against the released neighbour's own close, not against the
-     * cadence. A week published EARLY closes early, and the next issue opening at
-     * that earlier instant is the chain working: it is exactly where the previous
-     * one ended. What is refused is an interval that starts BEFORE a released
-     * neighbour closed, because the content between those two instants has
-     * already gone out in that neighbour, and a second issue claiming it would
-     * publish the same messages twice under two names.
+     * The test is against the neighbour's own close, not against the cadence. A
+     * week published EARLY closes early, and the next issue opening at that
+     * earlier instant is the chain working: it is exactly where the previous one
+     * ended. What is refused is an interval that starts BEFORE a neighbour closed,
+     * because the content between those two instants has already gone out in that
+     * neighbour, and a second issue claiming it would publish the same messages
+     * twice under two names.
+     *
+     * A RETIRED NEIGHBOUR DOES NOT CLAIM ITS PERIOD, and that is the whole reason
+     * this asks for PUBLISHED alone. Retiring an issue is the statement that what
+     * went out for that period should not stand -- and where the issue cannot be
+     * amended, which is every issue carried over from the previous system, a new
+     * issue for the same period IS the correction. Counting the withdrawn one as
+     * coverage refused precisely that issue: the one thing an admin is allowed to
+     * do about a wrong published document, refused on behalf of the document they
+     * had already withdrawn. Nothing publishes twice as a result, because the
+     * retired issue is off the public list -- what is on it is the replacement.
      */
     public void assertNoOverlap(PublicationSeries series, Date intervalFrom, PublicationIssue ignoring) {
         if (series == null || intervalFrom == null
@@ -168,7 +178,7 @@ public class IssueLifecycleService extends BaseService {
                         "SELECT i FROM PublicationIssue i WHERE i.series = :s AND i.status IN :st "
                                 + "ORDER BY i.id DESC", PublicationIssue.class)
                 .setParameter("s", series)
-                .setParameter("st", List.of(IssueStatus.PUBLISHED, IssueStatus.RETIRED))
+                .setParameter("st", IssuePublishService.COVERING_STATUSES)
                 .getResultList();
 
         for (PublicationIssue other : released) {
