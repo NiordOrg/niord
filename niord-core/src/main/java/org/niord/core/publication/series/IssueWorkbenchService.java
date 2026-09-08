@@ -30,6 +30,7 @@ import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The issue screen, assembled once.
@@ -39,21 +40,30 @@ import java.util.List;
  * decision taken there -- which parts a frozen issue carries, what a non-admin
  * sees, which instant the omissions answer for -- is a decision nothing can pin.
  *
- * ONE INSTANT for the whole screen. The members, the rail and the omissions all
- * read the same {@link IssueResolution}, so the panel cannot answer for a
- * different cut-off than the list beside it. That is a change from the six
- * requests this replaces: the omissions probe used to ask at the issue's nominal
- * interval end, so on an open weekly issue whose period closes in the future a
- * message with a future publish date read as a member in one panel and as an
- * AFTER_CUTOFF omission in the other.
+ * ONE PERIOD for the whole screen -- one start and one instant. The members, the
+ * rail and the omissions all read the same {@link IssueResolution}, so the panel
+ * cannot answer for a different window than the list beside it. That is a change
+ * from the six requests this replaces: the omissions probe used to ask at the
+ * issue's nominal interval end, so on an open weekly issue whose period closes in
+ * the future a message with a future publish date read as a member in one panel
+ * and as an AFTER_CUTOFF omission in the other.
  *
  * WHICH instant is the caller's to choose, within one bound each way. An open
  * issue whose planned cut-off has passed has two honest answers -- what it holds
  * now, and what it held when its period closed -- and they differ by exactly the
  * messages published in between. Both are answered here at the SAME instant
- * throughout, so choosing the view moves every panel together; and the one list
- * that names the difference between them is carried alongside, computed as of
- * now whichever view was asked for.
+ * throughout, so choosing the view moves every panel together; and the list that
+ * names the difference between them is carried alongside, measured against the
+ * cut-off THIS READ IS ABOUT: the instant the caller named where it named one,
+ * the issue's stored plan where it did not.
+ *
+ * SO IS THE START, on an open issue, and for the same reason at one remove: an
+ * admin editing the period is asking what the period they are typing would
+ * contain, which is a question about a window that is not on disk yet. Naming it
+ * moves the whole screen onto that window; naming nothing leaves the screen on
+ * the issue's own. Nothing about the what-if is written down and nothing is
+ * cached -- it is a read, and the next read without it answers for the stored
+ * period again.
  */
 @ApplicationScoped
 public class IssueWorkbenchService {
@@ -108,15 +118,58 @@ public class IssueWorkbenchService {
     @Transactional
     public IssueWorkbenchVo forIssue(PublicationIssue issue, String lang, boolean mayReadChecklist,
                                      Date at) {
+        return forIssue(issue, lang, mayReadChecklist, at, null);
+    }
+
+    /**
+     * The same screen, answered over a period the caller named.
+     *
+     * ONE PERIOD FOR THE WHOLE SCREEN, which is what the pair of parameters is
+     * for. An admin editing an open issue's period is asking what that period
+     * would contain, and every number on the screen has to answer that one
+     * question: the member list, its count, the rail's membership rows and the
+     * omissions panel all come off the single resolve taken here. Answered from
+     * the stored period instead, the panel beside the form would state a count
+     * for the period on disk while the form showed another, and neither would say
+     * which.
+     *
+     * @param from the period start to answer over, or null for the issue's own.
+     *             It is a what-if and is written nowhere; it may fall earlier or
+     *             later than the stored start, and must not fall after {@code at}
+     *             -- a period that closes before it opens describes no window.
+     *             Ignored on a frozen issue, for the same reason {@code at} is
+     */
+    @Transactional
+    public IssueWorkbenchVo forIssue(PublicationIssue issue, String lang, boolean mayReadChecklist,
+                                     Date at, Date from) {
         // Read once and carried, not re-read per use: the instant the screen is
         // answered at, the bound the caller's instant is checked against and the
         // instant the late list is computed at are the same "now", and three
         // separate clock reads make them three instants a few milliseconds apart.
         Date now = new Date();
-        Date viewed = at == null || IssueResolutionService.isFrozen(issue)
-                ? now : validInstant(issue, at, now);
+        boolean frozen = IssueResolutionService.isFrozen(issue);
+        // What a frozen issue holds is what it printed, so neither half of the
+        // caller's window applies to it. Dropped rather than refused, and dropped
+        // here so that nothing below has to ask again.
+        Date namedFrom = frozen ? null : from;
+        Date viewed;
+        if (frozen || (at == null && namedFrom == null)) {
+            viewed = now;
+        } else {
+            // The floor the instant is checked against is the start of the period
+            // being ASKED about. Where that is a what-if, checking the stored
+            // start instead would refuse a period moved wholly earlier -- a
+            // perfectly ordinary correction -- and it would refuse it while the
+            // form on the screen showed exactly that period.
+            // With no instant named the read is as of now, and only the named
+            // start has to be checked: an issue whose period has not opened yet
+            // reads as of now like any other, holding nothing.
+            viewed = validInstant(namedFrom != null ? namedFrom : issue.getIntervalFrom(),
+                    at == null ? now : at, now, namedFrom != null);
+        }
 
-        IssueResolution resolved = resolutions.forIssue(issue, viewed);
+        IssueResolution resolved = resolutions.forIssue(issue, viewed, namedFrom);
+        Date lateAfter = lateReference(issue, at, frozen);
 
         IssueWorkbenchVo vo = new IssueWorkbenchVo();
         vo.setIssue(issue.toVo(SystemPublicationIssueVo.class));
@@ -124,9 +177,19 @@ public class IssueWorkbenchService {
         // ignored -- which is what a frozen issue does with one -- would otherwise
         // be indistinguishable from one that was honoured.
         vo.setViewedAt(viewed.getTime());
+        // The period start the answer was actually taken over, on the same terms:
+        // the what-if where one was honoured, the stored start otherwise, and null
+        // where the issue has no start at all.
+        vo.setViewedFrom(resolved.from() == null ? null : resolved.from().getTime());
+        // The cut-off the late list below was measured against, on the same terms
+        // and for the same reason: the reader is being told how many messages fall
+        // after a cut-off, and a number without the instant it was taken against
+        // cannot be checked against the date on the form beside it.
+        vo.setLateAfter(lateAfter == null ? null : lateAfter.getTime());
         List<IssueMemberVo> members = memberList.members(issue, lang, resolved);
         vo.setMembers(members);
-        vo.setAfterPlannedCutoff(publishedAfterPlannedCutoff(issue, lang, resolved, members, now));
+        vo.setAfterPlannedCutoff(publishedAfterPlannedCutoff(issue, lang, resolved, members, now,
+                lateAfter));
         vo.setAudit(audit.forIssue(issue).stream().map(IssueAuditEntry::toVo).toList());
         // Still read on a frozen issue: an imported one carries standing decisions
         // that were taken before it was ever published here.
@@ -174,15 +237,41 @@ public class IssueWorkbenchService {
     }
 
     /**
-     * The members published after the issue's planned cut-off, as of NOW.
+     * The cut-off the late list is measured against, or null where there is none.
      *
-     * The difference between the two instants an open issue can be read at, named
-     * message by message. It is what a release at this moment would carry beyond
-     * the period the issue declares, and equally what a release stamped at that
-     * period's close would leave behind -- one list, two readings, which is why it
-     * is computed as of now whichever view was asked for. Answered per view it
-     * would empty itself in the planned view, and the screen would then offer a
-     * choice between two instants without saying what turns on it.
+     * AN OPEN ISSUE HAS TWO DATES, a period start and a planned cut-off, and "now"
+     * as the one alternative to the plan when the plan has passed. So the cut-off
+     * this question is asked about is the one the reader is looking at: the
+     * instant they named where they named one -- the planned view sends the stored
+     * plan, and an admin editing the period sends the cut-off as typed -- and the
+     * issue's stored plan where no other cut-off is in play. Measured against a
+     * third instant instead, the count would answer about a release nobody is
+     * looking at, and the date printed above it would not be the date it was taken
+     * against.
+     *
+     * Null on a frozen issue: its contents are what it printed, so there is no
+     * cut-off still to be chosen and nothing to be late for. Null too where an
+     * open issue has no planned cut-off at all and the caller named no instant --
+     * "after" needs something to be after.
+     */
+    private static Date lateReference(PublicationIssue issue, Date at, boolean frozen) {
+        if (frozen) {
+            return null;
+        }
+        return at != null ? at : issue.getIntervalTo();
+    }
+
+    /**
+     * The members published after that cut-off, as of NOW.
+     *
+     * What a release at this moment would carry beyond the cut-off in question,
+     * named message by message -- and equally what a release stamped at that
+     * cut-off would leave behind. One list, two readings, and it is the same list
+     * either way, which is why it is always taken from the AS-OF-NOW membership
+     * however the screen itself was answered: read at the cut-off, the messages
+     * published after it are by definition not members, so a list built from that
+     * view could only ever be empty and the screen would be offering a choice
+     * between two instants without saying what turns on it.
      *
      * Built through the member list the screen already uses, so the rows are the
      * rows: same shape, same titles, same order. A second builder here would be a
@@ -190,25 +279,32 @@ public class IssueWorkbenchService {
      * time a field was added to one of them.
      *
      * THE AS-OF-NOW RESOLUTION IS REUSED when that is what the screen was answered
-     * from, which is the ordinary case -- the default view. Only a caller asking
-     * for another instant pays a second resolve, and it pays for exactly this
-     * list.
+     * from, which is the ordinary case -- the default view. A caller that named
+     * another instant, or another period start, pays a second resolve, and it pays
+     * for exactly this list: the window it asked about is not the issue's own, and
+     * what that window holds says nothing about what this issue holds beyond the
+     * cut-off.
      *
-     * Empty in the three cases where the question does not arise: no planned
-     * cut-off to be after, a planned cut-off still ahead of us -- nothing can have
-     * been published after an instant that has not happened -- and a frozen issue,
-     * whose contents are a record rather than a question about today.
+     * Empty in the three cases where the question does not arise: no cut-off to be
+     * after at all, a cut-off at or ahead of now -- nothing can have been published
+     * after an instant that has not happened -- and a frozen issue, which reaches
+     * here with no reference for exactly that reason.
      */
     private List<IssueMemberVo> publishedAfterPlannedCutoff(PublicationIssue issue, String lang,
                                                             IssueResolution viewed,
                                                             List<IssueMemberVo> viewedMembers,
-                                                            Date now) {
-        Date planned = issue.getIntervalTo();
-        if (viewed.frozen() || planned == null || !planned.before(now)) {
+                                                            Date now, Date reference) {
+        if (reference == null || !reference.before(now)) {
             return List.of();
         }
 
-        List<IssueMemberVo> live = viewed.at().getTime() == now.getTime()
+        // Reusable only where the screen was answered over the ISSUE'S OWN period
+        // as of now: a read over a what-if period is a different member set, and
+        // filtering it here would name as late whatever that period happened to
+        // hold rather than what the issue holds.
+        boolean isTheAsOfNowSet = sameInstant(viewed.at(), now)
+                && sameInstant(viewed.from(), issue.getIntervalFrom());
+        List<IssueMemberVo> live = isTheAsOfNowSet
                 ? viewedMembers
                 : memberList.members(issue, lang, resolutions.forIssue(issue, now));
 
@@ -218,7 +314,7 @@ public class IssueWorkbenchService {
             // issue -- the column is named for what it holds once the issue is
             // frozen, and there is nothing frozen here to hold.
             Date published = row.getFrozenPublishDateFrom();
-            if (published != null && published.after(planned)) {
+            if (published != null && published.after(reference)) {
                 late.add(row);
             }
         }
@@ -226,26 +322,65 @@ public class IssueWorkbenchService {
     }
 
     /**
+     * Whether two dates name the same instant, whatever their classes.
+     *
+     * NOT {@link Objects#equals}, and the difference decides whether the screen
+     * takes a second resolve it does not need. The dates compared here arrive from
+     * two places: a persistent entity hands back {@link java.sql.Timestamp}, and
+     * the wire hands back plain {@link Date}. Timestamp.equals(Date) is false for
+     * any Date that is not itself a Timestamp, while Date.equals(Timestamp) is
+     * true when the milliseconds agree -- so an equality test over the pair gives
+     * opposite answers depending on which side it is called on, and the one that
+     * says "different" costs a full candidate narrowing, about a second on an
+     * in-force series, on every read that happens to hold the pair that way round.
+     */
+    private static boolean sameInstant(Date a, Date b) {
+        return a == null ? b == null : b != null && a.getTime() == b.getTime();
+    }
+
+    /**
      * The caller's instant, or a refusal naming the window it had to fall in.
      *
      * Both bounds are refusals rather than clamps. An instant before the period
-     * opened describes a window this issue does not have, and one in the future
+     * opened describes a window that period does not have, and one in the future
      * describes a member set that does not exist yet -- and either, silently
      * clamped, would hand back a confident answer under a heading naming the
-     * instant that was asked for. A lower bound is only checked where the issue
-     * has one: an issue that says what stood at an instant carries no period start
-     * to be before.
+     * instant that was asked for. A lower bound is only checked where there is
+     * one: an issue that says what stood at an instant carries no period start to
+     * be before.
+     *
+     * A CALLER-NAMED START MUST FALL STRICTLY BEFORE the instant, which the
+     * issue's own start need not. The window is (start, instant], so a start equal
+     * to the instant is an empty period; the resolve refuses to build one and the
+     * screen would answer 200 with a member list of zero -- which reads as "this
+     * period is empty" rather than "the two dates on your form are the same one".
+     * Only where the pair came from the caller: an issue that has arrived at that
+     * state on disk still has to be readable.
+     *
+     * @param opens    the start of the period being asked about, which is the
+     *                 what-if start where the caller named one and the issue's own
+     *                 otherwise
+     * @param named    whether that start came from the caller, which decides both
+     *                 the strictness above and what the refusal has to say: the
+     *                 reader is looking at a form holding both halves, and "your
+     *                 period start is after the instant you are reading at" is
+     *                 actionable where "this issue does not cover that window" is
+     *                 not
      */
-    private static Date validInstant(PublicationIssue issue, Date at, Date now) {
-        Date opens = issue.getIntervalFrom();
-        if (at.after(now) || (opens != null && at.before(opens))) {
+    private static Date validInstant(Date opens, Date at, Date now, boolean named) {
+        boolean beforeStart = opens != null
+                && (named ? !at.after(opens) : at.before(opens));
+        if (at.after(now) || beforeStart) {
             throw new IssueLifecycleService.TransitionRefusedException("INVALID_INSTANT",
-                    "cannot read this issue as of " + at.getTime() + ": the instant must fall at or "
-                            + "after the start of its period"
-                            + (opens == null ? "" : " (" + opens.getTime() + ")")
+                    "cannot read this issue as of " + at.getTime() + ": the instant must fall "
+                            + (named ? "after" : "at or after")
+                            + " the start of the period asked about"
+                            + (opens == null ? "" : " (" + opens.getTime()
+                                    + (named ? ", the one named on the request" : "") + ")")
                             + " and at or before now (" + now.getTime() + "). Earlier is a window "
-                            + "this issue does not cover, and later is a member set that does not "
-                            + "exist yet.");
+                            + "that period does not cover"
+                            + (named ? ", the same instant is a period of no length," : "")
+                            + " and later is a member set that does not exist yet.");
         }
         return at;
     }

@@ -16,6 +16,7 @@
 
 package org.niord.core.publication.series.vo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.niord.model.IJsonSerializable;
 
 import java.util.List;
@@ -63,18 +64,61 @@ public class IssueWorkbenchVo implements IJsonSerializable {
      */
     private long viewedAt;
 
+    /**
+     * The period START every part of this response was answered over, epoch
+     * milliseconds -- null where the issue has no start at all.
+     *
+     * The other half of the window {@link #viewedAt} closes, and echoed for the
+     * same reason: a caller may name a start of its own -- the period an admin is
+     * editing, before it is saved -- and a screen that could not tell which start
+     * was honoured would label a what-if answer as the issue's own, or the issue's
+     * own as the what-if. Absent from the request, this is the issue's stored
+     * period start; named, it is the one that was named; on a frozen issue, always
+     * the stored one, because a published issue's contents are what it printed.
+     *
+     * NULL IS A REAL ANSWER, not a missing one: an in-force issue has no lower
+     * bound -- its contents are what stood at the cut-off, however long ago they
+     * were published -- so the key is always serialised and carries null there.
+     * Reporting 0 instead would state a period beginning in 1970.
+     */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    private Long viewedFrom;
+
     /** The member rows, live or frozen by status, titled in the requested language. */
     private List<IssueMemberVo> members;
 
     /**
-     * The members published AFTER the issue's planned cut-off, as of now.
+     * The cut-off {@link #afterPlannedCutoff} was measured against, epoch
+     * milliseconds -- null where there is none.
+     *
+     * AN OPEN ISSUE HAS TWO DATES: a period start, and a planned cut-off with
+     * "now" as its one alternative once the plan has passed. This is the cut-off
+     * half of the read, as the read itself saw it -- the instant the caller named
+     * where it named one, the issue's stored plan where no other cut-off was in
+     * play. It is reported for the same reason the count beside it is: the screen
+     * prints "N published after <date>", and a number whose date the caller had to
+     * infer is one nobody can check against the form it is standing next to. A
+     * cut-off edited on the screen moves this, because it moves what the question
+     * is about.
+     *
+     * NULL IS A REAL ANSWER, not a missing one: an open issue with no planned
+     * cut-off has nothing to be after, and a frozen issue has no cut-off left to
+     * choose. So the key is always serialised and carries null there -- reporting
+     * 0 instead would name an instant in 1970 and the list beside it would be
+     * unreadable.
+     */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    private Long lateAfter;
+
+    /**
+     * The members published AFTER {@link #lateAfter}, as of now.
      *
      * The one part of this response that is deliberately NOT answered at
-     * {@link #viewedAt}. It is the difference between the two instants an open
-     * issue can be read at, so it has to be the same list in both views -- read as
-     * of now it names what publishing now would add beyond the planned period;
-     * read as of the planned cut-off it names what publishing then would leave
-     * out. A list that moved with the view could not say either.
+     * {@link #viewedAt}, and it cannot be: read AT a cut-off, the messages
+     * published after it are not members, so a list built from that view could
+     * only ever be empty. Taken as of now it says both of the things the reader
+     * needs at once -- what publishing now would add beyond that cut-off, and what
+     * publishing at that cut-off would leave behind.
      *
      * The rows are built exactly as {@link #members} are -- same shape, same
      * titles, same order -- so the two lists can be rendered by one component. The
@@ -82,10 +126,11 @@ public class IssueWorkbenchVo implements IJsonSerializable {
      * genuinely contains them; which of the two lists shows a row is the reader's
      * decision, not a second membership rule.
      *
-     * ALWAYS PRESENT, empty where the question does not arise: an issue with no
-     * planned cut-off, one whose planned cut-off has not passed, and a frozen
-     * issue, whose contents are what was printed rather than a question about
-     * today.
+     * ALWAYS PRESENT, empty where the question does not arise: no cut-off to be
+     * after at all ({@link #lateAfter} null), a cut-off at or ahead of now --
+     * nothing can have been published after an instant that has not happened --
+     * and a frozen issue, whose contents are what was printed rather than a
+     * question about today.
      */
     private List<IssueMemberVo> afterPlannedCutoff = List.of();
 
@@ -130,12 +175,28 @@ public class IssueWorkbenchVo implements IJsonSerializable {
         this.viewedAt = viewedAt;
     }
 
+    public Long getViewedFrom() {
+        return viewedFrom;
+    }
+
+    public void setViewedFrom(Long viewedFrom) {
+        this.viewedFrom = viewedFrom;
+    }
+
     public List<IssueMemberVo> getMembers() {
         return members;
     }
 
     public void setMembers(List<IssueMemberVo> members) {
         this.members = members;
+    }
+
+    public Long getLateAfter() {
+        return lateAfter;
+    }
+
+    public void setLateAfter(Long lateAfter) {
+        this.lateAfter = lateAfter;
     }
 
     public List<IssueMemberVo> getAfterPlannedCutoff() {

@@ -811,13 +811,38 @@ public class PublicationIssueRestService {
      * `lang` names the language the member rows are TITLED in and nothing else,
      * exactly as on the member list. Every other part is language-independent.
      *
-     * `at` is the instant the whole screen is answered for, epoch milliseconds,
-     * and it is the caller's only choice here. An open issue whose planned
-     * cut-off has passed has two honest answers -- what it holds now, and what it
-     * held when its period closed -- and every part moves together between them.
-     * Absent means now; on a frozen issue it is ignored, because what that issue
-     * contains is what it printed. The instant actually used comes back as
-     * `viewedAt`, so a caller never has to assume its own was honoured.
+     * `at` and `from` are the WINDOW the whole screen is answered over, epoch
+     * milliseconds, and they are the caller's only choice here. An open issue
+     * whose planned cut-off has passed has two honest answers -- what it holds
+     * now, and what it held when its period closed -- and every part moves
+     * together between them. `from` moves the other end: an admin editing the
+     * period needs the screen to answer for the period being typed rather than
+     * for the one on disk, so the member list, its count, the rail's membership
+     * rows and the omissions all resolve over (`from`, `at`]. It is a WHAT-IF --
+     * nothing is written, nothing is cached, and it may fall either side of the
+     * stored start. What it may not do is fall after `at`, which is refused as
+     * INVALID_INSTANT like the bounds on `at` itself.
+     *
+     * The rail's rows about the STORED period -- INTERVAL_PRESENT,
+     * INTERVAL_CHAINED, CUTOFF_AFTER_PREVIOUS, CUTOFF_BEFORE_SUCCESSOR,
+     * CUTOFF_NOT_FUTURE -- go on answering for the period the issue actually has.
+     * They describe whether this issue sits in its series' chain, which is a fact
+     * about what is saved; answered off an unsaved period they would report a
+     * chain nobody has.
+     *
+     * Both are absent by default -- now, and the issue's own start -- and both
+     * are ignored on a frozen issue, because what that issue contains is what it
+     * printed. The window actually used comes back as `viewedAt` and
+     * `viewedFrom`, so a caller never has to assume its own was honoured.
+     *
+     * `afterPlannedCutoff` is measured against `at` where one was named and
+     * against the issue's stored planned cut-off otherwise, and the instant it was
+     * actually measured against comes back as `lateAfter`. An open issue has two
+     * dates -- a period start and a planned cut-off -- so the cut-off this list is
+     * about is the one the caller is looking at: the stored plan when reading it,
+     * the cut-off as typed when editing it. It is the one part of the response NOT
+     * answered at `viewedAt`: read AT a cut-off, nothing published after it is a
+     * member, so the list is always taken from the as-of-now membership.
      */
     @GET
     @Path("/issue/{publicId}/workbench")
@@ -827,13 +852,15 @@ public class PublicationIssueRestService {
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
     public IssueWorkbenchVo workbench(@PathParam("publicId") String publicId,
                                       @QueryParam("lang") String lang,
-                                      @QueryParam("at") Long at) {
+                                      @QueryParam("at") Long at,
+                                      @QueryParam("from") Long from) {
         // The assembly is in core: which parts a frozen issue carries, which
-        // instant the omissions answer for, and which instants may be asked about
+        // window the omissions answer for, and which windows may be asked about
         // at all are rules, and this module has no container tests to pin a rule
-        // with. So the bounds on `at` are checked there rather than here.
+        // with. So the bounds on both are checked there rather than here.
         return workbenches.forIssue(required(publicId), lang,
-                userService.isCallerInRole(Roles.ADMIN), at == null ? null : new Date(at));
+                userService.isCallerInRole(Roles.ADMIN), at == null ? null : new Date(at),
+                from == null ? null : new Date(from));
     }
 
     /**

@@ -78,6 +78,14 @@ public class IssueResolutionService {
      * content is a file somebody uploaded raises no membership question at all,
      * and answering "0 members" for it is a warning nobody can clear.
      *
+     * @param from       the lower bound membership was decided over -- the issue's
+     *                   own period start, or the what-if start a caller named in
+     *                   its place. It is carried rather than re-read because the
+     *                   two differ exactly when somebody is asking what a period
+     *                   they have not saved yet would contain, and a screen that
+     *                   re-read the stored start would then label the answer with
+     *                   the wrong period. Null where the issue has no lower bound
+     *                   at all, which every in-force issue is
      * @param at         the instant membership was decided at
      * @param frozen     PUBLISHED or RETIRED: the rows are a record, and no live
      *                   resolve was taken
@@ -87,6 +95,7 @@ public class IssueResolutionService {
      * @param membership whether this issue HAS a member list to be asked about
      */
     public record IssueResolution(
+            Date from,
             Date at,
             boolean frozen,
             Map<String, IssueOverride> overrides,
@@ -151,6 +160,34 @@ public class IssueResolutionService {
      */
     @Transactional
     public IssueResolution forIssue(PublicationIssue issue, Date at) {
+        return forIssue(issue, at, null);
+    }
+
+    /**
+     * The same resolve, over a period start the caller named instead.
+     *
+     * A WHAT-IF, and nothing about it is written down. An admin editing an open
+     * issue's period is asking what that period would contain before saving it,
+     * and the only honest way to answer is to resolve over the period being
+     * typed rather than over the one on disk -- otherwise the count beside the
+     * form answers for the saved period while the form shows another, and the
+     * two disagree until somebody presses save.
+     *
+     * The named start is free to fall EARLIER or LATER than the stored one: both
+     * are legitimate questions about a period that does not exist yet. What it
+     * cannot do is reach past the instant being resolved at, and the caller that
+     * accepts it from the wire is where that is refused -- an interval whose
+     * lower bound does not precede its upper describes no window at all.
+     *
+     * IGNORED ON A FROZEN ISSUE, like the instant: those rows are what was
+     * printed, no resolve is taken, and the interval echoed back is the stored
+     * one so a reader is never told a published issue covered a period it did
+     * not.
+     *
+     * @param from the period start to resolve over, or null for the issue's own
+     */
+    @Transactional
+    public IssueResolution forIssue(PublicationIssue issue, Date at, Date from) {
         Map<String, IssueOverride> overrides = overridesOf(issue);
 
         Set<String> includes = new LinkedHashSet<>();
@@ -168,12 +205,19 @@ public class IssueResolutionService {
         boolean membership = queryBacked || !includes.isEmpty();
 
         boolean frozen = isFrozen(issue);
+        // The lower bound this resolve is actually taken over, decided once and
+        // then carried on the result: every reader of it -- the member list, the
+        // rail, the screen that names the period it answered for -- has to agree
+        // on which period was asked about, and a second reader defaulting the
+        // null for itself is how they stop agreeing.
+        Date start = frozen || from == null ? issue.getIntervalFrom() : from;
         if (frozen) {
-            return new IssueResolution(at, true, overrides, includes, excludes, null, membership);
+            return new IssueResolution(start, at, true, overrides, includes, excludes, null,
+                    membership);
         }
 
-        return new IssueResolution(at, false, overrides, includes, excludes,
-                resolutionOf(issue, at, includes, excludes), membership);
+        return new IssueResolution(start, at, false, overrides, includes, excludes,
+                resolutionOf(issue, start, at, includes, excludes), membership);
     }
 
     /**
@@ -193,6 +237,21 @@ public class IssueResolutionService {
      */
     public MemberResolutionService.Resolution resolutionOf(PublicationIssue issue, Date at,
                                                            Set<String> includes, Set<String> excludes) {
+        return resolutionOf(issue, issue.getIntervalFrom(), at, includes, excludes);
+    }
+
+    /**
+     * The same rule over a lower bound the caller decided.
+     *
+     * The bound arrives already decided rather than as "null means the issue's
+     * own": the issue HAS a null start -- every in-force issue does -- so a null
+     * here that meant "default it" would be indistinguishable from the real
+     * thing, and the one caller that names a bound would be defaulting it twice.
+     *
+     * @param from the interval's lower bound; null is a genuine absence of one
+     */
+    public MemberResolutionService.Resolution resolutionOf(PublicationIssue issue, Date from, Date at,
+                                                           Set<String> includes, Set<String> excludes) {
         PublicationSeries series = issue.getSeries();
         boolean queryBacked = series != null
                 && series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
@@ -201,8 +260,7 @@ public class IssueResolutionService {
             try {
                 ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue, domains);
                 if (criteria != null) {
-                    return resolver.resolve(criteria,
-                            new Interval(issue.getIntervalFrom(), at), includes, excludes);
+                    return resolver.resolve(criteria, new Interval(from, at), includes, excludes);
                 }
             } catch (RuntimeException e) {
                 // A document that cannot resolve is a series-configuration problem

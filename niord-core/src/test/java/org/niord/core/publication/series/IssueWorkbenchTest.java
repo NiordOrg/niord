@@ -47,6 +47,7 @@ import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -739,7 +740,7 @@ public class IssueWorkbenchTest {
 
     /**
      * The whole screen moves to the instant it was asked for, and the list of
-     * what separates the two instants does not.
+     * what separates the two instants reads the same in both.
      *
      * An open issue whose planned cut-off has passed has two honest answers, and
      * they differ by exactly the messages published in between. Read as of now it
@@ -747,16 +748,18 @@ public class IssueWorkbenchTest {
      * beside the list has to be the rail for THAT instant, or the screen offers a
      * choice between two views while only one of the panels moves.
      *
-     * `afterPlannedCutoff` is the one part that stays put, and that is what makes
-     * the choice legible: it is the same rows in both views, read once as "what
-     * publishing now would add" and once as "what publishing then would leave
-     * out". A list answered per view would empty itself in the planned view, and
-     * the screen would then be offering a switch with nothing to say what turns
-     * on it.
+     * `afterPlannedCutoff` is what makes the choice legible, and here it does not
+     * move -- not because it is pinned to the stored plan whatever is asked, but
+     * because both views are ABOUT the same cut-off: the planned view names the
+     * stored plan as its instant, and the default view has no other cut-off in
+     * play and falls back to that same plan. So the rows are the same rows, read
+     * once as "what publishing now would add" and once as "what publishing then
+     * would leave out". It is `lateAfter` that says which cut-off was measured
+     * against, and it agrees across the two.
      */
     @Test
     @Transactional
-    public void theViewInstantMovesTheMemberListAndTheRailButNotTheLateList() {
+    public void theViewInstantMovesTheScreenAndBothViewsMeasureAgainstTheSameCutoff() {
         PublicationSeries s = series();
         Date planned = new Date(OPENS.getTime() + 7 * DAY);
         PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
@@ -771,6 +774,11 @@ public class IssueWorkbenchTest {
         assertEquals(List.of(late.getUid()), uidsOf(asOfNow.getAfterPlannedCutoff()),
                 "the message published after the planned cut-off is not named as such, so the screen "
                         + "cannot tell an admin what publishing now would add beyond the period");
+        assertNotNull(asOfNow.getLateAfter(),
+                "the default read named no cut-off for the late list beside it, so the count on the "
+                        + "screen has no date the reader can check it against");
+        assertEquals(planned.getTime(), asOfNow.getLateAfter().longValue(),
+                "with no other cut-off in play the late list is measured against the stored plan");
         assertTrue(Math.abs(asOfNow.getViewedAt() - System.currentTimeMillis()) < 60_000,
                 "the default read reported a viewed instant that is not now: " + asOfNow.getViewedAt());
 
@@ -782,8 +790,13 @@ public class IssueWorkbenchTest {
                         + "after it");
         assertFalse(uidsOf(asOfPlanned.getMembers()).contains(late.getUid()));
         assertEquals(List.of(late.getUid()), uidsOf(asOfPlanned.getAfterPlannedCutoff()),
-                "the late list emptied itself in the planned view; it is the DIFFERENCE between the "
-                        + "two views and must read the same in both");
+                "the late list emptied itself in the planned view. Read AT the planned cut-off "
+                        + "nothing published after it is a member, so a list answered from that view "
+                        + "could only ever be empty -- it is taken from the as-of-now membership in "
+                        + "both views, and it is the DIFFERENCE between them");
+        assertEquals(asOfNow.getLateAfter(), asOfPlanned.getLateAfter(),
+                "the two views measured the late list against different cut-offs, and the planned "
+                        + "view names exactly the stored plan the default view falls back to");
 
         // The rail moved with the list, which is the half a client cannot check.
         // Both places it states a count: the envelope number the publish dialog
@@ -806,6 +819,87 @@ public class IssueWorkbenchTest {
         // with the rest rather than describing a third instant.
         assertNotNull(asOfPlanned.getOmissions(),
                 "the planned view carries no omissions panel; it is an open issue and was resolved");
+    }
+
+    /**
+     * The late list is measured against the cut-off THE READ IS ABOUT, and three
+     * reads of one issue give three different answers.
+     *
+     * An open issue has two dates -- a period start and a planned cut-off -- with
+     * "now" as the one alternative to the plan once the plan has passed. So the
+     * question "what was published after the cut-off" has to be asked about the
+     * cut-off in front of the reader: the stored plan when they are reading it,
+     * the instant they named when they moved it, and now when now is what they
+     * chose. Measured against a third instant instead, the count would answer
+     * about a release nobody is looking at while sitting under the date they are.
+     *
+     * The three reads here are the three the screen makes, over one fixture whose
+     * members are published on day 1, day 5 and day 9 of a period planned to close
+     * on day 4. The counts have to differ, and each has to match the date reported
+     * beside it -- which is what `lateAfter` is for: a bare number with no instant
+     * attached cannot be checked against the form it stands next to.
+     */
+    @Test
+    @Transactional
+    public void theLateListIsMeasuredAgainstTheCutoffTheReadIsAbout() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 4 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        Message day1 = message("NM-001", Status.PUBLISHED, new Date(OPENS.getTime() + DAY));
+        Message day5 = message("NM-005", Status.PUBLISHED, new Date(OPENS.getTime() + 5 * DAY));
+        Message day9 = message("NM-009", Status.PUBLISHED, new Date(OPENS.getTime() + 9 * DAY));
+        em.flush();
+
+        // The plain read: no other cut-off is in play, so the plan on disk is the
+        // one the question is about.
+        IssueWorkbenchVo asStored = workbench.forIssue(i, "da", true);
+        assertEquals(3, asStored.getMembers().size(),
+                "the period is open and all three messages fall in it as of now; the counts below "
+                        + "are filters over this list and would prove nothing if it were short");
+        assertNotNull(asStored.getLateAfter(), "the plain read named no cut-off for its late list");
+        assertEquals(planned.getTime(), asStored.getLateAfter().longValue(),
+                "a read that named no instant measured the late list against something other than "
+                        + "the stored plan");
+        List<String> lateAsStored = uidsOf(asStored.getAfterPlannedCutoff());
+        assertEquals(2, lateAsStored.size(),
+                "the plan closes on day 4 and two messages were published after it; the screen "
+                        + "reported " + lateAsStored.size());
+        assertTrue(lateAsStored.contains(day5.getUid()) && lateAsStored.contains(day9.getUid()),
+                "a message published after the stored plan is missing from the list that names them");
+        assertFalse(lateAsStored.contains(day1.getUid()),
+                "a message published BEFORE the plan closed was named as late");
+
+        // The plan moved to day 7 -- read in the planned view of a plan that says
+        // day 7, or typed into the form on the way to saving it. One act, and the
+        // numbers follow the date either way.
+        Date day7 = new Date(OPENS.getTime() + 7 * DAY);
+        IssueWorkbenchVo atDay7 = workbench.forIssue(i, "da", true, day7);
+        assertNotNull(atDay7.getLateAfter(), "the read at a named instant named no cut-off");
+        assertEquals(day7.getTime(), atDay7.getLateAfter().longValue(),
+                "the screen went on measuring against the stored plan while the reader was looking "
+                        + "at another cut-off, so the count and the date above it describe two "
+                        + "different releases");
+        assertEquals(List.of(day9.getUid()), uidsOf(atDay7.getAfterPlannedCutoff()),
+                "measured against day 7 exactly one message is late; the message published on day 5 "
+                        + "is inside that period and belongs in the release, not after it");
+        assertEquals(2, atDay7.getMembers().size(),
+                "the members moved to the named instant: day 1 and day 5 fall in (start, day 7]");
+        assertFalse(uidsOf(atDay7.getMembers()).contains(day9.getUid()),
+                "the message the same read names as late is also being counted as a member of the "
+                        + "period it falls after");
+
+        // And now, which is the other option the publish dialog offers: everything
+        // is inside the period, so nothing is after it.
+        Date nowish = new Date(System.currentTimeMillis() - HOUR);
+        IssueWorkbenchVo atNow = workbench.forIssue(i, "da", true, nowish);
+        assertNotNull(atNow.getLateAfter(), "the read as of now named no cut-off");
+        assertEquals(nowish.getTime(), atNow.getLateAfter().longValue(),
+                "the read as of now measured its late list against some other instant");
+        assertTrue(atNow.getAfterPlannedCutoff().isEmpty(),
+                "publishing now carries every message published so far, so nothing can fall after "
+                        + "it -- and the screen named " + atNow.getAfterPlannedCutoff().size());
+        assertEquals(3, atNow.getMembers().size(),
+                "the as-of-now view lost members, so the emptiness above says nothing");
     }
 
     /**
@@ -832,6 +926,12 @@ public class IssueWorkbenchTest {
         assertTrue(vo.getAfterPlannedCutoff().isEmpty(),
                 "an issue whose period has not closed reported " + vo.getAfterPlannedCutoff().size()
                         + " messages published after it closed");
+        assertNotNull(vo.getLateAfter(),
+                "the cut-off the empty list was measured against went unreported. The issue HAS a "
+                        + "planned cut-off; the list is empty because that cut-off has not arrived, "
+                        + "which is a different statement from having none");
+        assertEquals(planned.getTime(), vo.getLateAfter().longValue(),
+                "the screen reported some other cut-off than the plan it fell back to");
     }
 
     /**
@@ -864,6 +964,11 @@ public class IssueWorkbenchTest {
                         + "published");
         assertTrue(vo.getAfterPlannedCutoff().isEmpty(),
                 "a published issue reported what today's corpus would add to it beyond its period");
+        assertNull(vo.getLateAfter(),
+                "a published issue named a cut-off for a late list it cannot have. Its contents are "
+                        + "what it printed, so there is no cut-off left to choose between and nothing "
+                        + "to be late for -- and a date here would head an empty list with a question "
+                        + "that does not arise");
     }
 
     /**
@@ -999,6 +1104,268 @@ public class IssueWorkbenchTest {
         } finally {
             stats.setStatisticsEnabled(wasEnabled);
         }
+    }
+
+    /**
+     * A named period start that is the issue's own still skips the second resolve,
+     * whatever class the date arrives as.
+     *
+     * The reuse above turns on "was this answered over the issue's own period as
+     * of now", and half of that test compares two dates that come from different
+     * places: a persistent entity hands back {@link Timestamp}, the wire hands
+     * back plain {@link Date}. Timestamp.equals(Date) is false for any Date that
+     * is not itself a Timestamp, while Date.equals(Timestamp) is true when the
+     * milliseconds agree -- so an equality test over the pair answers differently
+     * depending on which side it is called on, and the answer that says
+     * "different" buys a full candidate narrowing nobody asked for. About a second
+     * on an in-force series, on a screen whose whole purpose is not to pay that
+     * twice.
+     *
+     * Named here as the class the ENTITY side produces, against a stored start
+     * that is a plain Date -- which is the direction that fails. Counted against
+     * the plain read beside it, and against a read at another instant that
+     * legitimately does resolve twice, so the counter is shown to be sensitive to
+     * exactly the work this pins.
+     */
+    @Test
+    @Transactional
+    public void aNamedStartOfAnotherDateClassStillSkipsTheSecondResolve() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 7 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED);
+        message("NM-003", Status.PUBLISHED, new Date(OPENS.getTime() + 14 * DAY));
+        em.flush();
+
+        // Warmed, because the counts below are compared to each other and the
+        // first read of an issue loads rows every later one finds already in hand.
+        workbench.forIssue(i, "da", true);
+
+        Statistics stats = em.unwrap(Session.class).getSessionFactory().getStatistics();
+        boolean wasEnabled = stats.isStatisticsEnabled();
+        stats.setStatisticsEnabled(true);
+        try {
+            long before = stats.getQueryExecutionCount();
+            IssueWorkbenchVo plain = workbench.forIssue(i, "da", true);
+            long plainRead = stats.getQueryExecutionCount() - before;
+
+            long mid = stats.getQueryExecutionCount();
+            IssueWorkbenchVo named = workbench.forIssue(i, "da", true, null,
+                    new Timestamp(OPENS.getTime()));
+            long namedRead = stats.getQueryExecutionCount() - mid;
+
+            long third = stats.getQueryExecutionCount();
+            workbench.forIssue(i, "da", true, planned);
+            long anotherInstant = stats.getQueryExecutionCount() - third;
+
+            assertEquals(1, plain.getAfterPlannedCutoff().size(),
+                    "the plain read named nothing as late, so it built no list and the counts below "
+                            + "would prove nothing");
+            assertNotNull(named.getViewedFrom(), "the named start was not reported at all");
+            assertEquals(OPENS.getTime(), named.getViewedFrom().longValue(),
+                    "the start named on the request was not the one the screen answered over");
+            assertEquals(uidsOf(plain.getAfterPlannedCutoff()),
+                    uidsOf(named.getAfterPlannedCutoff()),
+                    "naming the start the issue already has changed which messages read as late");
+            assertEquals(plainRead, namedRead,
+                    "the plain read ran " + plainRead + " queries and the read naming the SAME start "
+                            + "ran " + namedRead + ". They answer over one window, so the second has "
+                            + "the as-of-now member list in hand exactly as the first does; a higher "
+                            + "count means the two dates compared unequal because one is a Timestamp "
+                            + "and the other a Date");
+            assertTrue(anotherInstant > plainRead,
+                    "a read at another instant cost no more than the plain one (" + anotherInstant
+                            + " vs " + plainRead + "), so the counter is not measuring the resolve "
+                            + "this test claims");
+        } finally {
+            stats.setStatisticsEnabled(wasEnabled);
+        }
+    }
+
+    /**
+     * A period start the caller named moves the members, and leaves the rows about
+     * the issue's own period alone.
+     *
+     * The edit case. An admin retyping an open issue's period is asking what THAT
+     * period would contain, and the answer has to come from the period being typed
+     * -- otherwise the count beside the form answers for the period on disk while
+     * the form shows another, and the screen states two periods at once without
+     * saying which number belongs to which.
+     *
+     * The half that must NOT move is the chain. INTERVAL_CHAINED asks whether this
+     * issue opens exactly where its predecessor closed, which is a fact about what
+     * is saved; answered off an unsaved period it would report a broken chain that
+     * nobody has and that saving would not create. It is asserted here against a
+     * predecessor stamped exactly at the stored start, so the row genuinely CAN
+     * fail: read off the what-if start it would.
+     */
+    @Test
+    @Transactional
+    public void aNamedPeriodStartMovesTheMembersAndLeavesTheChainRowsAlone() {
+        PublicationSeries s = series();
+        PublicationIssue previous = lifecycle.create(s, new Date(OPENS.getTime() - 7 * DAY),
+                IntervalBoundSource.STAMPED, OPENS, user());
+        previous.setStatus(IssueStatus.PUBLISHED);
+        previous.setCutoffStampedAt(OPENS);
+        em.merge(previous);
+        em.flush();
+
+        Date planned = new Date(OPENS.getTime() + 14 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED, new Date(OPENS.getTime() + DAY));
+        Message inside = message("NM-005", Status.PUBLISHED, new Date(OPENS.getTime() + 5 * DAY));
+        message("NM-009", Status.PUBLISHED, new Date(OPENS.getTime() + 9 * DAY));
+        em.flush();
+
+        Date from = new Date(OPENS.getTime() + 4 * DAY);
+        Date at = new Date(OPENS.getTime() + 7 * DAY);
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true, at, from);
+
+        assertEquals(List.of(inside.getUid()), uidsOf(vo.getMembers()),
+                "the named period runs from day 4 to day 7 and holds exactly the message published "
+                        + "on day 5; the screen answered over some other window");
+        assertEquals(at.getTime(), vo.getViewedAt(),
+                "the instant the caller asked for was not the one the screen answered at");
+        assertNotNull(vo.getViewedFrom(), "the screen did not say which period start it answered over");
+        assertEquals(from.getTime(), vo.getViewedFrom().longValue(),
+                "the start the caller named was not the one the screen answered over, and the "
+                        + "member list beside it is therefore labelled with the wrong period");
+
+        assertEquals(1, memberCountOf(vo.getChecklist()),
+                "the rail counted the stored period's members beside a list showing the named "
+                        + "period's -- the disagreement the one-resolve rule exists to prevent");
+        assertNotNull(vo.getOmissions(),
+                "the named period carries no omissions panel; it is an open issue and was resolved");
+
+        assertTrue(rowOf(vo.getChecklist(), "INTERVAL_CHAINED").isPassed(),
+                "the chain row answered off the period named on the request rather than off the one "
+                        + "the issue has. This issue opens exactly where its predecessor closed; a "
+                        + "what-if start is not a break in the chain, and reporting one would send an "
+                        + "admin to 'correct' an interval that is right: "
+                        + rowOf(vo.getChecklist(), "INTERVAL_CHAINED").getDetail());
+        assertTrue(rowOf(vo.getChecklist(), "INTERVAL_PRESENT").isPassed(),
+                "the row about the stored interval's presence failed on an issue that has one");
+    }
+
+    /**
+     * With no period start named, the screen answers over the issue's own -- and
+     * says so.
+     *
+     * The default read is the same read, and `viewedFrom` is what makes the two
+     * distinguishable on the wire: a client that could not tell a what-if answer
+     * from the issue's own would label one with the other's heading, which is the
+     * single failure a view parameter must not produce.
+     */
+    @Test
+    @Transactional
+    public void withNoPeriodStartNamedTheScreenAnswersOverTheStoredOne() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 14 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED, new Date(OPENS.getTime() + DAY));
+        message("NM-005", Status.PUBLISHED, new Date(OPENS.getTime() + 5 * DAY));
+        message("NM-009", Status.PUBLISHED, new Date(OPENS.getTime() + 9 * DAY));
+        em.flush();
+
+        Date at = new Date(OPENS.getTime() + 7 * DAY);
+        IssueWorkbenchVo implied = workbench.forIssue(i, "da", true, at);
+        IssueWorkbenchVo named = workbench.forIssue(i, "da", true, at, OPENS);
+
+        assertEquals(2, implied.getMembers().size(),
+                "the issue's own period runs from its start to day 7 and holds the messages published "
+                        + "on day 1 and day 5");
+        assertEquals(uidsOf(named.getMembers()), uidsOf(implied.getMembers()),
+                "naming the start the issue already has changed which messages came back");
+        assertNotNull(implied.getViewedFrom());
+        assertEquals(OPENS.getTime(), implied.getViewedFrom().longValue(),
+                "a read that named no start reported answering over some other one");
+        assertEquals(implied.getViewedFrom(), named.getViewedFrom());
+        assertEquals(memberCountOf(named.getChecklist()), memberCountOf(implied.getChecklist()));
+    }
+
+    /**
+     * A period start that does not fall BEFORE the instant being read at is
+     * refused -- after it, and equal to it.
+     *
+     * A window that closes before it opens describes nothing, and one that closes
+     * exactly where it opens describes no length. There is no honest answer to
+     * give for either: the window is (start, instant], so both resolve to an empty
+     * member list, which reads as "this period is empty" rather than "the two
+     * dates you typed cannot make a period". The equal case is the one an admin
+     * reaches by hand -- typing the same date into both halves of the form -- and
+     * a 200 with a zero beside it is the answer least likely to be recognised as a
+     * mistake. Refused at all three ways of naming the pair: after with an
+     * instant, equal to one, and with no instant at all, where it is now.
+     */
+    @Test
+    @Transactional
+    public void aPeriodStartNotBeforeTheInstantIsRefused() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 14 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED);
+        em.flush();
+
+        Date at = new Date(OPENS.getTime() + 7 * DAY);
+        IssueLifecycleService.TransitionRefusedException inverted = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> workbench.forIssue(i, "da", true, at, new Date(at.getTime() + DAY)),
+                "a period whose start falls after the instant it is read at was answered rather "
+                        + "than refused");
+        assertEquals("INVALID_INSTANT", inverted.code());
+
+        IssueLifecycleService.TransitionRefusedException empty = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> workbench.forIssue(i, "da", true, at, new Date(at.getTime())),
+                "a period start equal to the instant it is read at was answered rather than refused. "
+                        + "The window is half-open, so the two name a period of no length -- and the "
+                        + "answer is a 200 carrying zero members, which reads as an empty period");
+        assertEquals("INVALID_INSTANT", empty.code());
+
+        IssueLifecycleService.TransitionRefusedException ahead = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> workbench.forIssue(i, "da", true, null,
+                        new Date(System.currentTimeMillis() + DAY)),
+                "a period starting in the future was answered as of now, which is before it began");
+        assertEquals("INVALID_INSTANT", ahead.code());
+    }
+
+    /**
+     * A frozen issue ignores a named period start, exactly as it ignores an instant.
+     *
+     * What a published issue holds is what it printed. There is no other period to
+     * read it over, so one named here is neither honoured nor refused -- and the
+     * one echoed back is the issue's own, so nobody is told a published issue
+     * covered a period it did not. The start named here is one that would be
+     * REFUSED on an open issue, which is what makes "ignored" the assertion rather
+     * than "happened not to matter".
+     */
+    @Test
+    @Transactional
+    public void aFrozenIssueIgnoresANamedPeriodStart() {
+        PublicationSeries s = series();
+        Date planned = new Date(OPENS.getTime() + 14 * DAY);
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, planned, user());
+        message("NM-001", Status.PUBLISHED, new Date(OPENS.getTime() + DAY));
+        em.flush();
+
+        i.setStatus(IssueStatus.PUBLISHED);
+        i.setCutoffStampedAt(planned);
+        em.merge(i);
+        em.flush();
+
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true, planned,
+                new Date(planned.getTime() + DAY));
+
+        assertNotNull(vo.getViewedFrom(),
+                "a published issue reported no period start at all; it has one, and it is the one "
+                        + "it printed from");
+        assertEquals(OPENS.getTime(), vo.getViewedFrom().longValue(),
+                "a published issue was answered over a period the caller named; its contents are a "
+                        + "record, and labelling them with another period describes a document nobody "
+                        + "published");
+        assertTrue(Math.abs(vo.getViewedAt() - System.currentTimeMillis()) < 60_000,
+                "a published issue was answered as of an instant the caller chose");
     }
 
     // The rail's WIRE SHAPE -- every CheckRow component reaching a property, and
