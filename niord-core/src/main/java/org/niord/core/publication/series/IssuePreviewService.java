@@ -19,6 +19,7 @@ package org.niord.core.publication.series;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.niord.core.publication.series.vo.IssuePreviewVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,10 +27,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -102,14 +106,50 @@ public class IssuePreviewService extends BaseService {
      * quietly.
      */
     public boolean isStale(PublicationIssue issue, String lang, Date memberSetChangedAt) {
-        Optional<Preview> preview = newest(issue, lang);
-        if (preview.isEmpty()) {
-            return true;
+        return newest(issue, lang)
+                .map(preview -> isStale(preview, memberSetChangedAt))
+                .orElse(true);
+    }
+
+    /**
+     * The same question asked about a generation already in hand.
+     *
+     * The comparison itself, in one place, so that the rail's answer and the row
+     * the issue screen puts a "stale" badge on cannot be two different rules. It
+     * takes the preview rather than looking it up because the listing above is a
+     * directory read: a caller that has already paid for it must not pay again to
+     * find out whether what it holds is current.
+     */
+    private static boolean isStale(Preview preview, Date memberSetChangedAt) {
+        return memberSetChangedAt != null && preview.renderedAt().before(memberSetChangedAt);
+    }
+
+    /**
+     * What is stored for an issue: the newest generation of each of its
+     * languages, with staleness answered against the issue's own stamp.
+     *
+     * A language with nothing stored yields no row at all. "No preview" and "a
+     * preview that is stale" are different states -- one offers something to
+     * open and the other does not -- and a row standing in for the absence would
+     * have to be told apart by its own flag on every reader.
+     *
+     * The issue's stamp moves on every edit and every curation, which is what
+     * makes it what "current" is read against; it is the same instant
+     * {@link #isStaleFor} compares to for the rail, so a screen cannot show a
+     * fresh badge on a row beside a rail warning that the preview is stale.
+     *
+     * ONE directory read per language, the same one answering a single language
+     * costs.
+     */
+    public List<IssuePreviewVo> stored(PublicationIssue issue) {
+        List<IssuePreviewVo> out = new ArrayList<>();
+        for (PublicationIssueDesc desc : issue.getDescs()) {
+            newest(issue, desc.getLang()).ifPresent(preview -> out.add(new IssuePreviewVo(
+                    preview.lang(),
+                    preview.renderedAt().getTime(),
+                    isStale(preview, issue.getUpdated()))));
         }
-        if (memberSetChangedAt == null) {
-            return false;
-        }
-        return preview.get().renderedAt().before(memberSetChangedAt);
+        return out;
     }
 
     /**
@@ -128,15 +168,37 @@ public class IssuePreviewService extends BaseService {
      * pass on another.
      */
     public boolean isStaleFor(PublicationIssue issue) {
-        if (issue.getSeries() == null || issue.getSeries().getReportId() == null) {
+        // Asked before the store is read: a series that renders nothing has no
+        // preview to be stale, and listing its directories to find that out costs
+        // a read per language for an answer that was already fixed.
+        return rendersADocument(issue) && isStaleFor(issue, stored(issue));
+    }
+
+    /**
+     * The same answer, off rows a caller has already read.
+     *
+     * The issue screen ships those rows and computes this rail row in one
+     * response, and reading the store twice for the two would be one directory
+     * listing per language spent on a question already answered. It is the same
+     * rule either way: a language is current only if it has a row and the row is
+     * not stale -- having no row at all is the "nothing to compare" half, and it
+     * is what makes an issue nobody has previewed report a warning rather than a
+     * pass.
+     */
+    public boolean isStaleFor(PublicationIssue issue, List<IssuePreviewVo> stored) {
+        if (!rendersADocument(issue)) {
             return false;
         }
-        for (PublicationIssueDesc desc : issue.getDescs()) {
-            if (isStale(issue, desc.getLang(), issue.getUpdated())) {
-                return true;
-            }
-        }
-        return false;
+        Set<String> current = stored.stream()
+                .filter(p -> !p.stale())
+                .map(IssuePreviewVo::lang)
+                .collect(Collectors.toSet());
+        return issue.getDescs().stream().anyMatch(desc -> !current.contains(desc.getLang()));
+    }
+
+    /** Whether there is anything to preview: an uploaded or link-backed issue renders nothing. */
+    private static boolean rendersADocument(PublicationIssue issue) {
+        return issue.getSeries() != null && issue.getSeries().getReportId() != null;
     }
 
     /** Removes generations past the TTL. */

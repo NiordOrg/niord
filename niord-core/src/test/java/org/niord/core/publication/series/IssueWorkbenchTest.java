@@ -35,6 +35,7 @@ import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueMemberVo;
 import org.niord.core.publication.series.vo.IssueOmissionsVo;
 import org.niord.core.publication.series.vo.IssueOverrideVo;
+import org.niord.core.publication.series.vo.IssuePreviewVo;
 import org.niord.core.publication.series.vo.IssueWorkbenchVo;
 import org.niord.core.publication.series.vo.PublishCheckRowVo;
 import org.niord.core.publication.series.vo.PublishChecklistVo;
@@ -44,6 +45,7 @@ import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -96,6 +98,9 @@ public class IssueWorkbenchTest {
 
     @Inject
     MemberResolutionService resolver;
+
+    @Inject
+    IssuePreviewService previews;
 
     @Inject
     EntityManager em;
@@ -562,6 +567,148 @@ public class IssueWorkbenchTest {
         assertEquals(IssueOmissionsVo.PROBE_SAMPLE, vo.getOmissions().getMisses().size(),
                 "the omissions panel shipped every miss; it is a sample, not a page");
         assertEquals(1, vo.getMembers().size(), "the dropped candidates became members");
+    }
+
+    /**
+     * An issue nobody has previewed reports an empty list, not an absent one.
+     *
+     * The screen seeds its preview rows from every read of this envelope, so the
+     * two states have to be told apart on the wire: "none stored" is an answer
+     * and it is what lets the screen stop offering to open something that is not
+     * there. A null here would be read as "unknown" by a client that has no
+     * separate way to ask.
+     */
+    @Test
+    @Transactional
+    public void anOpenIssueWithNothingPreviewedReportsAnEmptyList() {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        message("NM-001", Status.PUBLISHED);
+        em.flush();
+
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true);
+        assertNotNull(vo.getPreviews(), "the previews list is absent rather than empty");
+        assertTrue(vo.getPreviews().isEmpty(),
+                "an issue nobody has previewed reported " + vo.getPreviews().size() + " previews");
+    }
+
+    /**
+     * A reader who may not render or open a preview is not handed one to open.
+     *
+     * The preview endpoints answer only to an admin, so a row on the workbench of
+     * anybody else would be an offer the server refuses a moment later. Narrowed
+     * the way the checklist is, and off the same flag.
+     */
+    @Test
+    @Transactional
+    public void aStoredPreviewIsNotReportedToAReaderWhoMayNotOpenIt() throws Exception {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        message("NM-001", Status.PUBLISHED);
+        em.flush();
+
+        previews.record(i, "da", "test.pdf", "bytes".getBytes(StandardCharsets.UTF_8));
+
+        IssueWorkbenchVo asCurator = workbench.forIssue(i, "da", false);
+        assertNotNull(asCurator.getPreviews(), "the previews list is absent rather than empty");
+        assertTrue(asCurator.getPreviews().isEmpty(),
+                "a reader without the admin role was handed " + asCurator.getPreviews().size()
+                        + " preview rows whose download the server refuses");
+
+        IssueWorkbenchVo asAdmin = workbench.forIssue(i, "da", true);
+        assertEquals(1, asAdmin.getPreviews().size(), "the admin no longer sees the stored preview");
+    }
+
+    /**
+     * A stored preview reaches the screen, and moving the member set makes it say
+     * so.
+     *
+     * The row is what the screen offers to open, and its staleness is the same
+     * question the rail answers -- computed here off the issue's stamp rather
+     * than remembered from the moment the preview was generated. A curation
+     * moves that stamp, and the row has to follow: a screen still badging the
+     * preview as current after somebody has excluded a message would have an
+     * admin release against a document they read before the change.
+     */
+    @Test
+    @Transactional
+    public void aStoredPreviewIsReportedAndGoesStaleWhenTheMemberSetMoves() throws Exception {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        message("NM-001", Status.PUBLISHED);
+        Message dropped = message("NM-002", Status.PUBLISHED);
+        em.flush();
+
+        previews.record(i, "da", "test.pdf", "bytes".getBytes(StandardCharsets.UTF_8));
+
+        IssueWorkbenchVo before = workbench.forIssue(i, "da", true);
+        List<IssuePreviewVo> fresh = before.getPreviews();
+        assertEquals(1, fresh.size(),
+                "one language has a stored preview and the screen reported " + fresh.size() + " rows");
+        assertEquals("da", fresh.get(0).lang());
+        assertTrue(fresh.get(0).renderedAt() > 0,
+                "the preview row came back without the instant it was rendered at");
+        assertFalse(fresh.get(0).stale(),
+                "a preview generated after the last change to the issue was reported stale");
+        assertTrue(previewFreshRowOf(before).isPassed(),
+                "the rail warned that the preview is stale beside a row reporting it current; the "
+                        + "badge and the rail answer the same question and must not disagree");
+
+        // The stamp and the generation are both milliseconds, so a curation taken
+        // inside the same one would be indistinguishable from no change at all.
+        Thread.sleep(5);
+        curation.exclude(i, dropped.getUid(), user(), "held over to the next edition");
+        em.flush();
+
+        IssueWorkbenchVo moved = workbench.forIssue(i, "da", true);
+        List<IssuePreviewVo> after = moved.getPreviews();
+        assertEquals(1, after.size(), "the stored preview vanished when the member set moved");
+        assertTrue(after.get(0).stale(),
+                "the member set moved after the preview was rendered and the row still claims to be "
+                        + "current");
+        assertFalse(previewFreshRowOf(moved).isPassed(),
+                "the row went stale and the rail beside it still reports the preview as current");
+    }
+
+    /** The PREVIEW_FRESH row off a workbench response, so the badge and the rail are compared. */
+    private static PublishCheckRowVo previewFreshRowOf(IssueWorkbenchVo vo) {
+        return vo.getChecklist().getRows().stream()
+                .filter(r -> "PREVIEW_FRESH".equals(r.getCode()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("the rail has no PREVIEW_FRESH row at all"));
+    }
+
+    /**
+     * A frozen issue carries no preview rows, stored ones included.
+     *
+     * A preview is a preview of a live member list, and a published issue has
+     * none: what it printed is the archived document. The generations rendered
+     * while it was open outlive the release by up to the sweep's TTL, so this is
+     * not hypothetical -- an issue published an hour ago still has files on disk,
+     * and offering them beside the released document invites a reader to compare
+     * an official notice set against a draft of it.
+     */
+    @Test
+    @Transactional
+    public void aFrozenIssueCarriesNoPreviewRowsEvenWithOneStored() {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        message("NM-001", Status.PUBLISHED);
+        em.flush();
+
+        previews.record(i, "da", "test.pdf", "bytes".getBytes(StandardCharsets.UTF_8));
+        assertEquals(1, workbench.forIssue(i, "da", true).getPreviews().size(),
+                "the fixture stored no preview, so freezing it below would prove nothing");
+
+        i.setStatus(IssueStatus.PUBLISHED);
+        i.setCutoffStampedAt(new Date());
+        em.merge(i);
+        em.flush();
+
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true);
+        assertNotNull(vo.getPreviews(), "the previews list is absent rather than empty");
+        assertTrue(vo.getPreviews().isEmpty(),
+                "a published issue offered the previews rendered while it was still open");
     }
 
     // The rail's WIRE SHAPE -- every CheckRow component reaching a property, and

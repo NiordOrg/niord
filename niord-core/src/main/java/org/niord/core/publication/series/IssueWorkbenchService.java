@@ -21,11 +21,13 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import org.niord.core.publication.series.IssueResolutionService.IssueResolution;
+import org.niord.core.publication.series.vo.IssuePreviewVo;
 import org.niord.core.publication.series.vo.IssueWorkbenchVo;
 import org.niord.core.publication.series.vo.PublishChecklistVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * The issue screen, assembled once.
@@ -88,14 +90,31 @@ public class IssueWorkbenchService {
         // that were taken before it was ever published here.
         vo.setOverrides(memberList.standingDecisions(resolved));
 
+        // Off the same store the preview endpoints read, so the rows the screen
+        // shows are the generations the server actually still holds: they are
+        // swept on a TTL, and a screen that kept its own memory of them would go
+        // on offering a preview that is no longer there. Nothing for a frozen
+        // issue -- there is no live member list to preview, and the release it
+        // made is the archived document.
+        // And only for a reader who may also render and open one: the preview
+        // endpoints are admin-only, so a row handed to anybody else would offer a
+        // download that is refused. Narrowed exactly as the checklist below is.
+        List<IssuePreviewVo> stored = (!resolved.frozen() && mayReadChecklist)
+                ? previews.stored(issue) : List.of();
+        vo.setPreviews(stored);
+
         if (!resolved.frozen() && mayReadChecklist) {
             // allowFuture is false: the rail here is the reading screen's, not the
             // dialog's. Waiving the future cut-off is a choice an admin makes in
             // the publish dialog, which asks for its own rail at the instant it is
             // offering, and a screen that waived it by default would show a check
             // as satisfied that nobody had made.
+            // The PREVIEW_FRESH row is answered off the rows just read rather than
+            // from a second pass over the store: the rail and the preview badges
+            // beside it are then one answer by construction, and the screen reads
+            // each language's directory once.
             vo.setChecklist(PublishChecklistVo.of(
-                    checklist.compute(issue, false, previews.isStaleFor(issue), resolved)));
+                    checklist.compute(issue, false, previews.isStaleFor(issue, stored), resolved)));
         }
 
         // A frozen issue takes no resolve at all, so this is also the "not on a

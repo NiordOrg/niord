@@ -55,6 +55,19 @@ public class IssueWorkbenchVo implements IJsonSerializable {
     /** Every curation decision that STANDS, include and exclude alike. */
     private List<IssueOverrideVo> overrides;
 
+    /**
+     * The previews the server still holds, newest generation per language.
+     *
+     * ALWAYS PRESENT, empty where there is nothing stored -- unlike the two
+     * conditional parts below, which are absent. The screen seeds its preview
+     * rows from this on every read, and an absent key would have to be read as
+     * "unknown", which is the state that makes a refresh offer to generate a
+     * preview again while the rail beside it reports the one on disk as current.
+     * Empty for a frozen issue: what it printed is the archived document, and a
+     * preview of it is a document nobody can produce or need.
+     */
+    private List<IssuePreviewVo> previews = List.of();
+
     /** Absent on a frozen issue, and for a curator who is not an admin. */
     private PublishChecklistVo checklist;
 
@@ -91,6 +104,14 @@ public class IssueWorkbenchVo implements IJsonSerializable {
 
     public void setOverrides(List<IssueOverrideVo> overrides) {
         this.overrides = overrides;
+    }
+
+    public List<IssuePreviewVo> getPreviews() {
+        return previews;
+    }
+
+    public void setPreviews(List<IssuePreviewVo> previews) {
+        this.previews = previews;
     }
 
     public PublishChecklistVo getChecklist() {
