@@ -24,6 +24,7 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.NamedMessageVo;
 import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublishChecklistService;
@@ -160,7 +161,9 @@ public class PublicationApiContractTest {
         // thirteen of the fourteen real rows, checked separately below.
         PublishChecklistService.CheckRow row = new PublishChecklistService.CheckRow(
                 "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", PublishChecklistService.Severity.WARN,
-                false, true, true, "CANCELLED_BUT_DATE_ALIVE", "2 member(s) cancelled");
+                false, true, true, "CANCELLED_BUT_DATE_ALIVE",
+                new PublishChecklistService.Detail("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF.count",
+                        Map.of("count", 2), "2 member(s) cancelled"));
 
         JsonNode wire = new ObjectMapper().valueToTree(PublishCheckRowVo.of(row));
         for (RecordComponent component : PublishChecklistService.CheckRow.class.getRecordComponents()) {
@@ -173,6 +176,32 @@ public class PublicationApiContractTest {
                 "the rail no longer says which of its rows this issue can even be in; a verdict counted "
                         + "over all fourteen rows counts checks that never ran");
 
+        // The row's detail travels in BOTH forms, and the client needs the coded
+        // one: `detail` is English, composed on the server, and a Danish screen
+        // that renders it shows one English sentence under a translated heading.
+        // The key is per SENTENCE VARIANT -- a row says several different things --
+        // and the params are the values that sentence interpolates.
+        assertEquals("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF.count", wire.get("detailCode").asText(),
+                "the rail row's detailCode did not reach the wire; the frontend has nothing to "
+                        + "translate and falls back to the English detail on every row");
+        assertTrue(wire.get("detailParams").isObject()
+                        && wire.get("detailParams").get("count").asInt() == 2,
+                "the rail row's detailParams did not reach the wire as an object carrying the "
+                        + "sentence's values; a translated sentence with no params states no number: "
+                        + wire.get("detailParams"));
+
+        // Empty rather than absent where a sentence takes no values, so a client
+        // interpolates unconditionally instead of guarding every row.
+        JsonNode noParams = new ObjectMapper().valueToTree(PublishCheckRowVo.of(
+                new PublishChecklistService.CheckRow("REFERENCE_FORMAT_COMPLETE",
+                        PublishChecklistService.Severity.BLOCK, true, false, null,
+                        new PublishChecklistService.Detail("REFERENCE_FORMAT_COMPLETE.citable",
+                                Map.of(), "series is citable"))));
+        assertTrue(noParams.has("detailParams") && noParams.get("detailParams").isObject()
+                        && noParams.get("detailParams").isEmpty(),
+                "a rail row whose sentence takes no values dropped detailParams instead of sending "
+                        + "an empty object: " + noParams);
+
         // And the null-valued component keeps its key, UNDER A MAPPER THAT DROPS
         // NULLS -- which is the project's own default, applied to every
         // IJsonSerializable VO in this package. The client reads the null as a
@@ -182,7 +211,10 @@ public class PublicationApiContractTest {
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
         JsonNode unacknowledgeable = compact.valueToTree(PublishCheckRowVo.of(
                 new PublishChecklistService.CheckRow("ISSUE_OPEN",
-                        PublishChecklistService.Severity.BLOCK, true, false, null, "status is OPEN")));
+                        PublishChecklistService.Severity.BLOCK, true, false, null,
+                        new PublishChecklistService.Detail("ISSUE_OPEN.status",
+                                Map.of("status", "OPEN", "seriesStatus", "ACTIVE"),
+                                "status is OPEN, series is ACTIVE"))));
         assertTrue(unacknowledgeable.has("acknowledgeCode")
                         && unacknowledgeable.get("acknowledgeCode").isNull(),
                 "the rail row dropped its null acknowledgeCode: " + unacknowledgeable);
@@ -493,6 +525,32 @@ public class PublicationApiContractTest {
         assertTrue(issues.contains("nameMap(params)"),
                 "the publish endpoint no longer reads the names off its body, so the release dialog's "
                         + "name field would be accepted and dropped");
+    }
+
+    /**
+     * The probe names the messages it samples.
+     *
+     * The criteria editor exists to let an admin judge a document before it is
+     * saved onto a series, and the sample is the half of that answer that is not
+     * a number. Listed by uid it is a column of uuids -- nothing an admin can
+     * recognise, quote or open -- so the sample carries the same three fields
+     * every other list of messages in this API carries, filled in one query.
+     */
+    @Test
+    public void theProbeSampleNamesEveryMessageItLists() throws IOException {
+        List<String> components = Arrays.stream(NamedMessageVo.class.getRecordComponents())
+                .map(RecordComponent::getName).toList();
+        assertEquals(List.of("messageUid", "messageId", "title"), components,
+                "a sampled message is named by uid, short id and title together: the uid is the "
+                        + "only one that addresses it, the short id is the only one that can be cited, "
+                        + "and the title is the only one an unnumbered message has");
+
+        String series = read("src/main/java/org/niord/web/publication/PublicationSeriesRestService.java");
+        assertTrue(series.contains("naming.namedList("),
+                "the probe no longer fills the names of its sample, so the criteria panel would list "
+                        + "uids again -- and the count beside them would be the only readable thing on it");
+        assertFalse(series.contains("List<String> sample"),
+                "the probe went back to a sample of bare uids");
     }
 
     // ------------------------------------------------------------------ helpers

@@ -1274,12 +1274,16 @@ public class PublicationIssueRestService {
     @VersionChecked
     public void delete(@PathParam("publicId") String publicId,
                        @QueryParam("reason") String reason,
-                       @QueryParam("version") Integer version) {
+                       @QueryParam("version") Integer version,
+                       @QueryParam("lang") String lang) {
         PublicationIssue issue = required(publicId);
         domainGuard.assertWritable(issue);
         StaleVersionGuard.check(issue, version);
         String seriesId = issue.getSeries() == null ? null : issue.getSeries().getSeriesId();
-        deletion.delete(issue, userService.currentUser(), reason);
+        // The language reaches only the refusal: a delete that is refused names the
+        // messages citing this issue, and one of those may be a message that has
+        // not been numbered yet, nameable by its title alone.
+        deletion.delete(issue, userService.currentUser(), reason, lang);
         // Logged AFTER the guarded delete succeeded, and with the series named:
         // the issue's own audit rows go with it, so this line and the series-level
         // entry the service writes are what remain of it.
@@ -1528,6 +1532,11 @@ public class PublicationIssueRestService {
      *
      * Curator tier, matching the writes it describes: it carries the author and
      * the reason, which is the admin-only half of a why-line.
+     *
+     * Each row is NAMED -- short id and title -- because an excluded message is
+     * nowhere else on the screen and a decision listed by uid is not one a curator
+     * can check or withdraw. The short id is null on a message that has not been
+     * numbered yet, and the title is what names it then.
      */
     @GET
     @Path("/issue/{publicId}/overrides")
@@ -1535,8 +1544,9 @@ public class PublicationIssueRestService {
     @GZIP
     @NoCache
     @RolesAllowed({Roles.PUBLICATION_CURATE, Roles.ADMIN})
-    public List<IssueOverrideVo> overrides(@PathParam("publicId") String publicId) {
-        return memberList.standingDecisions(required(publicId));
+    public List<IssueOverrideVo> overrides(@PathParam("publicId") String publicId,
+                                           @QueryParam("lang") String lang) {
+        return memberList.standingDecisions(required(publicId), lang);
     }
 
     /**

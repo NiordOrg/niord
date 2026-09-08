@@ -100,8 +100,13 @@ public class PublicationExceptionMapper implements ExceptionMapper<PublicationEx
             List<Map<String, Object>> messages = new ArrayList<>();
             for (PublicationResolver.CitingMessage m : cited.citingMessages()) {
                 Map<String, Object> one = new LinkedHashMap<>();
+                // NULL where the message has not been numbered yet, with the title
+                // carrying the name instead. A uid put in this key would be
+                // indistinguishable from a real short id, and a dialog rendering
+                // it as a link offers a number nobody can look up.
                 one.put("messageId", m.messageId());
                 one.put("uid", m.uid());
+                one.put("title", m.title());
                 messages.add(one);
             }
             body.put("citingMessages", messages);

@@ -53,6 +53,8 @@ import org.niord.core.publication.series.legacy.CutoverPreflightService;
 import org.niord.core.publication.series.legacy.LegacyImportService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.publication.MessageNaming;
+import org.niord.core.publication.NamedMessageVo;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.series.PublicationDomainGuard;
@@ -155,6 +157,9 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
 
     @Inject
     MemberResolutionService memberResolver;
+
+    @Inject
+    MessageNaming naming;
 
     @Inject
     LegacyImportService importService;
@@ -717,7 +722,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
-    public Map<String, Object> resolvePreview(ResolvePreviewRequest request) {
+    public Map<String, Object> resolvePreview(ResolvePreviewRequest request,
+                                              @QueryParam("lang") String lang) {
         if (request == null || request.criteria() == null) {
             throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
                     "a criteria document is required to preview what it would select");
@@ -753,7 +759,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                     e.getMessage());
         }
 
-        List<String> sample = resolution.members().stream().limit(PROBE_SAMPLE).toList();
+        // Named, not listed by key. The panel exists to let an admin recognise what
+        // the document being typed selects, and a column of uuids answers that with
+        // something nobody can read or cite. Filled for the whole sample in one
+        // query, by the same rule that names the omissions beside it.
+        List<NamedMessageVo> sample = naming.namedList(
+                resolution.members().stream().limit(PROBE_SAMPLE).toList(), lang);
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("source", "PROBE");
@@ -771,10 +782,10 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // what is being dropped; missCount is what says how much there is.
         //
         // Capped AND labelled by the resolver, which is where the issue workbench's
-        // omissions panel gets its rows too: the short id each row carries is
-        // filled in one query over the capped uids, and building the two lists
-        // separately here is how the two screens would come to disagree.
-        IssueOmissionsVo omissions = memberResolver.omissions(resolution.misses());
+        // omissions panel gets its rows too: the short id and the title each row
+        // carries are filled in one query over the capped uids, and building the
+        // two lists separately here is how the two screens would come to disagree.
+        IssueOmissionsVo omissions = memberResolver.omissions(resolution.misses(), lang);
         out.put("missCount", omissions.getMissCount());
         out.put("misses", omissions.getMisses());
         return out;

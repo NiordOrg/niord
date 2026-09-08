@@ -52,7 +52,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -184,6 +186,12 @@ public class IssueWorkbenchTest {
         return m;
     }
 
+    /** One titled description, which is the only thing that names an unnumbered message. */
+    private void titled(Message m, String lang, String title) {
+        m.createDesc(lang).setTitle(title);
+        em.merge(m);
+    }
+
     /** One history row, which is where the instant of a withdrawal is read from. */
     private void history(Message m, Status status, Date at) {
         MessageHistory h = new MessageHistory();
@@ -261,6 +269,11 @@ public class IssueWorkbenchTest {
      * Counted rather than described, and with the resolving read measured beside
      * it so the counter is shown to be sensitive: a statistics handle that
      * recorded nothing would otherwise let this pass vacuously.
+     *
+     * TWO reads, not one: the override rows, and ONE naming read over all their
+     * uids. The names are what makes the list usable -- an excluded message is
+     * nowhere else on the screen -- and the bound that matters is that the second
+     * read is per LIST and not per row.
      */
     @Test
     @Transactional
@@ -278,7 +291,7 @@ public class IssueWorkbenchTest {
         stats.setStatisticsEnabled(true);
         try {
             long before = stats.getQueryExecutionCount();
-            List<IssueOverrideVo> decisions = memberList.standingDecisions(i);
+            List<IssueOverrideVo> decisions = memberList.standingDecisions(i, "en");
             long listing = stats.getQueryExecutionCount() - before;
 
             long mid = stats.getQueryExecutionCount();
@@ -286,16 +299,64 @@ public class IssueWorkbenchTest {
             long resolving = stats.getQueryExecutionCount() - mid;
 
             assertEquals(1, decisions.size(), "the fixture's exclusion is not being listed at all");
-            assertEquals(1L, listing,
+            assertEquals(2L, listing,
                     "listing the standing decisions ran " + listing + " queries. It is ONE read of the "
-                            + "override rows; anything more means it is resolving the issue's membership "
-                            + "to render a list that shows none of it");
+                            + "override rows and ONE naming read over their uids; anything more means "
+                            + "either a name lookup per row or a resolve of the issue's membership to "
+                            + "render a list that shows none of it");
             assertTrue(resolving > listing,
                     "the resolving read cost no more than the listing one (" + resolving + " vs "
                             + listing + "), so the counter is not measuring what this test claims");
         } finally {
             stats.setStatisticsEnabled(wasEnabled);
         }
+    }
+
+    /**
+     * And every standing decision is NAMED, numbered or not.
+     *
+     * The exclusion is the row this matters for: an excluded message has no row in
+     * the member list -- that is what excluding it means -- so this list is the
+     * only place it appears, and "uid 7f3a… is excluded" is not a decision anybody
+     * can check. A message that has not been given its number yet carries a null
+     * messageId and is nameable ONLY by its title, which is why the pair travels
+     * rather than one "label" the server picked.
+     */
+    @Test
+    @Transactional
+    public void everyStandingDecisionCarriesTheNamesAReaderRecognises() {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        Message numbered = message("NM-815-26", Status.PUBLISHED);
+        Message unnumbered = message(null, Status.PUBLISHED);
+        titled(numbered, "en", "Buoy off Hesselo withdrawn");
+        titled(numbered, "da", "Boje ud for Hesseloe inddraget");
+        titled(unnumbered, "da", "Skydeoevelse i Kattegat");
+        em.flush();
+
+        curation.exclude(i, numbered.getUid(), user(), "held over to the next edition");
+        curation.exclude(i, unnumbered.getUid(), user(), "not ready");
+        em.flush();
+
+        Map<String, IssueOverrideVo> byUid = new LinkedHashMap<>();
+        for (IssueOverrideVo vo : memberList.standingDecisions(i, "en")) {
+            byUid.put(vo.getMessageUid(), vo);
+        }
+
+        IssueOverrideVo cited = byUid.get(numbered.getUid());
+        assertEquals("NM-815-26", cited.getMessageId(),
+                "the standing decision does not name the message by the id an editor cites");
+        assertEquals("Buoy off Hesselo withdrawn", cited.getTitle(),
+                "the decision was titled in a language the caller did not ask for");
+
+        IssueOverrideVo draft = byUid.get(unnumbered.getUid());
+        assertNull(draft.getMessageId(),
+                "an unnumbered message was given a messageId; the only string available is its uid, "
+                        + "and a uid in that field is indistinguishable from a real message number");
+        assertEquals("Skydeoevelse i Kattegat", draft.getTitle(),
+                "the unnumbered decision fell back to no title at all, so the only thing naming it "
+                        + "is a uid -- and the requested language having no description is exactly "
+                        + "when the fallback has to work");
     }
 
     /**
@@ -477,7 +538,7 @@ public class IssueWorkbenchTest {
 
         List<String> composedDecisions = vo.getOverrides().stream()
                 .map(IssueOverrideVo::getMessageUid).toList();
-        List<String> directDecisions = memberList.standingDecisions(i).stream()
+        List<String> directDecisions = memberList.standingDecisions(i, null).stream()
                 .map(IssueOverrideVo::getMessageUid).toList();
         assertEquals(directDecisions, composedDecisions,
                 "the standing decisions came back in a different order than the endpoint sends them; "
@@ -518,6 +579,12 @@ public class IssueWorkbenchTest {
         // assumed one would either omit the row or invent an id for it.
         Message numbered = message("NM-815-26", Status.DRAFT);
         Message unnumbered = message(null, Status.DRAFT);
+        // Titled in both languages on the numbered one so the language rule is
+        // exercised rather than assumed, and in Danish only on the unnumbered one
+        // so the fallback is too -- an English caller must still be given a name.
+        titled(numbered, "en", "Buoy off Hesselo withdrawn");
+        titled(numbered, "da", "Boje ud for Hesseloe inddraget");
+        titled(unnumbered, "da", "Skydeoevelse i Kattegat");
         em.flush();
 
         IssueResolution resolved = resolutions.forIssue(i, new Date());
@@ -530,13 +597,14 @@ public class IssueWorkbenchTest {
         IssueOmissionsVo omissions;
         try {
             long before = stats.getQueryExecutionCount();
-            omissions = resolver.omissions(resolved.resolution().misses());
+            omissions = resolver.omissions(resolved.resolution().misses(), "en");
             long filling = stats.getQueryExecutionCount() - before;
 
             assertEquals(1L, filling,
-                    "filling the omission rows' short ids ran " + filling + " queries. It is ONE read "
-                            + "over the capped uids; anything more is a lookup per row, and the sample "
-                            + "is fifty rows on a path that fires while somebody is typing");
+                    "filling the omission rows' names ran " + filling + " queries. It is ONE read "
+                            + "over the capped uids -- short id and title together; anything more is a "
+                            + "lookup per row, and the sample is fifty rows on a path that fires while "
+                            + "somebody is typing");
         } finally {
             stats.setStatisticsEnabled(wasEnabled);
         }
@@ -548,19 +616,41 @@ public class IssueWorkbenchTest {
                 "a message with no short id was given one; the uid is the identity and the short id "
                         + "is display text that may genuinely be absent");
 
+        // The TITLE is what names the unnumbered row, and it is the whole reason the
+        // field exists: a message awaiting its number has no short id at all, and a
+        // panel that showed only the id would list that row as a blank.
+        assertEquals("Buoy off Hesselo withdrawn", titleOf(omissions, numbered.getUid()),
+                "the omission row was titled in a language the caller did not ask for");
+        assertEquals("Skydeoevelse i Kattegat", titleOf(omissions, unnumbered.getUid()),
+                "the unnumbered omission row has neither an id nor a title, so nothing on it names "
+                        + "the message an editor is being asked to decide about");
+
         // And the screen serves the same rows, so the panel is not a second shape.
         IssueWorkbenchVo vo = workbench.forIssue(i, "da", true);
         assertEquals("NM-815-26", messageIdOf(vo.getOmissions(), numbered.getUid()),
                 "the workbench's omissions panel serves rows with no short id on them");
+        assertEquals("Boje ud for Hesseloe inddraget", titleOf(vo.getOmissions(), numbered.getUid()),
+                "the workbench titled its omission rows in a language other than the one it was "
+                        + "asked for; the panel and the member list beside it would then name the "
+                        + "same message two different ways");
     }
 
     /** The short id on the row for one uid, or null. */
     private static String messageIdOf(IssueOmissionsVo omissions, String uid) {
+        return rowOf(omissions, uid).messageId();
+    }
+
+    /** The title on the row for one uid, or null. */
+    private static String titleOf(IssueOmissionsVo omissions, String uid) {
+        return rowOf(omissions, uid).title();
+    }
+
+    private static org.niord.core.publication.series.resolve.CriteriaMissVo rowOf(
+            IssueOmissionsVo omissions, String uid) {
         return omissions.getMisses().stream()
                 .filter(m -> uid.equals(m.messageUid()))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("no omission row for " + uid))
-                .messageId();
+                .orElseThrow(() -> new AssertionError("no omission row for " + uid));
     }
 
     /**

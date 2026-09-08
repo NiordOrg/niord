@@ -192,7 +192,7 @@ public class IssueWorkbenchService {
         vo.setAudit(audit.forIssue(issue).stream().map(IssueAuditEntry::toVo).toList());
         // Still read on a frozen issue: an imported one carries standing decisions
         // that were taken before it was ever published here.
-        vo.setOverrides(memberList.standingDecisions(resolved));
+        vo.setOverrides(memberList.standingDecisions(resolved, lang));
 
         // Off the same store the preview endpoints read, so the rows the screen
         // shows are the generations the server actually still holds: they are
@@ -221,10 +221,10 @@ public class IssueWorkbenchService {
         // today's corpus rather than against the one it was printed from.
         if (resolved.resolution() != null) {
             // Through the resolver rather than off the VO directly: the sample's
-            // short ids are filled there, in one query over the capped rows, and a
-            // panel listing omissions by uid alone is unreadable to the editor who
-            // has to decide whether each one belongs in the issue.
-            vo.setOmissions(resolver.omissions(resolved.resolution().misses()));
+            // short ids and titles are filled there, in one query over the capped
+            // rows, and a panel listing omissions by uid alone is unreadable to
+            // the editor who has to decide whether each one belongs in the issue.
+            vo.setOmissions(resolver.omissions(resolved.resolution().misses(), lang));
         }
         return vo;
     }

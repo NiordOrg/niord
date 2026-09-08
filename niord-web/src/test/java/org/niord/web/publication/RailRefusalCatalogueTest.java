@@ -105,7 +105,10 @@ public class RailRefusalCatalogueTest {
     @Test
     public void aRowAppliesUnlessItSaysOtherwise() {
         PublishChecklistService.CheckRow row = new PublishChecklistService.CheckRow(
-                "ISSUE_OPEN", PublishChecklistService.Severity.BLOCK, true, false, null, "status is OPEN");
+                "ISSUE_OPEN", PublishChecklistService.Severity.BLOCK, true, false, null,
+                new PublishChecklistService.Detail("ISSUE_OPEN.status",
+                        Map.of("status", "OPEN", "seriesStatus", "ACTIVE"),
+                        "status is OPEN, series is ACTIVE"));
 
         assertTrue(row.applicable(),
                 "a row built without saying anything about applicability must count");

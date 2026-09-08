@@ -139,6 +139,19 @@ public class IssueDeleteService extends BaseService {
      */
     @Transactional
     public void delete(PublicationIssue issue, User actor, String reason) {
+        delete(issue, actor, reason, null);
+    }
+
+    /**
+     * The same delete, naming any citing messages in the caller's language.
+     *
+     * The language reaches only the REFUSAL. A deletion that goes through says
+     * nothing about messages, and one that is refused has to render each citing
+     * message as a row somebody can open -- including the ones that have not been
+     * numbered yet, which have no short id and are nameable only by their title.
+     */
+    @Transactional
+    public void delete(PublicationIssue issue, User actor, String reason, String lang) {
 
         if (issue.getStatus() == IssueStatus.PUBLISHED) {
             throw new IssueLifecycleService.TransitionRefusedException("ISSUE_PUBLISHED_NOT_DELETABLE",
@@ -149,7 +162,7 @@ public class IssueDeleteService extends BaseService {
 
         if (issue.getStatus() == IssueStatus.RETIRED) {
             PublicationResolver.Citations cited =
-                    citations.citingMessages(issue.getPublicId(), NAMED_CITATIONS);
+                    citations.citingMessages(issue.getPublicId(), NAMED_CITATIONS, lang);
             if (cited.any()) {
                 throw new IssueCitedException(citedMessage(issue, cited),
                         cited.sample(), cited.total());
@@ -209,7 +222,11 @@ public class IssueDeleteService extends BaseService {
     private static String citedMessage(PublicationIssue issue, PublicationResolver.Citations cited) {
         StringBuilder names = new StringBuilder();
         for (PublicationResolver.CitingMessage m : cited.sample()) {
-            names.append(names.isEmpty() ? "" : ", ").append(m.messageId());
+            // The number where there is one, the title otherwise, the uid as the
+            // last resort. A message awaiting its number carries no short id, and
+            // a sentence that named it by uid put a key in a list of message
+            // numbers with nothing to say which was which.
+            names.append(names.isEmpty() ? "" : ", ").append(m.label());
         }
         String more = cited.total() > cited.sample().size()
                 ? " and " + (cited.total() - cited.sample().size()) + " more"

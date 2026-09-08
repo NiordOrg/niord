@@ -38,6 +38,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -674,6 +675,165 @@ public class IssueLifecycleTest {
                         "these rows do not apply and yet refuse the publish: " + contradictory);
             }
         }
+    }
+
+    /**
+     * The two rows that presume tiling do not apply to an in-force series.
+     *
+     * INTERVAL_CHAINED asks whether this issue's period opens exactly where the
+     * previous one closed, and OVERLAPPING_ISSUE asks whether two issues print the
+     * same message. Both are questions about issues that TILE. An in-force series
+     * answers "what is in force at this instant", so consecutive editions share
+     * every message that stayed in force across both of them, and an in-force
+     * issue has no lower bound to chain off at all.
+     *
+     * So both rows were failing permanently on every in-force issue in the estate
+     * -- the open P&T edition showed two standing warnings, and no action an admin
+     * could take would ever clear either of them. A warning that cannot be cleared
+     * teaches the reader to ignore the ones that can.
+     */
+    @Test
+    @Transactional
+    public void theTilingRowsDoNotApplyToAnInForceSeries() {
+        PublicationSeries inForce = series(TimeRelation.IN_FORCE_AT_CUTOFF);
+        PublicationIssue first = lifecycle.create(inForce, new Date(1_699_000_000_000L),
+                IntervalBoundSource.MANUAL, user());
+        em.flush();
+        // A published predecessor, so the rows have a neighbour to be wrong about:
+        // without one they would drop out as NO_PREDECESSOR and the case would
+        // pass for the wrong reason.
+        publish(first, new Date(1_699_500_000_000L));
+        PublicationIssue second = lifecycle.create(inForce, new Date(1_699_600_000_000L),
+                IntervalBoundSource.MANUAL, user());
+        em.flush();
+
+        for (String code : List.of("INTERVAL_CHAINED", "OVERLAPPING_ISSUE")) {
+            PublishChecklistService.CheckRow row = rowOf(second, code);
+            assertFalse(row.applicable(),
+                    code + " still answers for an in-force series, whose issues do not tile -- so it "
+                            + "reports a permanent warning nothing can clear");
+            assertTrue(row.passed(),
+                    code + " does not apply and yet reports a failure; an inapplicable row must stay "
+                            + "a passing one, because that is what everything reading the rail counts");
+            assertEquals("NOT_APPLICABLE.IN_FORCE_SERIES", row.detailCode(),
+                    code + " does not say WHY it does not apply, so the reader deciding whether to "
+                            + "release is shown a row with no answer and no reason");
+        }
+    }
+
+    /**
+     * And they still answer for a series whose issues DO tile.
+     *
+     * The pair is what stops "does not apply" from being read as "this check was
+     * removed": a tiling series with a published predecessor must be asked both
+     * questions, and INTERVAL_CHAINED must be able to fail.
+     */
+    @Test
+    @Transactional
+    public void theTilingRowsStillAnswerForAnIntervalSeries() {
+        PublicationSeries tiling = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationIssue first = lifecycle.create(tiling, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+        publish(first, new Date(1_699_500_000_000L));
+        PublicationIssue second = lifecycle.create(tiling, new Date(1_699_600_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        for (String code : List.of("INTERVAL_CHAINED", "OVERLAPPING_ISSUE")) {
+            PublishChecklistService.CheckRow row = rowOf(second, code);
+            assertTrue(row.applicable(),
+                    code + " stopped answering for a series whose issues tile, which is the only "
+                            + "kind of series it was ever about");
+            assertNotEquals("NOT_APPLICABLE.IN_FORCE_SERIES", row.detailCode(),
+                    code + " reported a tiling series as in-force");
+        }
+    }
+
+    /**
+     * And a series with NO time relation is not an in-force one.
+     *
+     * Every uploaded, link-backed and one-off series carries a null time relation:
+     * only a series that selects its content by query has one, and S-1 refuses to
+     * save a value on any other kind. So deciding the two tiling rows by "this is
+     * not an interval series" would sweep the whole document estate in and tell an
+     * admin their PDF series carries what is in force -- a reason that is not
+     * merely imprecise but untrue, and the kind a reader cannot argue with because
+     * it names a property of the series.
+     *
+     * The overlap row keeps the answer it already had -- no member list to overlap
+     * with at all. The chain row has none to give such a series either, before or
+     * after a predecessor exists, because its issues carry no lower bound; it steps
+     * aside with the reason that fits the kind.
+     */
+    @Test
+    @Transactional
+    public void aSeriesWithNoTimeRelationIsNotReportedAsInForce() {
+        PublicationSeries uploaded = uploadedSeries();
+        PublicationIssue first = lifecycle.create(uploaded, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        assertEquals("NOT_APPLICABLE.NOT_QUERY_BACKED", rowOf(first, "INTERVAL_CHAINED").detailCode(),
+                "the first issue of an uploaded series was told its chain does not apply because the "
+                        + "series is in force, which is not what the series is");
+        assertEquals("NOT_APPLICABLE.NO_MEMBERSHIP", rowOf(first, "OVERLAPPING_ISSUE").detailCode(),
+                "an uploaded issue resolves no member list, and THAT -- not a time relation it does "
+                        + "not carry -- is why the overlap row cannot answer");
+
+        // And once there is a predecessor the chain row still cannot answer: only
+        // a series whose issues tile is given a lower bound at all -- the shaping
+        // strips one from every other kind, and the requested open below is dropped
+        // on the way in -- so a row that compared it would warn on every issue
+        // after the first, for ever. It steps aside with the reason that fits an
+        // uploaded series, not the in-force one.
+        for (PublicationIssueDesc d : first.getDescs()) {
+            d.setFilePath("publications/test/" + d.getLang() + ".pdf");
+        }
+        publish(first, new Date(1_699_500_000_000L));
+        PublicationIssue second = lifecycle.create(uploaded,
+                new Date(first.getCutoffStampedAt().getTime()), IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        assertNull(second.getIntervalFrom(),
+                "an issue of a series that does not tile was given a lower bound; the resolver would "
+                        + "then ask for messages published inside a window this publication has none of");
+        PublishChecklistService.CheckRow chained = rowOf(second, "INTERVAL_CHAINED");
+        assertFalse(chained.applicable(),
+                "the chain row asked an uploaded issue to open where its predecessor closed, which no "
+                        + "issue of a series that does not tile can ever do");
+        assertTrue(chained.passed(), "a row that does not apply must not stand as a warning");
+        assertEquals("NOT_APPLICABLE.NOT_QUERY_BACKED", chained.detailCode(),
+                "the chain row gave an uploaded series the in-force reason, which is not what it is");
+        assertEquals("NOT_APPLICABLE.NO_MEMBERSHIP", rowOf(second, "OVERLAPPING_ISSUE").detailCode(),
+                "the overlap row changed its reason once the series had two issues");
+    }
+
+    /**
+     * A series whose document is a file somebody uploads.
+     *
+     * It carries none of the query-backed fields -- no time relation, no criteria,
+     * no liveness filter, no report -- because S-1 and S-2 refuse a save that sets
+     * any of them on a series that selects nothing by query. A fixture that left
+     * them set would describe a state the system cannot be in, and would hide
+     * exactly the case this covers.
+     */
+    private PublicationSeries uploadedSeries() {
+        PublicationSeries s = series(null);
+        s.setContentMode(ContentMode.UPLOADED_FILE);
+        s.setTimeRelation(null);
+        s.setCriteria(null);
+        s.setAliveAtCutoff(null);
+        s.setReportId(null);
+        em.merge(s);
+        return s;
+    }
+
+    /** A published predecessor, so a bracket row has a neighbour to answer about. */
+    private void publish(PublicationIssue issue, Date cutoff) {
+        publishService.publish(issue.getId(), new IssuePublishService.PublishRequest(
+                IssuePublishService.PublishRequest.ALL_WARNINGS, null, cutoff));
+        em.flush();
     }
 
     /** One row of the rail, for the tests that ask about a single check. */

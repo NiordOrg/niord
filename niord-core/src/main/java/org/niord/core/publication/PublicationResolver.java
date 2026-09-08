@@ -33,10 +33,13 @@ import org.niord.model.publication.PublicationType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jakarta.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -72,6 +75,9 @@ public class PublicationResolver extends BaseService implements PublicationMembe
 
     /** The wire code. One code for both refusal reasons, deliberately. */
     public static final String UNRESOLVABLE = "PUBLICATION_UNRESOLVABLE";
+
+    @Inject
+    MessageNaming naming;
 
     /**
      * {@inheritDoc}
@@ -276,8 +282,27 @@ public class PublicationResolver extends BaseService implements PublicationMembe
 
     // ------------------------------------------------------- the other direction
 
-    /** One message that carries a citation, named the way a person reads it. */
-    public record CitingMessage(String messageId, String uid) {
+    /**
+     * One message that carries a citation, named the way a person reads it.
+     *
+     * THREE FIELDS BECAUSE THEY ARE THREE DIFFERENT FACTS. {@code uid} is the
+     * identity and is always present. {@code messageId} is the short id -- display
+     * text, not unique, and absent on a message that has not been numbered yet, so
+     * NULL in that case rather than filled with the uid: a uid dressed up as a
+     * short id is a string somebody will try to cite, and a dialog cannot tell it
+     * apart from a real number. {@code title} is what names such a row instead --
+     * an unnumbered draft citing a publication is exactly the row a refusal has to
+     * be able to point at.
+     */
+    public record CitingMessage(String messageId, String uid, String title) {
+
+        /** How this message reads in a sentence: its number, its name, or its key. */
+        public String label() {
+            if (messageId != null && !messageId.isBlank()) {
+                return messageId;
+            }
+            return title != null && !title.isBlank() ? title : uid;
+        }
     }
 
     /**
@@ -315,8 +340,10 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      * publication's citations and refuse a delete that should have gone through.
      *
      * @param limit how many to name; the count is exact regardless
+     * @param lang  the language the named rows are titled in; blank falls through
+     *              to the first description that carries a title
      */
-    public Citations citingMessages(String publicationId, int limit) {
+    public Citations citingMessages(String publicationId, int limit, String lang) {
         if (publicationId == null || publicationId.isBlank()) {
             return new Citations(List.of(), 0);
         }
@@ -337,8 +364,6 @@ public class PublicationResolver extends BaseService implements PublicationMembe
             return new Citations(List.of(), 0);
         }
 
-        // shortId first, uid as the fallback: a message that has not been assigned
-        // its number yet still has to be nameable, or the refusal lists a blank.
         List<Object[]> rows = em.createQuery(
                         "SELECT DISTINCT m.id, m.shortId, m.uid FROM Message m JOIN m.descs d "
                                 + "WHERE d.publication LIKE :p ESCAPE '!' "
@@ -348,12 +373,24 @@ public class PublicationResolver extends BaseService implements PublicationMembe
                 .setMaxResults(Math.max(1, limit))
                 .getResultList();
 
+        // The titles for the whole bounded sample in one query. A message that has
+        // not been assigned its number yet has NO short id, and this is what names
+        // it instead -- previously such a row was named by its uid, so the refusal
+        // listed a key nobody could look up beside real message numbers, and
+        // nothing on the row said which kind of string it was.
+        List<String> uids = new ArrayList<>();
+        for (Object[] row : rows) {
+            uids.add((String) row[2]);
+        }
+        Map<String, MessageNaming.Name> names = naming.namesOf(uids, lang);
+
         List<CitingMessage> sample = new ArrayList<>();
         for (Object[] row : rows) {
             String shortId = (String) row[1];
             String uid = (String) row[2];
             sample.add(new CitingMessage(
-                    shortId == null || shortId.isBlank() ? uid : shortId, uid));
+                    shortId == null || shortId.isBlank() ? null : shortId, uid,
+                    names.getOrDefault(uid, MessageNaming.Name.NONE).title()));
         }
         return new Citations(List.copyOf(sample), total);
     }

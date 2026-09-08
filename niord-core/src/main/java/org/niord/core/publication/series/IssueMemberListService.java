@@ -21,6 +21,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import org.niord.core.publication.MessageNaming;
 import org.niord.core.publication.series.resolve.IssueOrdering;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueMemberVo;
@@ -82,6 +83,9 @@ public class IssueMemberListService {
     @Inject
     IssueResolutionService resolutions;
 
+    @Inject
+    MessageNaming naming;
+
     /**
      * Every curation decision that STANDS on this issue, include and exclude alike.
      *
@@ -101,10 +105,15 @@ public class IssueMemberListService {
      * {@link IssueResolutionService.IssueResolution} would be tidy and would make
      * this endpoint pay a candidate narrowing -- about a second on an in-force
      * series -- to list a handful of rows nobody resolved anything for.
+     *
+     * @param lang the language the rows are named in. An EXCLUDED message never
+     *             appears in the member list, so this list is the only place it is
+     *             named at all, and a row identified by a uid is not a decision
+     *             anybody can check or withdraw
      */
     @Transactional
-    public List<IssueOverrideVo> standingDecisions(PublicationIssue issue) {
-        return decisionsOf(resolutions.overridesOf(issue).values());
+    public List<IssueOverrideVo> standingDecisions(PublicationIssue issue, String lang) {
+        return decisionsOf(resolutions.overridesOf(issue).values(), lang);
     }
 
     /**
@@ -115,17 +124,41 @@ public class IssueMemberListService {
      * agreeing: a decision taken between the two queries would otherwise show in
      * one panel and not in the other.
      */
-    public List<IssueOverrideVo> standingDecisions(IssueResolutionService.IssueResolution pre) {
-        return decisionsOf(pre.overrides().values());
+    public List<IssueOverrideVo> standingDecisions(IssueResolutionService.IssueResolution pre,
+                                                   String lang) {
+        return decisionsOf(pre.overrides().values(), lang);
     }
 
-    /** One rendering of the decisions, whichever read produced them. */
-    private static List<IssueOverrideVo> decisionsOf(Collection<IssueOverride> overrides) {
+    /**
+     * One rendering of the decisions, whichever read produced them.
+     *
+     * The names come out of ONE query over the whole list, the same way the member
+     * list fills its titles. A decision list is short, so a lookup per row would
+     * be affordable and would still be wrong: it would be a second definition of
+     * which language a message is named in, and the exclusions panel would name a
+     * message differently from the member row three lines above it.
+     */
+    private List<IssueOverrideVo> decisionsOf(Collection<IssueOverride> overrides, String lang) {
         List<IssueOverrideVo> out = new ArrayList<>();
+        Set<String> uids = new LinkedHashSet<>();
+        for (IssueOverride override : overrides) {
+            if (override.getMessageUid() != null) {
+                uids.add(override.getMessageUid());
+            }
+        }
+        Map<String, MessageNaming.Name> names = naming.namesOf(uids, lang);
+
         for (IssueOverride override : overrides) {
             IssueOverrideVo vo = new IssueOverrideVo();
             fillCuration(vo, override);
             vo.setMessageUid(override.getMessageUid());
+            // NONE where the message is gone: the decision still stands and still
+            // has to be listed, and a row that vanished with its message would be
+            // an exclusion nobody could withdraw.
+            MessageNaming.Name name =
+                    names.getOrDefault(override.getMessageUid(), MessageNaming.Name.NONE);
+            vo.setMessageId(name.messageId());
+            vo.setTitle(name.title());
             out.add(vo);
         }
         return out;
@@ -408,49 +441,14 @@ public class IssueMemberListService {
     /**
      * Every member's title, in ONE query, resolved to one language per message.
      *
-     * The same chunked projection the live facts use, and for the same reason: a
-     * member list runs to hundreds of rows, and a title read through the Message
-     * entity would drag that message's parts, areas and geometry along behind it.
-     *
-     * The language rule is the one this row is read under. The requested language
-     * wins, compared without case so a caller saying "DA" is not answered in
-     * English; failing that, the first description that carries a title, which is
-     * what makes a Danish-only message name itself on an English screen. Rows
-     * arrive in description-id order so "the first available" is the same
-     * description on every call rather than whatever the database returned first.
-     *
-     * A message with no titled description at all is absent from the map, which
-     * is a null title on the row. Blank is treated as absent throughout: a row
-     * showing an empty name reads as a message with no subject, and the other
-     * language is the better answer.
+     * Delegated rather than implemented here, and that is the point of the
+     * delegation: the member list, the exclusions panel, the omissions panel and
+     * the delete refusal all name the same messages, and four copies of the
+     * language rule is four screens that can disagree about what a message is
+     * called. {@link MessageNaming} is the one rule.
      */
     private Map<String, String> titlesOf(Collection<String> uids, String lang) {
-        boolean wanted = lang != null && !lang.isBlank();
-        List<String> all = new ArrayList<>(uids);
-        Map<String, String> out = new LinkedHashMap<>();
-        Set<String> exact = new LinkedHashSet<>();
-        for (int from = 0; from < all.size(); from += LOOKUP_CHUNK) {
-            List<String> chunk = all.subList(from, Math.min(from + LOOKUP_CHUNK, all.size()));
-            for (Object[] row : em.createQuery(
-                            "SELECT m.uid, d.lang, d.title FROM Message m JOIN m.descs d "
-                                    + "WHERE m.uid IN (:uids) ORDER BY d.id", Object[].class)
-                    .setParameter("uids", chunk)
-                    .getResultList()) {
-                String uid = (String) row[0];
-                String descLang = (String) row[1];
-                String title = (String) row[2];
-                if (title == null || title.isBlank() || exact.contains(uid)) {
-                    continue;
-                }
-                if (wanted && lang.equalsIgnoreCase(descLang)) {
-                    out.put(uid, title);
-                    exact.add(uid);
-                } else {
-                    out.putIfAbsent(uid, title);
-                }
-            }
-        }
-        return out;
+        return naming.titlesOf(uids, lang);
     }
 
     /**

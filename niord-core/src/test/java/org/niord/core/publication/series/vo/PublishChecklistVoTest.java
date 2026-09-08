@@ -167,17 +167,25 @@ public class PublishChecklistVoTest {
     public void theRailSerialisesExactlyAsTheHandBuiltMapDid() throws Exception {
         List<PublishChecklistService.CheckRow> rows = List.of(
                 new PublishChecklistService.CheckRow("ISSUE_OPEN",
-                        PublishChecklistService.Severity.BLOCK, true, false, null, "status is OPEN"),
+                        PublishChecklistService.Severity.BLOCK, true, false, null,
+                        new PublishChecklistService.Detail("ISSUE_OPEN.status",
+                                new LinkedHashMap<>(Map.of("status", "OPEN")), "status is OPEN")),
                 new PublishChecklistService.CheckRow("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF",
                         PublishChecklistService.Severity.WARN, false, true, true,
-                        "CANCELLED_BUT_DATE_ALIVE", "2 member(s) cancelled"),
+                        "CANCELLED_BUT_DATE_ALIVE",
+                        new PublishChecklistService.Detail("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF.count",
+                                new LinkedHashMap<>(Map.of("count", 2)), "2 member(s) cancelled")),
                 new PublishChecklistService.CheckRow("MEMBER_LIMIT",
                         PublishChecklistService.Severity.BLOCK, true, false, false, null,
-                        "not applicable: the series resolves no member list"));
+                        new PublishChecklistService.Detail("NOT_APPLICABLE.NO_MEMBERSHIP", Map.of(),
+                                "not applicable: the series resolves no member list")));
         PublishChecklistService.Checklist checklist = new PublishChecklistService.Checklist(
                 rows, false, List.of("ISSUE_OPEN"), null);
 
-        // The endpoint's old body, verbatim.
+        // The endpoint's old body, verbatim -- plus the two keys the row has since
+        // gained, APPENDED after `detail` for the same reason `memberCount` is
+        // appended to the envelope: everything the hand-built map emitted keeps its
+        // old position, and anything new comes after it.
         List<Map<String, Object>> mapped = new ArrayList<>();
         for (PublishChecklistService.CheckRow r : rows) {
             Map<String, Object> row = new LinkedHashMap<>();
@@ -188,6 +196,8 @@ public class PublishChecklistVoTest {
             row.put("acknowledgeable", r.acknowledgeable());
             row.put("acknowledgeCode", r.acknowledgeCode());
             row.put("detail", r.detail());
+            row.put("detailCode", r.detailCode());
+            row.put("detailParams", r.detailParams());
             mapped.add(row);
         }
         Map<String, Object> old = new LinkedHashMap<>();
@@ -212,6 +222,51 @@ public class PublishChecklistVoTest {
                         + "a refusal for a code nobody could tick");
         assertTrue(after.contains("\"acknowledgeCode\":null"),
                 "the rail row dropped its null acknowledgeCode: " + after);
+    }
+
+    /**
+     * The row's detail travels coded as well as in English.
+     *
+     * `detail` is a sentence the SERVER composed, in English, and a Danish admin
+     * reading the release rail would get exactly one English line in the middle of
+     * a translated screen. So the same statement also ships as a key and its
+     * values, and the client renders those. Both halves stay: the publish gate
+     * splices `detail` into its refusal sentences, and an API caller has no
+     * dictionary to resolve a key against.
+     *
+     * The key is per SENTENCE VARIANT rather than per row, which is the part that
+     * is easy to get wrong. MEMBER_LIMIT says "214 of 1000" or says the question
+     * does not arise, and "the MEMBER_LIMIT row" is not a sentence anybody can
+     * translate -- so an inapplicable row carries NOT_APPLICABLE.<REASON> and not
+     * the row's own name.
+     */
+    @Test
+    public void everyRowCarriesACodeAndTheValuesItsSentenceUses() {
+        PublishCheckRowVo counted = PublishCheckRowVo.of(new PublishChecklistService.CheckRow(
+                "MEMBER_LIMIT", PublishChecklistService.Severity.BLOCK, true, false, null,
+                new PublishChecklistService.Detail("MEMBER_LIMIT.of",
+                        new LinkedHashMap<>(Map.of("count", 214, "limit", 1000)), "214 of 1000")));
+
+        assertEquals("MEMBER_LIMIT.of", counted.getDetailCode(),
+                "the row's sentence has no key, so the only thing a client can render is the "
+                        + "server's English");
+        assertEquals(214, counted.getDetailParams().get("count"));
+        assertEquals(1000, counted.getDetailParams().get("limit"));
+        assertEquals("214 of 1000", counted.getDetail(),
+                "the English sentence was dropped; the publish gate composes its refusals out of it");
+
+        PublishCheckRowVo inapplicable = PublishCheckRowVo.of(new PublishChecklistService.CheckRow(
+                "MEMBER_LIMIT", PublishChecklistService.Severity.BLOCK, true, false, false, null,
+                new PublishChecklistService.Detail("NOT_APPLICABLE.NO_MEMBERSHIP", Map.of(),
+                        "not applicable: the series resolves no member list")));
+        assertEquals("NOT_APPLICABLE.NO_MEMBERSHIP", inapplicable.getDetailCode(),
+                "an inapplicable row carried its ROW code where the reason belongs; the reason is "
+                        + "the half a reader needs and the half that has to be translated");
+        assertTrue(inapplicable.getDetailParams().isEmpty(),
+                "a sentence that takes no values must still carry an empty params object, so a "
+                        + "client interpolates unconditionally instead of guarding every row");
+        assertNotNull(inapplicable.getDetailParams(),
+                "detailParams went null; a client reading it as undefined renders nothing at all");
     }
 
     /** The property names a bean exposes, read the way Jackson reads them. */

@@ -387,6 +387,9 @@ public class IssueDeleteTest {
         assertEquals(citing.getShortId(), e.citingMessages().get(0).messageId(),
                 "the citing message was not named by the id a person reads");
         assertEquals(citing.getUid(), e.citingMessages().get(0).uid());
+        assertEquals("A notice", e.citingMessages().get(0).title(),
+                "the citing message carries no title, so a dialog that shows more than a bare "
+                        + "number has nothing to render");
         assertTrue(e.getMessage().contains(citing.getShortId()),
                 "the sentence should name the message too: " + e.getMessage());
 
@@ -453,12 +456,17 @@ public class IssueDeleteTest {
      * into its own column, so a lookup reading only the public one would let a
      * cited issue be deleted and leave the dangling reference in the half of the
      * estate the editors themselves read. And a message that has not been
-     * assigned its number has no short id at all -- naming it by nothing would
-     * put a blank row in the dialog, which is worse than not listing it.
+     * assigned its number has no short id at all -- so it carries a NULL
+     * messageId and is named by its TITLE instead.
+     *
+     * The uid used to be put in the messageId field, and that is the failure this
+     * pins: a dialog cannot tell a uid apart from a real message number, so it
+     * renders a link to a number nobody can look up, and the one row that most
+     * needs explaining is the one that reads as ordinary.
      */
     @Test
     @Transactional
-    public void anInternalCitationBlocksItAndAnUnnumberedMessageIsNamedByItsUid() {
+    public void anInternalCitationBlocksItAndAnUnnumberedMessageIsNamedByItsTitle() {
         PublicationSeries s = series();
         User actor = user();
         PublicationIssue issue = lifecycle.create(s, new Date(OPENS), IntervalBoundSource.STAMPED, actor);
@@ -476,9 +484,62 @@ public class IssueDeleteTest {
                         () -> deletion.delete(retired, actor, "housekeeping"));
         assertEquals(1, e.citingCount(), "an internal citation did not count");
         assertEquals(1, e.citingMessages().size());
-        assertEquals(draft.getUid(), e.citingMessages().get(0).messageId(),
-                "a message with no short id must still be named by something a person can look up");
+        assertNull(e.citingMessages().get(0).messageId(),
+                "an unnumbered message was given a messageId; whatever string sits there will be "
+                        + "rendered as the number an editor cites");
         assertEquals(draft.getUid(), e.citingMessages().get(0).uid());
+        assertEquals("A notice awaiting its number", e.citingMessages().get(0).title(),
+                "the unnumbered row has neither a number nor a title, so nothing on it names the "
+                        + "message blocking the deletion");
+        assertTrue(e.getMessage().contains("A notice awaiting its number"),
+                "the sentence named the message by nothing a reader recognises: " + e.getMessage());
+    }
+
+    /**
+     * The refusal names the citing messages in the language the caller asked for.
+     *
+     * A Danish admin reading an English title in a Danish dialog is being shown
+     * the same message under a different name than every other screen gives it,
+     * and the fallback matters just as much: a message titled only in Danish must
+     * still name itself to an English caller, because a blank row is worse than
+     * one in the wrong language.
+     */
+    @Test
+    @Transactional
+    public void theCitationRefusalTitlesItsMessagesInTheRequestedLanguage() {
+        PublicationSeries s = series();
+        User actor = user();
+        PublicationIssue issue = lifecycle.create(s, new Date(OPENS), IntervalBoundSource.STAMPED, actor);
+        em.flush();
+        PublicationIssue published = publish(issue, CUTOFF);
+
+        Message citing = message(TestIds.id("NM-LANG-"));
+        citing.createDesc("en").setTitle("Buoy off Hesselo withdrawn");
+        em.merge(citing);
+        cite(citing, published.getPublicId());
+
+        PublicationIssue retired = lifecycle.retire(published, actor, "withdrawn after an errata");
+        em.flush();
+
+        IssueDeleteService.IssueCitedException english =
+                assertThrows(IssueDeleteService.IssueCitedException.class,
+                        () -> deletion.delete(retired, actor, "housekeeping", "en"));
+        assertEquals("Buoy off Hesselo withdrawn", english.citingMessages().get(0).title(),
+                "the refusal ignored the language it was asked for");
+
+        IssueDeleteService.IssueCitedException danish =
+                assertThrows(IssueDeleteService.IssueCitedException.class,
+                        () -> deletion.delete(retired, actor, "housekeeping", "da"));
+        assertEquals("A notice", danish.citingMessages().get(0).title(),
+                "the refusal answered the same message in two languages the same way");
+
+        // An unknown language falls through to the first description carrying a
+        // title rather than leaving the row unnamed.
+        IssueDeleteService.IssueCitedException unknown =
+                assertThrows(IssueDeleteService.IssueCitedException.class,
+                        () -> deletion.delete(retired, actor, "housekeeping", "de"));
+        assertNotNull(unknown.citingMessages().get(0).title(),
+                "a language the message is not written in left the row with no name at all");
     }
 
     /**

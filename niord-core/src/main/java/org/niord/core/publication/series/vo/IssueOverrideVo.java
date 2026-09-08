@@ -36,11 +36,51 @@ public class IssueOverrideVo extends MemberCurationVo {
 
     private String messageUid;
 
+    /**
+     * The short id an editor reads and cites -- "NM-815-26" -- or null.
+     *
+     * DISPLAY TEXT, never a key: it is not declared unique, nothing stops it
+     * being reused, and a message that has not been numbered yet has none. Null
+     * in that case rather than falling back to the uid, because a uid dressed up
+     * as a short id is a string somebody will try to cite.
+     */
+    private String messageId;
+
+    /**
+     * The message's live title, in the language the list was asked for.
+     *
+     * The half that makes an EXCLUSION legible at all. An excluded message has no
+     * row in the member list -- that is what excluding it means -- so this list is
+     * the only place it is named, and "uid 7f3a… is excluded" is not a decision
+     * anybody can check. Never frozen: it says what the message is called today,
+     * so it cannot drift away from every other screen that names it.
+     *
+     * Null when the message carries no titled description, and null when it is
+     * gone altogether.
+     */
+    private String title;
+
     public String getMessageUid() {
         return messageUid;
     }
 
     public void setMessageUid(String messageUid) {
         this.messageUid = messageUid;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 }

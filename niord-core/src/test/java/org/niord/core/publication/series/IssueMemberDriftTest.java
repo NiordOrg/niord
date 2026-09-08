@@ -461,7 +461,7 @@ public class IssueMemberDriftTest {
         assertFalse(memberUids.contains(excluded.getUid()),
                 "an excluded message appeared in the member list");
 
-        var decisions = memberList.standingDecisions(i);
+        var decisions = memberList.standingDecisions(i, null);
         assertEquals(2, decisions.size());
         var exclusion = decisions.stream()
                 .filter(d -> excluded.getUid().equals(d.getMessageUid()))

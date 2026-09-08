@@ -129,7 +129,8 @@ public class PublicationExceptionMapperContractTest {
                 new IssueRenderService.RenderFailedException("…", new RuntimeException()),
                 new MemberResolutionService.UnresolvableOperandException("…"),
                 new IssueDeleteService.IssueCitedException("…",
-                        List.of(new PublicationResolver.CitingMessage("NM-1-26", "uid-1")), 1),
+                        List.of(new PublicationResolver.CitingMessage("NM-1-26", "uid-1", "A notice")),
+                        1),
                 new IssueNaming.UnknownTokenException("yeer"),
                 new CriteriaResolver.EmptyOperandException(CriterionKind.AREA),
                 new CriteriaParseException("…", new RuntimeException()));
@@ -167,8 +168,10 @@ public class PublicationExceptionMapperContractTest {
     public void aCitationRefusalNamesTheMessagesAndCountsThemAll() {
         Response response = new PublicationExceptionMapper().toResponse(
                 new IssueDeleteService.IssueCitedException("cited by 37 messages",
-                        List.of(new PublicationResolver.CitingMessage("NM-1-26", "uid-1"),
-                                new PublicationResolver.CitingMessage("uid-2", "uid-2")),
+                        List.of(new PublicationResolver.CitingMessage("NM-1-26", "uid-1",
+                                        "Buoy off Hesselo withdrawn"),
+                                new PublicationResolver.CitingMessage(null, "uid-2",
+                                        "Firing exercise in the Kattegat")),
                         37));
 
         assertEquals(409, response.getStatus(),
@@ -186,10 +189,22 @@ public class PublicationExceptionMapperContractTest {
         assertEquals(2, messages.size());
         assertEquals("NM-1-26", messages.get(0).get("messageId"));
         assertEquals("uid-1", messages.get(0).get("uid"));
-        // A message with no number yet is named by its uid, which is still a
-        // thing a person can look up -- a blank row would not be.
-        assertEquals("uid-2", messages.get(1).get("messageId"));
+        assertEquals("Buoy off Hesselo withdrawn", messages.get(0).get("title"),
+                "the row carries no title, so a client that cannot show a bare number has nothing "
+                        + "else to render");
+
+        // A message with no number yet carries a NULL messageId and is named by its
+        // title. The uid used to be put in that field, which a dialog cannot tell
+        // apart from a real message number -- so it renders a link to a number
+        // nobody can look up, and the one row that most needs explaining is the one
+        // that reads as ordinary.
+        assertNull(messages.get(1).get("messageId"),
+                "an unnumbered message was given a messageId; whatever string is there will be "
+                        + "rendered as the number an editor cites");
         assertEquals("uid-2", messages.get(1).get("uid"));
+        assertEquals("Firing exercise in the Kattegat", messages.get(1).get("title"),
+                "the unnumbered row has neither a number nor a title, so nothing on it names the "
+                        + "message blocking the deletion");
 
         assertEquals(37L, body.get("citingCount"),
                 "the count must be the true total rather than the length of the bounded list, or "

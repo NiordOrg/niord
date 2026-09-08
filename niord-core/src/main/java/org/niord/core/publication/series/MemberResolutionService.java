@@ -36,6 +36,7 @@ import org.niord.core.chart.ChartService;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageSeries;
+import org.niord.core.publication.MessageNaming;
 import org.niord.core.publication.series.resolve.CriteriaMissCode;
 import org.niord.core.publication.series.resolve.CriteriaMissVo;
 import org.niord.core.publication.series.resolve.Interval;
@@ -139,6 +140,9 @@ public class MemberResolutionService extends BaseService {
 
     @Inject
     ChartService chartService;
+
+    @Inject
+    MessageNaming naming;
 
     /** What a resolution produced: every decision, the members, and the diagnostics. */
     public record Resolution(
@@ -341,20 +345,30 @@ public class MemberResolutionService extends BaseService {
      * A row whose message has no short id -- a draft, an import that never got one
      * -- keeps a null there. The uid is the identity and is always present.
      */
-    public IssueOmissionsVo omissions(List<CriteriaMissVo> misses) {
+    public IssueOmissionsVo omissions(List<CriteriaMissVo> misses, String lang) {
         IssueOmissionsVo vo = IssueOmissionsVo.of(misses);
-        vo.setMisses(withMessageIds(vo.getMisses()));
+        vo.setMisses(withMessageIdsAndTitles(vo.getMisses(), lang));
         return vo;
     }
 
     /**
-     * The same rows, carrying the short id a reader recognises. One query.
+     * The same rows, carrying the names a reader recognises. One query.
+     *
+     * The title travels with the short id rather than after it, and that pairing
+     * is the point: a message the criteria dropped may have no short id at all --
+     * a draft, or an import that never got numbered -- and a row identified by a
+     * uid alone is not something a curator can decide anything about. The short id
+     * where there is one, the title otherwise, and both together where the screen
+     * has room.
      *
      * Public because the workbench and the probe are not the only two callers it
      * could ever have, and a second implementation would be the one that reverts
      * to a lookup per row.
+     *
+     * @param lang the language to prefer for the titles; blank falls through to
+     *             the first description that carries one
      */
-    public List<CriteriaMissVo> withMessageIds(List<CriteriaMissVo> sample) {
+    public List<CriteriaMissVo> withMessageIdsAndTitles(List<CriteriaMissVo> sample, String lang) {
         if (sample == null || sample.isEmpty()) {
             return sample;
         }
@@ -368,18 +382,13 @@ public class MemberResolutionService extends BaseService {
             return sample;
         }
 
-        Map<String, String> shortIds = new HashMap<>();
-        for (Tuple row : em.createQuery(
-                        "SELECT m.uid AS uid, m.shortId AS shortId FROM Message m WHERE m.uid IN :uids",
-                        Tuple.class)
-                .setParameter("uids", uids)
-                .getResultList()) {
-            shortIds.put(row.get("uid", String.class), row.get("shortId", String.class));
-        }
+        Map<String, MessageNaming.Name> names = naming.namesOf(uids, lang);
 
         List<CriteriaMissVo> out = new ArrayList<>(sample.size());
         for (CriteriaMissVo miss : sample) {
-            out.add(miss.withMessageId(shortIds.get(miss.messageUid())));
+            MessageNaming.Name name =
+                    names.getOrDefault(miss.messageUid(), MessageNaming.Name.NONE);
+            out.add(miss.withName(name.messageId(), name.title()));
         }
         return out;
     }

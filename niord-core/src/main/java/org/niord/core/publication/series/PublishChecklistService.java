@@ -20,16 +20,21 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.niord.core.publication.series.resolve.ResolutionWarningCode;
+import org.niord.core.publication.series.resolve.ResolutionWarningVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.service.BaseService;
 
-import java.util.ArrayList;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -75,14 +80,109 @@ public class PublishChecklistService extends BaseService {
      * pass, so nothing it reads changes. The one inapplicable row that can still
      * report a failure -- MEMBERS_RESOLVED, saying the resolver did not run -- is
      * a WARN, described rather than enforced.
+     *
+     * `detail` is the English sentence and `detailCode` + `detailParams` are the
+     * same statement as a key and its values. All three ship, and the reason is
+     * that they have different readers. A screen has to render the sentence in
+     * the reader's language, so it needs a key it can translate and the numbers
+     * to interpolate; an API caller and a log have nobody to translate for them,
+     * and the publish gate composes its refusal sentences out of `detail`
+     * directly. A row is one statement, and the code is per SENTENCE VARIANT
+     * rather than per row -- "the MEMBER_LIMIT row" says several different things
+     * depending on what it found, and none of them is translatable as a row name.
      */
     public record CheckRow(String code, Severity severity, boolean passed, boolean applicable,
-                           boolean acknowledgeable, String acknowledgeCode, String detail) {
+                           boolean acknowledgeable, String acknowledgeCode, String detail,
+                           String detailCode, Map<String, Object> detailParams) {
 
         /** A row that applies: the default, and the only shape most callers want. */
         public CheckRow(String code, Severity severity, boolean passed,
-                        boolean acknowledgeable, String acknowledgeCode, String detail) {
+                        boolean acknowledgeable, String acknowledgeCode, Detail detail) {
             this(code, severity, passed, true, acknowledgeable, acknowledgeCode, detail);
+        }
+
+        /** The same, saying for itself whether it applies. */
+        public CheckRow(String code, Severity severity, boolean passed, boolean applicable,
+                        boolean acknowledgeable, String acknowledgeCode, Detail detail) {
+            this(code, severity, passed, applicable, acknowledgeable, acknowledgeCode,
+                    detail.text(), detail.code(), detail.params());
+        }
+    }
+
+    /**
+     * What a row says about itself, in the two forms it has to say it in.
+     *
+     * ONE EXPRESSION HOLDS ALL THREE PARTS -- the code, the values, and the English
+     * -- because they are one statement and any arrangement that separates them
+     * lets them drift. A sentence reworded without its params is a translation
+     * that renders the wrong number; a code added without its sentence is a row
+     * that reads as blank to every API caller.
+     *
+     * {@code code} is the stable key a client translates: one per SENTENCE
+     * VARIANT rather than one per row, because a row says several different
+     * things depending on what it found and "the MEMBER_LIMIT row" is not a
+     * sentence anybody can translate. {@code params} carries the values the
+     * sentence interpolates, typed and unformatted -- an instant as epoch
+     * milliseconds and its zone beside it, never a rendered date, so the client
+     * formats it the way it formats every other instant on the screen.
+     * {@code text} is the English, kept for the API reader, for the log, and for
+     * the refusal sentences the publish gate composes out of it.
+     */
+    public record Detail(String code, Map<String, Object> params, String text) {
+    }
+
+    /**
+     * Why a row does not apply, and how that reads.
+     *
+     * An enum rather than free text so the reason is a key: an inapplicable row
+     * is still rendered, and "not applicable" alone tells the person deciding
+     * whether to release nothing at all. The phrase is here beside the constant
+     * for the same reason {@link Detail} keeps its three parts together.
+     */
+    public enum Inapplicable {
+
+        /** The series selects no content by query, so it has no period to require. */
+        NOT_QUERY_BACKED("the series does not select its content by query"),
+
+        /** First issue of the series: there is no chain to be in and no floor to clear. */
+        NO_PREDECESSOR("no predecessor"),
+
+        /** Last issue of the series: no ceiling to stay under. */
+        NO_SUCCESSOR("no successor"),
+
+        /** The bytes this row would demand are what publishing itself writes. */
+        PUBLISH_GENERATES_FILE("publish generates the file"),
+
+        /** Neither bytes nor a link: the series is not a document at all. */
+        NO_DOCUMENT("the series carries no document"),
+
+        /** Nothing is rendered for this series, so no report has to be configured. */
+        NOTHING_RENDERED("nothing is rendered for this series"),
+
+        /** Nothing may cite this series, so it needs no reference format. */
+        NOT_CITABLE("series is not citable"),
+
+        /** The caller waived the future check, which means it was not made. */
+        FUTURE_ALLOWED("future cut-offs explicitly allowed"),
+
+        /** No query, no curation: there is no member list to be asked about. */
+        NO_MEMBERSHIP("the series resolves no member list"),
+
+        /**
+         * The series' issues do not tile, so a row that presumes they do is
+         * asking a question this series cannot be in the wrong about.
+         */
+        IN_FORCE_SERIES("in-force series");
+
+        private final String phrase;
+
+        Inapplicable(String phrase) {
+            this.phrase = phrase;
+        }
+
+        /** How the reason reads to the admin deciding whether to release. */
+        public String phrase() {
+            return phrase;
         }
     }
 
@@ -138,9 +238,26 @@ public class PublishChecklistService extends BaseService {
         if (instant == null) {
             return "not set";
         }
-        ZoneId zone = series == null ? ZoneId.of("UTC") : series.cutoffZone();
+        ZoneId zone = zoneOf(series);
         return ZonedDateTime.ofInstant(instant.toInstant(), zone).format(CHECKLIST_STAMP)
                 + " (" + zone.getId() + ")";
+    }
+
+    /** The zone a cut-off of this series means, which is its domain's and nothing else. */
+    private static ZoneId zoneOf(PublicationSeries series) {
+        return series == null ? ZoneId.of("UTC") : series.cutoffZone();
+    }
+
+    /**
+     * The same instant for a client that renders it itself.
+     *
+     * Epoch milliseconds and the zone id, never the formatted string: the client
+     * shows every other instant on the screen in the session's own format, and a
+     * date pre-rendered by the server is the one date on the page that looks
+     * foreign. Null stays null -- "not set" is a sentence, not a date.
+     */
+    private static Long epoch(Date instant) {
+        return instant == null ? null : instant.getTime();
     }
 
     /**
@@ -177,31 +294,74 @@ public class PublishChecklistService extends BaseService {
         boolean queryBacked = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY;
         boolean interval = series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
 
+        // An IN-FORCE series: one whose issues answer "what is in force at this
+        // instant" instead of each covering a period of its own. Consecutive
+        // editions therefore share every message that stayed in force across both
+        // of them, and such an issue has no lower bound to chain off -- creating one
+        // with an intervalFrom is refused outright.
+        //
+        // Two rows presume the opposite, that the issues TILE -- each opening where
+        // the one before it closed, covering a span nothing else covers -- and on an
+        // in-force series both were a permanent, uncleanable warning: INTERVAL_CHAINED
+        // failing against an intervalFrom an in-force issue does not have, and
+        // OVERLAPPING_ISSUE failing against an overlap that is the entire point of
+        // the series.
+        //
+        // Asked as IN_FORCE_AT_CUTOFF rather than as "not PUBLISHED_IN_INTERVAL",
+        // and the difference is the whole estate of uploaded, link-backed and one-off
+        // series: those carry NO time relation at all -- S-1 requires it null,
+        // because only a query-backed series has one -- so a negated test would
+        // sweep every one of them in and tell the admin their PDF series is
+        // "in-force". It is not; it is neither.
+        //
+        // Their issues do not tile either, though: the shaping gives a lower bound
+        // to a PUBLISHED_IN_INTERVAL issue only, so INTERVAL_CHAINED has nothing to
+        // compare on them and would warn on every issue after the first, for ever.
+        // It is therefore not applicable on every series that does not tile -- with
+        // the reason that fits the kind. OVERLAPPING_ISSUE is different: it hangs
+        // off the member list, and a series without one already says so.
+        boolean inForce = series.getTimeRelation() == TimeRelation.IN_FORCE_AT_CUTOFF;
+
         // 1
         rows.add(row("ISSUE_OPEN", Severity.BLOCK,
                 issue.getStatus() == IssueStatus.OPEN
                         && (series.getStatus() == SeriesStatus.ACTIVE || series.getStatus() == SeriesStatus.RETIRED),
-                "status is " + issue.getStatus() + ", series is " + series.getStatus()));
+                detail("ISSUE_OPEN.status",
+                        "status is " + issue.getStatus() + ", series is " + series.getStatus(),
+                        "status", issue.getStatus() == null ? null : issue.getStatus().name(),
+                        "seriesStatus", series.getStatus() == null ? null : series.getStatus().name())));
 
         // 2. The interval is a property of membership: a series that selects
         // nothing by query has no period for the rail to require.
         rows.add(queryBacked
                 ? row("INTERVAL_PRESENT", Severity.BLOCK,
                         (interval) == (issue.getIntervalFrom() != null),
-                        "intervalFrom " + (issue.getIntervalFrom() == null ? "absent" : "present")
-                                + " under " + series.getTimeRelation())
-                : notApplicable("INTERVAL_PRESENT", Severity.BLOCK,
-                        "the series does not select its content by query"));
+                        detail("INTERVAL_PRESENT.under",
+                                "intervalFrom " + (issue.getIntervalFrom() == null ? "absent" : "present")
+                                        + " under " + series.getTimeRelation(),
+                                "present", issue.getIntervalFrom() != null,
+                                "timeRelation", series.getTimeRelation() == null
+                                        ? null : series.getTimeRelation().name()))
+                : notApplicable("INTERVAL_PRESENT", Severity.BLOCK, Inapplicable.NOT_QUERY_BACKED));
 
         // 3. A warning, not a block: a deliberate gap is legitimate. And there is
-        // no chain to be in when this is the first issue of the series.
+        // no chain to be in when this is the first issue of the series -- nor when
+        // the series' issues do not tile, whether because they are in force or
+        // because the series selects nothing by query.
         PublicationIssue predecessor = neighbour(issue, series, proposedCutoff, true);
-        rows.add(predecessor == null
-                ? notApplicable("INTERVAL_CHAINED", Severity.WARN, "no predecessor")
-                : row("INTERVAL_CHAINED", Severity.WARN,
-                        issue.getIntervalFrom() != null && predecessor.getCutoffStampedAt() != null
-                                && issue.getIntervalFrom().equals(predecessor.getCutoffStampedAt()),
-                        "predecessor stamped " + at(predecessor.getCutoffStampedAt(), series)));
+        rows.add(!interval
+                ? notApplicable("INTERVAL_CHAINED", Severity.WARN,
+                        inForce ? Inapplicable.IN_FORCE_SERIES : Inapplicable.NOT_QUERY_BACKED)
+                : predecessor == null
+                        ? notApplicable("INTERVAL_CHAINED", Severity.WARN, Inapplicable.NO_PREDECESSOR)
+                        : row("INTERVAL_CHAINED", Severity.WARN,
+                                issue.getIntervalFrom() != null && predecessor.getCutoffStampedAt() != null
+                                        && issue.getIntervalFrom().equals(predecessor.getCutoffStampedAt()),
+                                detail("INTERVAL_CHAINED.gap",
+                                        "predecessor stamped "
+                                                + at(predecessor.getCutoffStampedAt(), series),
+                                        "at", epoch(predecessor.getCutoffStampedAt()),
+                                        "zone", zoneOf(series).getId())));
 
         // 4. ONLY where bytes must already exist.
         //
@@ -221,23 +381,25 @@ public class PublishChecklistService extends BaseService {
             rows.add(row("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK,
                     issue.getDescs().stream()
                             .allMatch(d -> d.getFilePath() != null && !d.getFilePath().isBlank()),
-                    "uploaded content must already have bytes"));
+                    detail("FILE_PRESENT_PER_LANGUAGE.bytes",
+                            "uploaded content must already have bytes")));
         } else if (linkRequired) {
             rows.add(row("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK,
                     issue.getDescs().stream()
                             .allMatch(d -> d.getLink() != null && !d.getLink().isBlank()),
-                    "link-backed content must already have a link"));
+                    detail("FILE_PRESENT_PER_LANGUAGE.link",
+                            "link-backed content must already have a link")));
         } else {
             rows.add(notApplicable("FILE_PRESENT_PER_LANGUAGE", Severity.BLOCK,
-                    queryBacked ? "publish generates the file" : "the series carries no document"));
+                    queryBacked ? Inapplicable.PUBLISH_GENERATES_FILE : Inapplicable.NO_DOCUMENT));
         }
 
         // 5
         rows.add(queryBacked
                 ? row("REPORT_CONFIGURED", Severity.BLOCK, series.getReportId() != null,
-                        "reportId " + series.getReportId())
-                : notApplicable("REPORT_CONFIGURED", Severity.BLOCK,
-                        "nothing is rendered for this series"));
+                        detail("REPORT_CONFIGURED.reportId", "reportId " + series.getReportId(),
+                                "reportId", series.getReportId()))
+                : notApplicable("REPORT_CONFIGURED", Severity.BLOCK, Inapplicable.NOTHING_RENDERED));
 
         // 6
         boolean citable = series.getMessagePublication() != null
@@ -247,31 +409,43 @@ public class PublishChecklistService extends BaseService {
                         issue.getSeries().getDescs().stream()
                                 .allMatch(d -> d.getMessageReferenceFormat() != null
                                         && !d.getMessageReferenceFormat().isBlank()),
-                        "series is citable")
+                        detail("REFERENCE_FORMAT_COMPLETE.citable", "series is citable"))
                 : notApplicable("REFERENCE_FORMAT_COMPLETE", Severity.BLOCK,
-                        "series is not citable"));
+                        Inapplicable.NOT_CITABLE));
 
         // 7 and 8. The neighbour bracket -- and an end of the chain is an absent
         // bound rather than a satisfied one.
+        //
+        // These two hold for an in-force series as well, and deliberately: they ask
+        // whether the editions are in ORDER, not whether they tile. A new edition of
+        // an in-force publication stamped before the one it replaces is wrong in
+        // exactly the way it is wrong for a tiling series.
         PublicationIssue successor = neighbour(issue, series, proposedCutoff, false);
         rows.add(predecessor == null || predecessor.getCutoffStampedAt() == null
-                ? notApplicable("CUTOFF_AFTER_PREVIOUS", Severity.BLOCK, "no predecessor")
+                ? notApplicable("CUTOFF_AFTER_PREVIOUS", Severity.BLOCK, Inapplicable.NO_PREDECESSOR)
                 : row("CUTOFF_AFTER_PREVIOUS", Severity.BLOCK,
                         proposedCutoff.after(predecessor.getCutoffStampedAt()),
-                        "must be after " + at(predecessor.getCutoffStampedAt(), series)));
+                        detail("CUTOFF_AFTER_PREVIOUS.after",
+                                "must be after " + at(predecessor.getCutoffStampedAt(), series),
+                                "at", epoch(predecessor.getCutoffStampedAt()),
+                                "zone", zoneOf(series).getId())));
 
         rows.add(successor == null || successor.getCutoffStampedAt() == null
-                ? notApplicable("CUTOFF_BEFORE_SUCCESSOR", Severity.BLOCK, "no successor")
+                ? notApplicable("CUTOFF_BEFORE_SUCCESSOR", Severity.BLOCK, Inapplicable.NO_SUCCESSOR)
                 : row("CUTOFF_BEFORE_SUCCESSOR", Severity.BLOCK,
                         proposedCutoff.before(successor.getCutoffStampedAt()),
-                        "must be before " + at(successor.getCutoffStampedAt(), series)));
+                        detail("CUTOFF_BEFORE_SUCCESSOR.before",
+                                "must be before " + at(successor.getCutoffStampedAt(), series),
+                                "at", epoch(successor.getCutoffStampedAt()),
+                                "zone", zoneOf(series).getId())));
 
         // 9. Waived means the check was not made, not that it held.
         rows.add(allowFuture
-                ? notApplicable("CUTOFF_NOT_FUTURE", Severity.BLOCK,
-                        "future cut-offs explicitly allowed")
+                ? notApplicable("CUTOFF_NOT_FUTURE", Severity.BLOCK, Inapplicable.FUTURE_ALLOWED)
                 : row("CUTOFF_NOT_FUTURE", Severity.BLOCK, !proposedCutoff.after(new Date()),
-                        "cut-off is " + at(proposedCutoff, series)));
+                        detail("CUTOFF_NOT_FUTURE.at", "cut-off is " + at(proposedCutoff, series),
+                                "at", epoch(proposedCutoff),
+                                "zone", zoneOf(series).getId())));
 
         // 10 to 14 need the resolver.
         // The EFFECTIVE document -- criteriaOverride where the issue carries one.
@@ -303,26 +477,34 @@ public class PublishChecklistService extends BaseService {
         // and failed is a different thing entirely and still warns, which is why
         // this asks what the series is rather than whether `resolution` is null.
         boolean membership = pre.membership();
-        String noMembership = "the series resolves no member list";
 
         int memberCount = resolution == null ? 0 : resolution.members().size();
-        rows.add(row("MEMBERS_RESOLVED", resolution == null ? Severity.WARN : Severity.OK,
-                resolution != null, membership,
-                membership ? memberCount + " members" : detailFor(noMembership)));
+        rows.add(new CheckRow("MEMBERS_RESOLVED", resolution == null ? Severity.WARN : Severity.OK,
+                resolution != null, membership, false, null,
+                membership
+                        ? detail("MEMBERS_RESOLVED.count", memberCount + " members",
+                                "count", memberCount)
+                        : detailFor(Inapplicable.NO_MEMBERSHIP)));
 
         rows.add(membership
                 ? row("MEMBER_LIMIT", Severity.BLOCK,
                         memberCount <= MemberResolutionService.MEMBER_LIMIT,
-                        memberCount + " of " + MemberResolutionService.MEMBER_LIMIT)
-                : notApplicable("MEMBER_LIMIT", Severity.BLOCK, noMembership));
+                        detail("MEMBER_LIMIT.of",
+                                memberCount + " of " + MemberResolutionService.MEMBER_LIMIT,
+                                "count", memberCount,
+                                "limit", MemberResolutionService.MEMBER_LIMIT))
+                : notApplicable("MEMBER_LIMIT", Severity.BLOCK, Inapplicable.NO_MEMBERSHIP));
 
         boolean noStale = resolution == null
                 || resolution.warning(ResolutionWarningCode.STALE_OVERRIDE).isEmpty();
         rows.add(membership
                 ? row("NO_INEFFECTIVE_OVERRIDES", Severity.WARN, noStale,
-                        noStale ? "every override applies"
-                                : "an override no longer refers to a candidate")
-                : notApplicable("NO_INEFFECTIVE_OVERRIDES", Severity.WARN, noMembership));
+                        noStale
+                                ? detail("NO_INEFFECTIVE_OVERRIDES.none", "every override applies")
+                                : detail("NO_INEFFECTIVE_OVERRIDES.stale",
+                                        "an override no longer refers to a candidate"))
+                : notApplicable("NO_INEFFECTIVE_OVERRIDES", Severity.WARN,
+                        Inapplicable.NO_MEMBERSHIP));
 
         // The one acknowledgeable row. An exclusions panel cannot show this class
         // at all -- those messages ARE members.
@@ -331,32 +513,51 @@ public class PublishChecklistService extends BaseService {
         // compares that code against what the admin ticked, and a row that dropped
         // it on the way out would be a refusal the dialog has no control for.
         var aliveButWithdrawn = resolution == null
-                ? java.util.Optional.<org.niord.core.publication.series.resolve.ResolutionWarningVo>empty()
+                ? Optional.<ResolutionWarningVo>empty()
                 : resolution.warning(ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE);
         rows.add(new CheckRow("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", Severity.WARN,
                 aliveButWithdrawn.isEmpty(), membership, true,
                 ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.name(),
                 membership
-                        ? aliveButWithdrawn.map(w -> w.count()
-                                        + " member(s) cancelled or expired after the cut-off, still included")
-                                .orElse("none")
-                        : detailFor(noMembership)));
+                        ? aliveButWithdrawn
+                                .map(w -> detail("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF.count",
+                                        w.count() + " member(s) cancelled or expired after the "
+                                                + "cut-off, still included",
+                                        "count", w.count()))
+                                .orElseGet(() -> detail("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF.none",
+                                        "none"))
+                        : detailFor(Inapplicable.NO_MEMBERSHIP)));
 
-        // Purely informational for an in-force series: overlap is what they do.
+        // Two issues of one series sharing members -- which only means anything
+        // where the issues are supposed to tile. An in-force series answers "what
+        // is in force now", so consecutive editions share every message that stayed
+        // in force across both, and the row was reporting that as a warning on
+        // every single in-force issue with no action that could ever clear it.
         //
         // The producer is wired here, on the predecessor the bracket already found.
         // Left unwired, the row rendered "no other issue covers this period" as
         // SATISFIED on every issue in the system -- a check that cannot fail is
         // worse than an absent one, because the screen states an answer nobody
         // computed.
-        var overlap = overlapWith(predecessor, resolution);
-        rows.add(membership
-                ? row("OVERLAPPING_ISSUE", Severity.WARN, overlap.isEmpty(),
-                        overlap.map(w -> w.count() + " member(s) also belong to '"
-                                        + predecessor.getPublicId() + "'")
-                                .orElse(interval ? "issues of this series tile"
-                                        : "in-force issues overlap by design"))
-                : notApplicable("OVERLAPPING_ISSUE", Severity.WARN, noMembership));
+        // Not taken at all where the row does not apply: it reads every frozen
+        // member row of the neighbouring issue, and an in-force series is the one
+        // whose neighbours are largest.
+        var overlap = !inForce && membership
+                ? overlapWith(predecessor, resolution)
+                : Optional.<ResolutionWarningVo>empty();
+        rows.add(inForce
+                ? notApplicable("OVERLAPPING_ISSUE", Severity.WARN, Inapplicable.IN_FORCE_SERIES)
+                : membership
+                        ? row("OVERLAPPING_ISSUE", Severity.WARN, overlap.isEmpty(),
+                                overlap.map(w -> detail("OVERLAPPING_ISSUE.shared",
+                                                w.count() + " member(s) also belong to '"
+                                                        + predecessor.getPublicId() + "'",
+                                                "count", w.count(),
+                                                "issue", predecessor.getPublicId()))
+                                        .orElseGet(() -> detail("OVERLAPPING_ISSUE.tile",
+                                                "issues of this series tile")))
+                        : notApplicable("OVERLAPPING_ISSUE", Severity.WARN,
+                                Inapplicable.NO_MEMBERSHIP));
 
         List<String> blocking = new ArrayList<>();
         for (CheckRow r : rows) {
@@ -374,29 +575,50 @@ public class PublishChecklistService extends BaseService {
      * re-resolving it: those rows are what that issue actually published, and a
      * re-resolution would answer for a document that does not exist.
      */
-    private java.util.Optional<org.niord.core.publication.series.resolve.ResolutionWarningVo> overlapWith(
+    private Optional<ResolutionWarningVo> overlapWith(
             PublicationIssue predecessor, MemberResolutionService.Resolution resolution) {
         if (resolution == null || predecessor == null || predecessor.getId() == null) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
         Set<String> theirs = new LinkedHashSet<>(em.createQuery(
                         "SELECT m.messageUid FROM IssueMember m WHERE m.issue = :i", String.class)
                 .setParameter("i", predecessor)
                 .getResultList());
         if (theirs.isEmpty()) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
         return MemberResolutionService.overlappingIssue(resolution.members(), theirs);
     }
 
-    private CheckRow row(String code, Severity severity, boolean passed, String detail) {
+    private CheckRow row(String code, Severity severity, boolean passed, Detail detail) {
         return new CheckRow(code, severity, passed, true, false, null, detail);
     }
 
-    /** The same, saying for itself whether it applies. */
-    private CheckRow row(String code, Severity severity, boolean passed, boolean applicable,
-                         String detail) {
-        return new CheckRow(code, severity, passed, applicable, false, null, detail);
+    /**
+     * One statement of a row: its key, its English, and the values both use.
+     *
+     * The params arrive as alternating name and value so the call site reads as
+     * one expression -- the code, the sentence and the numbers it interpolates
+     * sitting together, where a reader can see that they agree. Split across a
+     * builder or a separate map they drift silently: a reworded sentence keeps
+     * the old params, and the translated row then states a number the English one
+     * does not.
+     *
+     * Values go in UNFORMATTED -- a count as an int, an instant as epoch
+     * milliseconds with its zone beside it -- because the client renders them in
+     * the session's own locale and zone. A pre-rendered date here would be the
+     * one date on the screen that does not match the rest of it.
+     */
+    private static Detail detail(String code, String text, Object... params) {
+        if (params.length % 2 != 0) {
+            throw new IllegalArgumentException(
+                    "detail params for " + code + " are name/value pairs; got " + params.length);
+        }
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < params.length; i += 2) {
+            map.put(String.valueOf(params[i]), params[i + 1]);
+        }
+        return new Detail(code, Collections.unmodifiableMap(map), text);
     }
 
     /**
@@ -412,7 +634,7 @@ public class PublishChecklistService extends BaseService {
      * What holds for all of them is the one thing the publish gate depends on: no
      * inapplicable row is a BLOCK row that fails.
      */
-    private CheckRow notApplicable(String code, Severity severity, String reason) {
+    private CheckRow notApplicable(String code, Severity severity, Inapplicable reason) {
         return new CheckRow(code, severity, true, false, false, null, detailFor(reason));
     }
 
@@ -420,10 +642,13 @@ public class PublishChecklistService extends BaseService {
      * The detail an inapplicable row carries in place of an answer nobody computed.
      *
      * The reason is written out rather than left to the code alone, because the
-     * person reading the row is the one deciding whether to release.
+     * person reading the row is the one deciding whether to release -- and it
+     * carries its own key, {@code NOT_APPLICABLE.<REASON>}, so that reason is
+     * translated rather than shown in English on a Danish screen.
      */
-    private static String detailFor(String reason) {
-        return "not applicable: " + reason;
+    private static Detail detailFor(Inapplicable reason) {
+        return new Detail("NOT_APPLICABLE." + reason.name(), Map.of(),
+                "not applicable: " + reason.phrase());
     }
 
     /**
