@@ -46,13 +46,14 @@ import java.util.stream.Stream;
  *
  * THE THREE ANSWERS.
  *
- * An OPEN issue may go, and no citation lookup runs first. That is a decision
- * rather than a guarantee: an editor may cite an issue while it is still being
- * prepared, so an unpublished one CAN already be named in message HTML. What
- * makes it safe to remove anyway is that nothing was ever released under its
- * name -- nobody outside the editors has read it, and nothing was downloaded --
- * so a citation of one is a draft reference for its own author to re-point,
- * not a dead link in a notice that has already gone out.
+ * An OPEN issue may go, unless a message already cites it. Nothing was ever
+ * released under its name, so there is no public record to erase -- but the
+ * publication picker offers an issue while it is still being prepared, so an
+ * editor CAN already have written its id into a message's publication text. A
+ * deleted target would leave that text pointing at nothing, and the editor who
+ * wrote it has no way of noticing. So the same lookup that guards a retired
+ * issue guards an open one, and the refusal names the messages so they can be
+ * re-pointed first.
  *
  * A PUBLISHED issue never may. It was released; people downloaded it and cited
  * it, and deleting a released document is not an administrative correction but an
@@ -160,13 +161,13 @@ public class IssueDeleteService extends BaseService {
                             + "that takes it off the public list and leaves the file at its link.");
         }
 
-        if (issue.getStatus() == IssueStatus.RETIRED) {
-            PublicationResolver.Citations cited =
-                    citations.citingMessages(issue.getPublicId(), NAMED_CITATIONS, lang);
-            if (cited.any()) {
-                throw new IssueCitedException(citedMessage(issue, cited),
-                        cited.sample(), cited.total());
-            }
+        // OPEN and RETIRED alike: a message may name either, and a citation
+        // whose target has gone reads as a dead reference in both cases.
+        PublicationResolver.Citations cited =
+                citations.citingMessages(issue.getPublicId(), NAMED_CITATIONS, lang);
+        if (cited.any()) {
+            throw new IssueCitedException(citedMessage(issue, cited),
+                    cited.sample(), cited.total());
         }
 
         // The trail first, and deliberately before anything is removed: the

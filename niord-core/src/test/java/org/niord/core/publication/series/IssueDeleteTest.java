@@ -239,13 +239,11 @@ public class IssueDeleteTest {
     // ------------------------------------------------------------------- an open issue
 
     /**
-     * An open issue goes, and everything that hung off it goes with it.
+     * An uncited open issue goes, and everything that hung off it goes with it.
      *
-     * No citation lookup runs first, and that is a decision rather than a
-     * guarantee: an editor may well cite an issue while it is still being
-     * prepared. What makes it safe anyway is that nothing was released under its
-     * name -- so a citation of one is a draft reference for its own author to
-     * re-point. What IS asserted alongside the removal is the blast radius: the
+     * The message planted here is EXCLUDED from the issue, not citing it -- an
+     * override is the issue's own decision about a message, and goes with the
+     * issue. What IS asserted alongside the removal is the blast radius: the
      * sibling that WAS released is untouched,
      * frozen snapshot and all -- a delete that reached the series' other issues
      * would be indistinguishable from this one until somebody opened the archive.
@@ -313,6 +311,48 @@ public class IssueDeleteTest {
                 "the released sibling's frozen interval moved");
         assertEquals(membersOfSibling, members(survivor.getId()),
                 "the released sibling lost member rows to another issue's delete");
+    }
+
+    /**
+     * An open issue that a message already cites is refused like a retired one.
+     *
+     * The publication picker offers an issue while it is still being prepared, so
+     * an editor can write its id into a message before anything is released under
+     * it. Deleting the target would leave that text pointing at nothing, and the
+     * editor has no way of noticing -- so the refusal names the message instead,
+     * and nothing of the issue is touched on the way to it.
+     */
+    @Test
+    @Transactional
+    public void aCitedOpenIssueIsRefusedWithTheCitingMessageNamed() {
+        PublicationSeries s = series();
+        User actor = user();
+        PublicationIssue open = lifecycle.create(s, new Date(OPENS), IntervalBoundSource.STAMPED, actor);
+        em.flush();
+
+        Message citing = message(TestIds.id("NM-OPEN-"));
+        cite(citing, open.getPublicId());
+        curation.exclude(open, message(TestIds.id("NM-OUT-")).getUid(), actor, "not for this issue");
+        em.flush();
+        long overridesBefore = overrides(open.getId());
+        long auditRowsBefore = issueAuditRows(open.getId());
+
+        IssueDeleteService.IssueCitedException e =
+                assertThrows(IssueDeleteService.IssueCitedException.class,
+                        () -> deletion.delete(open, actor, "created against the wrong series"));
+        assertEquals("ISSUE_CITED", e.code());
+        assertEquals(1, e.citingCount());
+        assertEquals(citing.getShortId(), e.citingMessages().get(0).messageId(),
+                "the citing message was not named by the id a person reads");
+
+        em.flush();
+        PublicationIssue stillThere = em.find(PublicationIssue.class, open.getId());
+        assertNotNull(stillThere, "a refused delete removed the open issue");
+        assertEquals(IssueStatus.OPEN, stillThere.getStatus());
+        assertEquals(overridesBefore, overrides(open.getId()),
+                "a refused delete cleared the issue's curation decisions");
+        assertEquals(auditRowsBefore, issueAuditRows(open.getId()),
+                "a refused delete cleared the issue's trail");
     }
 
     // ------------------------------------------------------------ a published issue
