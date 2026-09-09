@@ -17,6 +17,7 @@
 package org.niord.web.publication;
 
 import org.niord.core.publication.series.IssueArchiveService;
+import org.niord.core.publication.series.IssuePublicWindowService;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.StaleVersionGuard;
 
@@ -189,6 +190,14 @@ public final class PublicationErrorCatalogue {
         // chain, and clearing an end there hands the public site two current
         // editions.
         put("NOT_ONE_OFF", 409);
+        // 400: the two ends do not describe a period. Either they are the wrong
+        // way round -- which is not a shorter period but no period, readable at no
+        // instant at all -- or a released publication was given no start, which
+        // puts it on no public site with nothing on the screen saying why. Both
+        // instants are IN the request, so re-sending it unchanged fails
+        // identically and only different instants succeed: that is a 400, not the
+        // state conflict PUBLIC_WINDOW_CLOSED beside it is.
+        put(IssuePublicWindowService.INVALID, 400);
         // 400, not 409: the one-off form was pointed at a scheduled or unscheduled
         // series. No change of state makes that request correct -- the form has no
         // fields for the cadence, criteria and numbering such a series carries, so

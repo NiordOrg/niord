@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.niord.core.publication.PublicationResolver;
 import org.niord.core.publication.series.IssueDeleteService;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.IssuePublicWindowService;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueRenderService;
 import org.niord.core.publication.series.MemberResolutionService;
@@ -133,7 +134,9 @@ public class PublicationExceptionMapperContractTest {
                         1),
                 new IssueNaming.UnknownTokenException("yeer"),
                 new CriteriaResolver.EmptyOperandException(CriterionKind.AREA),
-                new CriteriaParseException("…", new RuntimeException()));
+                new CriteriaParseException("…", new RuntimeException()),
+                new IssueLifecycleService.TransitionRefusedException(
+                        IssuePublicWindowService.INVALID, "…"));
 
         for (PublicationException e : all) {
             assertNotNull(e.code(), e.getClass().getSimpleName() + " carries no code");
@@ -209,6 +212,32 @@ public class PublicationExceptionMapperContractTest {
         assertEquals(37L, body.get("citingCount"),
                 "the count must be the true total rather than the length of the bounded list, or "
                         + "the dialog tells the admin there are two when there are thirty-seven");
+    }
+
+    /**
+     * The two public-period refusals are catalogued, and they are NOT the same status.
+     *
+     * PUBLIC_WINDOW_CLOSED is a state that can change: re-open the period and the
+     * identical request goes through, which is what the refusal tells the caller
+     * to do. PUBLIC_WINDOW_INVALID never can -- both instants are IN the request,
+     * so re-sending it fails identically and only different instants succeed.
+     * Answering one with the other's status is how "retry on 409" becomes a loop
+     * against a body that will never be accepted.
+     */
+    @Test
+    public void thetwoPublicPeriodRefusalsAreCataloguedAndDistinct() {
+        assertEquals(400, PublicationErrorCatalogue.statusOf(IssuePublicWindowService.INVALID));
+        assertEquals(409, PublicationErrorCatalogue.statusOf("PUBLIC_WINDOW_CLOSED"));
+
+        Response response = new PublicationExceptionMapper().toResponse(
+                new IssueLifecycleService.TransitionRefusedException(IssuePublicWindowService.INVALID,
+                        "the public period would end before it starts"));
+        assertEquals(400, response.getStatus());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getEntity();
+        assertEquals("PUBLIC_WINDOW_INVALID", body.get("code"),
+                "the code is the contract; a client branches on it and nothing else");
     }
 
     /** The field errors survive the move onto the base type. */

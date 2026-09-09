@@ -198,4 +198,39 @@ public final class StaleVersionGuard {
         PublicationIssue managed = em.contains(issue) ? issue : em.merge(issue);
         em.lock(managed, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
     }
+
+    /**
+     * Move a SERIES' revision on because something ABOUT the publication changed
+     * that is not stored ON the series row.
+     *
+     * A one-off is a series and its single issue edited through one form, and ONE
+     * REVISION COVERS BOTH ROWS: every write is composed against the series'
+     * counter, whichever of the two rows it lands on. The public period lives on
+     * the ISSUE, so writing it leaves that counter exactly where it was -- and two
+     * admins who both loaded the publication at revision 7 would both pass the
+     * comparison at revision 7, the second one's period silently replacing the
+     * first's with nothing said to either of them. That is the failure this whole
+     * class exists to close, reappearing on the one action that decides whether a
+     * document is on the public site.
+     *
+     * IMMEDIATE, where the issue's increment above is registered for the end of
+     * the transaction, and the difference is not a preference. The writes that
+     * force an issue's counter on answer nothing at all; the ones that force a
+     * series' counter on hand the series straight back, and the revision on it is
+     * the token the caller composes its NEXT write against. A counter that moved
+     * only at commit would hand back the revision that was just spent, and the
+     * caller's next save would be refused for a collision with itself.
+     *
+     * THE ROW HAS TO BE IN THE DATABASE FIRST. The increment is a targeted UPDATE,
+     * so a series persisted but not yet written matches no row and fails naming a
+     * conflict with a transaction that does not exist -- the same flush the
+     * release path takes before its own lock.
+     */
+    public static void forceIncrement(EntityManager em, PublicationSeries series) {
+        if (em == null || series == null) {
+            return;
+        }
+        PublicationSeries managed = em.contains(series) ? series : em.merge(series);
+        em.lock(managed, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
+    }
 }

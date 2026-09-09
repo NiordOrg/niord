@@ -21,6 +21,7 @@ import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.CutoffDay;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.IssuePublicWindowService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
@@ -36,10 +37,14 @@ import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
 import org.niord.core.publication.series.resolve.TimeRelation;
+import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -457,7 +462,7 @@ public class OneOffShapeTest {
 
         IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
                 IssueLifecycleService.TransitionRefusedException.class,
-                () -> endpoint.get("no-such-publication"));
+                () -> endpoint.get("no-such-publication", null));
 
         assertEquals("SERIES_NOT_FOUND", refusal.code());
         assertEquals(404, PublicationErrorCatalogue.statusOf(refusal.code()),
@@ -484,7 +489,7 @@ public class OneOffShapeTest {
         OneOffRestService endpoint = endpointFinding(scheduled);
         IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
                 IssueLifecycleService.TransitionRefusedException.class,
-                () -> endpoint.get("weekly-ntm"));
+                () -> endpoint.get("weekly-ntm", null));
 
         assertEquals("SERIES_NOT_FOUND", refusal.code(),
                 "the read has one refusal; SERIES_NOT_ONE_OFF is the save's, and it is a 400");
@@ -514,7 +519,7 @@ public class OneOffShapeTest {
         issue.setPublicFrom(new Date(1_700_000_000_000L));
 
         OneOffRestService.OneOffVo vo =
-                endpointFinding(oneOff, issue).get("navigation-through-danish-waters");
+                endpointFinding(oneOff, issue).get("navigation-through-danish-waters", null);
 
         assertNotNull(vo, "a one-off's own id is the one id this route exists to answer");
         assertEquals(IssueStatus.PUBLISHED.name(), vo.issueStatus);
@@ -533,7 +538,7 @@ public class OneOffShapeTest {
         issue.setPublicFrom(new Date(System.currentTimeMillis() + 86_400_000L));
 
         OneOffRestService.OneOffVo vo =
-                endpointFinding(oneOff, issue).get("navigation-through-danish-waters");
+                endpointFinding(oneOff, issue).get("navigation-through-danish-waters", null);
 
         assertFalse(vo.active,
                 "published, but not yet: the series and the issue both say live and the "
@@ -565,7 +570,7 @@ public class OneOffShapeTest {
         issue.setPublicTo(new Date(1_514_761_140_000L));
 
         OneOffRestService.OneOffVo vo =
-                endpointFinding(oneOff, issue).get("navigation-through-danish-waters");
+                endpointFinding(oneOff, issue).get("navigation-through-danish-waters", null);
 
         assertFalse(vo.active, "the window closed in 2017, so the publication is not public");
         assertEquals(Long.valueOf(1_514_761_140_000L), vo.publicTo,
@@ -601,7 +606,7 @@ public class OneOffShapeTest {
         issue.setStatus(IssueStatus.PUBLISHED);
         issue.setPublicFrom(new Date(1_451_606_400_000L));
 
-        OneOffRestService.OneOffVo vo = endpointFinding(oneOff, issue).get("aids-to-navigation");
+        OneOffRestService.OneOffVo vo = endpointFinding(oneOff, issue).get("aids-to-navigation", null);
 
         assertTrue(vo.active,
                 "series ACTIVE, issue PUBLISHED, window open -- `active` is about those three and "
@@ -614,7 +619,7 @@ public class OneOffShapeTest {
         published.setCategoryId("dk-dma-publications");
         published.setPublish(true);
         oneOff.setCategory(published);
-        assertTrue(endpointFinding(oneOff, issue).get("aids-to-navigation").categoryPublish);
+        assertTrue(endpointFinding(oneOff, issue).get("aids-to-navigation", null).categoryPublish);
     }
 
     /**
@@ -743,7 +748,7 @@ public class OneOffShapeTest {
         IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
                 IssueLifecycleService.TransitionRefusedException.class,
                 () -> endpoint.setPublicWindow("weekly-ntm",
-                        new OneOffRestService.PublicWindowRequest(null, null)));
+                        new OneOffRestService.PublicWindowRequest(null, null, null), null));
 
         assertEquals("NOT_ONE_OFF", refusal.code(),
                 "a scheduled issue's window is closed by the issue that succeeds it; clearing an "
@@ -759,9 +764,155 @@ public class OneOffShapeTest {
         IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
                 IssueLifecycleService.TransitionRefusedException.class,
                 () -> endpoint.setPublicWindow("no-such-publication",
-                        new OneOffRestService.PublicWindowRequest(null, null)));
+                        new OneOffRestService.PublicWindowRequest(null, null, null), null));
 
         assertEquals("SERIES_NOT_FOUND", refusal.code());
         assertEquals(404, PublicationErrorCatalogue.statusOf(refusal.code()));
+    }
+
+    /** A period the wrong way round is refused, and the refusal is a 400. */
+    @Test
+    public void anundescribablePeriodIsRefusedWithACataloguedCode() {
+        Date opens = new Date(1_800_000_000_000L);
+        Date closes = new Date(opens.getTime() - 86_400_000L);
+
+        IssueLifecycleService.TransitionRefusedException inverted = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> IssuePublicWindowService.refuseUndescribablePeriod(
+                        IssueStatus.PUBLISHED, opens, closes));
+        assertEquals(IssuePublicWindowService.INVALID, inverted.code());
+
+        IssueLifecycleService.TransitionRefusedException startless = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> IssuePublicWindowService.refuseUndescribablePeriod(
+                        IssueStatus.PUBLISHED, null, closes),
+                "a released publication with no start is on no public site, and the row still "
+                        + "reads PUBLISHED");
+        assertEquals(IssuePublicWindowService.INVALID, startless.code());
+
+        assertEquals(400, PublicationErrorCatalogue.statusOf(IssuePublicWindowService.INVALID),
+                "both instants are in the request, so the same body never succeeds later and a "
+                        + "client branching on 409 would retry forever");
+
+        // And the two periods that ARE describable, so the refusal is not simply
+        // refusing everything: a start with no end is open-ended, and no start at
+        // all is what an issue still being assembled says.
+        IssuePublicWindowService.refuseUndescribablePeriod(IssueStatus.PUBLISHED, opens, null);
+        IssuePublicWindowService.refuseUndescribablePeriod(IssueStatus.OPEN, null, closes);
+    }
+
+    // -------------------------------------------- the three facts on the wire
+
+    /**
+     * THE THREE FACTS TRAVEL SEPARATELY, and that is the whole change.
+     *
+     * A one-off is a status, a public period and a category flag, and a screen
+     * that has all three can say which one is why the publication is not on the
+     * public site. Folded into one dot, "prepared for next month", "withdrawn"
+     * and "filed under a category that is on no public site" are the same word.
+     */
+    @Test
+    public void thethreeFactsThatDecideVisibilityAreEachOnTheWire() {
+        PublicationCategory internal = new PublicationCategory();
+        internal.setCategoryId("dk-dma-internal-publications");
+        internal.setPublish(false);
+        internal.createDesc("da").setName("Interne publikationer");
+        internal.createDesc("en").setName("Internal publications");
+
+        PublicationSeries oneOff = new PublicationSeries();
+        oneOff.setKind(SeriesKind.ONE_OFF);
+        oneOff.setStatus(SeriesStatus.ACTIVE);
+        oneOff.setCategory(internal);
+
+        PublicationIssue issue = new PublicationIssue();
+        issue.setStatus(IssueStatus.PUBLISHED);
+        issue.setPublicFrom(new Date(1_800_000_000_000L));
+        issue.setPublicTo(new Date(1_900_000_000_000L));
+
+        OneOffRestService.OneOffVo vo =
+                endpointFinding(oneOff, issue).get("aids-to-navigation", "en");
+
+        assertEquals(IssueStatus.PUBLISHED.name(), vo.issueStatus, "the status fact");
+        assertEquals(Long.valueOf(1_800_000_000_000L), vo.publicFrom,
+                "the start of the public period has to be readable, or a publication prepared "
+                        + "for a day in the future is indistinguishable from one nobody released");
+        assertEquals(Long.valueOf(1_900_000_000_000L), vo.publicTo);
+        assertFalse(vo.categoryPublish, "the category fact");
+        assertEquals("Internal publications", vo.categoryName,
+                "\"not public\" on its own sends the reader looking for a setting this form does "
+                        + "not have; naming the category is what makes the sentence actionable");
+
+        // The SERIES' status and the category id are not repeated: they travel on
+        // the series value object, and a second copy would be a second answer.
+        assertEquals(SeriesStatus.ACTIVE.name(), vo.series.getStatus());
+    }
+
+    /** The category name falls back to a language the category HAS. */
+    @Test
+    public void thecategoryNameFallsBackRatherThanComingBackBlank() {
+        PublicationCategory danishOnly = new PublicationCategory();
+        danishOnly.setCategoryId("dk-dma-publications");
+        danishOnly.createDesc("da").setName("Publikationer");
+
+        assertEquals("Publikationer",
+                OneOffRestService.categoryNameOf(danishOnly, "en"),
+                "a category with no name in the asked-for language would otherwise render as an "
+                        + "empty parenthesis in the sentence that explains the publication is not public");
+        assertEquals("Publikationer", OneOffRestService.categoryNameOf(danishOnly, null));
+        assertNull(OneOffRestService.categoryNameOf(null, "da"));
+    }
+
+    /**
+     * The wire shape itself, pinned by name and type.
+     *
+     * This value object is read by a client in another repository, so a field
+     * renamed or retyped here is a screen that silently stops rendering with
+     * nothing in either build to say so. `active` is in the list because it is
+     * DEPRECATED rather than gone: it stays one more release so a consumer that
+     * still reads it is not broken by the change that replaced it, and a test
+     * that did not name it would let it be dropped by accident.
+     */
+    @Test
+    public void thewireShapeIsWhatTheClientWasToldItIs() throws NoSuchFieldException {
+        Map<String, Class<?>> expected = new LinkedHashMap<>();
+        expected.put("series", SystemPublicationSeriesVo.class);
+        expected.put("active", boolean.class);
+        expected.put("issuePublicId", String.class);
+        expected.put("issueVersion", Integer.class);
+        expected.put("issueStatus", String.class);
+        expected.put("categoryPublish", boolean.class);
+        expected.put("categoryName", String.class);
+        expected.put("publicFrom", Long.class);
+        expected.put("publicTo", Long.class);
+        expected.put("links", List.class);
+        expected.put("fileNames", List.class);
+        expected.put("publishable", boolean.class);
+        expected.put("reason", String.class);
+
+        Map<String, Class<?>> actual = new LinkedHashMap<>();
+        for (Field f : OneOffRestService.OneOffVo.class.getFields()) {
+            actual.put(f.getName(), f.getType());
+        }
+
+        assertEquals(expected, actual,
+                "the one-off wire shape moved. Every field here is read by a screen in another "
+                        + "repository, and neither build fails when one is renamed.");
+
+        assertTrue(OneOffRestService.OneOffVo.class.getField("active")
+                        .isAnnotationPresent(Deprecated.class),
+                "`active` folds the three facts back into one dot; it is kept for one release "
+                        + "and has to say so");
+    }
+
+    /** And the window request carries both ends plus the series' revision. */
+    @Test
+    public void thewindowRequestCarriesBothEnds() {
+        OneOffRestService.PublicWindowRequest request =
+                new OneOffRestService.PublicWindowRequest(1_800_000_000_000L, null, 7);
+
+        assertEquals(Long.valueOf(1_800_000_000_000L), request.publicFrom());
+        assertNull(request.publicTo(), "a null end is open-ended, which is a value rather than "
+                + "an omission");
+        assertEquals(Integer.valueOf(7), request.version());
     }
 }

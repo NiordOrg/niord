@@ -36,19 +36,18 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.PublicationCategoryDesc;
 import org.niord.core.publication.PublicationCategoryService;
-import org.niord.core.publication.series.AuditAction;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.IntervalBoundSource;
-import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueLifecycleService;
+import org.niord.core.publication.series.IssuePublicWindowService;
 import org.niord.core.publication.series.IssuePublicationMapping;
 import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicAuthority;
-import org.niord.core.publication.series.PublicWindowSource;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublicationIssueDesc;
@@ -68,13 +67,9 @@ import org.niord.core.publication.series.StaleVersionGuard;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 import org.niord.core.publication.vo.MessagePublication;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * One-off publications: the surface for something published once.
@@ -138,11 +133,11 @@ public class OneOffRestService {
     @Inject
     IssueLifecycleService lifecycle;
 
-    // The window change is written here rather than in a lifecycle transition,
-    // and an unaudited change to what the public can read is the one kind this
-    // feature does not have.
+    // The public period: the rule, the write and the audit entry, together. An
+    // unaudited change to what the public can read is the one kind this feature
+    // does not have.
     @Inject
-    IssueAuditService auditService;
+    IssuePublicWindowService windowService;
 
     @Inject
     IssuePublishService publishService;
@@ -180,15 +175,59 @@ public class OneOffRestService {
      * a series has. The constraints that make it a one-off are applied on the way
      * in, not expressed by leaving fields out.
      *
-     * `active` folds the three states that really decide visibility -- series
-     * ACTIVE, issue PUBLISHED, and an open public window -- into the single dot
-     * the list shows, because any one of them being off is invisible from the
-     * other two.
+     * THREE INDEPENDENT FACTS, NEVER ONE DOT. What the public can read is decided
+     * by the STATUS (`issueStatus`: being assembled, released, withdrawn), the
+     * PUBLIC PERIOD (`publicFrom` and `publicTo`, both hand-set and both
+     * editable), and the CATEGORY (`categoryPublish`, with `categoryName` to name
+     * it). They are separate on the wire because they are separate decisions:
+     * folded into one flag, "prepared for next month", "withdrawn" and "filed
+     * under a category that is on no public site" are the same word, and the
+     * screen can name neither the reason nor the control that changes it.
      */
     public static class OneOffVo {
         public SystemPublicationSeriesVo series;
+        /**
+         * Whether the publication is on the public site right now.
+         *
+         * @deprecated the three facts below say everything this said and say it
+         *         separately, which is the point. "Active" folded a status, a
+         *         period and a category flag into one dot, so a publication that
+         *         was prepared for next month, one that was withdrawn and one
+         *         filed under a category that is on no public site all read the
+         *         same -- off, with nothing saying which. Kept for one release so
+         *         a consumer that still reads it is not broken by the change that
+         *         replaced it; the screens compute the sentence from issueStatus,
+         *         publicFrom, publicTo and categoryPublish, and no client of this
+         *         API reads this field any more. It goes at the next release.
+         */
+        @Deprecated
         public boolean active;
         public String issuePublicId;
+        /**
+         * The ISSUE's revision, for the two actions addressed at the issue.
+         *
+         * Withdrawing and re-publishing are status transitions, and the endpoints
+         * that take them are the issue's own -- they version-check against the
+         * issue, not against the series, and this response is the only place a
+         * one-off screen learns that number. Without it those two calls go out
+         * unguarded, which is last-write-wins on the one action that takes a
+         * document off the public site.
+         *
+         * `series.version` stays the token for the SAVE and for the public period:
+         * those are written through this resource, which checks the series.
+         */
+        public Integer issueVersion;
+        /**
+         * OPEN, PUBLISHED or RETIRED: the publication's status, and one of the
+         * three independent facts the screens state separately.
+         *
+         * Draft, Published and Withdrawn in the words a reader uses. RETIRED is
+         * gone from the public site, history included, while the file stays at its
+         * address so a message that cites it still resolves.
+         *
+         * The SERIES' status is not repeated here: it travels as `series.status`,
+         * and a second copy beside it would be a second answer to one question.
+         */
         public String issueStatus;
         /**
          * Whether the publication's CATEGORY is exposed on the public site.
@@ -197,19 +236,43 @@ public class OneOffRestService {
          * window open, and the first of those three is not on the series VO --
          * only the categoryId is. A screen that fetched the category list and
          * re-derived it would hold a second definition of visibility, free to
-         * disagree with `active` beside it, and would have to tell "the flag is
-         * false" apart from "the list has not arrived yet" while the two look
-         * identical. So the flag travels with the publication it describes,
-         * exactly as `active` does and for the same reason.
+         * disagree with the sentence beside it, and would have to tell "the flag
+         * is false" apart from "the list has not arrived yet" while the two look
+         * identical. So the flag travels with the publication it describes.
          */
         public boolean categoryPublish;
         /**
+         * The category's name in the requested language, for the sentence that
+         * says a publication is on no public site.
+         *
+         * "Not public" on its own invites the reader to look for the setting that
+         * turns it on; there is none on this form, because the decision belongs to
+         * the category. Naming the category is what turns the sentence into
+         * something actionable, and only this response knows which category the
+         * publication is filed under and what it is called at once.
+         *
+         * The requested language, or the first one the category HAS -- the same
+         * fallback every other localized read applies, because a category with no
+         * name in the asked-for language would otherwise render as a blank
+         * parenthesis.
+         */
+        public String categoryName;
+        /**
+         * When the publication becomes public, or null while nobody has decided.
+         *
+         * Hand-set, and editable after release: a publication can be prepared with
+         * the day it goes public already chosen, released today, and stay off the
+         * public site until that day. A null here on a released publication is a
+         * state the API refuses, precisely because it would be invisible with
+         * nothing saying why.
+         */
+        public Long publicFrom;
+        /**
          * When the publication stops being on the public site, or null for open-ended.
          *
-         * The one state of the three `active` folds that an admin cannot see from
-         * the other two: a series ACTIVE and an issue PUBLISHED with a window that
-         * closed in 2017 reads as "not active" with nothing on the screen saying
-         * why, and the toggle offered to fix it cannot.
+         * The state an admin cannot see from the other two: a series ACTIVE and an
+         * issue PUBLISHED with a period that closed in 2017 is off the public site,
+         * and until this field existed nothing on the screen said so.
          */
         public Long publicTo;
         /** Per language, for an EXTERNAL_LINK publication. */
@@ -251,13 +314,14 @@ public class OneOffRestService {
     @GZIP
     @NoCache
     @RolesAllowed(Roles.ADMIN)
-    public List<OneOffVo> list(@QueryParam("domain") String domain) {
+    public List<OneOffVo> list(@QueryParam("domain") String domain,
+                               @QueryParam("lang") String lang) {
         String owner = domain == null || domain.isBlank() ? null : domain.trim();
         return seriesService.findAll().stream()
                 .filter(s -> s.getKind() == SeriesKind.ONE_OFF)
                 .filter(s -> owner == null
                         || (s.getDomain() != null && owner.equals(s.getDomain().getDomainId())))
-                .map(this::toVo)
+                .map(s -> toVo(s, lang))
                 .toList();
     }
 
@@ -296,13 +360,14 @@ public class OneOffRestService {
     @GZIP
     @NoCache
     @RolesAllowed(Roles.ADMIN)
-    public OneOffVo get(@PathParam("seriesId") String seriesId) {
+    public OneOffVo get(@PathParam("seriesId") String seriesId,
+                        @QueryParam("lang") String lang) {
         PublicationSeries series = seriesService.findBySeriesId(seriesId);
         if (series == null || series.getKind() != SeriesKind.ONE_OFF) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
                     "no one-off publication with id " + seriesId);
         }
-        return toVo(series);
+        return toVo(series, lang);
     }
 
     // ------------------------------------------------------------------ writes
@@ -320,7 +385,7 @@ public class OneOffRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
-    public OneOffVo create(OneOffVo request) {
+    public OneOffVo create(OneOffVo request, @QueryParam("lang") String lang) {
         SystemPublicationSeriesVo vo = seriesOf(request);
         // Checked on the body: there is no stored series to compare against on a
         // create, so what is refused is authoring straight into another domain.
@@ -360,7 +425,7 @@ public class OneOffRestService {
             flushBeforePublish();
             publishIfComplete(saved, issue);
         }
-        return toVo(saved);
+        return toVo(saved, lang);
     }
 
     /**
@@ -395,7 +460,8 @@ public class OneOffRestService {
     @RolesAllowed(Roles.ADMIN)
     @DomainScoped
     @VersionChecked
-    public OneOffVo update(@PathParam("seriesId") String seriesId, OneOffVo request) {
+    public OneOffVo update(@PathParam("seriesId") String seriesId, OneOffVo request,
+                           @QueryParam("lang") String lang) {
         PublicationSeries series = required(seriesId);
         SystemPublicationSeriesVo vo = seriesOf(request);
 
@@ -497,28 +563,34 @@ public class OneOffRestService {
                 // an ordinary save is, and it must not move the publication.
             }
         }
-        return toVo(saved);
+        return toVo(saved, lang);
     }
 
     /**
-     * The publication's public window, set or cleared.
+     * The publication's public period, both ends, set or cleared.
      *
-     * ITS OWN ACTION BECAUSE IT IS ITS OWN DECISION. `publicTo` is what takes a
-     * document off the public site, and for a one-off nothing else writes it --
-     * there is no successor whose publish would cap it and no cadence to derive
-     * it from. Folding it into the active toggle would make "put this back on the
-     * list" and "decide when this stops being current" the same gesture, and the
-     * toggle would then have to guess an end date for a publication somebody
-     * meant to run indefinitely.
+     * ITS OWN ACTION BECAUSE IT IS ITS OWN DECISION. The period is what puts a
+     * document on the public site and what takes it off, and for a one-off nothing
+     * else writes it -- there is no successor whose release would cap it and no
+     * cadence to derive it from. Folding it into the save would make "put this
+     * back on the list" and "decide when this stops being current" the same
+     * gesture, and the save would then have to guess an end for a publication
+     * somebody meant to run indefinitely.
+     *
+     * BOTH ENDS TOGETHER, because they are one interval. Two endpoints moving one
+     * end each can be used to describe a period that ends before it starts, and
+     * neither call would be the wrong one -- so the pair is validated as a pair,
+     * and the audit entry names all four values for the same reason.
+     *
+     * A START IN THE FUTURE IS ORDINARY. It is how a publication is prepared: give
+     * it the day it goes public, release it now, and it stays PUBLISHED and off
+     * the public site until the day arrives. Nothing runs on that day; the public
+     * listing simply asks whether the period covers the instant being read at.
      *
      * ONE-OFFS ONLY, and the refusal is not a formality. A cadenced series' issue
-     * has its window closed by the issue that succeeds it, so clearing an end
+     * has its period closed by the issue that succeeds it, so clearing an end
      * there leaves two uncapped issues and hands the public download site two
      * current editions of the same publication.
-     *
-     * A null `publicTo` means open-ended -- the shape four of the five archived
-     * one-offs already have -- and it is the value that puts an expired
-     * publication back on the site.
      */
     @PUT
     @Path("/{seriesId}/public-window")
@@ -528,7 +600,8 @@ public class OneOffRestService {
     @DomainScoped
     @VersionChecked
     public OneOffVo setPublicWindow(@PathParam("seriesId") String seriesId,
-                                    PublicWindowRequest request) {
+                                    PublicWindowRequest request,
+                                    @QueryParam("lang") String lang) {
         PublicationSeries series = seriesService.findBySeriesId(seriesId);
         if (series == null) {
             throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
@@ -551,42 +624,44 @@ public class OneOffRestService {
         PublicationIssue issue = onlyIssue(series);
         if (issue == null) {
             throw new IssueLifecycleService.TransitionRefusedException("ISSUE_NOT_FOUND",
-                    "'" + seriesId + "' has no issue yet, so there is no public window to set");
+                    "'" + seriesId + "' has no issue yet, so there is no public period to set");
         }
 
-        Date wanted = request == null || request.publicTo() == null
-                ? null : new Date(request.publicTo());
-        Date current = issue.getPublicTo();
-        if (java.util.Objects.equals(
-                current == null ? null : current.getTime(),
-                wanted == null ? null : wanted.getTime())) {
-            return toVo(series);
-        }
+        // The rule, the write and the trail live together in the core service: the
+        // validation says which periods are describable and the audit entry says
+        // which one was chosen, and a reader of the history is asking about
+        // exactly that pair. It also puts them where a test with a database can
+        // reach them, which this module has no harness for.
+        //
+        // AND THE SERIES' REVISION MOVES THERE TOO, for the same reason. The check
+        // above is made against the series -- one revision covers both rows on this
+        // surface -- while the period is written on the ISSUE, so a bump left to
+        // this endpoint would be a bump the core write could be reached without.
+        // The response below carries the moved counter, which is the token the form
+        // composes its next write against.
+        windowService.set(issue, instant(request == null ? null : request.publicFrom()),
+                instant(request == null ? null : request.publicTo()), userService.currentUser());
 
-        // MANUAL, because somebody decided it. The publish chain skips a window it
-        // did not derive, which is what stops a later action quietly reopening or
-        // re-capping a decision an admin made.
-        issue.setPublicTo(wanted);
-        issue.setPublicWindowSource(PublicWindowSource.MANUAL);
-        issueService.update(issue);
+        return toVo(series, lang);
+    }
 
-        Map<String, Object> detail = new LinkedHashMap<>();
-        detail.put("from", current == null ? null : current.getTime());
-        detail.put("to", wanted == null ? null : wanted.getTime());
-        auditService.edited(issue, userService.currentUser(),
-                AuditAction.VISIBILITY_WINDOW_CHANGED, detail);
-
-        return toVo(series);
+    private static Date instant(Long epochMillis) {
+        return epochMillis == null ? null : new Date(epochMillis);
     }
 
     /**
-     * The window's end, and the revision the caller composed it against.
+     * The public period's two ends, and the revision the caller composed them against.
      *
-     * `publicTo` is epoch millis, or null for open-ended -- and null is a VALUE
-     * here rather than an omission, which is why the body has exactly one field:
-     * there is nothing else in it for an absent one to be confused with.
+     * Both are epoch millis and both may be null, and null is a VALUE on either
+     * side rather than an omission: a null end is open-ended -- the shape four of
+     * the five archived one-offs have -- and a null start means nobody has decided
+     * yet, which only a publication still being assembled may say.
+     *
+     * `version` is the SERIES' revision, matching the save: a one-off is a series
+     * and its single issue edited through one form, and a second token for the
+     * issue would be a second thing to get wrong with nothing to gain.
      */
-    public record PublicWindowRequest(Long publicTo, Integer version) {
+    public record PublicWindowRequest(Long publicFrom, Long publicTo, Integer version) {
     }
 
     /**
@@ -958,23 +1033,49 @@ public class OneOffRestService {
         return SeriesIdSlug.fit(text, max);
     }
 
-    private OneOffVo toVo(PublicationSeries series) {
+    private OneOffVo toVo(PublicationSeries series, String lang) {
         OneOffVo vo = new OneOffVo();
         vo.series = series.toVo(SystemPublicationSeriesVo.class);
 
         PublicationIssue issue = onlyIssue(series);
         if (issue != null) {
             vo.issuePublicId = issue.getPublicId();
+            vo.issueVersion = issue.getVersion();
             vo.issueStatus = issue.getStatus() == null ? null : issue.getStatus().name();
+            vo.publicFrom = issue.getPublicFrom() == null ? null : issue.getPublicFrom().getTime();
             vo.publicTo = issue.getPublicTo() == null ? null : issue.getPublicTo().getTime();
             fillIssueDescs(issue, vo);
             vo.publishable = isPublishable(series, issue);
         }
 
         vo.categoryPublish = series.getCategory() != null && series.getCategory().isPublish();
+        vo.categoryName = categoryNameOf(series.getCategory(), lang);
 
         vo.active = isActive(series, issue, new Date());
         return vo;
+    }
+
+    /**
+     * The category's name, in the requested language or the first it HAS.
+     *
+     * The fallback is the same one every other localized read applies, and it is
+     * not a nicety here: the name is used in the sentence that explains why a
+     * publication is on no public site, and a blank one leaves the reader with an
+     * empty parenthesis and nowhere to go.
+     *
+     * Package-private and static so the projection can be asserted without a
+     * database.
+     */
+    static String categoryNameOf(PublicationCategory category, String lang) {
+        if (category == null || category.getDescs() == null || category.getDescs().isEmpty()) {
+            return null;
+        }
+        for (PublicationCategoryDesc desc : category.getDescs()) {
+            if (lang != null && lang.equals(desc.getLang()) && desc.getName() != null) {
+                return desc.getName();
+            }
+        }
+        return category.getDescs().get(0).getName();
     }
 
     /**

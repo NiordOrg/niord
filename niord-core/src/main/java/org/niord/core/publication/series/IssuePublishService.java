@@ -968,6 +968,21 @@ public class IssuePublishService extends BaseService {
         return now;
     }
 
+    /**
+     * Step 12. Open the public window, WITHOUT overwriting one somebody set.
+     *
+     * The release instant is the DEFAULT starting instant, not the rule. A
+     * publication can be prepared with the day it is to go public already
+     * decided -- a hand-set publicFrom, MANUAL, possibly weeks away -- and
+     * released now; stamping over that here would put it on the public site
+     * today, which is the one thing the preparation existed to prevent. So a
+     * starting instant that is already there is kept, whatever it says about
+     * when, and the source is left as whoever wrote it recorded it.
+     *
+     * A hand-set END with no start still gets its start from this moment: the
+     * decision that was made was about when the publication stops being current,
+     * and it says nothing about when it begins.
+     */
     private void openWindow(PublicationIssue issue, Date stamp) {
         if (issue.getPublicFrom() == null) {
             issue.setPublicFrom(stamp);
