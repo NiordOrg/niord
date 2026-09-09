@@ -20,6 +20,7 @@ import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationDesc;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Where each template-less publication belongs.
@@ -67,9 +68,35 @@ public final class LegacyOrphanGrouping {
      * seriesId is the authored id for SHARED_SERIES, and the legacyTemplateId of
      * the destination for EXISTING_SERIES -- two different keys, which is why the
      * kind travels with it rather than being inferred from the shape of the id.
+     *
+     * names is the ruled name per language, empty where none is ruled. A SHARED
+     * series has no template to take a name from, so without a ruling it is named
+     * from whichever of its issues is the newest -- and an issue of a yearly
+     * publication is titled for ONE YEAR. That put "for vinteren 2026" and "2022"
+     * into two series names, where they will stay until the next edition arrives
+     * and moves them to a different wrong year. The identity of a shared series is
+     * an editorial decision -- the same decision that ruled these rows are one
+     * series -- so it belongs beside the ruled id rather than in a heuristic that
+     * strips a trailing year and leaves "for vinteren" dangling.
      */
-    public record Placement(Destination kind, String seriesId, String categoryId, String note) {
+    public record Placement(Destination kind, String seriesId, String categoryId,
+                            Map<String, String> names, String note) {
+
+        /** The common case: a placement with no ruled name. */
+        public Placement(Destination kind, String seriesId, String categoryId, String note) {
+            this(kind, seriesId, categoryId, Map.of(), note);
+        }
     }
+
+    /** The Danish ice-service annex, as it is to be named. */
+    private static final Map<String, String> ICE_SERVICE_NAMES = Map.of(
+            "da", "Meddelelse fra Marinestaben om istjeneste samt om ismeldinger m.m.",
+            "en", "Meddelelse fra Marinestaben om istjeneste samt om ismeldinger m.m. (Danish Only)");
+
+    /** The list of lights, whose two names are the same publication in two languages. */
+    private static final Map<String, String> LIST_OF_LIGHTS_NAMES = Map.of(
+            "da", "Dansk Fyrliste",
+            "en", "Danish List of Lights");
 
     /** "Annexes - Notices to Mariners". */
     public static final String ANNEX_CATEGORY = "dk-dma-nm-annex";
@@ -94,6 +121,7 @@ public final class LegacyOrphanGrouping {
         }
         if (matches(title, "istjeneste") || matches(title, "Marinestaben")) {
             return new Placement(Destination.SHARED_SERIES, "nm-annex-ice-service", ANNEX_CATEGORY,
+                    ICE_SERVICE_NAMES,
                     "one of the 8 ice-service annexes, which are one series");
         }
 
@@ -112,6 +140,7 @@ public final class LegacyOrphanGrouping {
 
         if (matches(title, "Danish List of Lights")) {
             return new Placement(Destination.SHARED_SERIES, "danish-list-of-lights", null,
+                    LIST_OF_LIGHTS_NAMES,
                     "one of the four Danish List of Lights editions, which are one series");
         }
 

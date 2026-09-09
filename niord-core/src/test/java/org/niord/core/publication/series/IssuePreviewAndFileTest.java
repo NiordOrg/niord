@@ -540,9 +540,11 @@ public class IssuePreviewAndFileTest {
                 "corrected".getBytes(StandardCharsets.UTF_8), user());
         em.flush();
 
+        // The trail comes back newest first, so the entry the upload just wrote is
+        // the FIRST match rather than the last.
         IssueAuditEntry replacement = audit.forIssue(published).stream()
                 .filter(a -> AuditAction.FILE_REPLACED_MANUALLY == a.getAction())
-                .reduce((first, second) -> second)
+                .findFirst()
                 .orElseThrow(() -> new AssertionError(
                         "the replacement was not audited as one; the trail shows an upload, which "
                                 + "reads as a document appearing rather than a cited one being "

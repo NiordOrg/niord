@@ -528,6 +528,33 @@ public class PublicationApiContractTest {
     }
 
     /**
+     * The edit body carries the edition, and it reaches the service.
+     *
+     * The column was write-once at import: the read surfaces were built -- a
+     * sortable column, "2026 (2)" in the timeline strip -- while nothing on the
+     * wire could set it, so the one row in the archive carrying a mistyped value
+     * was uncorrectable through the product that displays it.
+     *
+     * Both halves are asserted because either alone passes while the field is
+     * dead: a component nothing maps is accepted and dropped, and a mapping with
+     * no component does not compile but a renamed one silently would.
+     */
+    @Test
+    public void theEditBodyCarriesTheEdition() throws IOException {
+        List<String> components =
+                Arrays.stream(PublicationIssueRestService.UpdateIssueRequest.class.getRecordComponents())
+                        .map(RecordComponent::getName).toList();
+        assertTrue(components.contains("edition"),
+                "the edit body carries no edition, so the field the issue list sorts on can only "
+                        + "ever hold what the import put there");
+
+        String issues = read("src/main/java/org/niord/web/publication/PublicationIssueRestService.java");
+        assertTrue(issues.contains("request.edition()"),
+                "editOf does not pass the edition through, so a client sending one is answered 200 "
+                        + "and nothing changes");
+    }
+
+    /**
      * The probe names the messages it samples.
      *
      * The criteria editor exists to let an admin judge a document before it is

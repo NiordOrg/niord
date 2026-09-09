@@ -788,4 +788,45 @@ public class IssueDeleteTest {
             assertNull(entry.getIssue(), "a per-issue entry reached the series history");
         }
     }
+
+    /**
+     * The ISSUE trail is newest first too, which is the same answer to the same
+     * question.
+     *
+     * It used to run the other way, on the reasoning that an issue's trail is a
+     * story read forwards. In front of an admin the two panels sit on one screen,
+     * and a reader had to check the dates on every line to know which way each was
+     * running -- while the entry they came to look at, the amendment made this
+     * morning, sat under nine years of imported archive.
+     *
+     * The tiebreak descends with the time: the publish transaction writes several
+     * entries in the same millisecond, and an ascending id there would put the
+     * first thing that happened above the last.
+     */
+    @Test
+    @Transactional
+    public void theIssueTrailIsNewestFirst() {
+        PublicationSeries s = series();
+        User actor = user();
+
+        PublicationIssue target = lifecycle.create(s, new Date(OPENS), IntervalBoundSource.STAMPED, actor);
+        em.flush();
+        audit.edited(target, actor, AuditAction.NAME_CHANGED, java.util.Map.of("to", "renamed"));
+        audit.edited(target, actor, AuditAction.EDITION_CHANGED, java.util.Map.of("to", "2"));
+        em.flush();
+
+        List<IssueAuditEntry> trail = audit.forIssue(target);
+        assertTrue(trail.size() >= 3, "expected the create and both edits, got " + trail);
+        assertEquals(AuditAction.EDITION_CHANGED, trail.get(0).getAction(),
+                "the issue trail is not newest first");
+        assertEquals(AuditAction.NAME_CHANGED, trail.get(1).getAction(),
+                "entries written in the same millisecond must break by id the same way round");
+        assertEquals(AuditAction.CREATED, trail.get(trail.size() - 1).getAction(),
+                "the create is the oldest thing that happened and belongs at the bottom");
+
+        for (int i = 1; i < trail.size(); i++) {
+            assertTrue(!trail.get(i).getCreated().after(trail.get(i - 1).getCreated()),
+                    "the trail is not ordered by time: " + trail);
+        }
+    }
 }

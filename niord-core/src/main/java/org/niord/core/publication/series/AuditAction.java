@@ -53,6 +53,16 @@ public enum AuditAction {
     // line answer the question it was opened for.
     INTERVAL_CHANGED,
     NAME_CHANGED,
+
+    /**
+     * The edition string an admin typed, replacing the one the create derived.
+     *
+     * Its own action rather than a name change: the edition is what tells two
+     * publications of the SAME period apart, it is printed on the cover of the
+     * reports that carry one, and it expands into a file-name pattern -- so the
+     * trail has to say which of those moved.
+     */
+    EDITION_CHANGED,
     CRITERIA_OVERRIDDEN,
     OVERRIDE_INCLUDED,
     OVERRIDE_EXCLUDED,
@@ -84,6 +94,18 @@ public enum AuditAction {
      * somebody looks when a publication left the site.
      */
     VISIBILITY_CAPPED,
+
+    /**
+     * The public window's end, set or cleared by hand.
+     *
+     * Distinct from VISIBILITY_CAPPED, which is a NEIGHBOUR's publish closing
+     * this window as a side effect of taking over. This one is somebody deciding
+     * when a publication stops being on the public site -- or deciding it no
+     * longer stops -- and it is the only action that can put a publication whose
+     * window has expired back on the site, so it is what somebody looks for when
+     * one reappears.
+     */
+    VISIBILITY_WINDOW_CHANGED,
 
     IMPORTED,
     SERIES_ACTIVATED,

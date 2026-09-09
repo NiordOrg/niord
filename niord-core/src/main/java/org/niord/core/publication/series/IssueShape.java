@@ -276,8 +276,47 @@ public class IssueShape extends BaseService {
         }
     }
 
+    // ------------------------------------------------------------------ edition
+
+    /**
+     * The edition a FRESH period's issue carries.
+     *
+     * ONE for every series, because the first issue of a period IS its first
+     * edition -- and a period that has only ever had one edition should say so
+     * rather than say nothing. The column was write-once at import: 1,048 of the
+     * 1,077 archived rows carry it because the previous system defaulted it on
+     * every create, while every issue created here was born with no edition at
+     * all. A publication whose file-name pattern names the edition then published
+     * as "EfS-A-v-2027.pdf": the token expanded to the empty string, which is not
+     * an unresolved token, so nothing refused it.
+     *
+     * The draft proposes this and the create writes it, from here, so the number
+     * on the form is the number that lands.
+     */
+    public static final Integer FIRST_EDITION = 1;
+
+    /** The same, as the free text the column stores. */
+    public static final String FIRST_EDITION_TEXT = String.valueOf(FIRST_EDITION);
+
+    /**
+     * The edition that SUCCEEDS one: the predecessor's number plus one.
+     *
+     * The new-edition action exists precisely because two issues share a period,
+     * and the edition is the column that tells them apart -- so a successor left
+     * with the predecessor's number, or with none, is the one row the action was
+     * taken to distinguish showing nothing.
+     *
+     * A predecessor whose edition is absent or is not a number counts as the
+     * first: there is nothing to count from, and the successor is the second
+     * edition of that period whatever the first one was called.
+     */
+    public static String editionAfter(PublicationIssue predecessor) {
+        Integer previous = predecessor == null ? null : editionOf(predecessor);
+        return String.valueOf(previous == null ? FIRST_EDITION + 1 : previous + 1);
+    }
+
     /** The edition as a number, where somebody wrote one. Free text otherwise. */
-    private static Integer editionOf(PublicationIssue issue) {
+    public static Integer editionOf(PublicationIssue issue) {
         String edition = issue.getEdition();
         if (edition == null || !edition.trim().matches("\\d+")) {
             return null;

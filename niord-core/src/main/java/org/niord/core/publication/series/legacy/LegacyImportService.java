@@ -41,6 +41,7 @@ import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.SeriesStatus;
 import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.report.FmReportService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
@@ -968,6 +969,8 @@ public class LegacyImportService extends BaseService {
                     planCategoryOf(plan, source, series);
                 }
 
+                applySharedSeriesNaming(series, source, place);
+
                 plan.series().add(series);
                 group.forEach(member ->
                         seriesByTemplate.put(member.getPublicationId(), series));
@@ -977,6 +980,86 @@ public class LegacyImportService extends BaseService {
                 problem(plan, "ORPHAN_SERIES_UNTRANSLATABLE", source, ex.getMessage());
             }
         }
+    }
+
+    /**
+     * The name, the suggestion pattern, the file-name pattern and the link of a
+     * SHARED series, which has no template to take any of them from.
+     *
+     * THE ROLES INVERT WITHOUT A TEMPLATE, and that is the whole of this method.
+     * A legacy TEMPLATE separates a series' name from the pattern its issues are
+     * named by -- "Weekly NtM" beside "NtM Week ${week} - ${year}" -- so copying
+     * both verbatim is correct for the five template-derived series. An orphan
+     * has no titleFormat and its title names ONE EDITION, so the verbatim copy
+     * puts an edition's year into the SERIES name and leaves the pattern that
+     * should carry the year token empty. The next issue an admin creates is then
+     * born named for a year that has passed, and filed under a file name to
+     * match.
+     *
+     * SO: the ruled name where there is one, and the year moved from the title
+     * into the pattern where the title carries one. Only where a year was
+     * actually found -- a series whose editions are all titled the same thing has
+     * nothing to parameterise, and authoring a pattern equal to the title would
+     * claim a rule nobody stated.
+     *
+     * AND NO LINK PATTERN UNLESS THE PUBLICATION IS A LINK. An uploaded
+     * publication's legacy link addresses ONE issue's repository folder, revision
+     * and file; as a series-level pattern it can only ever point at the wrong
+     * edition, and it read as provenance that does not exist.
+     */
+    private static void applySharedSeriesNaming(PublicationSeries series, Publication source,
+                                                LegacyOrphanGrouping.Placement place) {
+        Map<String, String> descTitles = new LinkedHashMap<>();
+        Map<String, String> descFileNames = new LinkedHashMap<>();
+        if (source.getDescs() != null) {
+            source.getDescs().forEach(d -> {
+                if (d.getLang() != null && !d.getLang().isBlank()) {
+                    descTitles.put(d.getLang(), d.getTitle());
+                    descFileNames.put(d.getLang(), d.getFileName());
+                }
+            });
+        }
+
+        for (org.niord.core.publication.series.PublicationSeriesDesc desc : series.getDescs()) {
+            String lang = desc.getLang();
+            String ruled = place.names().get(lang);
+            if (ruled != null && !ruled.isBlank()) {
+                desc.setName(ruled);
+            }
+            String namePattern = withYearToken(descTitles.get(lang));
+            if (namePattern != null) {
+                desc.setNameSuggestionPattern(namePattern);
+            }
+            String filePattern = withYearToken(descFileNames.get(lang));
+            if (filePattern != null) {
+                desc.setFileNamePattern(filePattern);
+            }
+            if (series.getContentMode() != ContentMode.EXTERNAL_LINK) {
+                desc.setLinkPattern(null);
+            }
+        }
+    }
+
+    /** Four digits that are a year, as the token that renders them. */
+    private static final java.util.regex.Pattern FOUR_DIGIT_YEAR =
+            java.util.regex.Pattern.compile("(?<!\\d)(19|20)\\d{2}(?!\\d)");
+
+    /**
+     * The text with its year replaced by the naming token, or null where it
+     * carries no year.
+     *
+     * Null rather than the text unchanged, so a caller can tell "there was
+     * nothing to parameterise" from "here is a pattern".
+     */
+    private static String withYearToken(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        java.util.regex.Matcher m = FOUR_DIGIT_YEAR.matcher(text);
+        if (!m.find()) {
+            return null;
+        }
+        return m.reset().replaceAll(java.util.regex.Matcher.quoteReplacement("${year}"));
     }
 
     /** The six that really are one-offs, each with its own authored id. */
@@ -1125,16 +1208,19 @@ public class LegacyImportService extends BaseService {
             // the pair closed, and the chain moves on past the pair as a whole.
             Date siblingsOpenAt = null;
             Date siblingsCloseAt = null;
-            Date previousRelease = null;
+            // The whole previous ROW, not only its release instant: a withdrawal
+            // and its replacement are recognised from the outgoing row's status
+            // and its own public window as well as from the gap between them.
+            Publication previousRow = null;
 
             for (int i = 0; i < chain.size(); i++) {
                 Publication legacy = chain.get(i);
-                boolean sibling = isSibling(previousRelease, legacy.getPublishDateFrom());
+                boolean sibling = isSibling(previousRow, legacy);
                 if (!sibling) {
                     siblingsOpenAt = previousCutoff;
                     siblingsCloseAt = null;
                 }
-                previousRelease = legacy.getPublishDateFrom();
+                previousRow = legacy;
                 try {
                     // repoPath is where the bytes live, and it is NOT NULL on the
                     // issue. Every one of the 1,077 production rows has one.
@@ -1525,9 +1611,64 @@ public class LegacyImportService extends BaseService {
                     nominalClose);
         }
 
-        // A one-off: the interval is its window, and the original bounds apply.
-        return CutoffRecovery.recover(legacy, CutoffRecovery.nextTagCreated(chain, i), null, true,
-                new CutoffRecovery.Bounds(issue.getIntervalFrom(), issue.getIntervalTo()));
+        // A CADENCE-LESS issue: the interval is its window, and the original
+        // bounds apply -- plus the one ceiling this shape had and the others did
+        // not.
+        //
+        // WHY IT NEEDS ONE. A cadence-less row routinely carries no window end at
+        // all, and with no upper bound the believability test degenerates to "any
+        // candidate after the window opened". The cascade then adopts whatever
+        // stamp it finds, and on an archived row the last write is the one that
+        // set it inactive -- made in the sitting that published its replacement,
+        // years later. The 2023 ice-service edition was stamped 47 seconds after
+        // the 2026 edition's window opened and sorted after it, numbered for
+        // 2026. The annual in-force shape has had this guard since the firing
+        // editions showed the same thing; the weekly shape is bounded by its
+        // nominal close. This branch was the one with no ceiling.
+        //
+        // AND WHY THE FALLBACK IS THE WINDOW OPEN. With the ceiling in place a row
+        // whose only stamp is its withdrawal has no believable candidate left, and
+        // there is no nominal close to stand in -- so the instant it became public
+        // is the answer, which is where a publication that comes out once decides
+        // its content.
+        return CutoffRecovery.recoverOrWindowOpen(legacy, CutoffRecovery.nextTagCreated(chain, i),
+                null, true,
+                new CutoffRecovery.Bounds(issue.getIntervalFrom(), issue.getIntervalTo(),
+                        replacementOpen(chain, i)),
+                legacy.getPublishDateFrom());
+    }
+
+    /**
+     * When the row at position i stopped being the current publication: the first
+     * later chain entry whose own window opens more than the agreement window
+     * after this row's.
+     *
+     * The five-minute exemption is the sibling rule seen from the other side. A
+     * withdrawal and the replacement released in the same action are one period,
+     * and one half of a pair cannot bound the other -- taken as a ceiling, the
+     * replacement's own instant would reject the withdrawn row's release stamp,
+     * which is plainly its release.
+     *
+     * The chain is ordered by the public window's start, so the first entry past
+     * the exemption is the earliest one. Null at the end of a chain, which is an
+     * answer: the newest edition has not been replaced.
+     */
+    private static Date replacementOpen(List<Publication> chain, int i) {
+        if (chain == null || i < 0 || i >= chain.size()) {
+            return null;
+        }
+        Date open = chain.get(i).getPublishDateFrom();
+        if (open == null) {
+            return null;
+        }
+        for (int j = i + 1; j < chain.size(); j++) {
+            Date later = chain.get(j).getPublishDateFrom();
+            if (later != null
+                    && later.getTime() - open.getTime() > CutoffRecovery.AGREEMENT_WINDOW_MS) {
+                return later;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1660,13 +1801,51 @@ public class LegacyImportService extends BaseService {
     /**
      * Whether two releases are the same release seen twice.
      *
-     * Five minutes, the same agreement window the cascade uses: a withdrawal and
-     * its replacement are written by one action, and rows minutes apart were
-     * released together. Rows hours apart were not.
+     * TWO WAYS TO BE ONE PERIOD, and the second is the one that took ten days to
+     * find.
+     *
+     * WITHIN FIVE MINUTES, the same agreement window the cascade uses: a
+     * withdrawal and its replacement are written by one action, and rows minutes
+     * apart were released together. Six pairs in the archive are of this shape.
+     *
+     * OR THE OUTGOING ROW WAS WITHDRAWN AND THIS ONE WENT OUT INSIDE ITS WINDOW.
+     * A correction is not always made in the same sitting: an edition that went
+     * out with the previous year's title and the previous year's member list
+     * stood for six days before somebody set it inactive and published a
+     * replacement, backdating the replacement's window to three hours after the
+     * withdrawn one opened. Read as two consecutive releases, the replacement
+     * opens where the WITHDRAWN row closed and covers three hours of a weekly
+     * publication -- and the period it was published to cover reads as never
+     * covered at all. Read as one period, it opens where the row before the pair
+     * closed, which is what actually happened.
+     *
+     * THE INACTIVE GUARD IS LOAD-BEARING. Without it the second test is "released
+     * inside the predecessor's window", and the weekly windows overlap by
+     * construction -- throughout 2018 and 2019 week N closes at 10:59 while week
+     * N+1 opens at 10:00 -- so it matches 67 consecutive pairs and collapses
+     * whole years of the chain into one release group. With it, it matches four,
+     * every one of them a genuine same-period replacement.
      */
-    private static boolean isSibling(Date previousRelease, Date release) {
-        return previousRelease != null && release != null
-                && Math.abs(release.getTime() - previousRelease.getTime()) <= CutoffRecovery.AGREEMENT_WINDOW_MS;
+    // Package-visible so the rule can be asserted over the estate directly.
+    // Reaching it through plan() means measuring the whole import to ask which
+    // pairs the rule matches, and the count is the property worth pinning.
+    static boolean isSibling(Publication previous, Publication release) {
+        if (previous == null || release == null) {
+            return false;
+        }
+        Date previousRelease = previous.getPublishDateFrom();
+        Date opened = release.getPublishDateFrom();
+        if (previousRelease == null || opened == null) {
+            return false;
+        }
+        if (Math.abs(opened.getTime() - previousRelease.getTime()) <= CutoffRecovery.AGREEMENT_WINDOW_MS) {
+            return true;
+        }
+        if (previous.getStatus() != PublicationStatus.INACTIVE) {
+            return false;
+        }
+        Date previousClose = previous.getPublishDateTo();
+        return previousClose != null && opened.after(previousRelease) && opened.before(previousClose);
     }
 
     /**

@@ -169,9 +169,11 @@ public class IssueArchiveStreamTest {
                         IssuePublishService.PublishRequest.ALL_WARNINGS, user(),
                         "a chart number was wrong in three of the notices"));
         em.flush();
+        // The trail comes back newest first, so the entry the amend just wrote is
+        // the FIRST match rather than the last.
         return auditService.forIssue(issue).stream()
                 .filter(a -> AuditAction.AMENDED == a.getAction())
-                .reduce((first, second) -> second)
+                .findFirst()
                 .orElseThrow(() -> new AssertionError("the amend wrote no AMENDED entry"));
     }
 

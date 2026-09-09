@@ -209,7 +209,7 @@ public class IssueDraftService extends BaseService {
         warnings.addAll(observations(series, issues, tiles, predecessor, fromSource));
 
         IssueNaming.Numbers numbers = to == null ? null
-                : IssueNaming.derive(to, tiles ? from : null, zone, nextEdition(series, issues));
+                : IssueNaming.derive(to, tiles ? from : null, zone, nextEdition());
 
         IssueDraftVo vo = new IssueDraftVo();
         vo.setSeriesId(series.getSeriesId());
@@ -374,30 +374,23 @@ public class IssueDraftService extends BaseService {
     }
 
     /**
-     * The next edition number, where the numbering scheme has one.
+     * The edition the draft proposes: the first, because a draft is a FRESH
+     * PERIOD.
      *
-     * Read off the highest edition already recorded rather than off the issue
-     * count: a series whose first two editions were imported as 3 and 4 has no
-     * edition 1, and counting rows would propose one that already exists.
+     * THE SAME VALUE THE CREATE WRITES, from the same constant, and that is the
+     * whole point of it living in one place. The draft used to propose the
+     * highest recorded edition plus one, which is the answer to a different
+     * question -- and on the two series where somebody once typed a YEAR into the
+     * edition box it proposed 2026 for a period's first issue, then the create
+     * stored nothing at all, so the number on the form and the number in the
+     * database were never the same number.
+     *
+     * A SECOND edition of a period is not this question. It comes from the
+     * new-edition action, which counts from the predecessor it supersedes --
+     * {@link IssueShape#editionAfter}.
      */
-    private static Integer nextEdition(PublicationSeries series, List<PublicationIssue> issues) {
-        NumberingScheme scheme = series.getNumberingScheme();
-        if (scheme != NumberingScheme.YEAR_EDITION && scheme != NumberingScheme.EDITION_SEQUENCE) {
-            return null;
-        }
-        int highest = 0;
-        for (PublicationIssue i : issues) {
-            String edition = i.getEdition();
-            if (edition == null || edition.isBlank()) {
-                continue;
-            }
-            try {
-                highest = Math.max(highest, Integer.parseInt(edition.trim()));
-            } catch (NumberFormatException e) {
-                // An edition somebody wrote as words is not a number to count from.
-            }
-        }
-        return highest + 1;
+    private static Integer nextEdition() {
+        return IssueShape.FIRST_EDITION;
     }
 
     /**

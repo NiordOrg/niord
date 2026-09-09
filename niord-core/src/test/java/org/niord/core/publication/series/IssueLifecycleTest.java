@@ -202,6 +202,15 @@ public class IssueLifecycleTest {
 
         assertNotNull(edition.getSupersedes(), "supersedes was not set");
         assertEquals(first.getId(), edition.getSupersedes().getId());
+
+        // The number that tells the two apart. Without it the successor of a
+        // period's first edition shows nothing in the very column the action
+        // exists to fill, and a file-name pattern naming the edition renders the
+        // same name for both.
+        assertEquals("1", predecessor.getEdition(),
+                "a fresh period's issue is its first edition");
+        assertEquals("2", edition.getEdition(),
+                "a new edition counts from the one it supersedes");
         // The predecessor stays current until the replacement is actually
         // published: the new edition is OPEN and nobody can read it, so closing
         // the old window now would leave the download site with no current

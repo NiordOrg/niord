@@ -22,6 +22,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.publication.Publication;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
@@ -66,6 +67,17 @@ public class SeamRegressionTest {
     /** One row of the fixture: what the estate holds and where it must land. */
     record Expected(String seam, String publicationId, String seriesId, boolean orphan, String name,
                     IssueStatus status, Long publicFrom, Long publicTo, Integer tagMessageCount) {
+    }
+
+    /**
+     * A seam row and what it was translated into, kept together.
+     *
+     * The chaining assertion needs both halves: the ISSUE for the intervals and
+     * cut-offs it is about, and the ROW because whether two releases are one
+     * period is decided from the archived publication's status and window, and it
+     * is decided by the importer's own rule rather than by a copy of it here.
+     */
+    record Seamed(Publication row, PublicationIssue issue) {
     }
 
     static List<Expected> seams() {
@@ -169,8 +181,13 @@ public class SeamRegressionTest {
      */
     @Test
     public void theSeamsChainWithoutOverlapOrPhantomGaps() {
+        List<Publication> rows = LegacyEstateFixture.publications();
         LegacyImportService.Plan plan = importService.planFrom(
-                LegacyEstateFixture.templates(), LegacyEstateFixture.publications());
+                LegacyEstateFixture.templates(), rows);
+        java.util.Map<String, Publication> rowsById = new java.util.LinkedHashMap<>();
+        for (Publication row : rows) {
+            rowsById.put(row.getPublicationId(), row);
+        }
 
         java.util.Map<String, List<Expected>> groups = new java.util.LinkedHashMap<>();
         for (Expected e : seams()) {
@@ -179,25 +196,26 @@ public class SeamRegressionTest {
 
         List<String> failures = new ArrayList<>();
         for (java.util.Map.Entry<String, List<Expected>> g : groups.entrySet()) {
-            List<PublicationIssue> issues = new ArrayList<>();
+            List<Seamed> issues = new ArrayList<>();
             for (Expected e : g.getValue()) {
                 PublicationIssue issue = plan.issues().get(e.publicationId());
                 if (issue != null && issue.getStatus() != IssueStatus.OPEN) {
-                    issues.add(issue);
+                    issues.add(new Seamed(rowsById.get(e.publicationId()), issue));
                 }
             }
             issues.sort(java.util.Comparator
-                    .comparing((PublicationIssue i) -> i.getPublicFrom().getTime())
-                    .thenComparing(PublicationIssue::getPublicId));
+                    .comparing((Seamed s) -> s.issue().getPublicFrom().getTime())
+                    .thenComparing(s -> s.issue().getPublicId()));
 
             boolean tiling = g.getKey().endsWith("weekly-ntm");
             Date previousClose = null;   // the close of the previous release group
             Date groupOpen = null;       // what the current release group opened at
-            Date groupRelease = null;
             Date groupClose = null;
+            Publication previousRow = null;
             List<Date> closes = new ArrayList<>();
 
-            for (PublicationIssue issue : issues) {
+            for (Seamed seamed : issues) {
+                PublicationIssue issue = seamed.issue();
                 String who = g.getKey() + " / " + daName(issue);
                 Date cutoff = issue.getCutoffStampedAt();
                 Date nominal = issue.getPublicFrom();
@@ -212,15 +230,21 @@ public class SeamRegressionTest {
                             + nominal + " (" + issue.getCutoffSource() + ")");
                 }
 
-                boolean sibling = groupRelease != null
-                        && Math.abs(nominal.getTime() - groupRelease.getTime()) <= CutoffRecovery.AGREEMENT_WINDOW_MS;
+                // THE IMPORTER'S OWN RULE, called rather than re-stated. A
+                // withdrawal and its replacement are one release period, and there
+                // are two ways to be one: released within the agreement window, or
+                // an outgoing row that was withdrawn and a replacement released
+                // inside its window days later. A replica that mirrored only the
+                // first would read a seam as chained cleanly while the import
+                // grouped it differently -- which is a test agreeing with itself.
+                boolean sibling = LegacyImportService.isSibling(previousRow, seamed.row());
+                previousRow = seamed.row();
                 if (!sibling) {
                     if (groupClose != null) {
                         closes.add(groupClose);
                     }
                     previousClose = groupClose;
                     groupOpen = previousClose;
-                    groupRelease = nominal;
                     groupClose = null;
                 }
                 if (groupClose == null || issue.getStatus() == IssueStatus.PUBLISHED) {

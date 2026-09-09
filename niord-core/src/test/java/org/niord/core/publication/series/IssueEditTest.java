@@ -119,6 +119,134 @@ public class IssueEditTest {
         return audit.forIssue(issue).stream().map(IssueAuditEntry::getAction).toList();
     }
 
+    // ------------------------------------------------------------------ edition
+
+    /**
+     * The create writes the first edition, so no issue is born without one.
+     *
+     * The column was write-once at import: the archive carries an edition on 1,048
+     * of its 1,077 rows because the previous system defaulted one, and every issue
+     * created here had none. A series whose file-name pattern names the edition
+     * then published as "…-v-2027.pdf" -- the token expands to the empty string,
+     * which is not an unresolved token and so is refused by nothing.
+     */
+    @Test
+    @Transactional
+    public void anewIssueIsBornAsTheFirstEditionOfItsPeriod() {
+        PublicationIssue issue = anIssue();
+        assertEquals("1", issue.getEdition(),
+                "an issue with no edition publishes with the token expanded to nothing");
+    }
+
+    /** A typed edition is trimmed, stored and recorded as its own event. */
+    @Test
+    @Transactional
+    public void aneditionIsChangedAndAudited() {
+        PublicationIssue issue = anIssue();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(null, null, null, null, null, false, "  2  "),
+                user());
+        em.flush();
+
+        assertEquals("2", issue.getEdition(), "the edition was not trimmed");
+        assertTrue(actions(issue).contains(AuditAction.EDITION_CHANGED),
+                "the edition is on the cover and in the file name; the trail has to say it moved");
+    }
+
+    /**
+     * FREE TEXT, because the archive is.
+     *
+     * Two rows carry a YEAR, typed into the previous system's edition box, and one
+     * of those years is in a published file name to this day. A numeric column
+     * would refuse to round-trip the archive this has to carry.
+     */
+    @Test
+    @Transactional
+    public void anonNumericEditionIsKept() {
+        PublicationIssue issue = anIssue();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(null, null, null, null, null, false, "v2 rettet"),
+                user());
+        em.flush();
+
+        assertEquals("v2 rettet", issue.getEdition());
+    }
+
+    /** Absent leaves it alone, like every other field on the edit. */
+    @Test
+    @Transactional
+    public void anabsentEditionChangesNothing() {
+        PublicationIssue issue = anIssue();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "Uge 44"), null, null, null),
+                user());
+        em.flush();
+
+        assertEquals("1", issue.getEdition());
+        assertFalse(actions(issue).contains(AuditAction.EDITION_CHANGED),
+                "a field nobody sent must not produce an entry saying it changed");
+    }
+
+    /**
+     * A BLANK edition is refused rather than treated as a clear.
+     *
+     * "No edition" and "the first edition" are different claims, and the create
+     * writes the first one precisely so nothing has to be ambiguous about which.
+     */
+    @Test
+    @Transactional
+    public void ablankEditionIsRefused() {
+        PublicationIssue issue = anIssue();
+
+        IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> editService.update(issue,
+                        new IssueEditService.IssueEdit(null, null, null, null, null, false, "   "),
+                        user()));
+        assertEquals("EDITION_INVALID", refusal.code());
+        assertEquals("1", issue.getEdition(), "the refusal must not have written anything");
+    }
+
+    /** And one longer than the column, for the same reason and with the same code. */
+    @Test
+    @Transactional
+    public void anoverlongEditionIsRefused() {
+        PublicationIssue issue = anIssue();
+        String tooLong = "e".repeat(IssueEditService.MAX_EDITION + 1);
+
+        IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> editService.update(issue,
+                        new IssueEditService.IssueEdit(null, null, null, null, null, false, tooLong),
+                        user()));
+        assertEquals("EDITION_INVALID", refusal.code());
+    }
+
+    /**
+     * A PUBLISHED issue's edition is frozen by the gate that freezes its names.
+     *
+     * It is on the cover of a document people have downloaded and in the file name
+     * they downloaded it under; re-deciding it afterwards would leave the record
+     * and the artefact disagreeing.
+     */
+    @Test
+    @Transactional
+    public void theeditionOfAPublishedIssueIsFrozen() {
+        PublicationIssue issue = anIssue();
+        issue.setStatus(IssueStatus.PUBLISHED);
+        em.flush();
+
+        IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> editService.update(issue,
+                        new IssueEditService.IssueEdit(null, null, null, null, null, false, "2"),
+                        user()));
+        assertEquals("ISSUE_NOT_OPEN", refusal.code());
+    }
+
     // -------------------------------------------------------------------- names
 
     /** A typed name is stored, marked as a decision, and recorded. */

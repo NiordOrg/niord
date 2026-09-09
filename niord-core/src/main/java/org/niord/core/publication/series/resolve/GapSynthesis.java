@@ -199,6 +199,9 @@ public final class GapSynthesis {
                     : GapDetection.gaps(gate, List.of(previous.effectiveCutoff(), next.effectiveCutoff()),
                             periodMillis);
             for (GapDetection.Gap gap : gaps) {
+                if (reCovered(covering, gap)) {
+                    continue;
+                }
                 out.add(row(RowKind.MISSING, seriesId, gap.from(), gap.to(),
                         latestAtOrBefore(covering, gap.from()), earliestAfter(covering, gap.to()),
                         zone, patterns));
@@ -232,6 +235,33 @@ public final class GapSynthesis {
 
         out.sort((a, b) -> Long.compare(a.sortKey(), b.sortKey()));
         return out;
+    }
+
+    /**
+     * Whether an issue that still covers its period closed INSIDE this gap.
+     *
+     * The withdraw-and-replace shape, seen from the coverage arithmetic. A
+     * withdrawn issue is dropped from the covering list, but the successor that
+     * was chained off it keeps the period start it inherited -- so the arithmetic
+     * measures from the row before the withdrawn one to a start that is a whole
+     * period late, and synthesizes a period that a published issue is sitting in
+     * the middle of. Offering a retro-create there asks an admin to make an issue
+     * for a period they already published to.
+     *
+     * STRICTLY INSIDE, and the strictness is what keeps the withdrawal rule
+     * intact. A neighbour closing exactly AT either bound is the chain working --
+     * that is what a tiling period's ends are -- so a week whose only issue was
+     * withdrawn still comes back as MISSING, which is the whole way a wrong
+     * published issue gets corrected.
+     */
+    private static boolean reCovered(List<Issue> covering, GapDetection.Gap gap) {
+        for (Issue issue : covering) {
+            Date cutoff = issue.effectiveCutoff();
+            if (cutoff != null && cutoff.after(gap.from()) && cutoff.before(gap.to())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

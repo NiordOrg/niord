@@ -919,11 +919,21 @@ public class IssuePublishTest {
      */
     @Test
     public void theAuditVocabularyIsClosedAndSpecific() {
-        assertEquals(29, AuditAction.values().length, "the audit vocabulary changed size");
+        assertEquals(31, AuditAction.values().length, "the audit vocabulary changed size");
         assertTrue(List.of(AuditAction.values()).containsAll(
                         List.of(AuditAction.LINK_SET, AuditAction.LINK_CLEARED,
                                 AuditAction.INTERVAL_CHANGED, AuditAction.NAME_CHANGED,
                                 AuditAction.CRITERIA_OVERRIDDEN, AuditAction.FILE_REPLACED_MANUALLY,
+                                // The edition string, typed rather than derived: it
+                                // is printed on the cover, expands into a file-name
+                                // pattern, and is what tells two publications of one
+                                // period apart.
+                                AuditAction.EDITION_CHANGED,
+                                // The public window's end, set or cleared by hand --
+                                // distinct from a neighbour's publish capping it,
+                                // and the only action that puts an expired
+                                // publication back on the public site.
+                                AuditAction.VISIBILITY_WINDOW_CHANGED,
                                 // Moving a publication to another desk: it leaves one
                                 // team's screens and appears on another's, and the
                                 // question afterwards is always who and why.

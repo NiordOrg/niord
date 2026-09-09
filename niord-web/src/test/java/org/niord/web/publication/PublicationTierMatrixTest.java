@@ -254,6 +254,11 @@ public class PublicationTierMatrixTest {
         t.put("GET /one-off-publications/{seriesId}", Tier.ADMIN);
         t.put("POST /one-off-publications/", Tier.ADMIN);
         t.put("PUT /one-off-publications/{seriesId}", Tier.ADMIN);
+        // Setting or clearing the public window puts a document on the public
+        // site or takes it off, so it is the same tier as the save it was split
+        // out of -- and it is split out precisely so it is not a side effect of
+        // one.
+        t.put("PUT /one-off-publications/{seriesId}/public-window", Tier.ADMIN);
 
         // ---- the legacy publication resource ----------------------------
         // FROZEN. These are not the redesign's endpoints and their tiers are the

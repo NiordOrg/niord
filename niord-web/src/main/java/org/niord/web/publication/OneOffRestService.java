@@ -37,8 +37,10 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
+import org.niord.core.publication.series.AuditAction;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.IntervalBoundSource;
+import org.niord.core.publication.series.IssueAuditService;
 import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.IssuePublicationMapping;
 import org.niord.core.publication.series.IssuePublishService;
@@ -46,6 +48,7 @@ import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicAuthority;
+import org.niord.core.publication.series.PublicWindowSource;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublicationIssueDesc;
@@ -68,8 +71,10 @@ import org.niord.core.publication.vo.MessagePublication;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * One-off publications: the surface for something published once.
@@ -133,6 +138,12 @@ public class OneOffRestService {
     @Inject
     IssueLifecycleService lifecycle;
 
+    // The window change is written here rather than in a lifecycle transition,
+    // and an unaudited change to what the public can read is the one kind this
+    // feature does not have.
+    @Inject
+    IssueAuditService auditService;
+
     @Inject
     IssuePublishService publishService;
 
@@ -179,6 +190,28 @@ public class OneOffRestService {
         public boolean active;
         public String issuePublicId;
         public String issueStatus;
+        /**
+         * Whether the publication's CATEGORY is exposed on the public site.
+         *
+         * The public listing is category.publish AND the issue published AND the
+         * window open, and the first of those three is not on the series VO --
+         * only the categoryId is. A screen that fetched the category list and
+         * re-derived it would hold a second definition of visibility, free to
+         * disagree with `active` beside it, and would have to tell "the flag is
+         * false" apart from "the list has not arrived yet" while the two look
+         * identical. So the flag travels with the publication it describes,
+         * exactly as `active` does and for the same reason.
+         */
+        public boolean categoryPublish;
+        /**
+         * When the publication stops being on the public site, or null for open-ended.
+         *
+         * The one state of the three `active` folds that an admin cannot see from
+         * the other two: a series ACTIVE and an issue PUBLISHED with a window that
+         * closed in 2017 reads as "not active" with nothing on the screen saying
+         * why, and the toggle offered to fix it cannot.
+         */
+        public Long publicTo;
         /** Per language, for an EXTERNAL_LINK publication. */
         public List<LangText> links = new ArrayList<>();
         /** Per language, read-only: what was uploaded, if anything. */
@@ -402,6 +435,23 @@ public class OneOffRestService {
                             + " and the body says " + vo.getSeriesId());
         }
 
+        // THE DOT IS A SWITCH, AND IT TURNS ON A TRANSITION RATHER THAN ON A VALUE.
+        //
+        // `active` folds series ACTIVE, issue PUBLISHED and an open public window
+        // into the one control the editor renders, so every save carries it back --
+        // a rename, a new link, a changed category. Reading the requested value as
+        // an instruction is then wrong in both directions: a publication whose
+        // window ran out reports active:false, so a plain rename was refused for a
+        // missing reason, and a rename that supplied one would have RETIRED the
+        // issue as a side effect of the rename.
+        //
+        // So what happens is decided from the difference between what is stored and
+        // what is asked for, folded with the same predicate the read reports -- and
+        // it is decided HERE, before anything is written, so the save underneath
+        // cannot move the state the decision was made against.
+        ActiveAction activeAction =
+                activeAction(series, onlyIssue(series), request.active, new Date());
+
         // The status is NOT taken from the body: activation is a transition that
         // validates, and letting a save carry a status would route around it.
         SeriesStatus status = series.getStatus();
@@ -423,31 +473,145 @@ public class OneOffRestService {
             issueService.update(issue);
         }
 
-        // THE DOT IS A SWITCH, and it turns both ways.
-        //
-        // `active` folds the three states that decide visibility into one control,
-        // and the editor renders it as a toggle -- so turning it off has to mean
-        // something. It did not: the false branch simply did not exist, the save
-        // returned 200, and the publication stayed on the public site with the
-        // screen showing it as off. Off is the issue's own retire, with its own
-        // reason and its own audit entry; on again is its reactivate.
-        if (request.active) {
-            if (issue != null && issue.getStatus() == IssueStatus.RETIRED) {
-                lifecycle.reactivate(issue, userService.currentUser(), null);
-            } else if (saved.getStatus() != SeriesStatus.ACTIVE) {
+        // Decided before the save, carried out after it, so that the refusals the
+        // save itself raises -- an operand naming nothing, a rule the document
+        // breaks -- are answered first: they are about what the admin just typed.
+        switch (activeAction) {
+            case REACTIVATE_ISSUE -> lifecycle.reactivate(issue, userService.currentUser(), null);
+            case ACTIVATE_SERIES -> {
                 activate(saved);
                 flushBeforePublish();
                 publishIfComplete(saved, issue);
             }
-        } else if (issue != null && issue.getStatus() == IssueStatus.PUBLISHED) {
-            // The reason is demanded here rather than inside retire so the refusal
-            // names the field the form actually has. Same code, same bounds.
-            IssueLifecycleService.requireReason(request.reason,
-                    "taking this publication off the public list removes a document people may have "
-                            + "cited; it must say why");
-            lifecycle.retire(issue, userService.currentUser(), request.reason);
+            case REFUSE_WINDOW_CLOSED -> throw new PublicWindowClosedException(issue.getPublicTo());
+            case RETIRE_ISSUE -> {
+                // The reason is demanded here rather than inside retire so the refusal
+                // names the field the form actually has. Same code, same bounds.
+                IssueLifecycleService.requireReason(request.reason,
+                        "taking this publication off the public list removes a document people may have "
+                                + "cited; it must say why");
+                lifecycle.retire(issue, userService.currentUser(), request.reason);
+            }
+            case NOTHING -> {
+                // The dot already says what it is being asked to say. This is what
+                // an ordinary save is, and it must not move the publication.
+            }
         }
         return toVo(saved);
+    }
+
+    /**
+     * The publication's public window, set or cleared.
+     *
+     * ITS OWN ACTION BECAUSE IT IS ITS OWN DECISION. `publicTo` is what takes a
+     * document off the public site, and for a one-off nothing else writes it --
+     * there is no successor whose publish would cap it and no cadence to derive
+     * it from. Folding it into the active toggle would make "put this back on the
+     * list" and "decide when this stops being current" the same gesture, and the
+     * toggle would then have to guess an end date for a publication somebody
+     * meant to run indefinitely.
+     *
+     * ONE-OFFS ONLY, and the refusal is not a formality. A cadenced series' issue
+     * has its window closed by the issue that succeeds it, so clearing an end
+     * there leaves two uncapped issues and hands the public download site two
+     * current editions of the same publication.
+     *
+     * A null `publicTo` means open-ended -- the shape four of the five archived
+     * one-offs already have -- and it is the value that puts an expired
+     * publication back on the site.
+     */
+    @PUT
+    @Path("/{seriesId}/public-window")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(Roles.ADMIN)
+    @DomainScoped
+    @VersionChecked
+    public OneOffVo setPublicWindow(@PathParam("seriesId") String seriesId,
+                                    PublicWindowRequest request) {
+        PublicationSeries series = seriesService.findBySeriesId(seriesId);
+        if (series == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_FOUND",
+                    "no publication series with id " + seriesId);
+        }
+        // 409 rather than the save's 400: the caller named a real series and the
+        // request is well formed, and it is the series' KIND that makes the action
+        // wrong. Reclassifying the series makes the same request correct.
+        if (series.getKind() != SeriesKind.ONE_OFF) {
+            throw new IssueLifecycleService.TransitionRefusedException("NOT_ONE_OFF",
+                    seriesId + " is a " + series.getKind() + " series. The public window of a "
+                            + "scheduled publication's issue is closed by the issue that succeeds "
+                            + "it, so setting it here would leave the public site with two current "
+                            + "editions.");
+        }
+        // The caller's desk, before anything is written.
+        domainGuard.assertWritable(series);
+        StaleVersionGuard.check(series, request == null ? null : request.version());
+
+        PublicationIssue issue = onlyIssue(series);
+        if (issue == null) {
+            throw new IssueLifecycleService.TransitionRefusedException("ISSUE_NOT_FOUND",
+                    "'" + seriesId + "' has no issue yet, so there is no public window to set");
+        }
+
+        Date wanted = request == null || request.publicTo() == null
+                ? null : new Date(request.publicTo());
+        Date current = issue.getPublicTo();
+        if (java.util.Objects.equals(
+                current == null ? null : current.getTime(),
+                wanted == null ? null : wanted.getTime())) {
+            return toVo(series);
+        }
+
+        // MANUAL, because somebody decided it. The publish chain skips a window it
+        // did not derive, which is what stops a later action quietly reopening or
+        // re-capping a decision an admin made.
+        issue.setPublicTo(wanted);
+        issue.setPublicWindowSource(PublicWindowSource.MANUAL);
+        issueService.update(issue);
+
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("from", current == null ? null : current.getTime());
+        detail.put("to", wanted == null ? null : wanted.getTime());
+        auditService.edited(issue, userService.currentUser(),
+                AuditAction.VISIBILITY_WINDOW_CHANGED, detail);
+
+        return toVo(series);
+    }
+
+    /**
+     * The window's end, and the revision the caller composed it against.
+     *
+     * `publicTo` is epoch millis, or null for open-ended -- and null is a VALUE
+     * here rather than an omission, which is why the body has exactly one field:
+     * there is nothing else in it for an absent one to be confused with.
+     */
+    public record PublicWindowRequest(Long publicTo, Integer version) {
+    }
+
+    /**
+     * The publication is off the public site because its window ran out.
+     *
+     * Carries the end date on the wire, because the whole point of the refusal is
+     * that it names the state the toggle could not see -- and a client parsing it
+     * back out of the sentence would break the first time the wording improved.
+     */
+    public static class PublicWindowClosedException
+            extends org.niord.core.publication.series.PublicationException {
+
+        private final Date publicTo;
+
+        public PublicWindowClosedException(Date publicTo) {
+            super("PUBLIC_WINDOW_CLOSED",
+                    "this publication's public window ended on " + publicTo + ", so it is off the "
+                            + "public site whatever the active toggle says. Putting it back is a "
+                            + "decision about the window: set or clear its end.");
+            this.publicTo = publicTo;
+        }
+
+        public Date publicTo() {
+            return publicTo;
+        }
     }
 
     // ------------------------------------------------------------------ pieces
@@ -802,17 +966,115 @@ public class OneOffRestService {
         if (issue != null) {
             vo.issuePublicId = issue.getPublicId();
             vo.issueStatus = issue.getStatus() == null ? null : issue.getStatus().name();
+            vo.publicTo = issue.getPublicTo() == null ? null : issue.getPublicTo().getTime();
             fillIssueDescs(issue, vo);
             vo.publishable = isPublishable(series, issue);
         }
 
-        Date now = new Date();
-        vo.active = series.getStatus() == SeriesStatus.ACTIVE
+        vo.categoryPublish = series.getCategory() != null && series.getCategory().isPublish();
+
+        vo.active = isActive(series, issue, new Date());
+        return vo;
+    }
+
+    /**
+     * The three states that decide whether the public can read this publication,
+     * folded into the one dot the screen shows.
+     *
+     * ONE DEFINITION, shared by the read that REPORTS the dot and the save that
+     * decides what turning it means. Two copies would let a publication read as
+     * off on the screen while the save that turns it off decides it was on, and
+     * the disagreement would surface as a save that refuses to rename a document.
+     *
+     * Package-private and static so it can be asserted without a database: what
+     * `active` means is the whole contract of the toggle.
+     */
+    static boolean isActive(PublicationSeries series, PublicationIssue issue, Date now) {
+        return series != null
+                && series.getStatus() == SeriesStatus.ACTIVE
                 && issue != null
                 && issue.getStatus() == IssueStatus.PUBLISHED
                 && (issue.getPublicFrom() == null || !issue.getPublicFrom().after(now))
                 && (issue.getPublicTo() == null || issue.getPublicTo().after(now));
-        return vo;
+    }
+
+    /** What the save has to DO about the active dot, once the two states are compared. */
+    enum ActiveAction {
+        /** The dot already says what it is being asked to say. */
+        NOTHING,
+        /** Off because the issue was retired: put it back. */
+        REACTIVATE_ISSUE,
+        /** Off because the series was never activated: activate it, and publish if it can. */
+        ACTIVATE_SERIES,
+        /** Off because the public window ran out, which this toggle does not own. */
+        REFUSE_WINDOW_CLOSED,
+        /** On, and asked to come off: that is the issue's own retire. */
+        RETIRE_ISSUE
+    }
+
+    /**
+     * The transition a save's active dot asks for, decided from the difference.
+     *
+     * A TRANSITION, NOT A VALUE, and that distinction is the bug this method
+     * exists to hold shut. The editor sends the whole publication back on every
+     * save, so `active` arrives on a rename exactly as it does on a deliberate
+     * flip -- and for a publication whose window ran out it arrives as false,
+     * because that is what the read reported. Acting on the value alone made an
+     * ordinary rename either a refusal for a missing reason or, with one supplied,
+     * a retire nobody asked for.
+     *
+     * Package-private and static so every case can be asserted without a database
+     * or a server: this endpoint's transitions are what it is for.
+     */
+    static ActiveAction activeAction(PublicationSeries series, PublicationIssue issue,
+                                     boolean requested, Date now) {
+        if (requested == isActive(series, issue, now)) {
+            return ActiveAction.NOTHING;
+        }
+        if (!requested) {
+            // Off, and it was on -- so the issue is PUBLISHED by the fold above.
+            // Off is the issue's own retire, with its own reason and its own audit
+            // entry; nothing else takes a document off the public site.
+            return issue != null && issue.getStatus() == IssueStatus.PUBLISHED
+                    ? ActiveAction.RETIRE_ISSUE
+                    : ActiveAction.NOTHING;
+        }
+        if (issue != null && issue.getStatus() == IssueStatus.RETIRED) {
+            return ActiveAction.REACTIVATE_ISSUE;
+        }
+        if (series.getStatus() != SeriesStatus.ACTIVE) {
+            return ActiveAction.ACTIVATE_SERIES;
+        }
+        if (onlyThePublicWindowIsClosed(series, issue)) {
+            // NEITHER BRANCH ABOVE MATCHES, AND THAT USED TO BE SILENCE. The series
+            // is active and the issue is published; what is off is the public
+            // window, which this toggle does not own. Re-opening it puts a document
+            // back on the public site, which is the decision publicTo exists to
+            // protect -- so it is its own action, on its own endpoint, rather than
+            // a side effect of a dot.
+            return ActiveAction.REFUSE_WINDOW_CLOSED;
+        }
+        // On, and not live for a reason none of the branches owns: an uploaded
+        // publication still waiting for its bytes. Saying so is the upload's job.
+        return ActiveAction.NOTHING;
+    }
+
+    /**
+     * Whether this publication's ONLY closed state is a public window that ran out.
+     *
+     * The case the activate toggle could not answer. Series ACTIVE, issue
+     * PUBLISHED, and a window that ended years ago: neither branch of the toggle
+     * matches -- there is no retired issue to reactivate and no inactive series to
+     * activate -- so the save used to return 200 having changed nothing, and the
+     * screen redrew the same "not active" dot.
+     */
+    private static boolean onlyThePublicWindowIsClosed(PublicationSeries series, PublicationIssue issue) {
+        if (series.getStatus() != SeriesStatus.ACTIVE
+                || issue == null || issue.getStatus() != IssueStatus.PUBLISHED) {
+            return false;
+        }
+        Date to = issue.getPublicTo();
+        return to != null && !to.after(new Date());
     }
 
     /**

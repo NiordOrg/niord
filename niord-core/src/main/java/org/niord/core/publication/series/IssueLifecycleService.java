@@ -245,6 +245,11 @@ public class IssueLifecycleService extends BaseService {
         assertNoOverlap(series, intervalFrom, predecessor);
         PublicationIssue edition = newIssue(series, intervalFrom, IntervalBoundSource.MANUAL);
         edition.setSupersedes(predecessor);
+        // The number that tells the two apart, and then the names again -- a
+        // pattern that names the edition has to render the one this issue
+        // actually carries, and newIssue derived them against the first.
+        edition.setEdition(IssueShape.editionAfter(predecessor));
+        shape.renumber(edition, series);
         em.persist(edition);
 
         // The LINK is made here, in the same transaction as the issue, so it can
@@ -306,6 +311,12 @@ public class IssueLifecycleService extends BaseService {
         issue.setIntervalFromSource(source);
         issue.setIntervalTo(intervalTo);
         issue.setIntervalToSource(toSource);
+        // The first edition of the period, before the names are derived: a
+        // file-name pattern that names the edition expands against this, and an
+        // issue born with no edition published as "…-v-2027.pdf" -- an empty
+        // substitution, which is not an unresolved token and so was refused by
+        // nothing. The new-edition action overwrites it with the next number.
+        issue.setEdition(IssueShape.FIRST_EDITION_TEXT);
 
         // One desc row per CONFIGURED language, from the moment of create.
         //

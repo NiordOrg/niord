@@ -79,6 +79,13 @@ public class PublicationExceptionMapper implements ExceptionMapper<PublicationEx
         if (e instanceof IssueNaming.UnknownTokenException unknown) {
             body.put("token", unknown.token());
         }
+        // When the publication stopped being public. The refusal exists to name
+        // the state the caller could not see, so the date has to be readable as a
+        // date rather than parsed back out of the sentence.
+        if (e instanceof OneOffRestService.PublicWindowClosedException closed
+                && closed.publicTo() != null) {
+            body.put("publicTo", closed.publicTo().getTime());
+        }
         // Both revisions, so the client can say "you are three saves behind"
         // rather than "somebody changed something" -- and so it knows which
         // revision to re-read against without guessing.

@@ -96,14 +96,26 @@ public class IssueEditService extends BaseService {
                             Date intervalTo,
                             Map<String, Object> reportParams,
                             IssueCriteriaVo criteriaOverride,
-                            boolean clearCriteriaOverride) {
+                            boolean clearCriteriaOverride,
+                            String edition) {
 
         /** The four-field form, for callers with no criteria to say anything about. */
         public IssueEdit(Map<String, String> names, Date intervalFrom, Date intervalTo,
                          Map<String, Object> reportParams) {
-            this(names, intervalFrom, intervalTo, reportParams, null, false);
+            this(names, intervalFrom, intervalTo, reportParams, null, false, null);
+        }
+
+        /** The form from before the edition was editable. */
+        public IssueEdit(Map<String, String> names, Date intervalFrom, Date intervalTo,
+                         Map<String, Object> reportParams, IssueCriteriaVo criteriaOverride,
+                         boolean clearCriteriaOverride) {
+            this(names, intervalFrom, intervalTo, reportParams, criteriaOverride,
+                    clearCriteriaOverride, null);
         }
     }
+
+    /** As long as the column, which is free text and deliberately so. */
+    public static final int MAX_EDITION = 64;
 
     @Transactional
     public PublicationIssue update(PublicationIssue issue, IssueEdit edit, User actor) {
@@ -116,9 +128,12 @@ public class IssueEditService extends BaseService {
             return issue;
         }
 
-        // Interval first. It re-derives the suggested names, so a rename in the
-        // same call has to land after it -- otherwise the rename is overwritten
-        // by the re-derivation it was meant to replace.
+        // Edition first, then the interval, then the names. The interval
+        // re-derives the suggested names and a name pattern may expand the
+        // edition, so an edition arriving after it would leave the names rendering
+        // the previous one; and a rename has to land after the re-derivation it is
+        // meant to replace.
+        applyEdition(issue, edit, actor);
         applyInterval(issue, edit, actor);
         applyNames(issue, edit.names(), actor);
         applyCriteriaOverride(issue, edit, actor);
@@ -196,6 +211,56 @@ public class IssueEditService extends BaseService {
 
         issue.setCriteriaOverride(wanted);
         audit.edited(issue, actor, AuditAction.CRITERIA_OVERRIDDEN, detail);
+    }
+
+    // ------------------------------------------------------------------- edition
+
+    /**
+     * The edition string, where the caller sent one.
+     *
+     * FREE TEXT, up to the width of the column. The archive holds "1", "2" and
+     * two rows where somebody typed a YEAR into the previous system's edition box
+     * -- and one of those years is in a published file name to this day. Storing
+     * it as a number would refuse to round-trip the archive it has to carry, so
+     * what is checked is that the value is a value: absent leaves it alone, and a
+     * blank one is REFUSED rather than treated as a clear. An issue that reached
+     * "no edition" through the form would be indistinguishable from one created
+     * before the field existed, and the create writes the first edition
+     * precisely so that nothing has to be.
+     *
+     * OPEN ONLY, through the gate this whole method sits behind. Once the issue is
+     * published, the edition is on the cover of the document and in the file name
+     * people have downloaded, and it is frozen by the same rule that freezes the
+     * interval and the names.
+     *
+     * The names follow it, for the same reason an interval change re-derives them:
+     * a suggestion pattern may render the edition, and an issue left describing
+     * the previous one is exactly the drift the rendering exists to avoid.
+     */
+    private void applyEdition(PublicationIssue issue, IssueEdit edit, User actor) {
+        String edition = edit.edition();
+        if (edition == null) {
+            return;
+        }
+        String trimmed = edition.trim();
+        if (trimmed.isEmpty() || trimmed.length() > MAX_EDITION) {
+            throw new IssueLifecycleService.TransitionRefusedException("EDITION_INVALID",
+                    "an edition is between 1 and " + MAX_EDITION + " characters. It is what tells "
+                            + "two publications of the same period apart, so an empty one is not a "
+                            + "way of saying there is only one -- the first edition says that.");
+        }
+        if (trimmed.equals(issue.getEdition())) {
+            return;
+        }
+
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("from", issue.getEdition());
+        detail.put("to", trimmed);
+
+        issue.setEdition(trimmed);
+        shape.renumber(issue, issue.getSeries());
+
+        audit.edited(issue, actor, AuditAction.EDITION_CHANGED, detail);
     }
 
     // ------------------------------------------------------------------ interval

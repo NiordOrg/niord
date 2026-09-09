@@ -17,6 +17,7 @@
 package org.niord.web.publication;
 
 import org.junit.jupiter.api.Test;
+import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.CutoffDay;
 import org.niord.core.publication.series.IssueLifecycleService;
@@ -537,5 +538,230 @@ public class OneOffShapeTest {
         assertFalse(vo.active,
                 "published, but not yet: the series and the issue both say live and the "
                         + "publication still is not");
+    }
+
+    // --------------------------------------------------- what the dot cannot say
+
+    /**
+     * The window's END travels with the publication, because it is the state the
+     * dot folds away and nothing else on the wire carries.
+     *
+     * A one-off whose series is ACTIVE and whose issue is PUBLISHED, with a window
+     * that closed in 2017, answers `active: false` -- and until this field existed
+     * the screen had the two states that were ON and nothing at all about the one
+     * that was off. Four of the five archived one-offs have no end at all, which
+     * is the shape that says "current until somebody decides otherwise", so null
+     * is a value here rather than a gap.
+     */
+    @Test
+    public void theclosedPublicWindowIsOnTheWire() {
+        PublicationSeries oneOff = new PublicationSeries();
+        oneOff.setKind(SeriesKind.ONE_OFF);
+        oneOff.setStatus(SeriesStatus.ACTIVE);
+
+        PublicationIssue issue = new PublicationIssue();
+        issue.setStatus(IssueStatus.PUBLISHED);
+        issue.setPublicFrom(new Date(1_487_718_000_000L));
+        issue.setPublicTo(new Date(1_514_761_140_000L));
+
+        OneOffRestService.OneOffVo vo =
+                endpointFinding(oneOff, issue).get("navigation-through-danish-waters");
+
+        assertFalse(vo.active, "the window closed in 2017, so the publication is not public");
+        assertEquals(Long.valueOf(1_514_761_140_000L), vo.publicTo,
+                "the one state the dot folds away has to be readable, or the screen can only say "
+                        + "'not active' about a series and an issue that both say live");
+    }
+
+    /**
+     * Whether the CATEGORY publishes travels with the publication too.
+     *
+     * The public listing is category.publish AND the issue published AND the
+     * window open. The first of those is not on the series value object -- only
+     * the categoryId is -- so a screen that re-derived it from the category list
+     * would hold a second definition of visibility beside `active`, free to
+     * disagree with it, and would have to tell "the flag is false" apart from "the
+     * list has not arrived" while the two look identical.
+     *
+     * Two of the five categories in the archive do not publish, and four of the
+     * five one-offs are filed under them.
+     */
+    @Test
+    public void thecategoryPublishFlagIsOnTheWire() {
+        PublicationCategory internal = new PublicationCategory();
+        internal.setCategoryId("dk-dma-internal-publications");
+        internal.setPublish(false);
+
+        PublicationSeries oneOff = new PublicationSeries();
+        oneOff.setKind(SeriesKind.ONE_OFF);
+        oneOff.setStatus(SeriesStatus.ACTIVE);
+        oneOff.setCategory(internal);
+
+        PublicationIssue issue = new PublicationIssue();
+        issue.setStatus(IssueStatus.PUBLISHED);
+        issue.setPublicFrom(new Date(1_451_606_400_000L));
+
+        OneOffRestService.OneOffVo vo = endpointFinding(oneOff, issue).get("aids-to-navigation");
+
+        assertTrue(vo.active,
+                "series ACTIVE, issue PUBLISHED, window open -- `active` is about those three and "
+                        + "stays about those three");
+        assertFalse(vo.categoryPublish,
+                "and the publication is still on no public site, which is what the screen could "
+                        + "not say");
+
+        PublicationCategory published = new PublicationCategory();
+        published.setCategoryId("dk-dma-publications");
+        published.setPublish(true);
+        oneOff.setCategory(published);
+        assertTrue(endpointFinding(oneOff, issue).get("aids-to-navigation").categoryPublish);
+    }
+
+    /**
+     * The public-window refusal is catalogued, carries the date, and is a 409.
+     *
+     * The case it exists for: series ACTIVE, issue PUBLISHED, window expired.
+     * Neither branch of the active toggle matches -- there is no retired issue to
+     * reactivate and no inactive series to activate -- so the save used to answer
+     * 200 having changed nothing, and the screen redrew the same "not active" dot.
+     * A save that reports success and changes nothing is the worst of the three
+     * available answers.
+     *
+     * 409 rather than 400 because the same request succeeds once the window is
+     * re-opened, which is what the refusal tells the caller to do.
+     */
+    @Test
+    public void theclosedWindowRefusalIsCataloguedAndCarriesTheDate() {
+        Date closed = new Date(1_514_761_140_000L);
+        OneOffRestService.PublicWindowClosedException refusal =
+                new OneOffRestService.PublicWindowClosedException(closed);
+
+        assertEquals("PUBLIC_WINDOW_CLOSED", refusal.code());
+        assertEquals(409, PublicationErrorCatalogue.statusOf(refusal.code()),
+                "the same request succeeds once the window is re-opened, which is what 409 means");
+        assertEquals(closed, refusal.publicTo(),
+                "the whole point of the refusal is that it names the state the toggle could not "
+                        + "see; a client parsing it out of the sentence breaks on the next rewording");
+    }
+
+    // ------------------------------------------- what TURNING the dot means
+
+    private static PublicationSeries live() {
+        PublicationSeries oneOff = new PublicationSeries();
+        oneOff.setKind(SeriesKind.ONE_OFF);
+        oneOff.setStatus(SeriesStatus.ACTIVE);
+        return oneOff;
+    }
+
+    private static PublicationIssue publishedIssue(Date publicTo) {
+        PublicationIssue issue = new PublicationIssue();
+        issue.setStatus(IssueStatus.PUBLISHED);
+        issue.setPublicFrom(new Date(1_487_718_000_000L));
+        issue.setPublicTo(publicTo);
+        return issue;
+    }
+
+    private static final Date NOW = new Date(1_757_000_000_000L);
+    private static final Date CLOSED_IN_2017 = new Date(1_514_761_140_000L);
+
+    /**
+     * A RENAME OF AN EXPIRED PUBLICATION IS A RENAME, and nothing else.
+     *
+     * The editor sends the whole publication back on every save, and `active` comes
+     * with it -- as FALSE for a publication whose window ran out years ago, because
+     * that is what the read reported. Acting on the requested value alone made an
+     * ordinary save either a refusal for a reason the admin was never asked for, or,
+     * with one filled in, a RETIRE nobody asked for: an audit entry saying a
+     * document was withdrawn, written because somebody fixed a typo in its title.
+     */
+    @Test
+    public void asaveOnAnExpiredPublicationIsNoTransitionAtAll() {
+        assertEquals(OneOffRestService.ActiveAction.NOTHING,
+                OneOffRestService.activeAction(live(), publishedIssue(CLOSED_IN_2017), false, NOW),
+                "the window ran out, so the dot ALREADY reads off; a save that carries that value "
+                        + "back is a rename, and it must not retire the document it renames");
+    }
+
+    /** And the dot really does turn off, on a publication that is really on. */
+    @Test
+    public void turningOffApublicationThatIsLiveRetiresItsIssue() {
+        assertEquals(OneOffRestService.ActiveAction.RETIRE_ISSUE,
+                OneOffRestService.activeAction(live(), publishedIssue(null), false, NOW),
+                "series ACTIVE, issue PUBLISHED, window open: this one IS on the public site, so "
+                        + "off is the issue's own retire with its own reason and its own audit entry");
+    }
+
+    /**
+     * Turning it ON when only the window is closed is still the refusal.
+     *
+     * The path the refusal was added for stays exactly where it was: re-opening a
+     * public window puts a document back in front of the public, which is the
+     * decision publicTo exists to protect, so it is its own action rather than a
+     * side effect of a dot.
+     */
+    @Test
+    public void turningOnAnExpiredPublicationIsStillRefused() {
+        assertEquals(OneOffRestService.ActiveAction.REFUSE_WINDOW_CLOSED,
+                OneOffRestService.activeAction(live(), publishedIssue(CLOSED_IN_2017), true, NOW),
+                "neither a retired issue to reactivate nor an inactive series to activate: what is "
+                        + "off is the window, and the toggle does not own it");
+    }
+
+    /**
+     * The two transitions that were always there, pinned beside the two that were not.
+     *
+     * A retired issue comes back; a series that was never activated is activated.
+     * And a plain save on a publication that is already live is a plain save --
+     * not a re-publish.
+     */
+    @Test
+    public void theotherWaysOfTurningItOnAreUnchanged() {
+        PublicationIssue retired = publishedIssue(null);
+        retired.setStatus(IssueStatus.RETIRED);
+        assertEquals(OneOffRestService.ActiveAction.REACTIVATE_ISSUE,
+                OneOffRestService.activeAction(live(), retired, true, NOW));
+
+        PublicationSeries draft = live();
+        draft.setStatus(SeriesStatus.DRAFT);
+        PublicationIssue open = publishedIssue(null);
+        open.setStatus(IssueStatus.OPEN);
+        assertEquals(OneOffRestService.ActiveAction.ACTIVATE_SERIES,
+                OneOffRestService.activeAction(draft, open, true, NOW));
+
+        assertEquals(OneOffRestService.ActiveAction.NOTHING,
+                OneOffRestService.activeAction(live(), publishedIssue(null), true, NOW),
+                "already live and asked to be live: a save is a save");
+    }
+
+    /** And the window endpoint's own refusal for a series that is not a one-off. */
+    @Test
+    public void thewindowEndpointRefusesAScheduledSeries() {
+        PublicationSeries scheduled = seriesWithEverything();
+        scheduled.setKind(SeriesKind.SCHEDULED);
+
+        OneOffRestService endpoint = endpointFinding(scheduled);
+        IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> endpoint.setPublicWindow("weekly-ntm",
+                        new OneOffRestService.PublicWindowRequest(null, null)));
+
+        assertEquals("NOT_ONE_OFF", refusal.code(),
+                "a scheduled issue's window is closed by the issue that succeeds it; clearing an "
+                        + "end there hands the public site two current editions");
+        assertEquals(409, PublicationErrorCatalogue.statusOf(refusal.code()));
+    }
+
+    /** An id that names nothing is the same 404 the read gives. */
+    @Test
+    public void thewindowEndpointIsNotFoundForAnUnknownId() {
+        OneOffRestService endpoint = endpointFinding(null);
+
+        IssueLifecycleService.TransitionRefusedException refusal = assertThrows(
+                IssueLifecycleService.TransitionRefusedException.class,
+                () -> endpoint.setPublicWindow("no-such-publication",
+                        new OneOffRestService.PublicWindowRequest(null, null)));
+
+        assertEquals("SERIES_NOT_FOUND", refusal.code());
+        assertEquals(404, PublicationErrorCatalogue.statusOf(refusal.code()));
     }
 }

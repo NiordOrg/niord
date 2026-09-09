@@ -101,6 +101,12 @@ public final class PublicationErrorCatalogue {
         // The name column is NOT NULL precisely because a nameless issue is
         // unfindable in every list that shows it, and "" clears it as well as null.
         put("NAME_BLANK", 400);
+        // An edition that is empty or longer than the column. 400: the value
+        // itself is wrong, and resending it cannot become right. Not a clear --
+        // the edition tells two publications of one period apart, and an issue
+        // with none would be indistinguishable from one made before the field
+        // existed.
+        put("EDITION_INVALID", 400);
         // An override on a series that does not select by criteria would decide
         // nothing. 400: the request is wrong about what the series is, and
         // resending it cannot become right while the content mode stands.
@@ -172,6 +178,17 @@ public final class PublicationErrorCatalogue {
         // conflict that CAN clear -- reclassifying the series as UNSCHEDULED makes
         // the same request succeed -- so it is 409 rather than 400.
         put("SERIES_IS_ONE_OFF", 409);
+        // 409: the publication's public window has already ended, so the request
+        // to put it back on the list is well formed and refers to a state that can
+        // change -- re-opening the window makes the same request succeed. Silently
+        // succeeding without changing anything was the alternative, and a save that
+        // reports success and changes nothing is the worst of the three.
+        put("PUBLIC_WINDOW_CLOSED", 409);
+        // 409: the public-window endpoint was pointed at a series that is not a
+        // one-off. The window of a scheduled series' issue is owned by the publish
+        // chain, and clearing an end there hands the public site two current
+        // editions.
+        put("NOT_ONE_OFF", 409);
         // 400, not 409: the one-off form was pointed at a scheduled or unscheduled
         // series. No change of state makes that request correct -- the form has no
         // fields for the cadence, criteria and numbering such a series carries, so

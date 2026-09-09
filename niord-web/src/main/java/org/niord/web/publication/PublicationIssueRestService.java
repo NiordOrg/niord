@@ -1333,6 +1333,10 @@ public class PublicationIssueRestService {
      * because the older administration client sends none and a hard requirement
      * would take every one of its edits down at once; sending it is how a client
      * asks to be told when somebody else got there first.
+     *
+     * `edition` is free text of at most 64 characters, and absent leaves it
+     * alone like every other field. An empty string is REFUSED rather than
+     * treated as a clear -- see IssueEditService.
      */
     public record UpdateIssueRequest(Map<String, String> names,
                                      Long intervalFrom,
@@ -1340,6 +1344,7 @@ public class PublicationIssueRestService {
                                      Map<String, Object> reportParams,
                                      IssueCriteriaVo criteriaOverride,
                                      Boolean clearCriteriaOverride,
+                                     String edition,
                                      Integer version) {
     }
 
@@ -1361,7 +1366,8 @@ public class PublicationIssueRestService {
                 request.intervalTo() == null ? null : new Date(request.intervalTo()),
                 request.reportParams(),
                 request.criteriaOverride(),
-                Boolean.TRUE.equals(request.clearCriteriaOverride()));
+                Boolean.TRUE.equals(request.clearCriteriaOverride()),
+                request.edition());
     }
 
     // ------------------------------------------------------------------ document

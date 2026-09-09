@@ -74,7 +74,10 @@
 </div>
 <table class="first-page-info-line">
     <tr>
-        <td width="25%" align="left">${.now?string["dd. MMMM yyyy"]}</td>
+        <td width="25%" align="left">
+            ${.now?string["dd. MMMM yyyy"]}
+            <#if edition?? && edition != '1'> - Version ${edition}</#if>
+        </td>
         <td width="25%" align="center">ISSN ${ISSN!""}</td>
         <td width="25%" align="center">${text('pdf.volume', (.now?string('yyyy')?number - 1884))}</td>
         <td width="25%" align="right">

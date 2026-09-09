@@ -46,7 +46,10 @@
 
 <table class="first-page-info-line" style="margin-bottom: 1cm">
     <tr>
-        <td width="50%" align="left">${.now?string["dd. MMMM yyyy"]}</td>
+        <td width="50%" align="left">
+            ${.now?string["dd. MMMM yyyy"]}
+            <#if edition?? && edition != '1'> - Version ${edition}</#if>
+        </td>
         <td width="50%" align="right">
             ${text("pdf.nm_abbrev")}  ${week!""} ${year!""}
         </td>

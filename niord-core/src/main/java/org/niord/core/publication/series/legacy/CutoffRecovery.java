@@ -89,17 +89,28 @@ public final class CutoffRecovery {
     /**
      * Not a witness of the release either: the boundary the public window names.
      *
-     * An annual publication is released some time into the year it is valid for
-     * -- or the year after the one it accumulates -- and the row's last-write
-     * stamp says when somebody touched it, not what its contents describe. The
-     * cut-off is the end of the content period, and for a yearly series the
-     * public window IS that period (verified 2026-08-27: all 46 yearly rows carry
-     * 1 January to 31 December). The release moment is kept separately, as
+     * A publication whose period IS its public window is decided at one of that
+     * window's two ends, and the row's last-write stamp says when somebody
+     * touched it rather than what its contents describe. The cut-off is the end
+     * of the content period; the release moment is kept separately, as
      * publishedAt, where it is credible.
      *
-     * For an IN-FORCE annual this is the fallback rather than the rule: a
-     * credible release stamp on a later day wins, and the row then records
-     * FROM_UPDATED instead. See {@link #forAnnualInForce}.
+     * THREE SHAPES REACH IT, at two different ends of the window.
+     *
+     * A YEARLY issue: the public window IS the content period (verified
+     * 2026-08-27: all 46 yearly rows carry 1 January to 31 December). An
+     * accumulated list is decided where the window CLOSES; for an in-force annual
+     * this is the fallback rather than the rule, at the day the window OPENS, and
+     * a credible release stamp on a later day wins and records FROM_UPDATED
+     * instead. See {@link #forAnnualInForce}.
+     *
+     * A CADENCE-LESS issue: the window OPENS, and this is the fallback where no
+     * stamp is believable. A publication that comes out once has no nominal close
+     * to fall back to and no cadence to derive one from, and its content is
+     * decided when it goes out -- so the instant it became public is the honest
+     * answer, and the alternative is an archive row with no cut-off at all, which
+     * sorts at the epoch and is numbered by nothing. See
+     * {@link #recoverOrWindowOpen}.
      */
     public static final String PUBLIC_WINDOW = "PUBLIC_WINDOW";
 
@@ -146,14 +157,31 @@ public final class CutoffRecovery {
      * present is not the same as it being this release. The bounds are what turns
      * a plausible date into a checkable claim.
      */
-    public record Bounds(Date from, Date to, Long leadMillis, Long slackMillis) {
+    public record Bounds(Date from, Date to, Long leadMillis, Long slackMillis, Date replacedAt) {
 
         /** No interval to check against -- an in-force issue, or the head of a chain. */
-        public static final Bounds NONE = new Bounds(null, null, null, null);
+        public static final Bounds NONE = new Bounds(null, null, null, null, null);
 
         /** The original shape: after the open, up to a full period past the close. */
         public Bounds(Date from, Date to) {
-            this(from, to, null, null);
+            this(from, to, null, null, null);
+        }
+
+        /**
+         * The original shape with a replacement ceiling: the same interval, plus
+         * the instant this row stopped being the current publication.
+         *
+         * A write made once the successor is public is this row's WITHDRAWAL, and
+         * a withdrawal decides nothing about what the row's content was. Null
+         * where no successor is known, which is every head of a chain.
+         */
+        public Bounds(Date from, Date to, Date replacedAt) {
+            this(from, to, null, null, replacedAt);
+        }
+
+        /** The four-field shape, with no replacement ceiling. */
+        public Bounds(Date from, Date to, Long leadMillis, Long slackMillis) {
+            this(from, to, leadMillis, slackMillis, null);
         }
 
         /**
@@ -170,13 +198,18 @@ public final class CutoffRecovery {
          * all of them.
          */
         public static Bounds release(Date opened, Date nominalClose, long lead, long slack) {
-            return new Bounds(opened, nominalClose, lead, slack);
+            return new Bounds(opened, nominalClose, lead, slack, null);
         }
 
         /**
          * Whether a candidate could be this period's close.
          *
          * Strictly after the open, because a period cannot close before it begins.
+         * Never at or after the moment a successor took over, where one is known:
+         * that write is this row's withdrawal, and the changeover of a publication
+         * deactivates the outgoing edition in the same sitting that opens the
+         * incoming one, so a stamp there dates the OUTGOING row to the day its
+         * replacement went out and the pair then sorts with the replacement first.
          * Not earlier than the close minus the lead, where a lead is given. The
          * upper bound is the nominal close plus the slack -- a full period where
          * none is given, because the release action legitimately runs a little
@@ -188,6 +221,9 @@ public final class CutoffRecovery {
                 return false;
             }
             if (from != null && !candidate.after(from)) {
+                return false;
+            }
+            if (replacedAt != null && !candidate.before(replacedAt)) {
                 return false;
             }
             if (to != null && leadMillis != null && candidate.getTime() < to.getTime() - leadMillis) {
@@ -298,6 +334,31 @@ public final class CutoffRecovery {
         Recovered r = recover(legacy, nextTagCreated, coverDate, released, bounds);
         if (MANUAL.equals(r.source()) && nominalClose != null) {
             return new Recovered(nominalClose, NOMINAL_CLOSE, true);
+        }
+        return r;
+    }
+
+    /**
+     * The cascade for a CADENCE-LESS issue, whose period is its public window.
+     *
+     * The analogue of {@link #recoverOrNominal} for the one shape that has no
+     * nominal close to fall back to. A publication that comes out once has no
+     * cadence to derive a close from, so where no stamp is believable the honest
+     * answer is the instant the publication became public: its content was
+     * decided when it went out. Recorded as PUBLIC_WINDOW, which is not a witness
+     * of the release -- so publishedAt is still read separately, from a stamp,
+     * where one is credible.
+     *
+     * The alternative is MANUAL with no date, and a cadence-less archive row with
+     * no cut-off has no effective cut-off either: it sorts at no position at all
+     * and is numbered by nothing, which put the current edition of one series at
+     * the epoch.
+     */
+    public static Recovered recoverOrWindowOpen(Publication legacy, Date nextTagCreated, Date coverDate,
+                                                boolean released, Bounds bounds, Date windowOpen) {
+        Recovered r = recover(legacy, nextTagCreated, coverDate, released, bounds);
+        if (MANUAL.equals(r.source()) && windowOpen != null) {
+            return new Recovered(windowOpen, PUBLIC_WINDOW, true);
         }
         return r;
     }

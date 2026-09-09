@@ -292,7 +292,15 @@ public class IssueAuditService extends BaseService {
     // ------------------------------------------------------------------ reads
 
     /**
-     * The Historik panel, oldest first.
+     * The Historik panel, newest first.
+     *
+     * THE SAME ORDER THE SERIES' OWN HISTORY IS READ IN, and one order for both
+     * because they are read as one thing: an admin looking at a publication sees
+     * the issue's trail and the series' log on the same screen, and two panels
+     * that disagreed about which end is the top made the reader check the dates
+     * on every line to know which way each was running. What somebody wants from
+     * either is what happened most recently -- an amendment made this morning
+     * belongs at the top, not under nine years of imported archive.
      *
      * BY THE TIME, with the surrogate id only as a tiebreak. The created column
      * exists precisely so the panel has something to order by that is a time
@@ -300,12 +308,13 @@ public class IssueAuditService extends BaseService {
      * only while nothing is ever backfilled, and an import that writes its
      * entries in one pass writes them in whatever order it iterated. The id keeps
      * the order total for entries written in the same millisecond, which the
-     * publish transaction does.
+     * publish transaction does, and it descends with the time so the tiebreak
+     * reads the same way as the key it breaks.
      */
     public List<IssueAuditEntry> forIssue(PublicationIssue issue) {
         return em.createQuery(
                         "SELECT a FROM IssueAuditEntry a WHERE a.issue = :i "
-                                + "ORDER BY a.created ASC, a.id ASC",
+                                + "ORDER BY a.created DESC, a.id DESC",
                         IssueAuditEntry.class)
                 .setParameter("i", issue).getResultList();
     }
@@ -319,9 +328,8 @@ public class IssueAuditService extends BaseService {
      * the writers, and a panel that would start showing every issue's entries the
      * day one row set both should not depend on remembering it.
      *
-     * Newest first, unlike the per-issue trail. An issue's trail is a story read
-     * forwards -- created, published, amended -- while a series' is a log, and the
-     * question at a log is "what happened recently".
+     * Newest first, exactly as the per-issue trail is: a history is a log, and
+     * the question at a log is "what happened recently".
      */
     public List<IssueAuditEntry> forSeries(PublicationSeries series) {
         return em.createQuery(

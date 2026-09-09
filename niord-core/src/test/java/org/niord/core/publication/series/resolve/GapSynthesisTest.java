@@ -159,6 +159,44 @@ public class GapSynthesisTest {
                         + "to the withdrawn one");
     }
 
+    /**
+     * A withdrawn week that was ALREADY REPLACED is not missing.
+     *
+     * The shape the archive supplied. An edition went out, was withdrawn six days
+     * later and a replacement was published with its window backdated three hours
+     * into the withdrawn one's -- so the replacement was chained off the WITHDRAWN
+     * row's cut-off and covers a few hours of a weekly period. The withdrawn row
+     * is dropped from the coverage list, the arithmetic measures from the week
+     * before it to a start that is a whole period late, and it synthesizes a
+     * period that a published issue is sitting in the middle of. Offering a
+     * retro-create there asks an admin to make an issue for a week they already
+     * published to, twice.
+     *
+     * The three tests around this one are the reason the test is "strictly
+     * inside": a neighbour closing exactly AT either bound is the chain working,
+     * and a week whose only issue was withdrawn must still come back as MISSING.
+     */
+    @Test
+    public void awithdrawnWeekAlreadyCoveredByItsReplacementIsNotMissing() {
+        Date closedBefore = wed(33);
+        // The withdrawn edition's nominal close, an hour short of the next slot.
+        Date withdrawnCut = new Date(wed(34).getTime() - 3_900_000L);
+        GapSynthesis.Issue withdrawn = new GapSynthesis.Issue("w34-withdrawn", withdrawnCut,
+                IntervalBoundSource.STAMPED, closedBefore, false, true);
+        // The replacement, chained off the row it replaced and closing inside the
+        // period the arithmetic is about to call missing.
+        GapSynthesis.Issue replacement = new GapSynthesis.Issue("w34-replacement",
+                new Date(withdrawnCut.getTime() + 3_600_000L),
+                IntervalBoundSource.STAMPED, withdrawnCut, false);
+
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(week("w33", 33), withdrawn, replacement, week("w35", 35)),
+                WEEK, CPH, PATTERNS, null, wed(35));
+
+        assertEquals(0, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
+                "the week went out twice and reads as never covered: " + rows);
+    }
+
     /** The control: the same three weeks with nothing withdrawn have no gap at all. */
     @Test
     public void aPublishedWeekBetweenTwoOthersIsNotMissing() {
