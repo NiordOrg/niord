@@ -143,7 +143,8 @@ public final class IssuePublicationMapping {
         }
 
         try {
-            return IssueNaming.expandCitation(seriesDesc.getMessageReferenceFormat(), numbers);
+            return IssueNaming.expandCitation(seriesDesc.getMessageReferenceFormat(), numbers,
+                    PrintedNumbering.labelsOf(issue));
         } catch (RuntimeException e) {
             // A pattern that cannot expand is a series-validation problem, and it
             // must not become a half-expanded citation stored in a message. But it

@@ -19,7 +19,9 @@ package org.niord.core.publication.series.vo;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The EDITOR face of an issue.
@@ -178,6 +180,69 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
     private IssueCriteriaVo seriesCriteria;
 
     private String followingPublicId;
+
+    /**
+     * What this edition is CALLED where the derived week is printed, when
+     * somebody has written it down.
+     *
+     * Beside week / weekTo / year rather than instead of them: those stay
+     * numbers, because the ordering, the timeline and the gap arithmetic read
+     * them. Absent means the number prints.
+     */
+    private String weekLabel;
+
+    private String weekToLabel;
+
+    private String yearLabel;
+
+    /**
+     * The three, resolved -- exactly the strings the document and its file name
+     * will carry.
+     *
+     * Emitted for the reason effectiveCutoff is: the coalesce decides what the
+     * header, the Document card and the PDF all say, and three clients
+     * re-implementing "label if there is one, else the number" is three chances
+     * for a screen to disagree with the file it is describing.
+     */
+    private String printedWeek;
+
+    private String printedWeekTo;
+
+    private String printedYear;
+
+    /** Whether any printed number was written down for this edition. */
+    private boolean numberingOverridden;
+
+    /** The report THIS edition renders with, where that is not the series'. Absent means it follows. */
+    private String reportId;
+
+    /**
+     * What the SERIES renders with, so the drawer can show "from the series"
+     * without a second fetch -- the same reasoning as seriesCriteria beside it.
+     */
+    private String seriesReportId;
+
+    /**
+     * Whether the edition renders with something other than its series says.
+     *
+     * Derived rather than "reportId is set", exactly as criteriaOverridden is: a
+     * series since edited to name the same report is no longer a deviation.
+     */
+    private boolean reportOverridden;
+
+    /**
+     * The report parameters THIS edition sets, which the render lays over the
+     * series' map.
+     *
+     * Writable through the edit endpoint since that endpoint existed, and until
+     * now readable nowhere: a screen offering to change them had no way to show
+     * what they currently are, so the only safe thing it could do was send the
+     * whole map back and hope. Empty means the edition adds nothing of its own.
+     */
+    private Map<String, Object> reportParams = new LinkedHashMap<>();
+
+    /** The series' own map, so the parameter table can show both columns without a second fetch. */
+    private Map<String, Object> seriesReportParams = new LinkedHashMap<>();
 
     public String getStatus() {
         return status;
@@ -433,5 +498,101 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    public String getWeekLabel() {
+        return weekLabel;
+    }
+
+    public void setWeekLabel(String weekLabel) {
+        this.weekLabel = weekLabel;
+    }
+
+    public String getWeekToLabel() {
+        return weekToLabel;
+    }
+
+    public void setWeekToLabel(String weekToLabel) {
+        this.weekToLabel = weekToLabel;
+    }
+
+    public String getYearLabel() {
+        return yearLabel;
+    }
+
+    public void setYearLabel(String yearLabel) {
+        this.yearLabel = yearLabel;
+    }
+
+    public String getPrintedWeek() {
+        return printedWeek;
+    }
+
+    public void setPrintedWeek(String printedWeek) {
+        this.printedWeek = printedWeek;
+    }
+
+    public String getPrintedWeekTo() {
+        return printedWeekTo;
+    }
+
+    public void setPrintedWeekTo(String printedWeekTo) {
+        this.printedWeekTo = printedWeekTo;
+    }
+
+    public String getPrintedYear() {
+        return printedYear;
+    }
+
+    public void setPrintedYear(String printedYear) {
+        this.printedYear = printedYear;
+    }
+
+    public boolean isNumberingOverridden() {
+        return numberingOverridden;
+    }
+
+    public void setNumberingOverridden(boolean numberingOverridden) {
+        this.numberingOverridden = numberingOverridden;
+    }
+
+    public String getReportId() {
+        return reportId;
+    }
+
+    public void setReportId(String reportId) {
+        this.reportId = reportId;
+    }
+
+    public String getSeriesReportId() {
+        return seriesReportId;
+    }
+
+    public void setSeriesReportId(String seriesReportId) {
+        this.seriesReportId = seriesReportId;
+    }
+
+    public boolean isReportOverridden() {
+        return reportOverridden;
+    }
+
+    public void setReportOverridden(boolean reportOverridden) {
+        this.reportOverridden = reportOverridden;
+    }
+
+    public Map<String, Object> getReportParams() {
+        return reportParams;
+    }
+
+    public void setReportParams(Map<String, Object> reportParams) {
+        this.reportParams = reportParams;
+    }
+
+    public Map<String, Object> getSeriesReportParams() {
+        return seriesReportParams;
+    }
+
+    public void setSeriesReportParams(Map<String, Object> seriesReportParams) {
+        this.seriesReportParams = seriesReportParams;
     }
 }

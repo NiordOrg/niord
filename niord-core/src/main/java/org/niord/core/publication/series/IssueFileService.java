@@ -52,6 +52,37 @@ public class IssueFileService extends BaseService {
     @Inject
     IssueAuditService audit;
 
+    /**
+     * A file name reduced to a bare name: any path stripped, then trimmed.
+     * Null where nothing usable is left.
+     *
+     * TWO CALLERS, ONE RULE, and that is why it lives here rather than at either
+     * of them. The upload takes a name out of a multipart body and the issue edit
+     * takes one out of a JSON body, and both end up resolved against the issue's
+     * repository folder -- a name carrying `..` or an absolute path would write
+     * outside it. A second copy of the stripping is a second chance to get it
+     * wrong, on the half of the estate that happens to use the other endpoint.
+     *
+     * It returns rather than throws, because the two callers refuse differently:
+     * an upload with no usable name is a malformed multipart body, and an edit
+     * with one is a bad field. One sanitiser, two refusals.
+     */
+    public static String bareFileName(String fileName) {
+        if (fileName == null) {
+            return null;
+        }
+        String bare = fileName.replace('\\', '/');
+        int slash = bare.lastIndexOf('/');
+        if (slash >= 0) {
+            bare = bare.substring(slash + 1);
+        }
+        bare = bare.trim();
+        if (bare.isEmpty() || ".".equals(bare) || "..".equals(bare)) {
+            return null;
+        }
+        return bare;
+    }
+
     @Transactional
     public PublicationIssueDesc upload(PublicationIssue issue, String lang, String fileName,
                                        byte[] bytes, User actor) {

@@ -63,6 +63,39 @@ public enum AuditAction {
      * trail has to say which of those moved.
      */
     EDITION_CHANGED,
+
+    /**
+     * The PRINTED week, closing week or year, written down or taken back.
+     *
+     * Its own action, and not a rename: these three are what the cover, the file
+     * name and the report heading all render from, so one entry saying "the
+     * numbering changed from 36 to 36+37" explains three things somebody
+     * afterwards sees as three separate surprises. The derived numbers are
+     * untouched by it -- the ordering and the archive still read those -- which
+     * is exactly the distinction the trail has to record.
+     */
+    NUMBERING_CHANGED,
+
+    /**
+     * The file name one language's document will be written under, set by hand
+     * or returned to the series' pattern.
+     *
+     * Distinct from FILE_UPLOADED and FILE_REPLACED_MANUALLY, which are about
+     * BYTES. This one changes the address the bytes will land at, and only ever
+     * while the issue is open -- once it is published the address is fixed,
+     * because every stored citation is a URL into it.
+     */
+    FILE_NAME_CHANGED,
+
+    /**
+     * The report THIS edition renders with, set or handed back to the series.
+     *
+     * It decides the whole shape of the document, so it is not an edit detail:
+     * an edition that came out looking unlike every other edition of its series
+     * is a question somebody asks the history, and this is the line that answers
+     * it.
+     */
+    REPORT_CHANGED,
     CRITERIA_OVERRIDDEN,
     OVERRIDE_INCLUDED,
     OVERRIDE_EXCLUDED,

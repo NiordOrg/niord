@@ -253,6 +253,48 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
 
     private Integer year;
 
+    /**
+     * What this edition is CALLED where the derived week would be printed.
+     *
+     * Free text beside the number rather than instead of it, and the split is the
+     * point. The columns above are derived from the cut-off and are arithmetic:
+     * the list order, the timeline strip, gap detection and the archive all read
+     * them, and nothing a person types can reach any of that. These three carry
+     * what goes on the cover -- "36+37", "36 og 37", "36 &amp; 37" are all in the
+     * estate -- and are read by everything that PRINTS. See PrintedNumbering.
+     *
+     * Absent means the derived number prints, which is what every issue does
+     * until somebody says otherwise, and is how "follow the cut-off again" is
+     * expressed. `edition` needs none of this: it has always been free text.
+     */
+    @Column(length = 64)
+    private String weekLabel;
+
+    /** The same, for the closing week of a multi-week edition. */
+    @Column(length = 64)
+    private String weekToLabel;
+
+    /**
+     * The same, for the year.
+     *
+     * It is also where a year that is not a number goes -- an edition spanning a
+     * turn of the year has been titled "2025/2026" by hand every time it happened.
+     */
+    @Column(length = 64)
+    private String yearLabel;
+
+    /**
+     * The report THIS edition renders with, where it is not the series'.
+     *
+     * Null means it follows the series, which is what all but a handful ever do.
+     * An edition that has to be set out differently used to require cloning the
+     * whole series into a throwaway one and publishing a single edition from it;
+     * six of those clones are in the imported estate, fragmenting the archives
+     * they were cloned from. Resolved through EffectiveReport, never read raw.
+     */
+    @Column(length = 64)
+    private String reportId;
+
     @Column(length = 64)
     private String edition;
 
@@ -588,6 +630,38 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         this.year = year;
     }
 
+    public String getWeekLabel() {
+        return weekLabel;
+    }
+
+    public void setWeekLabel(String weekLabel) {
+        this.weekLabel = weekLabel;
+    }
+
+    public String getWeekToLabel() {
+        return weekToLabel;
+    }
+
+    public void setWeekToLabel(String weekToLabel) {
+        this.weekToLabel = weekToLabel;
+    }
+
+    public String getYearLabel() {
+        return yearLabel;
+    }
+
+    public void setYearLabel(String yearLabel) {
+        this.yearLabel = yearLabel;
+    }
+
+    public String getReportId() {
+        return reportId;
+    }
+
+    public void setReportId(String reportId) {
+        this.reportId = reportId;
+    }
+
     public String getEdition() {
         return edition;
     }
@@ -666,6 +740,11 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         // does not. A public reader has no use for where a file came from, and the
         // fields only make sense next to the buttons that change them.
         boolean editorShape = vo instanceof SystemPublicationIssueVo;
+        // Named once for the whole loop rather than per language: the instant a
+        // file name renders is a fact about the ISSUE, and asking for it twice
+        // would let two languages of one edition be named from two clocks.
+        Date namingCutoff = editorShape && series != null
+                ? IssuePublishService.defaultCutoff(this, series, new Date()) : null;
         for (PublicationIssueDesc d : getDescs()) {
             PublicationIssueDescVo dv = editorShape
                     ? new SystemPublicationIssueDescVo()
@@ -679,6 +758,13 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
                 sysDesc.setHref(IssuePublicationMapping.linkOf(d));
                 sysDesc.setFileSource(d.getFileSource() == null ? null : d.getFileSource().name());
                 sysDesc.setFileSourceSticky(d.isFileSourceSticky());
+                sysDesc.setNameOverridden(d.isNameOverridden());
+                sysDesc.setFileNameOverridden(d.isFileNameOverridden());
+                // Quietly: a series pattern that cannot expand is a series
+                // validation problem, and it must not take down every read of
+                // every issue that belongs to it.
+                sysDesc.setSuggestedFileName(
+                        IssueFileNaming.suggestedQuietly(this, series, d, namingCutoff));
             }
             vo.getDescs().add(dv);
         }
@@ -737,6 +823,27 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             // should not be asked to make.
             sys.setCriteriaOverridden(EffectiveCriteria.isOverridden(this));
             sys.setSeriesCriteria(series == null ? null : series.getCriteria());
+
+            // The printed numbering: what was written down, and what will actually
+            // be printed. Both, because the drawer edits the first and every other
+            // surface shows the second.
+            sys.setWeekLabel(weekLabel);
+            sys.setWeekToLabel(weekToLabel);
+            sys.setYearLabel(yearLabel);
+            sys.setPrintedWeek(PrintedNumbering.printedWeek(this));
+            sys.setPrintedWeekTo(PrintedNumbering.printedWeekTo(this));
+            sys.setPrintedYear(PrintedNumbering.printedYear(this));
+            sys.setNumberingOverridden(PrintedNumbering.isOverridden(this));
+
+            // The report, on the same terms as the criteria beside it: what this
+            // edition says, what the series says, and the comparison the client
+            // should not be asked to make.
+            sys.setReportId(reportId);
+            sys.setSeriesReportId(series == null ? null : series.getReportId());
+            sys.setReportOverridden(EffectiveReport.isOverridden(this));
+            sys.setReportParams(new LinkedHashMap<>(reportParams == null ? Map.of() : reportParams));
+            sys.setSeriesReportParams(new LinkedHashMap<>(
+                    series == null || series.getReportParams() == null ? Map.of() : series.getReportParams()));
         }
         return vo;
     }

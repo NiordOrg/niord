@@ -43,6 +43,32 @@ public class SystemPublicationIssueDescVo extends PublicationIssueDescVo {
     /** Whether a publish will leave this file alone rather than regenerating over it. */
     private boolean fileSourceSticky;
 
+    /**
+     * Whether the name was TYPED rather than suggested by the series' pattern.
+     *
+     * The server's own answer to "is this field following the series", so the
+     * screen marks it without re-deriving the suggestion and comparing -- a
+     * comparison that reads as "not overridden" the moment somebody types
+     * exactly what the pattern would have produced.
+     */
+    private boolean nameOverridden;
+
+    /** The same for the file name: set for this edition, rather than the series' pattern. */
+    private boolean fileNameOverridden;
+
+    /**
+     * What the series' pattern would call this language's file.
+     *
+     * Emitted because there is no other honest source for it. Until an issue
+     * publishes, `fileName` is empty -- the file does not exist yet -- and the
+     * screen still has to say what it WILL be called; deriving it in the client
+     * means a second implementation of the token vocabulary, which is how a
+     * suggestion comes to disagree with the name the release actually writes.
+     * Absent where the series names no pattern, or where the pattern cannot
+     * expand.
+     */
+    private String suggestedFileName;
+
     public String getHref() {
         return href;
     }
@@ -65,5 +91,29 @@ public class SystemPublicationIssueDescVo extends PublicationIssueDescVo {
 
     public void setFileSourceSticky(boolean fileSourceSticky) {
         this.fileSourceSticky = fileSourceSticky;
+    }
+
+    public boolean isNameOverridden() {
+        return nameOverridden;
+    }
+
+    public void setNameOverridden(boolean nameOverridden) {
+        this.nameOverridden = nameOverridden;
+    }
+
+    public boolean isFileNameOverridden() {
+        return fileNameOverridden;
+    }
+
+    public void setFileNameOverridden(boolean fileNameOverridden) {
+        this.fileNameOverridden = fileNameOverridden;
+    }
+
+    public String getSuggestedFileName() {
+        return suggestedFileName;
+    }
+
+    public void setSuggestedFileName(String suggestedFileName) {
+        this.suggestedFileName = suggestedFileName;
     }
 }

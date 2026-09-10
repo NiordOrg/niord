@@ -89,6 +89,41 @@ public final class IssueNaming {
     }
 
     /**
+     * What the publication PRINTS where a derived number would go.
+     *
+     * The period an issue covers and the period it is CALLED are two different
+     * facts, and only the first is arithmetic. A double week is written "36+37",
+     * "36 & 37" or "36 og 37" depending on the publication and on who typed it,
+     * and none of those is a number: the moment they shared a column, either the
+     * ordering broke or the cover did.
+     *
+     * So the numbers stay derived and numeric -- ordering, gap detection, the
+     * timeline and the archive all keep reading them -- and this carries the free
+     * text that goes on the page. A blank or absent label means the derived
+     * number prints, which is what every issue does until somebody says otherwise.
+     *
+     * BOTH VARIANTS OF A TOKEN TAKE THE LABEL, the zero-padded one included.
+     * "36+37" has no two-digit form, and a pattern that asked for one would
+     * otherwise print the derived 36 beside a title saying 36+37 -- the exact
+     * disagreement the label exists to remove. A label is a decision about what
+     * this edition is called, and it is printed as it was written.
+     */
+    public record Labels(String week, String weekTo, String year) {
+
+        /** Nothing overridden: every token renders the derived number. */
+        public static final Labels NONE = new Labels(null, null, null);
+
+        /** Whether anything at all was written down. */
+        public boolean any() {
+            return notBlank(week) || notBlank(weekTo) || notBlank(year);
+        }
+
+        static boolean notBlank(String value) {
+            return value != null && !value.isBlank();
+        }
+    }
+
+    /**
      * Which year ${year} means.
      *
      * Declared here, as a plain choice, rather than taken from the series'
@@ -204,6 +239,35 @@ public final class IssueNaming {
         return v;
     }
 
+    /**
+     * The same values, with the printed labels laid over the derived numbers.
+     *
+     * ONE OVERLAY, applied here, so that a typed "36+37" reaches the name
+     * pattern, the file-name pattern and the citation format by the same route.
+     * The alternative was each caller remembering to ask -- and the one that
+     * forgot would publish a document whose title and whose file name disagreed
+     * about which weeks it covers.
+     */
+    public static Map<String, String> valuesOf(Numbers n, Labels labels) {
+        Map<String, String> v = valuesOf(n);
+        if (labels == null) {
+            return v;
+        }
+        if (Labels.notBlank(labels.week())) {
+            v.put("week", labels.week());
+            v.put("week-2-digits", labels.week());
+        }
+        if (Labels.notBlank(labels.weekTo())) {
+            v.put("weekTo", labels.weekTo());
+            v.put("weekTo-2-digits", labels.weekTo());
+        }
+        if (Labels.notBlank(labels.year())) {
+            v.put("year", labels.year());
+            v.put("year-2-digits", labels.year());
+        }
+        return v;
+    }
+
     private static String pad(int value) {
         return String.format(Locale.ROOT, "%02d", value);
     }
@@ -216,10 +280,15 @@ public final class IssueNaming {
      * reached a file name and then a URL, so this is asserted rather than assumed.
      */
     public static String expand(String pattern, Numbers numbers) {
+        return expand(pattern, numbers, Labels.NONE);
+    }
+
+    /** The same, with the printed labels laid over the derived numbers. */
+    public static String expand(String pattern, Numbers numbers, Labels labels) {
         if (pattern == null) {
             return null;
         }
-        Map<String, String> values = valuesOf(numbers);
+        Map<String, String> values = valuesOf(numbers, labels);
 
         Matcher m = TOKEN.matcher(pattern);
         StringBuilder out = new StringBuilder();
@@ -263,10 +332,21 @@ public final class IssueNaming {
      * token is correct, and it survives by name.
      */
     public static String expandCitation(String pattern, Numbers numbers) {
+        return expandCitation(pattern, numbers, Labels.NONE);
+    }
+
+    /**
+     * The same, with the printed labels laid over the derived numbers.
+     *
+     * A citation is printed too -- into message HTML, where it stays. An issue
+     * whose cover says "uge 36+37" and whose citations say "uge 36" is the same
+     * disagreement as a title that argues with its own file name.
+     */
+    public static String expandCitation(String pattern, Numbers numbers, Labels labels) {
         if (pattern == null) {
             return null;
         }
-        Map<String, String> values = valuesOf(numbers);
+        Map<String, String> values = valuesOf(numbers, labels);
 
         Matcher m = TOKEN.matcher(pattern);
         StringBuilder out = new StringBuilder();

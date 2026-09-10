@@ -395,10 +395,16 @@ public class PublishChecklistService extends BaseService {
         }
 
         // 5
+        // The EFFECTIVE report, which is the one the release will render with.
+        // Reading the series' here would refuse an edition that names its own --
+        // and, the other way round, would pass an edition whose own report is set
+        // while the render used something else. The rail and the publish answer
+        // the same question or the rail is advice.
+        String effectiveReportId = EffectiveReport.idOf(issue, series);
         rows.add(queryBacked
-                ? row("REPORT_CONFIGURED", Severity.BLOCK, series.getReportId() != null,
-                        detail("REPORT_CONFIGURED.reportId", "reportId " + series.getReportId(),
-                                "reportId", series.getReportId()))
+                ? row("REPORT_CONFIGURED", Severity.BLOCK, effectiveReportId != null,
+                        detail("REPORT_CONFIGURED.reportId", "reportId " + effectiveReportId,
+                                "reportId", effectiveReportId))
                 : notApplicable("REPORT_CONFIGURED", Severity.BLOCK, Inapplicable.NOTHING_RENDERED));
 
         // 6

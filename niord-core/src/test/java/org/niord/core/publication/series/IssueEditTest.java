@@ -268,23 +268,205 @@ public class IssueEditTest {
     }
 
     /**
-     * A blank name is refused rather than stored.
+     * A BLANK NAME IS THE WAY BACK, and until now there was none.
      *
-     * The column is NOT NULL precisely because a nameless issue is unfindable in
-     * every list that shows it, and an empty string clears it just as well as a
-     * null would.
+     * The flag a rename sets is what stops the shaping re-deriving the name, and
+     * every name written through this service set it -- so an issue renamed once
+     * was renamed for ever, and the drawer's "follow the series again" control
+     * had nothing to call. The refusal it used to get even said to clear the
+     * override instead, which was the one thing that could not be done.
+     *
+     * The suggestion is written back HERE, in the same request. A clear that only
+     * dropped the flag would leave the drawer showing the withdrawn name until
+     * something unrelated moved the interval.
      */
     @Test
     @Transactional
-    public void ablankNameIsRefused() {
+    public void ablankNameGoesBackToTheSeriesSuggestion() {
         PublicationIssue issue = anIssue();
+        String suggested = issue.getDescs().get(0).getName();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "Et navn nogen tastede"), null, null, null),
+                user());
+        em.flush();
+        assertTrue(issue.getDescs().get(0).isNameOverridden(), "the rename did not pin the name");
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "   "), null, null, null), user());
+        em.flush();
+
+        PublicationIssueDesc desc = issue.getDescs().get(0);
+        assertFalse(desc.isNameOverridden(),
+                "the override survived the blank, so the name is still frozen and the control that "
+                        + "sent it does nothing");
+        assertEquals(suggested, desc.getName(),
+                "the name did not go back to the series' suggestion; a clear that leaves the typed "
+                        + "text on the row says one thing on the flag and another on the page");
+    }
+
+    /** And typing again re-pins it, so the two states are reachable in both directions. */
+    @Test
+    @Transactional
+    public void aclearedNameCanBePinnedAgain() {
+        PublicationIssue issue = anIssue();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "Et navn"), null, null, null), user());
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", ""), null, null, null), user());
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "Et andet navn"), null, null, null), user());
+        em.flush();
+
+        PublicationIssueDesc desc = issue.getDescs().get(0);
+        assertEquals("Et andet navn", desc.getName());
+        assertTrue(desc.isNameOverridden(), "the re-typed name did not pin, so the next edit re-derives it");
+    }
+
+    /**
+     * Clearing one language says nothing about the others.
+     *
+     * The same per-language rule the rename has, and for the same reason: an
+     * admin handing the Danish title back to the series has not asked for the
+     * English one they typed last week to be discarded with it.
+     */
+    @Test
+    @Transactional
+    public void clearingOneLanguageLeavesTheOthersPinned() {
+        PublicationIssue issue = anIssue();
+        PublicationSeries s = issue.getSeries();
+        s.getLanguages().add("en");
+        PublicationSeriesDesc enSeries = s.createDesc("en");
+        enSeries.setName("Test series");
+        enSeries.setNameSuggestionPattern("Week ${week}, ${year}");
+        PublicationIssueDesc enDesc = issue.createDesc("en");
+        enDesc.setName("Week 44, 2023");
+        em.flush();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "Dansk navn", "en", "English name"),
+                        null, null, null),
+                user());
+        em.flush();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", ""), null, null, null), user());
+        em.flush();
+
+        PublicationIssueDesc da = issue.getDescs().stream()
+                .filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow();
+        PublicationIssueDesc en = issue.getDescs().stream()
+                .filter(d -> "en".equals(d.getLang())).findFirst().orElseThrow();
+        assertFalse(da.isNameOverridden(), "the language named in the map did not stop following");
+        assertTrue(en.isNameOverridden(),
+                "clearing one language cleared another; the map names exactly the languages the "
+                        + "caller decided about");
+        assertEquals("English name", en.getName(),
+                "the re-shape ran over a language the caller said nothing about");
+    }
+
+    /** The trail says the name stopped being a decision, and what it was. */
+    @Test
+    @Transactional
+    public void thetrailSaysAnameStoppedBeingAnOverride() {
+        PublicationIssue issue = anIssue();
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "Et navn nogen tastede"), null, null, null),
+                user());
+        em.flush();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", ""), null, null, null), user());
+        em.flush();
+
+        // Newest first, so this is the clear rather than the rename before it.
+        IssueAuditEntry entry = audit.forIssue(issue).stream()
+                .filter(a -> a.getAction() == AuditAction.NAME_CHANGED)
+                .findFirst().orElseThrow();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> detail = (Map<String, Object>) entry.getDetail();
+        assertEquals("da", detail.get("lang"));
+        assertEquals("Et navn nogen tastede", detail.get("from"),
+                "a history line that cannot say which name was withdrawn answers nothing");
+        assertNull(detail.get("to"), "the entry claims a name was typed rather than handed back");
+    }
+
+    /** A blank for a language that already follows the series is not an event. */
+    @Test
+    @Transactional
+    public void ablankNameOnALanguageThatAlreadyFollowsChangesNothing() {
+        PublicationIssue issue = anIssue();
+        String suggested = issue.getDescs().get(0).getName();
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", "  "), null, null, null), user());
+        em.flush();
+
+        assertEquals(suggested, issue.getDescs().get(0).getName());
+        assertFalse(actions(issue).contains(AuditAction.NAME_CHANGED),
+                "a Historik panel listing edits that changed nothing buries the ones that did");
+    }
+
+    /**
+     * The one blank still refused: a language with no name to fall back on.
+     *
+     * The clear writes no name of its own -- it drops the flag and lets the
+     * shaping render one -- so a desc that is already nameless would be left that
+     * way, and an issue is unfindable in every list that shows it under a
+     * language with no name.
+     */
+    @Test
+    @Transactional
+    public void ablankNameForALanguageWithNothingToFallBackOnIsRefused() {
+        PublicationIssue issue = anIssue();
+        issue.getDescs().get(0).setName("");
+        em.flush();
 
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
                         () -> editService.update(issue,
                                 new IssueEditService.IssueEdit(Map.of("da", "   "), null, null, null),
                                 user()));
-        assertEquals("NAME_BLANK", e.code());
+        assertEquals(IssueEditService.NAME_BLANK, e.code());
+    }
+
+    /**
+     * Longer than the column it lands in.
+     *
+     * Without the cap the value reaches the driver as a truncation from inside
+     * the transaction that was renaming the issue -- which names no field and
+     * gives no length, and is answered as a server fault rather than as a
+     * refusal the form can show.
+     */
+    @Test
+    @Transactional
+    public void atoolongNameIsRefused() {
+        PublicationIssue issue = anIssue();
+        String suggested = issue.getDescs().get(0).getName();
+        String tooLong = "N".repeat(IssueEditService.MAX_NAME + 1);
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> editService.update(issue,
+                                new IssueEditService.IssueEdit(Map.of("da", tooLong), null, null, null),
+                                user()));
+        assertEquals(IssueEditService.NAME_INVALID, e.code());
+        assertEquals(suggested, issue.getDescs().get(0).getName(), "the refused name was written anyway");
+    }
+
+    /** And a name that exactly fits it is not. */
+    @Test
+    @Transactional
+    public void anameThatFitsTheColumnIsAccepted() {
+        PublicationIssue issue = anIssue();
+        String atTheCap = "N".repeat(IssueEditService.MAX_NAME);
+
+        editService.update(issue,
+                new IssueEditService.IssueEdit(Map.of("da", atTheCap), null, null, null), user());
+        em.flush();
+
+        assertEquals(atTheCap, issue.getDescs().get(0).getName());
     }
 
     /** A language the series does not carry has no row to write to. */
@@ -334,19 +516,27 @@ public class IssueEditTest {
                 "the issue was created under a name somebody typed and nothing in the trail says so");
     }
 
-    /** A blank name at create is refused with the code the edit path answers. */
+    /**
+     * A field the create dialog left empty means "as the series names it".
+     *
+     * The dialog prefills the suggestions, so an emptied field is a deliberate
+     * act -- and the only sensible reading of it is the one every other override
+     * has: do not decide this one, let the series. Refusing here would ask an
+     * admin to retype a name that is already on the screen in front of them.
+     */
     @Test
     @Transactional
-    public void aBlankNameGivenAtCreateIsRefused() {
+    public void aBlankNameGivenAtCreateFollowsTheSeries() {
         PublicationIssue issue = anIssue();
         String suggested = issue.getDescs().get(0).getName();
 
-        IssueLifecycleService.TransitionRefusedException e =
-                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
-                        () -> editService.applyNames(issue, Map.of("da", "  "), user()));
-        assertEquals("NAME_BLANK", e.code());
-        assertEquals(suggested, issue.getDescs().get(0).getName(),
-                "the refused name was written anyway");
+        editService.applyNames(issue, Map.of("da", "  "), user());
+        em.flush();
+
+        PublicationIssueDesc desc = issue.getDescs().get(0);
+        assertEquals(suggested, desc.getName(), "the issue was created under a name nobody chose");
+        assertFalse(desc.isNameOverridden(),
+                "an emptied field pinned the suggestion, so the interval could never re-render it");
     }
 
     /** Renaming to the value it already holds writes no history. */

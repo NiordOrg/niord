@@ -54,6 +54,25 @@ public class PublicationIssueDesc extends DescEntity<PublicationIssue> {
     @Column(length = 255)
     private String fileName;
 
+    /**
+     * Whether the file name above was SET rather than derived.
+     *
+     * The twin of nameOverridden, and it exists for the same reason. A file name
+     * the series' pattern produced is a rendering of the period, so it re-renders
+     * every time the period or the printed numbering moves. A file name somebody
+     * typed is a decision, and re-deriving over it would discard the decision
+     * with nothing anywhere to say it had been made.
+     *
+     * Without the flag the two are indistinguishable: the column also holds the
+     * name of an UPLOADED document and the name the last publish happened to
+     * write, and neither of those is a decision about what the file should be
+     * called. That is why clearing the override leaves the column alone -- the
+     * file that exists still has the name it has -- and only stops the name being
+     * preferred over the pattern.
+     */
+    @Column(nullable = false)
+    private boolean fileNameOverridden = false;
+
     @Column(length = 512)
     private String filePath;
 
@@ -105,6 +124,14 @@ public class PublicationIssueDesc extends DescEntity<PublicationIssue> {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public boolean isFileNameOverridden() {
+        return fileNameOverridden;
+    }
+
+    public void setFileNameOverridden(boolean fileNameOverridden) {
+        this.fileNameOverridden = fileNameOverridden;
     }
 
     public String getFilePath() {
@@ -200,6 +227,7 @@ public class PublicationIssueDesc extends DescEntity<PublicationIssue> {
         this.name = desc.getName();
         this.nameOverridden = desc.isNameOverridden();
         this.fileName = desc.getFileName();
+        this.fileNameOverridden = desc.isFileNameOverridden();
         this.filePath = desc.getFilePath();
         this.link = desc.getLink();
         this.messageReferenceFormat = desc.getMessageReferenceFormat();

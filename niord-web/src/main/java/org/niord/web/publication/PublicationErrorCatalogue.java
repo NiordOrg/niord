@@ -17,7 +17,9 @@
 package org.niord.web.publication;
 
 import org.niord.core.publication.series.IssueArchiveService;
+import org.niord.core.publication.series.IssueEditService;
 import org.niord.core.publication.series.IssuePublicWindowService;
+import org.niord.core.publication.series.PrintedNumbering;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.StaleVersionGuard;
 
@@ -99,9 +101,16 @@ public final class PublicationErrorCatalogue {
         // would publish EMPTY rather than fail -- which is why it is refused at
         // the edge rather than left to produce a document with no contents.
         put("INTERVAL_INVERTED", 400);
-        // The name column is NOT NULL precisely because a nameless issue is
-        // unfindable in every list that shows it, and "" clears it as well as null.
-        put("NAME_BLANK", 400);
+        // A blank name where the language has nothing to fall back on. NOT the
+        // ordinary blank, which is a clear like every other override's -- this is
+        // the one case a clear cannot serve, because it writes no name of its own
+        // and the desc has none to keep. The one-off create answers with the same
+        // code for the same fact: a publication with no name in any language.
+        put(IssueEditService.NAME_BLANK, 400);
+        // A name longer than the column. Checked here so it arrives as a refusal
+        // naming the field, rather than as a driver truncation from inside the
+        // transaction that was renaming the issue.
+        put(IssueEditService.NAME_INVALID, 400);
         // An edition that is empty or longer than the column. 400: the value
         // itself is wrong, and resending it cannot become right. Not a clear --
         // the edition tells two publications of one period apart, and an issue
@@ -112,6 +121,27 @@ public final class PublicationErrorCatalogue {
         // nothing. 400: the request is wrong about what the series is, and
         // resending it cannot become right while the content mode stands.
         put("CRITERIA_NOT_APPLICABLE", 400);
+
+        // The per-edition overrides. All 400: each names a value that is wrong in
+        // itself, so the same request never becomes right.
+        //
+        // A printed number is free text -- "36+37", "36 og 37" -- and only two
+        // things are refused: one longer than the column, and one carrying a
+        // control character. The label reaches a PDF heading and a file name, and
+        // a newline in either is not a value.
+        put(PrintedNumbering.INVALID, 400);
+        // A file name that is a path, carries a control character, or would not
+        // fit the column. It becomes part of a public download URL.
+        put(IssueEditService.FILE_NAME_INVALID, 400);
+        // A report id that names no report. 400 rather than 404: the report is a
+        // field of the request, not the resource being addressed -- and left
+        // unchecked it fails at step 10 of the publish, after the cut-off has been
+        // stamped.
+        put(IssueEditService.REPORT_NOT_FOUND, 400);
+        // week, weekTo, year and edition come from the edition's own numbering and
+        // are injected into every report; typed as parameters they are a second
+        // answer the document ignores. Same rule as S-23 on the series form.
+        put(IssueEditService.REPORT_PARAM_RESERVED, 400);
 
         // The upload (I24). All 400 -- the multipart body itself is wrong, and
         // re-posting the same body cannot help.

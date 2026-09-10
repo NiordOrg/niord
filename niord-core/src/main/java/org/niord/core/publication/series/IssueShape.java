@@ -292,7 +292,8 @@ public class IssueShape extends BaseService {
             if (desc.isNameOverridden() || renamedByHand) {
                 continue;
             }
-            String suggested = IssueLifecycleService.suggestName(series, desc.getLang(), numbers);
+            String suggested = IssueLifecycleService.suggestName(series, desc.getLang(), numbers,
+                    PrintedNumbering.labelsOf(issue));
             if (suggested != null && !suggested.isBlank()) {
                 desc.setName(suggested);
             }

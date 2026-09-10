@@ -1291,7 +1291,8 @@ public class PublicationIssueRestService {
     }
 
     /**
-     * I8. Edit an OPEN issue: its names, its interval, its report parameters.
+     * I8. Edit an OPEN issue: its names, its interval, its printed numbering, its
+     * file names, and the report it renders with.
      *
      * The one thing an admin could not do. An issue's name is minted at create
      * from the series' pattern over a PROVISIONAL interval start -- the lifecycle
@@ -1300,9 +1301,13 @@ public class PublicationIssueRestService {
      * interval: a recovered period is created from a bound somebody worked out,
      * and correcting it meant deleting the issue and creating it again.
      *
-     * The document fields are deliberately not accepted here. A file and a link
+     * The document BYTES are deliberately not accepted here. A file and a link
      * have their own endpoints, which archive, guard file-name collisions and
-     * audit; two write paths to one field is how they come to disagree.
+     * audit; two write paths to one field is how they come to disagree. The file
+     * NAME is a different question -- it decides where the release will write,
+     * not what is written -- and it is decided here, while the issue is still
+     * open, because once it is published the address is fixed by every stored
+     * citation that points into it.
      */
     @PUT
     @Path("/issue/{publicId}")
@@ -1337,6 +1342,20 @@ public class PublicationIssueRestService {
      * `edition` is free text of at most 64 characters, and absent leaves it
      * alone like every other field. An empty string is REFUSED rather than
      * treated as a clear -- see IssueEditService.
+     *
+     * `names`, `weekLabel`, `weekToLabel`, `yearLabel`, `fileNames` and
+     * `reportId` are the per-edition overrides, and they read an empty string the
+     * OTHER way round from the edition: "" means "follow the series again". They
+     * are strings, so they have an empty form to say it with; a JSON null could
+     * not be used for it, because absent and null arrive here as the same value
+     * and every partial edit would then silently clear them. `names` and
+     * `fileNames` are lang to value, and a language absent from either is
+     * untouched.
+     *
+     * A blank `names` entry does not blank the row: the override comes off, the
+     * issue is re-shaped, and the response carries the name the series suggests.
+     * The only blank refused is one for a language that has no name to fall back
+     * on at all.
      */
     public record UpdateIssueRequest(Map<String, String> names,
                                      Long intervalFrom,
@@ -1345,6 +1364,11 @@ public class PublicationIssueRestService {
                                      IssueCriteriaVo criteriaOverride,
                                      Boolean clearCriteriaOverride,
                                      String edition,
+                                     String weekLabel,
+                                     String weekToLabel,
+                                     String yearLabel,
+                                     Map<String, String> fileNames,
+                                     String reportId,
                                      Integer version) {
     }
 
@@ -1367,7 +1391,12 @@ public class PublicationIssueRestService {
                 request.reportParams(),
                 request.criteriaOverride(),
                 Boolean.TRUE.equals(request.clearCriteriaOverride()),
-                request.edition());
+                request.edition(),
+                request.weekLabel(),
+                request.weekToLabel(),
+                request.yearLabel(),
+                request.fileNames(),
+                request.reportId());
     }
 
     // ------------------------------------------------------------------ document
@@ -1444,13 +1473,12 @@ public class PublicationIssueRestService {
             throw new IssueLifecycleService.TransitionRefusedException("NO_FILE_NAME",
                     "the uploaded file carried no name");
         }
-        String bare = fileName.replace('\\', '/');
-        int slash = bare.lastIndexOf('/');
-        if (slash >= 0) {
-            bare = bare.substring(slash + 1);
-        }
-        bare = bare.trim();
-        if (bare.isEmpty() || ".".equals(bare) || "..".equals(bare)) {
+        // The stripping itself is IssueFileService's, because the issue edit
+        // takes a file name too and both end up resolved against the same folder.
+        // Only the refusal is local: a malformed multipart body is a different
+        // complaint from a bad field.
+        String bare = IssueFileService.bareFileName(fileName);
+        if (bare == null) {
             throw new IssueLifecycleService.TransitionRefusedException("BAD_FILE_NAME",
                     "'" + fileName + "' does not name a file");
         }

@@ -26,11 +26,13 @@ import jakarta.ws.rs.Path;
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.NamedMessageVo;
 import org.niord.core.publication.PublicationResolver;
+import org.niord.core.publication.series.IssueEditService;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublishChecklistService;
 import org.niord.core.publication.series.vo.PublicationIssueVo;
 import org.niord.core.publication.series.vo.PublishCheckRowVo;
 import org.niord.core.publication.series.vo.PublicationSeriesVo;
+import org.niord.core.publication.series.vo.SystemPublicationIssueDescVo;
 import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
@@ -124,7 +126,13 @@ public class PublicationApiContractTest {
 
         Set<String> publicIssueFields = declaredFields(PublicationIssueVo.class);
         for (String leaky : List.of("intervalFrom", "cutoffStampedAt", "snapshotIntervalFrom",
-                "membershipProvenance", "repoPath")) {
+                "membershipProvenance", "repoPath",
+                // The per-edition overrides are administration, on the same terms
+                // as the series' own reportId beside them: which template sets a
+                // document out, and what an admin typed into its parameters, are
+                // answers to questions a public reader is not asking and a
+                // parameter map is a place secrets get typed.
+                "reportId", "reportParams", "seriesReportParams", "seriesReportId")) {
             assertFalse(publicIssueFields.contains(leaky),
                     "PublicationIssueVo declares " + leaky
                             + "; out of context a public reader would take it for the issue period");
@@ -134,6 +142,26 @@ public class PublicationApiContractTest {
         // than a deletion.
         assertTrue(declaredFields(SystemPublicationSeriesVo.class).contains("criteria"));
         assertTrue(declaredFields(SystemPublicationIssueVo.class).contains("snapshotIntervalFrom"));
+
+        // The read side of the per-edition overrides. A drawer that can WRITE a
+        // field and cannot READ it back can only send the whole form and hope,
+        // and every mark the design puts on an overridden field is a comparison
+        // the server already made -- emitted, so no client makes it differently.
+        Set<String> systemIssueFields = declaredFields(SystemPublicationIssueVo.class);
+        for (String required : List.of("weekLabel", "weekToLabel", "yearLabel",
+                "printedWeek", "printedWeekTo", "printedYear", "numberingOverridden",
+                "reportId", "seriesReportId", "reportOverridden",
+                "reportParams", "seriesReportParams")) {
+            assertTrue(systemIssueFields.contains(required),
+                    "SystemPublicationIssueVo no longer declares " + required
+                            + "; the drawer can write the field and cannot read it back");
+        }
+        Set<String> systemDescFields = declaredFields(SystemPublicationIssueDescVo.class);
+        for (String required : List.of("nameOverridden", "fileNameOverridden", "suggestedFileName")) {
+            assertTrue(systemDescFields.contains(required),
+                    "SystemPublicationIssueDescVo no longer declares " + required
+                            + "; the per-language file-name section has nothing to mark or to suggest");
+        }
     }
 
     /**
@@ -552,6 +580,56 @@ public class PublicationApiContractTest {
         assertTrue(issues.contains("request.edition()"),
                 "editOf does not pass the edition through, so a client sending one is answered 200 "
                         + "and nothing changes");
+    }
+
+    /**
+     * Every per-edition override reaches the service, under its own name.
+     *
+     * The same two halves as the edition above, for the same reason: a component
+     * nothing maps is accepted and dropped -- the client is answered 200 and
+     * nothing changes -- and a mapping with a renamed component would not compile
+     * but a re-ORDERED one silently would, because these are all strings.
+     *
+     * Five fields, and each is a thing the series decides that one edition
+     * occasionally has to decide for itself: what it is CALLED where its derived
+     * numbers print (three), what its documents are filed under, and which report
+     * sets it out.
+     */
+    @Test
+    public void theEditBodyCarriesEveryPerEditionOverride() throws IOException {
+        List<String> components =
+                Arrays.stream(PublicationIssueRestService.UpdateIssueRequest.class.getRecordComponents())
+                        .map(RecordComponent::getName).toList();
+        String issues = read("src/main/java/org/niord/web/publication/PublicationIssueRestService.java");
+
+        for (String field : List.of("weekLabel", "weekToLabel", "yearLabel", "fileNames", "reportId")) {
+            assertTrue(components.contains(field),
+                    "the edit body carries no " + field + ", so the drawer that edits it has no way "
+                            + "to save it");
+            assertTrue(issues.contains("request." + field + "()"),
+                    "editOf does not pass " + field + " through, so a client sending one is answered "
+                            + "200 and nothing changes");
+        }
+    }
+
+    /**
+     * And they reach the SERVICE record in the same order they are read off the
+     * body.
+     *
+     * Five consecutive components of one record, four of them String: a
+     * transposition compiles, passes every type check, and swaps the year label
+     * with the week label on the cover of a published document. The order is
+     * asserted rather than trusted.
+     */
+    @Test
+    public void theServiceEditCarriesTheOverridesInTheOrderTheyAreMapped() {
+        List<String> components =
+                Arrays.stream(IssueEditService.IssueEdit.class.getRecordComponents())
+                        .map(RecordComponent::getName).toList();
+        assertEquals(List.of("weekLabel", "weekToLabel", "yearLabel", "fileNames", "reportId"),
+                components.subList(components.size() - 5, components.size()),
+                "the edit record's override fields moved; editOf passes them positionally, so a "
+                        + "transposition here silently prints the year where the week goes");
     }
 
     /**

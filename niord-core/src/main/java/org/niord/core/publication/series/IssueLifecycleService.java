@@ -346,6 +346,19 @@ public class IssueLifecycleService extends BaseService {
      * nobody noticed it was never set.
      */
     static String suggestName(PublicationSeries series, String lang, IssueNaming.Numbers numbers) {
+        return suggestName(series, lang, numbers, IssueNaming.Labels.NONE);
+    }
+
+    /**
+     * The same, told what this edition PRINTS where the numbers would go.
+     *
+     * A typed "36+37" has to reach the suggested name, or the drawer's own hint
+     * -- "name, file name and the report's heading follow" -- is untrue of the
+     * first of the three. The labels are the issue's, and the draft, which has no
+     * issue yet, passes none.
+     */
+    static String suggestName(PublicationSeries series, String lang, IssueNaming.Numbers numbers,
+                              IssueNaming.Labels labels) {
         PublicationSeriesDesc seriesDesc = series.getDescs().stream()
                 .filter(d -> lang.equals(d.getLang()))
                 .findFirst().orElse(null);
@@ -353,7 +366,7 @@ public class IssueLifecycleService extends BaseService {
         if (seriesDesc != null && seriesDesc.getNameSuggestionPattern() != null
                 && !seriesDesc.getNameSuggestionPattern().isBlank() && numbers != null) {
             try {
-                return IssueNaming.expand(seriesDesc.getNameSuggestionPattern(), numbers);
+                return IssueNaming.expand(seriesDesc.getNameSuggestionPattern(), numbers, labels);
             } catch (RuntimeException e) {
                 // A pattern that cannot expand is a series-validation problem,
                 // not a reason to refuse to create an issue.

@@ -90,8 +90,15 @@ public class IssueTimelineQueryTest {
      * because this database is long-lived and never truncated, so an assertion
      * about WHICH series the rule selects has to be made against an uncapped read
      * or it is really an assertion about the slice.
+     *
+     * NO FINITE NUMBER, and that is the point rather than caution. A generous one
+     * is still a cap, and the desk grows every time this suite runs: at ten
+     * thousand it had passed for months and then began failing on the assertion
+     * that the unnarrowed read returns both halves -- because the calendar-less
+     * series sort LAST, so they are the first thing a cap takes away, and the
+     * failure reads as a rule that changed rather than as an estate that grew.
      */
-    private static final int UNCAPPED = 10_000;
+    private static final int UNCAPPED = Integer.MAX_VALUE;
 
     private String messageSeriesId;
 

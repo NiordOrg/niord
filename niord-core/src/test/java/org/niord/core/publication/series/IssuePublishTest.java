@@ -928,7 +928,7 @@ public class IssuePublishTest {
      */
     @Test
     public void theAuditVocabularyIsClosedAndSpecific() {
-        assertEquals(31, AuditAction.values().length, "the audit vocabulary changed size");
+        assertEquals(34, AuditAction.values().length, "the audit vocabulary changed size");
         assertTrue(List.of(AuditAction.values()).containsAll(
                         List.of(AuditAction.LINK_SET, AuditAction.LINK_CLEARED,
                                 AuditAction.INTERVAL_CHANGED, AuditAction.NAME_CHANGED,
@@ -946,7 +946,18 @@ public class IssuePublishTest {
                                 // Moving a publication to another desk: it leaves one
                                 // team's screens and appears on another's, and the
                                 // question afterwards is always who and why.
-                                AuditAction.OWNER_TRANSFERRED)),
+                                AuditAction.OWNER_TRANSFERRED,
+                                // The three per-edition overrides, each its own
+                                // action because each is a separate surprise to
+                                // whoever opens the history. The printed numbering
+                                // changes the cover, the file name and the report
+                                // heading at once while the derived numbers stand;
+                                // the file name moves where the release will write;
+                                // and the report decides the whole shape of the
+                                // document.
+                                AuditAction.NUMBERING_CHANGED,
+                                AuditAction.FILE_NAME_CHANGED,
+                                AuditAction.REPORT_CHANGED)),
                 "the vocabulary is specific by design: a history panel cannot render "
                         + "'something changed', so every mutation an admin can make has its own value");
     }
@@ -1221,35 +1232,75 @@ public class IssuePublishTest {
     }
 
     /**
-     * A blank name in the release body is refused, and nothing is released.
+     * An EMPTIED name in the release body hands the title back to the series.
      *
-     * With the same code the rename path answers, because a caller that cannot
-     * tell the two apart cannot tell the admin what to fix. The refusal lands
-     * before the members are frozen and before the status flips, which is what
-     * matters: a release is the one action here that cannot be taken back, and an
-     * issue left PUBLISHED under a blank name is unfindable in every list that
-     * shows it.
+     * The same convention the edit drawer uses, and it has to be the same one:
+     * the release dialog is the LAST moment a name can be changed, so it is also
+     * the last moment a name typed by mistake can stop being a decision. An admin
+     * who clears an override on Tuesday and is told on Friday that the field may
+     * not be empty has been given two rules for one field.
      *
-     * And nothing is stamped either. The cut-off is the column a release can never
-     * un-write, so a refusal that lands after it has been set leaves the issue
-     * correct only for as long as the transaction rolls back -- which is not a
-     * property of this refusal, it is a property of the caller.
+     * What lands is the series' own rendering of the period that actually went
+     * out -- the restamp has already moved the numbers by the time the name is
+     * applied -- which is the whole reason the clear re-shapes rather than merely
+     * dropping a flag.
      */
     @Test
     @Transactional
-    public void aBlankNameAtReleaseIsRefusedAndNothingIsReleased() {
+    public void aBlankNameAtReleaseHandsTheTitleBackToTheSeries() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        s.getDescs().stream().filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow()
+                .setNameSuggestionPattern("Uge ${week}, ${year}");
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        // Typed, and therefore a decision: the restamp below would otherwise
+        // re-derive over it.
+        edits.applyNames(i, Map.of("da", "Et navn nogen tastede"), null);
+        em.flush();
+        PublicationIssueDesc da = i.getDescs().stream()
+                .filter(d -> "da".equals(d.getLang())).findFirst().orElseThrow();
+        assertTrue(da.isNameOverridden(), "the fixture never pinned the name, so there is nothing to clear");
+
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_700_000_000_000L), Map.of("da", "   ")));
+        em.flush();
+
+        assertEquals(IssueStatus.PUBLISHED, i.getStatus(), "an emptied name was read as a refusal");
+        assertFalse(da.isNameOverridden(), "the override survived the clear, so the name is frozen for ever");
+        assertEquals("Uge " + i.getWeek() + ", " + i.getYear(), da.getName(),
+                "the released document kept the typed name; a clear that does not re-shape leaves the "
+                        + "issue titled by a decision that was withdrawn");
+    }
+
+    /**
+     * A name that cannot be stored IS refused, and nothing is released.
+     *
+     * The refusal lands before the members are frozen and before the status
+     * flips, which is what matters: a release is the one action here that cannot
+     * be taken back. And nothing is stamped either -- the cut-off is the column a
+     * release can never un-write, so a refusal landing after it has been set
+     * leaves the issue correct only for as long as the transaction rolls back.
+     */
+    @Test
+    @Transactional
+    public void anUnusableNameAtReleaseIsRefusedAndNothingIsReleased() {
         PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
         PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
         em.flush();
 
+        String tooLong = "N".repeat(IssueEditService.MAX_NAME + 1);
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
                         () -> publishService.publish(i.getId(),
                                 new IssuePublishService.PublishRequest(
                                         IssuePublishService.PublishRequest.ALL_WARNINGS, null,
-                                        new Date(1_700_000_000_000L), java.util.Map.of("da", "   "))));
-        assertEquals("NAME_BLANK", e.code(), "the release refused with a code the rename path does not use");
+                                        new Date(1_700_000_000_000L), Map.of("da", tooLong))));
+        assertEquals(IssueEditService.NAME_INVALID, e.code(),
+                "the release refused with a code the rename path does not use");
 
         assertEquals(IssueStatus.OPEN, i.getStatus(), "a refused release flipped the status anyway");
         assertNull(i.getPublishedAt(), "a refused release stamped a publication moment");

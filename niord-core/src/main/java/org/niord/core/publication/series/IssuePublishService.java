@@ -24,7 +24,6 @@ import org.niord.core.message.Message;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.resolve.GapDetection;
 import org.niord.core.publication.series.resolve.Interval;
-import org.niord.core.publication.series.resolve.IssueNaming;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
 import org.niord.core.publication.series.resolve.IssueOrdering;
@@ -301,9 +300,15 @@ public class IssuePublishService extends BaseService {
         // A name the release dialog carried is APPLIED further down, after the
         // restamp that would otherwise overwrite it. Whether it is acceptable is
         // decided here, with every other refusal, because everything below this
-        // line mutates the issue: a blank name found after the stamp would leave a
-        // cut-off written on an entity whose release was refused, and only the
-        // transaction rollback would take it off again.
+        // line mutates the issue: an unusable name found after the stamp would
+        // leave a cut-off written on an entity whose release was refused, and only
+        // the transaction rollback would take it off again.
+        //
+        // An EMPTIED field is not an unusable name. It says the release should
+        // title this edition the way its series titles every other one, which is
+        // the same thing it says in the edit drawer -- one convention, so an admin
+        // who cleared an override on Tuesday is not told on Friday that the field
+        // may not be empty.
         edits.validateNames(issue, request.names());
 
         // --- 2. STAMP, before resolving -----------------------------------
@@ -736,7 +741,10 @@ public class IssuePublishService extends BaseService {
                     "only an open issue has a live member list to preview; a published one has its document");
         }
         PublicationSeries series = issue.getSeries();
-        if (series.getReportId() == null) {
+        // The EFFECTIVE report, not the series': an edition that names its own
+        // renders with it, and asking the series here would refuse a preview of
+        // exactly the issue whose report was set because the series has none.
+        if (EffectiveReport.idOf(issue, series) == null) {
             throw new IssueLifecycleService.TransitionRefusedException("REPORT_NOT_CONFIGURED",
                     "the series has no report to render a preview from");
         }
@@ -801,7 +809,7 @@ public class IssuePublishService extends BaseService {
      */
     private void writeFiles(PublicationIssue issue, PublicationSeries series,
                             List<IssueOrdering.Orderable> ordered, Date stamp) {
-        if (series.getReportId() == null) {
+        if (EffectiveReport.idOf(issue, series) == null) {
             // A query-backed series with no report has nothing to render and no
             // bytes to fall back on, so returning quietly here left it PUBLISHED
             // with no document -- the failure that looks exactly like success. The
@@ -879,15 +887,27 @@ public class IssuePublishService extends BaseService {
         if (issue.getReportParams() != null) {
             params.putAll(issue.getReportParams());
         }
-        params.put("week", issue.getWeek());
-        params.put("weekTo", issue.getWeekTo());
-        params.put("year", issue.getYear());
+        // AS TEXT, and that is a fix rather than a formatting preference.
+        //
+        // These went in as Integers, and FreeMarker formats a NUMBER with the
+        // grouping of the language it is rendering in: under a Danish render the
+        // year 2026 printed as "2.026", on the cover of the document, in every
+        // edition. A string is interpolated as it was written, in every language.
+        //
+        // It is also what makes a printed label reach the report at all. The
+        // heading, the title and the file name are three renderings of one
+        // decision, and they read it through the same resolution -- see
+        // PrintedNumbering. Verified against the shipped templates: every one of
+        // them interpolates these tokens and none does arithmetic on them.
+        params.put("week", PrintedNumbering.printedWeek(issue));
+        params.put("weekTo", PrintedNumbering.printedWeekTo(issue));
+        params.put("year", PrintedNumbering.printedYear(issue));
         params.put("edition", issue.getEdition());
 
         boolean areaHeadings = "AREA".equalsIgnoreCase(series.getMessageSortBy());
 
         return new IssueRenderService.RenderRequest(
-                series.getReportId(),
+                EffectiveReport.idOf(issue, series),
                 lang,
                 messages,
                 series.getPageSize() == null ? null : series.getPageSize().name(),
@@ -899,31 +919,17 @@ public class IssuePublishService extends BaseService {
     }
 
     /**
-     * The official file name for one language: the series' pattern expanded with
-     * the issue's numbers, else the name the language already carries, else the
-     * issue's public id -- always a PDF.
+     * The official file name for one language.
+     *
+     * The rule itself lives in {@link IssueFileNaming}, because the editor screen
+     * has to be able to say what a file WILL be called before it exists, and a
+     * second implementation of the order -- the name somebody set, then the
+     * series' pattern, then what the language carries -- is how a screen comes to
+     * promise one address and the release write another.
      */
     private String fileNameFor(PublicationIssue issue, PublicationSeries series, PublicationIssueDesc desc,
                                Date stamp) {
-        String pattern = null;
-        for (PublicationSeriesDesc sd : series.getDescs()) {
-            if (desc.getLang().equals(sd.getLang())) {
-                pattern = sd.getFileNamePattern();
-            }
-        }
-        String name = null;
-        if (pattern != null && !pattern.isBlank()) {
-            Integer edition = issue.getEdition() == null || !issue.getEdition().matches("\\d+")
-                    ? null : Integer.valueOf(issue.getEdition());
-            IssueNaming.Numbers numbers = IssueNaming.derive(stamp, issue.getIntervalFrom(),
-                    series.cutoffZone(), edition, IssueShape.yearBasisOf(series));
-            name = IssueNaming.expand(pattern, numbers);
-        }
-        if (name == null || name.isBlank()) {
-            name = desc.getFileName() != null && !desc.getFileName().isBlank()
-                    ? desc.getFileName() : issue.getPublicId() + ".pdf";
-        }
-        return name.toLowerCase().endsWith(".pdf") ? name : name + ".pdf";
+        return IssueFileNaming.resolve(issue, series, desc, stamp);
     }
 
     /**

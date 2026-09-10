@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The renderer, stood in for, in this module only.
@@ -57,6 +59,8 @@ public class StubIssueRenderService extends IssueRenderService {
 
     private static volatile String body = DEFAULT_BODY;
 
+    private static final List<RenderRequest> REQUESTS = new CopyOnWriteArrayList<>();
+
     /** The bytes every render produces until something says otherwise. */
     public static void renders(String nextBody) {
         body = nextBody;
@@ -65,6 +69,26 @@ public class StubIssueRenderService extends IssueRenderService {
     /** Back to the default, so one test's bytes are not the next one's. */
     public static void reset() {
         body = DEFAULT_BODY;
+        REQUESTS.clear();
+    }
+
+    /**
+     * Every request this stub was handed, in order.
+     *
+     * Recorded because some of what publish decides is only visible IN the
+     * request: which report it chose, and what it put in the parameter map. The
+     * document is deterministic bytes here, so there is nothing to read it out
+     * of afterwards -- and the parameter map is where a year became "2.026" on
+     * the cover of a Danish edition, which is not a fact any assertion about a
+     * file could reach.
+     */
+    public static List<RenderRequest> requests() {
+        return List.copyOf(REQUESTS);
+    }
+
+    /** The last one, which is what a single-language test is asking about. */
+    public static RenderRequest lastRequest() {
+        return REQUESTS.isEmpty() ? null : REQUESTS.get(REQUESTS.size() - 1);
     }
 
     @Override
@@ -72,6 +96,7 @@ public class StubIssueRenderService extends IssueRenderService {
         if (request == null || request.orderedMessages() == null) {
             throw new IllegalArgumentException("render() takes an ordered message list, never a query");
         }
+        REQUESTS.add(request);
         if (UNRENDERABLE.equals(request.reportId())) {
             throw new RenderFailedException("no such report: " + request.reportId(), null);
         }
