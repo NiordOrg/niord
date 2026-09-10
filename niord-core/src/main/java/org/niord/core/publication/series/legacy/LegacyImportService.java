@@ -1472,6 +1472,17 @@ public class LegacyImportService extends BaseService {
      * that should stay open is the one legacy marks ACTIVE -- which is also the
      * most recently updated, and is NOT the one publicationId order would pick.
      *
+     * ONLY A RELEASED SUCCESSOR CLOSES ANYTHING, and the ordering above is what
+     * makes that cheap to say. An unreleased row carries no public window at
+     * all, so it sorts to the FRONT of its group for want of a start date: it
+     * stands ahead of every row that states one, and the only rows it can ever
+     * stand behind are the other startless ones. Whichever position it lands
+     * in, what it offers a predecessor is a missing start -- and a missing start
+     * is exactly what the guard after the skip below rejects. The skip is
+     * therefore the rule written down rather than the thing that enforces it:
+     * the pass must not end an edition at a date nobody published on, and that
+     * is a statement about release, not about which field happens to be empty.
+     *
      * Applied to every imported series rather than only the grouped ones,
      * because the invariant is about series with two current issues and not
      * about how a series came to exist. Where a series already has exactly one
@@ -1507,7 +1518,25 @@ public class LegacyImportService extends BaseService {
                 if (issue.getPublicTo() != null) {
                     continue;
                 }
-                Date successorOpens = plan.issues().get(group.get(i + 1)).getPublicFrom();
+                PublicationIssue successor = plan.issues().get(group.get(i + 1));
+
+                // AN UNRELEASED SUCCESSOR TAKES OVER NOTHING. A pre-created row is
+                // the next edition being prepared, not the one on the site, so
+                // ending the current edition where it is EXPECTED to open leaves
+                // the series with no current publication between the two -- the
+                // newest edition withdrawn from public view by a row nobody has
+                // published. Its window stays open-ended, which is what "this is
+                // still the current edition" means, and the publish action caps it
+                // at the successor's real stamp when that finally happens.
+                //
+                // Said out loud rather than left to the guard below: such a row has
+                // no public start either, so the next test would step over it in any
+                // case. What the reader needs here is the reason, and the reason is
+                // that nobody released it.
+                if (successor.getStatus() == IssueStatus.OPEN) {
+                    continue;
+                }
+                Date successorOpens = successor.getPublicFrom();
 
                 // Only a successor that actually states when it opened can close
                 // anything, and it cannot close a window before that window began.

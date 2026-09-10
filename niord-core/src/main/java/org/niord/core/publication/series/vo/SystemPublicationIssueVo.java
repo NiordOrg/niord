@@ -84,6 +84,43 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
     /** Derived: cutoffStampedAt ?? intervalTo. Emitted so no client re-implements the coalesce. */
     private Date effectiveCutoff;
 
+    /**
+     * When this edition is EXPECTED to go public, where that is not yet decided.
+     *
+     * A PROJECTION, NEVER A STORED VALUE, and the distinction is the whole of the
+     * pair. publicFrom and publicTo are what the archive holds: the window an
+     * edition actually occupied, written by the publish action and by nothing
+     * else. An issue nobody has published has neither, because nothing has
+     * happened -- and a screen that shows a blank there is telling the truth about
+     * the row while being useless to the person planning next week.
+     *
+     * So the expectation is computed for the list and sent beside the stored pair
+     * rather than in place of it. A client renders it as a forecast -- differently
+     * from a window that exists -- and a write that echoed it back would be
+     * writing a date nothing decided.
+     *
+     * Filled for an unreleased issue of a cadenced series only: its planned
+     * cut-off, and one cadence period on from there. Absent everywhere else,
+     * including on every synthesized row.
+     */
+    private Date expectedPublicFrom;
+
+    /**
+     * When this edition is expected to STOP being the current one.
+     *
+     * Two rows carry it, and for the same reason seen from either end. On an
+     * unreleased issue it is its own planned window closing, one cadence period
+     * after it opens. On the newest PUBLISHED issue -- the one still current,
+     * whose window is open-ended because nothing has superseded it -- it is the
+     * instant the unreleased successor is planned to take over, which is what the
+     * publish action will cap this window at when that happens.
+     *
+     * That second case is why it is emitted regardless of the stored publicTo: the
+     * current edition's window says "no end recorded", and the answer the screen
+     * needs is "until the next one comes out, which is planned for Wednesday".
+     */
+    private Date expectedPublicTo;
+
     /** OPEN | PUBLISHED | RETIRED for a real row; MISSING | UPCOMING for a synthesized one. */
     private String computedStatus;
 
@@ -292,6 +329,22 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     public void setEffectiveCutoff(Date effectiveCutoff) {
         this.effectiveCutoff = effectiveCutoff;
+    }
+
+    public Date getExpectedPublicFrom() {
+        return expectedPublicFrom;
+    }
+
+    public void setExpectedPublicFrom(Date expectedPublicFrom) {
+        this.expectedPublicFrom = expectedPublicFrom;
+    }
+
+    public Date getExpectedPublicTo() {
+        return expectedPublicTo;
+    }
+
+    public void setExpectedPublicTo(Date expectedPublicTo) {
+        this.expectedPublicTo = expectedPublicTo;
     }
 
     public String getComputedStatus() {

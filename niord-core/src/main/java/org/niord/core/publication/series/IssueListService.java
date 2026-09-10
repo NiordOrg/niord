@@ -254,9 +254,13 @@ public class IssueListService {
         Synthesis synthesis = synthesize(series, issues, now);
 
         List<SystemPublicationIssueVo> rows = new ArrayList<>();
+        Map<String, SystemPublicationIssueVo> real = new LinkedHashMap<>();
         for (PublicationIssue issue : issues) {
-            rows.add(issue.toVo(SystemPublicationIssueVo.class));
+            SystemPublicationIssueVo vo = issue.toVo(SystemPublicationIssueVo.class);
+            rows.add(vo);
+            real.put(issue.getPublicId(), vo);
         }
+        expectedWindowsInto(series, issues, real);
         for (GapSynthesis.Row row : synthesis.pseudo()) {
             rows.add(toVo(row, series));
         }
@@ -275,6 +279,88 @@ public class IssueListService {
                         .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count()
                 : null);
         return out;
+    }
+
+    /**
+     * The window each row is EXPECTED to occupy, where the archive has none.
+     *
+     * WHY IT IS PROJECTED AND NOT STORED. An unreleased issue carries no public
+     * window at all -- neither end -- because nothing has published it, and the
+     * edition still on the site carries an open-ended one because nothing has
+     * superseded it. Both are the truth about the row and both leave the screen
+     * blank exactly where somebody planning next week is looking. Writing the
+     * expectation into the columns instead would put a publication on the public
+     * site from a date nothing decided, which is the defect this is the answer to.
+     *
+     * TWO CASES, AND THEY ARE THE SAME INSTANT SEEN FROM EITHER SIDE.
+     *
+     * An unreleased issue of a cadenced series expects to open at its own planned
+     * cut-off -- the interval bound the shaping already gave it -- and to close one
+     * cadence period later. A series with no cadence has no period to add, so it
+     * gets neither: a one-off's window is a decision somebody makes, not one that
+     * follows from a rhythm, and the one-off screens let it be prepared by hand.
+     *
+     * The issue BEFORE it -- the newest published one, still current -- expects to
+     * close where that successor opens. That is the value the publish action will
+     * cap it at, so the forecast and what eventually happens come from one number,
+     * and it is emitted whatever the stored publicTo says because the stored answer
+     * on a current edition is "no end recorded".
+     *
+     * SYNTHESIZED ROWS GET NOTHING. A period with no issue has nothing planned
+     * about it; what it offers is a retro-create, not a forecast.
+     */
+    private static void expectedWindowsInto(PublicationSeries series, List<PublicationIssue> issues,
+                                            Map<String, SystemPublicationIssueVo> rows) {
+        // Sorted here rather than trusted from the caller: build() is handed a page
+        // slice on one path and a hand-built list on another, and "the next issue"
+        // is the whole question this asks.
+        //
+        // OVER THE ROWS THE CALLER HAS, which for a paged request is that page.
+        // Both rows this concerns are the two newest of the series, so they are on
+        // page 0 together and a pager cannot separate them; a page deeper in the
+        // archive has no unreleased row on it and nothing to forecast.
+        List<PublicationIssue> dated = new ArrayList<>();
+        for (PublicationIssue issue : issues) {
+            if (issue.effectiveCutoff() != null) {
+                dated.add(issue);
+            }
+        }
+        dated.sort(Comparator.comparing(PublicationIssue::effectiveCutoff)
+                .thenComparing(i -> i.getPublicId() == null ? "" : i.getPublicId()));
+
+        ZoneId zone = series.cutoffZone();
+        String cadence = series.getCadence() == null ? null : series.getCadence().name();
+
+        for (int i = 0; i < dated.size(); i++) {
+            PublicationIssue issue = dated.get(i);
+            SystemPublicationIssueVo vo = rows.get(issue.getPublicId());
+            if (vo == null) {
+                continue;
+            }
+
+            if (issue.getStatus() == IssueStatus.OPEN) {
+                Date planned = issue.effectiveCutoff();
+                // Measured around the issue's OWN cut-off, because a month and a
+                // year are not fixed lengths and the period wanted is the one this
+                // edition sits in.
+                long period = GapDetection.periodMillisOf(cadence, zone, planned);
+                if (period > 0) {
+                    vo.setExpectedPublicFrom(planned);
+                    vo.setExpectedPublicTo(new Date(planned.getTime() + period));
+                }
+                continue;
+            }
+
+            // Only a PUBLISHED row is the current edition. A retired one is off the
+            // public list already, so nothing is waiting to take it over.
+            if (issue.getStatus() != IssueStatus.PUBLISHED || i + 1 >= dated.size()) {
+                continue;
+            }
+            PublicationIssue successor = dated.get(i + 1);
+            if (successor.getStatus() == IssueStatus.OPEN) {
+                vo.setExpectedPublicTo(successor.effectiveCutoff());
+            }
+        }
     }
 
     /**

@@ -328,16 +328,27 @@ public class CutoverPreflightService extends BaseService {
     }
 
     /**
-     * I-18: a series has at most one issue with publicTo IS NULL.
+     * I-18: a series has at most one RELEASED issue with publicTo IS NULL.
      *
      * That issue is the current one. Two of them means two editions are current
      * at once, which on the public site reads as the archive having forked.
+     *
+     * AN UNRELEASED ISSUE IS NOT A CURRENT ONE, and counting it as one is a
+     * category error rather than a stricter reading. It has no public window --
+     * neither end of it -- because nothing has published it; it is on no public
+     * list and serves nobody. Counted, it makes every series that has a next
+     * edition in preparation look like a fork, which is every healthy cadenced
+     * series. The publish path already states the invariant this way: it counts
+     * open-ended windows among PUBLISHED rows.
      */
     private void assertOneCurrentIssuePerSeries(List<PublicationIssue> imported,
                                                 List<Violation> violations,
                                                 Map<String, Integer> counts) {
         Map<String, List<PublicationIssue>> openEnded = new LinkedHashMap<>();
         for (PublicationIssue i : imported) {
+            if (i.getStatus() == IssueStatus.OPEN) {
+                continue;
+            }
             if (i.getPublicTo() == null && i.getSeries() != null) {
                 openEnded.computeIfAbsent(i.getSeries().getSeriesId(), k -> new ArrayList<>()).add(i);
             }

@@ -103,15 +103,43 @@ public final class LegacyIssueTranslation {
         issue.setCreated(legacy.getCreated());
         issue.setUpdated(legacy.getUpdated());
 
-        // The public window, verbatim. The recovery cascade recovers the cut-off stamp
-        // afterwards; nothing here invents one.
-        issue.setPublicFrom(legacy.getPublishDateFrom());
-        issue.setPublicTo(legacy.getPublishDateTo());
+        boolean released = issue.getStatus() != IssueStatus.OPEN;
+
+        // The public window, verbatim, for an edition that was actually released.
+        // The recovery cascade recovers the cut-off stamp afterwards; nothing here
+        // invents one.
+        //
+        // AN UNRELEASED ROW GETS NO WINDOW AT ALL, and the dates it carries are the
+        // reason. A pre-created row states the window its edition is EXPECTED to
+        // occupy -- the weekly template fills it in a period ahead -- so copying it
+        // across puts a publication on the public site from a date nothing has
+        // published it on, and the archive shows an edition that does not exist
+        // yet. It is the same shape a natively created successor has: it is minted
+        // with no window, and the publish action opens one at the instant it runs.
+        // What the window would have said is not lost -- the planned cut-off is the
+        // interval's own upper bound, which the list projects as the expected
+        // window for the screen that needs to show it.
+        //
+        // AND ITS PREDECESSOR IS NOT CLOSED AT IT EITHER; see closeSupersededIssues,
+        // which steps over an unreleased successor for the same reason.
+        if (released) {
+            issue.setPublicFrom(legacy.getPublishDateFrom());
+            issue.setPublicTo(legacy.getPublishDateTo());
+        }
 
         applyContentInterval(issue, legacy, series, previousCutoff);
 
         // Rule R8. DERIVED for anything with a cadence, MANUAL only for a
         // genuinely open-ended one-off.
+        //
+        // NOT DECIDED AT ALL WHERE THERE IS NO WINDOW YET. The source describes a
+        // window, and an unreleased row has none, so it is left on the column's own
+        // DERIVED default -- which is precisely where a natively created successor
+        // sits, because the create path does not set it either. The column is NOT
+        // NULL, so "no answer" is spelt as the default rather than as a null, and
+        // nothing reads the field while the window is absent: an admin setting a
+        // period by hand stamps MANUAL at that moment, and the publish action
+        // stamps DERIVED when it opens one.
         //
         // Read from the SERIES where there is one and from the publication's own
         // periodicalType where there is not. Keying on the series alone marked 9
@@ -121,9 +149,11 @@ public final class LegacyIssueTranslation {
         // cadenced issue MANUAL is exactly what the publish transaction skips by design,
         // and the first native publish would then leave two current EfS issues
         // on the public site at once.
-        issue.setPublicWindowSource(isCadenced(legacy, series)
-                ? PublicWindowSource.DERIVED
-                : PublicWindowSource.MANUAL);
+        if (released) {
+            issue.setPublicWindowSource(isCadenced(legacy, series)
+                    ? PublicWindowSource.DERIVED
+                    : PublicWindowSource.MANUAL);
+        }
 
         issue.setRepoPath(legacy.getRepoPath());
         issue.setEdition(legacy.getEdition() == null ? null : String.valueOf(legacy.getEdition()));

@@ -349,7 +349,11 @@ public class LegacyTemplateRulingsTest {
         t.put("weekly-ntm-p-t", new String[]{"niord-nm", "OWNER_ONLY"});
         t.put("accumulated-yearly-ntm", new String[]{"niord-nm", "OWNER_ONLY"});
         t.put("efs-a", new String[]{"niord-almanac", "OWNER_ONLY"});
-        t.put("firing-practice-areas", new String[]{"niord-fa", "OWNER_ONLY"});
+        // Owned by the firing desk, cited from every desk. The one row where the
+        // two questions genuinely come apart: it is GENERATED, so the default
+        // answers OWNER_ONLY, and the annual firing-areas list is referenced from
+        // notices written everywhere.
+        t.put("firing-practice-areas", new String[]{"niord-fa", "ALL_DOMAINS"});
         t.put("nm-annex-ice-service", new String[]{"niord-annex", "OWNER_ONLY"});
         t.put("nm-annex-ncags", new String[]{"niord-annex", "OWNER_ONLY"});
         // The six that carried no domain in legacy: the annex desk's to
@@ -403,21 +407,27 @@ public class LegacyTemplateRulingsTest {
     }
 
     /**
-     * The declared ruling names the nine the data cannot decide, and no others.
+     * The declared ruling names the ten the data cannot decide, and no others.
      *
-     * The other four rows of the §3 table -- the two weeklies, efs-a and
-     * firing-practice-areas -- are GENERATED, so what an admin would get for a
-     * publication of that kind is already the right answer and a ruling would be a
-     * second source that can disagree with it. Naming them anyway would be the
-     * kind of "harmless" duplication that later gets edited on one side only.
+     * The remaining rows of the §3 table -- the two weeklies and efs-a -- are
+     * GENERATED and belong to the desk that generates them, so what an admin would
+     * get for a publication of that kind is already the right answer and a ruling
+     * would be a second source that can disagree with it. Naming them anyway would
+     * be the kind of "harmless" duplication that later gets edited on one side only.
+     *
+     * firing-practice-areas is generated TOO and is named anyway, which is the
+     * point of naming rather than deriving: it is the row where being generated and
+     * being one desk's come apart. It is built from niord-fa's messages and cited
+     * from every desk, and no property of the data says so.
      */
     @Test
     public void therulingNamesOnlyTheSeriesTheDataCannotDecide() {
         Map<String, SeriesAvailability> ruled = LegacyTemplateRulings.availabilities();
 
-        assertEquals(9, ruled.size(),
-                "the ruling should name three uploaded publications that belong to one desk each "
-                        + "and the six that belong to all of them: " + ruled.keySet());
+        assertEquals(10, ruled.size(),
+                "the ruling should name three uploaded publications that belong to one desk each, "
+                        + "the six that belong to all of them, and the generated firing-areas list "
+                        + "that belongs to one desk and is cited by all: " + ruled.keySet());
         for (Map.Entry<String, String[]> row : theSpecTable().entrySet()) {
             SeriesAvailability named = ruled.get(row.getKey());
             if (named != null) {
@@ -486,9 +496,14 @@ public class LegacyTemplateRulingsTest {
     /**
      * And the weeklies are their own desk's alone.
      *
-     * A generated series is assembled from one domain's messages over that
-     * domain's cut-off calendar, so its editions mean that desk's week. Sharing
-     * one would offer another authority's weekly edition as if it were everybody's.
+     * A weekly is assembled from one domain's messages over that domain's cut-off
+     * calendar, so its editions mean that desk's week. Sharing one would offer
+     * another authority's weekly edition as if it were everybody's.
+     *
+     * Named as the weeklies rather than as "generated series", which is what this
+     * used to say and is not the reason. firing-practice-areas is generated too and
+     * IS shared: an annual list of firing areas is a reference an editor at any
+     * desk cites, where a week of one authority's notices is not.
      */
     @Test
     @Transactional

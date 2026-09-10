@@ -226,6 +226,13 @@ public final class LegacyTemplateRulings {
      * which is the rule an admin creating a publication by hand gets. That keeps
      * the unnamed tail -- the dont-use-* clones, the ncags-2021 family -- behaving
      * as an authored publication of the same kind would.
+     *
+     * A GENERATED SERIES IS NOT AUTOMATICALLY ITS OWN DESK'S, which is the second
+     * thing a derivation gets wrong. The firing-practice-areas list is generated
+     * from the firing desk's own messages, so the default makes it OWNER_ONLY --
+     * and it is cited from every desk, exactly as the six reference lists are.
+     * Being generated says how a publication is BUILT; it does not say who reaches
+     * for it.
      */
     private static final Map<String, SeriesAvailability> AVAILABILITY_BY_SERIES =
             new LinkedHashMap<>();
@@ -243,6 +250,14 @@ public final class LegacyTemplateRulings {
         for (String seriesId : SHARED_EVERYWHERE) {
             AVAILABILITY_BY_SERIES.put(seriesId, SeriesAvailability.ALL_DOMAINS);
         }
+
+        // The firing practice areas, owned by the firing desk and cited by all of
+        // them. It is the one row where the two questions genuinely pull apart:
+        // the list is GENERATED from niord-fa's own messages, so the default
+        // answers OWNER_ONLY -- and the annual "Skydeområder på søterritoriet" is
+        // referenced from notices written at every desk, which is what an editor
+        // outside niord-fa loses when the default stands.
+        AVAILABILITY_BY_SERIES.put("firing-practice-areas", SeriesAvailability.ALL_DOMAINS);
     }
 
     /**

@@ -466,6 +466,13 @@ public class LegacyImportServiceTest {
      * Driven over the captured estate rather than a fixture pair, because the
      * shape that broke it -- same-day duplicates, and a legacy end date on some
      * rows but not others -- does not occur in anything hand-built.
+     *
+     * COUNTED OVER RELEASED ROWS. An unreleased issue carries no public window at
+     * either end, because nothing has published it: it is on no public list and
+     * serves nobody, so it is not one of the current editions this is about.
+     * Counting it makes every series with a next edition in preparation read as a
+     * fork, which is every healthy cadenced series. The publish path states the
+     * invariant the same way -- it counts open-ended windows among PUBLISHED rows.
      */
     @Test
     public void everyImportedSeriesServesExactlyOneCurrentIssue() {
@@ -474,6 +481,9 @@ public class LegacyImportServiceTest {
 
         Map<String, Integer> open = new java.util.LinkedHashMap<>();
         for (PublicationIssue issue : plan.issues().values()) {
+            if (issue.getStatus() == org.niord.core.publication.series.IssueStatus.OPEN) {
+                continue;
+            }
             if (issue.getPublicTo() == null && issue.getSeries() != null) {
                 open.merge(issue.getSeries().getSeriesId(), 1, Integer::sum);
             }
@@ -495,6 +505,13 @@ public class LegacyImportServiceTest {
      * January. That nine-day gap is recorded data, not an artefact to normalise
      * away, and the ruling is explicit that chaining fills in only what legacy
      * left empty (Rasmus, 2026-08-24).
+     *
+     * OVER RELEASED ROWS. An unreleased row loses its window WHOLE -- both ends,
+     * and its start with them -- because the window it carries is the one its
+     * edition is expected to occupy rather than one it ever occupied; see
+     * UnreleasedIssueWindowTest. That is a different rule from this one, which is
+     * about the supersession pass never writing over an end that is data. Keeping
+     * such a row here would let this test assert half of the other rule's opposite.
      */
     @Test
     public void chainingFillsGapsAndNeverOverwritesARecordedEndDate() {
@@ -506,7 +523,8 @@ public class LegacyImportServiceTest {
                 continue;
             }
             PublicationIssue issue = plan.issues().get(legacy.getPublicationId());
-            if (issue == null) {
+            if (issue == null
+                    || issue.getStatus() == org.niord.core.publication.series.IssueStatus.OPEN) {
                 continue;
             }
             assertEquals(legacy.getPublishDateTo(), issue.getPublicTo(),

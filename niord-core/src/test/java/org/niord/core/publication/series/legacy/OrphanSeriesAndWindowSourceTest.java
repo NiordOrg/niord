@@ -32,6 +32,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -59,6 +60,12 @@ public class OrphanSeriesAndWindowSourceTest {
      * Marking a cadenced imported issue MANUAL is what the publish transaction skips by
      * design, and the first native publish would then leave two current EfS
      * issues on the public site at once.
+     *
+     * An unreleased row has no window for a source to describe -- the import gives
+     * it neither end, exactly as a natively created successor is minted with
+     * neither -- and it reaches this the same way that successor does: on the
+     * column's own DERIVED default, which the publish action then leaves as it
+     * finds it when it opens the window.
      */
     @Test
     public void noCadencedIssueCarriesAManualWindow() {
@@ -66,15 +73,27 @@ public class OrphanSeriesAndWindowSourceTest {
         weekly.setCadence(SeriesCadence.WEEKLY);
 
         List<String> offenders = new ArrayList<>();
+        int unreleased = 0;
         for (Publication p : LegacyEstateFixture.publications()) {
             PublicationSeries series = p.getTemplate() == null ? null : weekly;
             PublicationIssue issue = LegacyIssueTranslation.translate(p, series, FROZEN, (java.util.Date) null);
 
+            if (issue.getStatus() == org.niord.core.publication.series.IssueStatus.OPEN) {
+                unreleased++;
+                assertNull(issue.getPublicFrom(),
+                        p.getPublicationId() + " has not been released, so it must be on no public "
+                                + "site -- and a publicFrom is exactly that claim");
+                assertNull(issue.getPublicTo(), p.getPublicationId()
+                        + " carries the end of a window it never had a start for");
+            }
             if (LegacyIssueTranslation.isCadenced(p, series)
                     && issue.getPublicWindowSource() != PublicWindowSource.DERIVED) {
                 offenders.add(p.getPublicationId());
             }
         }
+        assertEquals(4, unreleased,
+                "the captured estate holds four rows that were never released; a count of zero means "
+                        + "the assertions above pass over nothing");
         assertTrue(offenders.isEmpty(),
                 "R8: a cadenced issue must derive its window, or the first native publish leaves the "
                         + "imported predecessor uncapped on the public site: " + offenders);

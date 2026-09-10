@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueListResultVo;
+import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -351,6 +352,183 @@ public class IssueListWireTest {
 
         assertEquals("open", result.getData().get(0).getPublicId());
         assertEquals("OPEN", result.getData().get(0).getComputedStatus());
+    }
+
+    // ------------------------------------------------------- the expected window
+
+    /**
+     * An issue still being assembled has no window, and the list says when one is
+     * expected.
+     *
+     * WHY THE PAIR EXISTS. publicFrom and publicTo record what happened: the
+     * publish action writes them and nothing else does, so an unreleased issue has
+     * neither and the current edition's end is absent because nothing has
+     * superseded it. Both are true and both leave the screen blank exactly where
+     * somebody planning the week is looking. Writing the expectation into the
+     * columns instead would put a publication on the public site from a date
+     * nothing decided, which is the failure the absence is there to prevent -- so
+     * it is PROJECTED, beside the stored pair rather than into it.
+     */
+    private static PublicationIssue open(PublicationSeries series, String publicId, Date plannedCutoff) {
+        PublicationIssue i = new PublicationIssue();
+        i.setSeries(series);
+        i.setPublicId(publicId);
+        i.setStatus(IssueStatus.OPEN);
+        i.setIntervalTo(plannedCutoff);
+        i.setIntervalToSource(IntervalBoundSource.NOMINAL);
+        return i;
+    }
+
+    private static SystemPublicationIssueVo row(IssueListResultVo result, String publicId) {
+        return result.getData().stream()
+                .filter(r -> publicId.equals(r.getPublicId()))
+                .findFirst().orElseThrow(() -> new AssertionError(publicId + " is not in the list"));
+    }
+
+    /**
+     * The unreleased issue expects to open at its planned cut-off and to run one
+     * period.
+     *
+     * Its own cut-off, not "now" plus a period: the cut-off is the bound the
+     * shaping already gave it, and it is what the publish action will close the
+     * period at. Two answers to "when does this week end" would disagree the first
+     * time a release ran late.
+     */
+    @Test
+    public void anUnreleasedIssueOfACadencedSeriesForecastsItsOwnWindow() {
+        PublicationSeries active = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+
+        IssueListResultVo result = IssueListService.build(active,
+                newestFirst(published(active, "current", wed(50)), open(active, "next", wed(51))),
+                new Date(wed(51).getTime() - 3600_000L));
+
+        SystemPublicationIssueVo next = row(result, "next");
+        assertNull(next.getPublicFrom(), "an unreleased issue is on no public site");
+        assertEquals(wed(51), next.getExpectedPublicFrom(),
+                "it expects to go public at its own planned cut-off");
+        assertEquals(new Date(wed(51).getTime() + WEEK), next.getExpectedPublicTo(),
+                "and to be current for one cadence period after that");
+    }
+
+    /**
+     * And the current edition expects to end where that one opens.
+     *
+     * The same instant seen from the other side, and it is emitted although the
+     * stored publicTo is absent -- which is the whole point: "no end recorded" is
+     * what a current edition's window says, and the answer the screen needs is
+     * "until the next one comes out". It is also the value the publish action will
+     * cap this window at, so the forecast and what eventually happens come from one
+     * number.
+     */
+    @Test
+    public void theCurrentEditionForecastsBeingSupersededByTheUnreleasedOne() {
+        PublicationSeries active = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+
+        IssueListResultVo result = IssueListService.build(active,
+                newestFirst(published(active, "current", wed(50)), open(active, "next", wed(51))),
+                new Date(wed(51).getTime() - 3600_000L));
+
+        SystemPublicationIssueVo current = row(result, "current");
+        assertNull(current.getPublicTo(), "the fixture is pointless if the window already ends");
+        assertNull(current.getExpectedPublicFrom(),
+                "it is already public; when it opened is recorded, not forecast");
+        assertEquals(wed(51), current.getExpectedPublicTo(),
+                "it expects to stop being current when the week after it is released");
+    }
+
+    /**
+     * A published issue whose successor is also published forecasts nothing.
+     *
+     * Nothing is waiting to take over, so there is nothing to expect: the pair's
+     * absence is what tells a screen to render the stored window and stop.
+     */
+    @Test
+    public void aPublishedIssueBehindAnotherPublishedOneForecastsNothing() {
+        PublicationSeries active = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+
+        IssueListResultVo result = IssueListService.build(active,
+                newestFirst(published(active, "older", wed(50)), published(active, "newer", wed(51))),
+                new Date(wed(51).getTime() + 3600_000L));
+
+        for (String publicId : List.of("older", "newer")) {
+            assertNull(row(result, publicId).getExpectedPublicFrom(), publicId + " forecasts a start");
+            assertNull(row(result, publicId).getExpectedPublicTo(), publicId + " forecasts an end");
+        }
+    }
+
+    /**
+     * A series with no cadence forecasts nothing either, and the reason is not
+     * caution.
+     *
+     * There is no period to add. A one-off's window is a decision somebody makes,
+     * and the one-off screens are where it is made by hand; inventing a length for
+     * it here would put a date on the screen that nothing in the model supports.
+     */
+    @Test
+    public void anUnreleasedIssueOfACadencelessSeriesForecastsNothing() {
+        PublicationSeries oneOff = series(SeriesStatus.ACTIVE, SeriesCadence.NONE,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+
+        IssueListResultVo result = IssueListService.build(oneOff,
+                newestFirst(published(oneOff, "first", wed(50)), open(oneOff, "next", wed(51))),
+                new Date(wed(51).getTime() - 3600_000L));
+
+        SystemPublicationIssueVo next = row(result, "next");
+        assertNull(next.getExpectedPublicFrom(),
+                "a series with no cadence has no period to place a window in");
+        assertNull(next.getExpectedPublicTo());
+        // The predecessor's forecast does not depend on the cadence: the successor
+        // still states when it plans to take over, and the publish action will
+        // still cap this window there.
+        assertEquals(wed(51), row(result, "first").getExpectedPublicTo());
+    }
+
+    /**
+     * Neither field ever appears on a synthesized row, and neither is ever null on
+     * the wire.
+     *
+     * A period nobody published has nothing planned about it -- what it offers is a
+     * retro-create, not a forecast -- and a `null` under either key would read as
+     * "we looked and there is no expectation", which is a different claim from
+     * "this row does not have one".
+     */
+    @Test
+    public void aSynthesizedRowCarriesNoForecastAndNoNullUnderEitherKey() throws Exception {
+        PublicationSeries active = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+
+        JsonNode json = wire(IssueListService.build(active,
+                newestFirst(published(active, "a", wed(10)), open(active, "next", wed(14))),
+                new Date(wed(14).getTime() - 3600_000L)));
+
+        assertTrue(count(json, "MISSING") > 0, "the fixture is missing weeks 11 to 13");
+        for (JsonNode row : json.get("data")) {
+            for (String key : List.of("expectedPublicFrom", "expectedPublicTo")) {
+                if (row.path("pseudo").asText(null) != null) {
+                    assertFalse(row.has(key),
+                            "a synthesized period claims a forecast under " + key + ": " + row);
+                }
+                assertFalse(row.has(key) && row.get(key).isNull(),
+                        "a null under " + key + " reads as 'we looked and there is none', which is "
+                                + "a different claim from 'this row does not have one': " + row);
+            }
+        }
+
+        // And the real rows do carry it, so the assertion above is not passing over
+        // a feature that never emits anything.
+        JsonNode next = null;
+        for (JsonNode candidate : json.get("data")) {
+            if ("next".equals(candidate.path("publicId").asText(null))) {
+                next = candidate;
+            }
+        }
+        assertNotNull(next);
+        assertEquals(wed(14).getTime(), next.get("expectedPublicFrom").asLong(),
+                "the forecast reaches the wire as epoch milliseconds");
+        assertEquals(wed(14).getTime() + WEEK, next.get("expectedPublicTo").asLong());
     }
 
     private static int count(JsonNode json, String pseudoKind) {

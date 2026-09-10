@@ -631,6 +631,62 @@ public class PublicationApiContractTest {
         return false;
     }
 
+    /**
+     * The expected public window reaches the wire, under both names, as epoch
+     * milliseconds -- and only on the editor shape.
+     *
+     * IT IS A FORECAST BESIDE A RECORD, and the pair only works if a client can
+     * tell them apart. publicFrom and publicTo are what happened; expectedPublicFrom
+     * and expectedPublicTo are what is planned, projected by the issue list for the
+     * two rows that have no window to show -- the issue still being assembled, and
+     * the current edition whose end nothing has decided yet. A client that could
+     * not distinguish them would render a plan as a fact and put a publication on
+     * the public site, on screen, from a date nobody chose.
+     *
+     * ABSENT RATHER THAN NULL WHERE THERE IS NO FORECAST, which is the inherited
+     * policy and is asserted here because this pair is the one where a null would
+     * be read as an answer.
+     *
+     * AND NOT ON THE PUBLIC SHAPE AT ALL. A public reader asking what is current
+     * gets the window; an expectation about an unpublished edition is an editorial
+     * plan, and a field that is not there cannot leak.
+     */
+    @Test
+    public void theExpectedPublicWindowIsOnTheEditorShapeAlone() throws Exception {
+        Set<String> publicIssueFields = declaredFields(PublicationIssueVo.class);
+        for (String forecast : List.of("expectedPublicFrom", "expectedPublicTo")) {
+            assertFalse(publicIssueFields.contains(forecast),
+                    "PublicationIssueVo declares " + forecast + "; a public reader would take an "
+                            + "editorial plan for the window the publication is actually on");
+            assertTrue(declaredFields(SystemPublicationIssueVo.class).contains(forecast),
+                    "the editor shape has lost " + forecast + ", so the issue list has nowhere to "
+                            + "put the forecast it computes");
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        SystemPublicationIssueVo forecast = new SystemPublicationIssueVo();
+        forecast.setPublicId("next");
+        forecast.setExpectedPublicFrom(new java.util.Date(1_787_133_600_000L));
+        forecast.setExpectedPublicTo(new java.util.Date(1_787_738_400_000L));
+        JsonNode json = mapper.readTree(mapper.writeValueAsString(forecast));
+
+        assertEquals(1_787_133_600_000L, json.get("expectedPublicFrom").asLong(),
+                "the forecast must travel as epoch milliseconds, like every other instant here");
+        assertEquals(1_787_738_400_000L, json.get("expectedPublicTo").asLong());
+
+        SystemPublicationIssueVo published = new SystemPublicationIssueVo();
+        published.setPublicId("current");
+        published.setPublicFrom(new java.util.Date(1_786_528_800_000L));
+        JsonNode stored = mapper.readTree(mapper.writeValueAsString(published));
+
+        assertTrue(stored.has("publicFrom"), "the fixture is pointless if nothing is emitted");
+        assertFalse(stored.has("expectedPublicFrom"),
+                "a row with no forecast emits the key anyway; a null there reads as 'we looked and "
+                        + "there is no plan', which is a different claim from 'this row has none'");
+        assertFalse(stored.has("expectedPublicTo"));
+    }
+
     private static Set<String> declaredFields(Class<?> type) {
         Set<String> out = new LinkedHashSet<>();
         for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
