@@ -153,7 +153,11 @@ public class SeriesOperandResolutionTest {
         s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
-        s.setNextIssueCreation(NextIssueCreation.MANUAL);
+        // S-8: a cadence IS the automation, so a weekly series that leaves its next
+        // issue to be created by hand no longer describes a state the system can be
+        // in -- and this fixture asserts it is otherwise clean, so a second failing
+        // rule would make the test pass for the wrong reason.
+        s.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH);
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);

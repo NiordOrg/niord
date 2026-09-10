@@ -22,6 +22,7 @@ import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import org.niord.core.message.Message;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
+import org.niord.core.publication.series.resolve.GapDetection;
 import org.niord.core.publication.series.resolve.Interval;
 import org.niord.core.publication.series.resolve.IssueNaming;
 import org.niord.model.DataFilter;
@@ -1063,18 +1064,30 @@ public class IssuePublishService extends BaseService {
     }
 
     /**
-     * Step 14. Create the next issue, but only when all four clauses hold.
+     * Step 14. Create the next issue, but only when all three clauses hold.
      *
-     * Tiling matters: an IN_FORCE_AT_CUTOFF series has no "next interval" to
-     * chain to, because its issues overlap rather than follow one another.
+     * A CADENCE IS THE AUTOMATION. A series that says it comes out every week and
+     * is still active opens its next issue when one publishes, and that is true
+     * whether its issues tile or overlap: an in-force publication comes out to a
+     * schedule exactly as an interval-based one does, and the only difference is
+     * what its next issue's period looks like once it exists.
+     *
+     * Tiling used to be a fourth clause here, and the reasoning was about the
+     * SHAPE rather than about whether anything was due -- an IN_FORCE_AT_CUTOFF
+     * issue has no lower bound to chain to. That is still true and is handled
+     * below by not writing one: the successor of an in-force issue carries no
+     * interval start at all, and the shaping derives its close from the cut-off
+     * just stamped plus one cadence period. Left as a clause it meant the two
+     * largest weekly publications in the estate opened nothing when they
+     * released, and somebody had to notice and create next week's issue by hand
+     * every week, forever.
      */
     private PublicationIssue createSuccessorIfDue(PublicationIssue issue, PublicationSeries series, Date stamp) {
         boolean hasCadence = series.getCadence() != null && series.getCadence() != SeriesCadence.NONE;
         boolean active = series.getStatus() == SeriesStatus.ACTIVE;
         boolean autoCreate = series.getNextIssueCreation() == NextIssueCreation.AUTO_ON_PUBLISH;
-        boolean tiles = series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
 
-        if (!(hasCadence && active && autoCreate && tiles)) {
+        if (!(hasCadence && active && autoCreate)) {
             return null;
         }
 
@@ -1107,8 +1120,35 @@ public class IssuePublishService extends BaseService {
         next.setStatus(IssueStatus.OPEN);
         // Chained off the STAMP, not a nominal plus-one-period. That chaining is
         // what removes the drift the nominal calculation accumulated.
-        next.setIntervalFrom(stamp);
-        next.setIntervalFromSource(IntervalBoundSource.STAMPED);
+        //
+        // ONLY WHERE THE PERIODS TILE. An in-force issue says what stood at one
+        // instant, so it has one bound and the create path refuses a second; its
+        // successor therefore opens with no start at all, and the shaping below
+        // reads the instant just stamped as the anchor to measure its close from.
+        if (series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL) {
+            next.setIntervalFrom(stamp);
+            next.setIntervalFromSource(IntervalBoundSource.STAMPED);
+        } else {
+            // THE SAME CHAINING, expressed on the only bound this issue has.
+            //
+            // A tiling successor pins itself to the stamp by writing it as the
+            // lower bound, and the shaping then closes it one period on. An
+            // in-force successor has no lower bound to write, so writing nothing
+            // would leave the shaping to go looking for a neighbour to measure
+            // from -- and the newest neighbour is not necessarily the issue just
+            // published: a sibling that was never released carries no stamp and a
+            // nominal close that can sit later than this one, and the guard above
+            // lets it through because it is neither open nor stamped ahead. The
+            // close is therefore computed here, from the instant just stamped, so
+            // "one period after the cut-off this release recorded" is what the
+            // successor carries rather than what a query happened to return.
+            long period = GapDetection.periodMillisOf(series.getCadence().name(),
+                    series.cutoffZone(), stamp);
+            if (period > 0) {
+                next.setIntervalTo(new Date(stamp.getTime() + period));
+                next.setIntervalToSource(IntervalBoundSource.NOMINAL);
+            }
+        }
 
         // One desc row per configured language, exactly as a hand-created issue
         // gets. This chain built none at all, so the issue an admin finds waiting

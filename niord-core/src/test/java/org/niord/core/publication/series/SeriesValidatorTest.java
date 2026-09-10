@@ -256,6 +256,13 @@ public class SeriesValidatorTest {
         s8.setNominalCutoffTime(null);
         assertFires("S-8", s8);
 
+        // S-8, the other half: a series that says it comes out every week and
+        // leaves next week's issue to somebody's memory. The cadence IS the
+        // automation, and the pair publishes without opening anything.
+        PublicationSeries s8b = valid();
+        s8b.setNextIssueCreation(NextIssueCreation.MANUAL);
+        assertFires("S-8", s8b);
+
         // S-9: half the report settings.
         PublicationSeries s9 = valid();
         s9.setPageSize(null);

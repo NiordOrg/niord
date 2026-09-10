@@ -28,7 +28,6 @@ import org.niord.core.publication.series.vo.IssueMemberVo;
 import org.niord.core.publication.series.vo.LiveMessageStateVo;
 import org.niord.core.publication.series.vo.IssueOverrideVo;
 import org.niord.core.publication.series.vo.MemberCurationVo;
-import org.niord.core.user.User;
 import org.niord.model.message.Status;
 
 import java.util.ArrayList;
@@ -552,17 +551,9 @@ public class IssueMemberListService {
      */
     static void fillCuration(MemberCurationVo vo, IssueOverride override) {
         vo.setKind(override.getKind() == null ? null : override.getKind().name());
-        vo.setAuthor(authorOf(override.getAuthor()));
+        vo.setAuthor(ActorName.of(override.getAuthor()));
         vo.setAt(override.getCreated());
         vo.setReason(override.getReason());
     }
 
-    /** A curator by the name a colleague would recognise, falling back to the login. */
-    private static String authorOf(User author) {
-        if (author == null) {
-            return null;
-        }
-        String name = author.getName();
-        return name == null || name.isBlank() ? author.getUsername() : name;
-    }
 }

@@ -221,11 +221,34 @@ public class IssueShape extends BaseService {
      * @return the numbers, or null where the issue has no cut-off to number by
      */
     public static IssueNaming.Numbers applyNumbers(PublicationIssue issue, PublicationSeries series) {
+        return applyNumbers(issue, series, issue.getIntervalFrom());
+    }
+
+    /**
+     * The same, told where the period this issue covers began.
+     *
+     * SEPARATE FROM THE ISSUE'S OWN LOWER BOUND, because for half the estate
+     * there is no such bound to read. A double week is one whose window swallowed
+     * a period no issue closed -- "uge 36 og 37", the week that went out late --
+     * and an in-force publication expresses exactly the same fact while carrying
+     * only ONE bound: its own instant. Reading the span off intervalFrom therefore
+     * asked a question the row can never answer, and 503 issues of the largest
+     * in-force weekly in the estate were numbered for the week they closed in
+     * while their titles, typed by hand every time it happened, said two weeks.
+     *
+     * The span start is the caller's, not this method's, because working out
+     * which neighbour a period hangs off needs the series' other issues -- and
+     * this method is deliberately reachable without a persistence context.
+     *
+     * @param spanStart when the period covered began, or null where nothing says
+     */
+    public static IssueNaming.Numbers applyNumbers(PublicationIssue issue, PublicationSeries series,
+                                                   Date spanStart) {
         IssueNaming.Numbers numbers = null;
         Date cutoff = issue.effectiveCutoff();
         if (cutoff != null && series != null) {
             try {
-                numbers = IssueNaming.derive(cutoff, issue.getIntervalFrom(), series.cutoffZone(),
+                numbers = IssueNaming.derive(cutoff, spanStart, series.cutoffZone(),
                         editionOf(issue), yearBasisOf(series));
             } catch (RuntimeException e) {
                 // An instant that cannot be read as a cut-off leaves the numbers
@@ -250,7 +273,7 @@ public class IssueShape extends BaseService {
      * series id rather than to a placeholder.
      */
     private void number(PublicationIssue issue, PublicationSeries series, boolean keepChangedNames) {
-        IssueNaming.Numbers numbers = applyNumbers(issue, series);
+        IssueNaming.Numbers numbers = applyNumbers(issue, series, spanStart(issue, series));
         if (series == null) {
             return;
         }
@@ -340,7 +363,64 @@ public class IssueShape extends BaseService {
                 .getSingleResult() > 0;
     }
 
+    /**
+     * When the period this issue covers began -- the span a double week is read
+     * from.
+     *
+     * TWO ANSWERS, one question. Where the periods TILE the issue carries its own
+     * lower bound and that bound IS the span. Where they do not, the issue has one
+     * instant and no window, and the period it covers is nevertheless real: it
+     * runs from wherever the previous issue closed. That is the same instant
+     * {@link #shapeInterval} anchors the nominal close on, and until now it was
+     * computed and thrown away -- which is why a publication that skipped a week
+     * had to be renamed by hand, in every language, every time.
+     *
+     * ONLY FOR A WEEKLY CADENCE, and that is the scope of the rule rather than a
+     * limitation of this method. A double week is expressed as a pair of WEEK
+     * numbers -- there is no column that could hold "two months" or "two years" --
+     * and the multi-period test downstream counts weeks accordingly. Handing it a
+     * yearly or monthly predecessor would report an ordinary annual edition as
+     * spanning fifty-two periods and renumber it for the week before the one it
+     * closes in, in its title, its file name and therefore the link it is cited
+     * by. A weekly series is the only one whose period and whose counting unit are
+     * the same thing, so a publication on any other cadence carries a single
+     * number and nothing is lost: widening this means first counting in the
+     * series' own period, which moves the threshold's unit and is a separate
+     * question about every publication in the estate.
+     */
+    private Date spanStart(PublicationIssue issue, PublicationSeries series) {
+        if (series == null || series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL) {
+            return issue.getIntervalFrom();
+        }
+        if (series.getCadence() != SeriesCadence.WEEKLY) {
+            return null;
+        }
+        PublicationIssue predecessor = newestDatedBefore(series, issue, issue.effectiveCutoff());
+        return predecessor == null ? null : predecessor.effectiveCutoff();
+    }
+
     // ----------------------------------------------------------------- neighbours
+
+    /**
+     * The newest sibling that closed BEFORE this instant, or null.
+     *
+     * Strictly before, because "the previous issue" is the question: the newest
+     * dated sibling of an issue recovered into the middle of an archive is a row
+     * years AFTER it, and measuring a span backwards from that would be a
+     * negative period rather than a predecessor.
+     */
+    private PublicationIssue newestDatedBefore(PublicationSeries series, PublicationIssue issue, Date instant) {
+        if (instant == null) {
+            return null;
+        }
+        for (PublicationIssue sibling : siblings(series, issue)) {
+            Date close = sibling.effectiveCutoff();
+            if (close != null && close.before(instant)) {
+                return sibling;
+            }
+        }
+        return null;
+    }
 
     /** The newest sibling that has a close to chain off, or null. */
     private PublicationIssue newestDated(PublicationSeries series, PublicationIssue issue) {

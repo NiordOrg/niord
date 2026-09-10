@@ -185,6 +185,16 @@ public final class SeriesValidator {
         }
 
         // S-8. A one-off has nothing to chain to and no sequence to number within.
+        //
+        // AND ITS MIRROR: a cadence IS the automation. A publication that says it
+        // comes out every week opens next week's issue when this week's goes out,
+        // so "cadenced" and "created by hand" is not a configuration -- it is a
+        // series that quietly stops scheduling itself, which is how the two
+        // largest weeklies in the estate came to publish without opening anything
+        // and had to be caught up by hand. The field is derived from the cadence
+        // rather than chosen beside it, and updateFromVo heals a stored MANUAL on
+        // the next save so an existing row does not have to be refused to be
+        // corrected.
         if (s.getCadence() == SeriesCadence.NONE) {
             if (s.getNextIssueCreation() != NextIssueCreation.MANUAL) {
                 e.add(new FieldError("S-8", "nextIssueCreation",
@@ -193,6 +203,10 @@ public final class SeriesValidator {
             if (s.getNumberingScheme() != NumberingScheme.NONE) {
                 e.add(new FieldError("S-8", "numberingScheme", "a one-off has no sequence to number within"));
             }
+        } else if (s.getCadence() != null && s.getNextIssueCreation() != NextIssueCreation.AUTO_ON_PUBLISH) {
+            e.add(new FieldError("S-8", "nextIssueCreation",
+                    "a series with a cadence opens its next issue when one publishes; leaving it MANUAL "
+                            + "makes the schedule something a person has to remember every period"));
         }
 
         // S-9. Report settings arrive together or not at all.

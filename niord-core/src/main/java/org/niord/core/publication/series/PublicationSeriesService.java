@@ -328,6 +328,16 @@ public class PublicationSeriesService extends BaseService {
 
         series.setStatus(target);
 
+        // The derived fields first, because this path never passes through a save
+        // and would otherwise validate a row against a rule nothing here can put
+        // right. A series that says it comes out every week but still carries
+        // "next issue created by hand" fails S-8, and the status body carries no
+        // fields at all -- so the remedy for a refusal here would be to go and save
+        // the series unchanged, which is exactly what this does. It also keeps
+        // "check rules" and the activate button answering the same question: the
+        // report validates a candidate built through updateFromVo, which normalises.
+        series.normaliseDerivedFields();
+
         // S-17: ACTIVE is what puts a series in the picker, so it may not be
         // incomplete. A DRAFT is allowed to be.
         List<SeriesValidator.FieldError> errors = SeriesValidator.validateForActivation(series, null);

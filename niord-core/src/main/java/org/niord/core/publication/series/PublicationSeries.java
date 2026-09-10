@@ -663,6 +663,7 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         if (sentNextIssueCreation != null) {
             nextIssueCreation = sentNextIssueCreation;
         }
+        normaliseDerivedFields();
         // The same silence rule again, and here it matters most on the create path:
         // a client that says nothing about who may cite this publication is not
         // asking for it to be narrowed to one desk. The REST layer picks the
@@ -728,6 +729,33 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
                 // equals() over the list throws on a desc row that has no lang.
                 checkCreateDesc(dv.getLang()).updateFromVo(dv);
             }
+        }
+    }
+
+    /**
+     * The fields the series does not choose, brought into line with the ones it
+     * does.
+     *
+     * DERIVED FROM THE CADENCE, not chosen beside it. A publication that comes out
+     * every week opens next week's issue when this week's publishes -- that IS
+     * what a cadence means -- so the pair "weekly, created by hand" is not a
+     * configuration anybody wants, it is a series that silently stops scheduling
+     * itself. S-8 says so in both directions.
+     *
+     * REACHED FROM EVERY PATH THAT VALIDATES, which is the whole reason it is a
+     * method rather than two lines inside {@link #updateFromVo}. A save heals the
+     * stored value; an activation validates the entity as it stands and never
+     * passes through a save, so a series carrying the old value could pass "check
+     * rules" -- which reports on a candidate built through updateFromVo -- and
+     * then be refused activation on the very rule the report had just healed. Two
+     * definitions of a valid series, and the one on screen would be the wrong one.
+     *
+     * NOT a JPA lifecycle callback: @PreUpdate runs at flush, which is after every
+     * one of those validations has already read the field.
+     */
+    void normaliseDerivedFields() {
+        if (cadence != null && cadence != SeriesCadence.NONE) {
+            nextIssueCreation = NextIssueCreation.AUTO_ON_PUBLISH;
         }
     }
 

@@ -203,18 +203,18 @@ public class IssueAuditEntry extends BaseEntity<Integer> {
      * person did, and a free-text label for the events -- an import, an unattended
      * release -- that had no person behind them.
      *
-     * The label is the person's NAME, not their login. User.getName() is first
-     * plus last name and already falls back to the username when both are blank,
-     * so it can never render emptier than the login would -- and the panel is
-     * read by people asking who did something, for whom a login id is not an
-     * answer.
+     * The label is the person's NAME, not their login, and the rule itself lives
+     * in {@link ActorName} because three fields answer "who did this" and they
+     * had drifted. It can never render emptier than the login would -- the name
+     * falls back to the username -- and the panel is read by people asking who
+     * did something, for whom a login id is not an answer.
      */
     public IssueAuditEntryVo toVo() {
         IssueAuditEntryVo vo = new IssueAuditEntryVo();
         vo.setId(getId());
         vo.setAction(action == null ? null : action.name());
         vo.setActorKind(actorKind == null ? null : actorKind.name());
-        vo.setActorLabel(user == null ? actorLabel : user.getName());
+        vo.setActorLabel(user == null ? actorLabel : ActorName.of(user));
         vo.setCreated(created);
         vo.setReason(reason);
         // The archive is described, never located. Which languages this entry

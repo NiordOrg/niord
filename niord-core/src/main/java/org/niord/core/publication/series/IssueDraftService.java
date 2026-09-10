@@ -208,8 +208,22 @@ public class IssueDraftService extends BaseService {
 
         warnings.addAll(observations(series, issues, tiles, predecessor, fromSource));
 
+        // WHERE THE PERIOD COVERED BEGAN, which is not the same question as where
+        // this issue's own window opens. A tiling issue answers both with one
+        // bound. An in-force one has no window at all, and the period it covers
+        // still runs from wherever the previous issue closed -- so the draft reads
+        // the same anchor the shaping does, or the create form would offer "uge
+        // 37" and the issue it creates would come back called "uge 36+37".
+        //
+        // Weekly only, for the reason the shaping states: the multi-period test
+        // counts weeks, so a yearly predecessor would report every ordinary annual
+        // edition as spanning fifty-two of them.
+        Date spanStart = tiles ? from
+                : predecessor != null && series.getCadence() == SeriesCadence.WEEKLY
+                        ? predecessor.effectiveCutoff()
+                        : null;
         IssueNaming.Numbers numbers = to == null ? null
-                : IssueNaming.derive(to, tiles ? from : null, zone, nextEdition());
+                : IssueNaming.derive(to, spanStart, zone, nextEdition());
 
         IssueDraftVo vo = new IssueDraftVo();
         vo.setSeriesId(series.getSeriesId());

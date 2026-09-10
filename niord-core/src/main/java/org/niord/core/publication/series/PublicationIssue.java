@@ -708,7 +708,12 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             sys.setCutoffReconstructed(cutoffReconstructed);
             sys.setCutoffSource(cutoffSource);
             sys.setPublishedAt(publishedAt);
-            sys.setPublishedBy(publishedBy == null ? null : publishedBy.getUsername());
+            // THE NAME, not the login. The release line is read by people asking
+            // who put this out, and an account id is not an answer to that
+            // question -- it was also the one actor field that rendered
+            // differently from the history panel directly below it, which records
+            // the same release against the same person under their full name.
+            sys.setPublishedBy(ActorName.of(publishedBy));
             sys.setRetiredAt(retiredAt);
             sys.setRetiredReason(retiredReason);
             // TRI-STATE ON THE WIRE, while the column stays INTEGER NOT NULL.

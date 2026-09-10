@@ -337,10 +337,20 @@ public final class LegacySeriesTranslation {
         // new adapter in the same change that created it.
         series.setPublicAuthority(PublicAuthority.LEGACY);
 
-        // A translated series is reviewed before it releases anything, so the
-        // conservative pair: nothing happens without a human.
+        // A translated series is reviewed before it RELEASES anything: no document
+        // reaches the public without somebody pressing publish.
         series.setReleaseMode(ReleaseMode.MANUAL_GATE);
-        series.setNextIssueCreation(NextIssueCreation.MANUAL);
+
+        // OPENING the next issue is a different question, and the answer is the
+        // cadence. A weekly publication that opens nothing when it releases leaves
+        // a person to remember, every week, that next week's issue does not exist
+        // yet -- and the gate above already guarantees nobody publishes it by
+        // accident. A publication with no cadence has no next period to open, so
+        // it stays manual: there is nothing for the automation to derive.
+        series.setNextIssueCreation(
+                series.getCadence() != null && series.getCadence() != SeriesCadence.NONE
+                        ? NextIssueCreation.AUTO_ON_PUBLISH
+                        : NextIssueCreation.MANUAL);
 
         applyPrintSettings(template, series);
         series.setReportParams(importableReportParams(template.getReportParams()));

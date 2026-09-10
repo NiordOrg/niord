@@ -83,6 +83,20 @@ public class SeriesVoRoundTripTest {
             "publicAuthority");
 
     /**
+     * Fields updateFromVo DERIVES rather than copies.
+     *
+     * A settable field whose stored value is decided by another one, so the
+     * round-trip probe cannot compare it: what comes back is the right answer
+     * rather than the value that went in. Each is asserted on its own below --
+     * skipping it here without saying what it becomes would hide exactly the
+     * silently-dropped field this class exists to catch.
+     */
+    private static final Map<String, String> DERIVED_FROM_ANOTHER_FIELD = Map.of(
+            "nextIssueCreation",
+            "derived from the cadence: a cadenced series opens its next issue when one publishes (S-8), "
+                    + "so a stored MANUAL on one heals to AUTO_ON_PUBLISH on the next save");
+
+    /**
      * Fields the VALUE OBJECT declares that no entity field backs.
      *
      * The probe above walks the ENTITY and catches a setting an admin cannot
@@ -165,6 +179,9 @@ public class SeriesVoRoundTripTest {
 
         List<String> lost = new ArrayList<>();
         for (Field f : fields) {
+            if (DERIVED_FROM_ANOTHER_FIELD.containsKey(f.getName())) {
+                continue;
+            }
             Object before = f.get(source);
             Object after = f.get(target);
             if (!comparable(before).equals(comparable(after))) {
@@ -206,6 +223,46 @@ public class SeriesVoRoundTripTest {
                         + "never be given one and can never activate");
         assertEquals(Integer.valueOf(31), reloaded.getNominalCutoffDayOfMonth(),
                 "S-6 requires a day of the month for a MONTHLY or YEARLY cadence");
+    }
+
+    /**
+     * A cadenced series comes back scheduling itself, however it was saved.
+     *
+     * The pair "weekly, and its next issue is created by hand" reads like a
+     * setting and behaves like a series that quietly stops scheduling itself: it
+     * publishes, opens nothing, and somebody has to notice every week. It reached
+     * the estate two ways -- the new-series template ships MANUAL to agree with
+     * its own cadence of NONE and nothing re-derives it when the admin picks a
+     * cadence, and the import wrote MANUAL onto every translated series -- so the
+     * healing is here rather than in a refusal. Refusing it would leave an admin
+     * unable to save the very screen that shows the problem.
+     */
+    @Test
+    public void acadencedSeriesComesBackOpeningItsNextIssueItself() {
+        PublicationSeries stored = new PublicationSeries();
+        stored.setCadence(SeriesCadence.WEEKLY);
+        stored.setNextIssueCreation(NextIssueCreation.MANUAL);
+
+        PublicationSeries saved = new PublicationSeries();
+        saved.updateFromVo(stored.toVo(SystemPublicationSeriesVo.class));
+
+        assertEquals(NextIssueCreation.AUTO_ON_PUBLISH, saved.getNextIssueCreation(),
+                "a weekly series saved as MANUAL stayed MANUAL; it would publish and open nothing, "
+                        + "and the next period would exist only if a person remembered it");
+    }
+
+    /** And a series with no cadence has no next period to open, so it stays manual. */
+    @Test
+    public void acadencelessSeriesIsLeftCreatingItsIssuesByHand() {
+        PublicationSeries stored = new PublicationSeries();
+        stored.setCadence(SeriesCadence.NONE);
+        stored.setNextIssueCreation(NextIssueCreation.MANUAL);
+
+        PublicationSeries saved = new PublicationSeries();
+        saved.updateFromVo(stored.toVo(SystemPublicationSeriesVo.class));
+
+        assertEquals(NextIssueCreation.MANUAL, saved.getNextIssueCreation(),
+                "a one-off has no next period to derive, so there is nothing to automate");
     }
 
     /** Instance fields declared by the entity, minus the two resolved by id. */

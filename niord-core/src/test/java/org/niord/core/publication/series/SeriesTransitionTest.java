@@ -94,7 +94,11 @@ public class SeriesTransitionTest {
         s.setAliveAtCutoff(false);
         s.setFirstIssueStartsAt(new java.util.Date());
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
-        s.setNextIssueCreation(NextIssueCreation.MANUAL);
+        // S-8: a cadenced series opens its next issue when one publishes, and
+        // activation validates every rule -- so a weekly fixture that left this
+        // MANUAL would be refused ACTIVE for a reason having nothing to do with
+        // the transition it exists to exercise.
+        s.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH);
         s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
@@ -218,6 +222,45 @@ public class SeriesTransitionTest {
         assertTrue(e.fieldErrors().stream().anyMatch(f -> f.field().startsWith("nominalCutoff")),
                 "and the field that is missing: " + e.fieldErrors());
         assertEquals(SeriesStatus.DRAFT, em.find(PublicationSeries.class, s.getId()).getStatus());
+    }
+
+    /**
+     * A stored value that a cadence has since made wrong is corrected, not
+     * refused.
+     *
+     * S-8 reads both ways, so a weekly series carrying "next issue created by
+     * hand" fails it -- and a status change sends no fields at all, so a refusal
+     * here would have no remedy on the screen that caused it. Every cadenced
+     * series created before the rule existed is in exactly this state, so this is
+     * the activation the cutover itself performs.
+     */
+    @Test
+    @Transactional
+    public void activatingHealsANextIssueSettingTheCadenceContradicts() {
+        PublicationSeries s = series(SeriesStatus.DRAFT);
+        s.setNextIssueCreation(NextIssueCreation.MANUAL);
+        em.flush();
+
+        PublicationSeries saved = seriesService.transition(s, SeriesStatus.ACTIVE, null, user());
+        em.flush();
+
+        assertEquals(SeriesStatus.ACTIVE, saved.getStatus(), "the activation is not refused");
+        assertEquals(NextIssueCreation.AUTO_ON_PUBLISH, saved.getNextIssueCreation(),
+                "a weekly series opens its next issue itself, whatever the row said before");
+    }
+
+    /** And a reinstatement heals it on the same rule, from the same place. */
+    @Test
+    @Transactional
+    public void reinstatingHealsItToo() {
+        PublicationSeries s = series(SeriesStatus.RETIRED);
+        s.setNextIssueCreation(NextIssueCreation.MANUAL);
+        em.flush();
+
+        PublicationSeries saved = seriesService.transition(s, SeriesStatus.ACTIVE, null, user());
+
+        assertEquals(SeriesStatus.ACTIVE, saved.getStatus());
+        assertEquals(NextIssueCreation.AUTO_ON_PUBLISH, saved.getNextIssueCreation());
     }
 
     /** The same status twice is not a transition, and writes nothing. */

@@ -626,13 +626,23 @@ public class IssuePublishTest {
         }
     }
 
-    /** Step 14. The successor is created only when all four clauses hold. */
+    /**
+     * Step 14. The successor is created only when all three clauses hold.
+     *
+     * TILING USED TO BE A FOURTH CLAUSE and is not one any more. It says what the
+     * successor's period LOOKS like -- an in-force issue has one bound, so its
+     * successor opens with none -- and never said whether anything was due. As a
+     * clause it meant the two largest weekly publications in the estate published
+     * without opening anything, and somebody had to create next week's issue by
+     * hand every week. The shape an in-force successor is born with is asserted
+     * in {@link InForceCadenceTest}.
+     */
     @Test
     @Transactional
     public void aSuccessorIsCreatedOnlyWhenEveryClauseHolds() {
         Date stamp = new Date(1_700_000_000_000L);
 
-        // Positive: all four.
+        // Positive: all three.
         PublicationSeries all = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.ACTIVE);
         PublicationIssue i = issue(all, new Date(stamp.getTime() - 7 * 24 * 3600_000L));
@@ -646,6 +656,8 @@ public class IssuePublishTest {
         PublicationIssue successor = em.find(PublicationIssue.class, result.successorId());
         assertEquals(stamp, successor.getIntervalFrom(),
                 "the successor does not start at this issue's stamp; that chaining is what removes drift");
+        assertEquals(IntervalBoundSource.STAMPED, successor.getIntervalFromSource(),
+                "a tiling successor's start is a recorded instant, not a nominal one");
 
         // One clause false at a time -- each must produce NO successor.
         assertNoSuccessor(series(SeriesCadence.NONE, TimeRelation.PUBLISHED_IN_INTERVAL,
@@ -660,9 +672,6 @@ public class IssuePublishTest {
         assertNoSuccessor(series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
                 ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.RETIRED),
                 "is no longer ACTIVE");
-        assertNoSuccessor(series(SeriesCadence.YEARLY, TimeRelation.IN_FORCE_AT_CUTOFF,
-                ReleaseMode.MANUAL_GATE, NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.ACTIVE),
-                "does not tile");
     }
 
     private void assertNoSuccessor(PublicationSeries s, String why) {
