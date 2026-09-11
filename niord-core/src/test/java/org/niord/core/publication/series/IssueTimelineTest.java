@@ -319,23 +319,30 @@ public class IssueTimelineTest {
     }
 
     /**
-     * An IN_FORCE_AT_CUTOFF series synthesizes nothing either, and for a different
-     * reason: its issues OVERLAP rather than tile, so a "missing year" between two
-     * editions sharing thirty-one of thirty-two members is a category error.
+     * An IN_FORCE_AT_CUTOFF series synthesizes no MISSING cell between two
+     * editions: its issues OVERLAP rather than tile, so a "missing year" between
+     * two editions sharing thirty-one of thirty-two members is a category error.
+     * It still gets the cell for the period being worked toward, because a
+     * yearly publication is owed its next edition whatever the edition carries.
      */
     @Test
-    public void anOverlappingSeriesSynthesizesNoCells() {
+    public void anOverlappingSeriesSynthesizesNoMissingCellButStillAnUpcomingOne() {
         PublicationSeries s = series(SeriesStatus.ACTIVE, SeriesCadence.YEARLY,
                 TimeRelation.IN_FORCE_AT_CUTOFF);
         IssueTimelineVo strip = IssueListService.buildRecent(s,
                 newestFirst(published(s, "a", wed(2)), published(s, "b", wed(40))),
                 8, wed(45), "en");
 
+        List<String> synthesized = new ArrayList<>();
         for (IssueTimelineRowVo row : strip.getRows()) {
-            assertNotNull(row.getPublicId(),
-                    "an overlapping series produced a MISSING cell for a period that was never absent");
+            if (row.getPublicId() == null) {
+                synthesized.add(row.getComputedStatus());
+            }
         }
-        assertEquals("RELATION_NOT_TILING", strip.getGapDetection().getReasonCode());
+        assertEquals(List.of("UPCOMING"), synthesized,
+                "an overlapping series must synthesize the period being worked toward and nothing else");
+        assertTrue(strip.getGapDetection().isEnabled());
+        assertEquals("CADENCED_SERIES", strip.getGapDetection().getReasonCode());
     }
 
     /** The strip is capped at the periods asked for, newest end kept. */

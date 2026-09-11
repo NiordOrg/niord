@@ -451,17 +451,24 @@ public class IssueMemberListService {
     }
 
     /**
-     * What has moved, and what it moved to.
+     * What the message is today, and what has moved since the document went out.
      *
-     * The three compared fields are the ones a frozen row stores BECAUSE they are
-     * mutable in production: type is editor-writable and unversioned, status
-     * changes on every withdrawal, and publishDateTo is null while a notice is
-     * still open and gets a value the moment it closes -- which is the single
-     * most common drift on the estate and the one a null-unsafe comparison would
-     * miss entirely.
+     * `current` is on EVERY frozen row. The status a reader of a published issue
+     * wants is the message's status now -- the frozen one is "published" for
+     * every row by construction, since nothing withdrawn before the cut-off is a
+     * member -- and a client left to show the live status only where the server
+     * said something moved would have to invent it for the rows where nothing
+     * did.
      *
-     * A message that is GONE drifts too, and says so under its own name rather
-     * than reporting three nulls that read like empty values.
+     * `drift` names what moved: the status, the type, or the message itself
+     * being gone. A row that drifted is still a member. It was published when
+     * the issue was decided at its cut-off, and what changed happened afterwards;
+     * the row is the record of the document and is never rewritten from the
+     * live message.
+     *
+     * The end of the publication window is frozen as part of that record but is
+     * not compared: it acquires a value as a side effect of every cancel and
+     * expiry, so it never says anything the status does not already say.
      */
     private static void applyDrift(IssueMemberVo vo, IssueMember member, LiveFacts live) {
         List<String> drift = new ArrayList<>();
@@ -483,26 +490,12 @@ public class IssueMemberListService {
             if (!Objects.equals(member.getFrozenStatus(), live.status())) {
                 drift.add("status");
             }
-            // Compared as instants rather than as objects: two Date instances of
-            // the same millisecond are not equal under Timestamp's own equals,
-            // and the values come back from JDBC as Timestamps.
-            if (!sameInstant(member.getFrozenPublishDateTo(), live.publishDateTo())) {
-                drift.add("publishDateTo");
-            }
         }
 
-        if (drift.isEmpty()) {
-            return;
-        }
-        vo.setDrift(drift);
         vo.setCurrent(current);
-    }
-
-    private static boolean sameInstant(Date a, Date b) {
-        if (a == null || b == null) {
-            return a == null && b == null;
+        if (!drift.isEmpty()) {
+            vo.setDrift(drift);
         }
-        return a.getTime() == b.getTime();
     }
 
     /**

@@ -21,11 +21,13 @@ import org.niord.model.IJsonSerializable;
 /**
  * What a frozen member's message looks like TODAY.
  *
- * Carried beside the frozen row only when the two disagree, so its presence is
- * itself the signal: a member list with no `current` anywhere is one nothing has
- * moved under. The frozen row is never rewritten from this -- the snapshot is
- * the record of what was published, and healing it would erase the very
- * divergence somebody needs to see before deciding whether to amend.
+ * Carried beside every frozen row: the status a reader wants to see is the one
+ * the message has now, and a client shown it only where something moved would
+ * have to invent it for the rows where nothing did. Whether anything moved is
+ * said separately, by the row's `drift`. The frozen row is never rewritten from
+ * this -- the snapshot is the record of what was published, and healing it
+ * would erase the very divergence somebody needs to see before deciding
+ * whether to amend.
  *
  * `exists` is separate from the two values because a deleted message has no type
  * and no status to report, and reporting nulls for them would be indistinguishable

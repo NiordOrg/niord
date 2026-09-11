@@ -58,10 +58,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * to agree with today would disagree with the document that went out, and
  * nothing would record that they had ever differed.
  *
- * The three compared fields are the mutable ones, which is why they are frozen
- * in the first place -- type is editor-writable and unversioned, status changes
- * on every withdrawal, and publishDateTo is null while a notice is open and gets
- * a value the moment it closes.
+ * Two things are compared, the status and the type, and a message that is gone
+ * says so under its own name. The end of the publication window is frozen as
+ * part of the record but not compared: it acquires a value as a side effect of
+ * every cancel and expiry, so it never says anything the status does not.
+ *
+ * And the live state travels on EVERY frozen row, not only where something
+ * moved: the status a reader wants beside a frozen row is the message's status
+ * now, and the frozen one is "published" for every member by construction.
  */
 @QuarkusTest
 @EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
@@ -172,15 +176,17 @@ public class IssueMemberDriftTest {
     // ------------------------------------------------------------------ drift
 
     /**
-     * A member whose message has not moved carries NO drift and NO current.
+     * A member whose message has not moved carries NO drift, and still says what
+     * the message is today.
      *
-     * The absence is the signal. If every row carried a `current` block the
-     * reader would be back to comparing it against the frozen half themselves,
-     * which is the comparison the server is here to make once.
+     * The absence of drift is the signal that nothing moved. The live block is
+     * there regardless: the status column of a published issue shows the status
+     * the message has now, and a client shown it only where something moved would
+     * have to invent it for the rows where nothing did.
      */
     @Test
     @Transactional
-    public void anUnchangedMemberReportsNothing() {
+    public void anUnchangedMemberReportsNoDriftAndItsLiveState() {
         PublicationSeries s = series();
         PublicationIssue i = issue(s, IssueStatus.PUBLISHED);
         Message m = message(Type.TEMPORARY_NOTICE, Status.PUBLISHED, null);
@@ -189,16 +195,19 @@ public class IssueMemberDriftTest {
 
         IssueMemberVo row = rowFor(memberList.members(i), m.getUid());
         assertNull(row.getDrift(), "an unchanged member reported drift");
-        assertNull(row.getCurrent(), "an unchanged member carried a current block");
+        assertNotNull(row.getCurrent(), "a frozen row carried no live state");
+        assertTrue(row.getCurrent().isExists());
+        assertEquals("PUBLISHED", row.getCurrent().getStatus());
+        assertEquals("TEMPORARY_NOTICE", row.getCurrent().getType());
     }
 
     /**
-     * The three mutable fields each drift under their own name, and the frozen
-     * row is untouched.
+     * The status and the type each drift under their own name, the end of the
+     * window does not, and the frozen row is untouched.
      */
     @Test
     @Transactional
-    public void typeStatusAndPublishDateToEachDriftUnderTheirOwnName() {
+    public void typeAndStatusEachDriftUnderTheirOwnName() {
         PublicationSeries s = series();
         PublicationIssue i = issue(s, IssueStatus.PUBLISHED);
         Message m = message(Type.TEMPORARY_NOTICE, Status.PUBLISHED, null);
@@ -214,8 +223,10 @@ public class IssueMemberDriftTest {
 
         IssueMemberVo row = rowFor(memberList.members(i), m.getUid());
         assertNotNull(row.getDrift());
-        assertTrue(row.getDrift().containsAll(List.of("type", "status", "publishDateTo")),
-                "expected type, status and publishDateTo to drift; got " + row.getDrift());
+        assertTrue(row.getDrift().containsAll(List.of("type", "status")),
+                "expected type and status to drift; got " + row.getDrift());
+        assertFalse(row.getDrift().contains("publishDateTo"),
+                "the end of the window is a side effect of the cancel, not a finding of its own");
 
         assertNotNull(row.getCurrent());
         assertTrue(row.getCurrent().isExists());
@@ -229,15 +240,16 @@ public class IssueMemberDriftTest {
     }
 
     /**
-     * An open-ended validity that has since been closed is drift.
+     * An open-ended validity that has since been closed is NOT drift on its own.
      *
-     * This is the most common one on the estate and the one a null-unsafe
-     * comparison misses entirely: null means "still open", which is exactly the
-     * value an equality check written for two dates skips over.
+     * It is the most common change on the estate, and it is a side effect: every
+     * cancel and every expiry writes an end date. The status already says what
+     * happened, and a second mark for the date behind it read as a second finding
+     * about the same row. The date stays frozen as part of the record.
      */
     @Test
     @Transactional
-    public void anOpenEndedValidityThatWasClosedIsDrift() {
+    public void aClosedValidityAloneIsNotAFinding() {
         PublicationSeries s = series();
         PublicationIssue i = issue(s, IssueStatus.PUBLISHED);
         Message m = message(Type.TEMPORARY_NOTICE, Status.PUBLISHED, null);
@@ -249,7 +261,8 @@ public class IssueMemberDriftTest {
         em.flush();
 
         IssueMemberVo row = rowFor(memberList.members(i), m.getUid());
-        assertEquals(List.of("publishDateTo"), row.getDrift());
+        assertNull(row.getDrift(), "closing the window was reported as a finding: " + row.getDrift());
+        assertNull(row.getFrozenPublishDateTo(), "the frozen record was rewritten");
     }
 
     /**

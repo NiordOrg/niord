@@ -158,7 +158,7 @@ public class IssueListWireTest {
         assertTrue(json.has("gapCount"), "detection ran, so the count is a real answer and is present");
         assertEquals(0, json.get("gapCount").asInt());
         assertTrue(json.get("gapDetection").get("enabled").asBoolean());
-        assertEquals("TILING_SERIES", json.get("gapDetection").get("reasonCode").asText());
+        assertEquals("CADENCED_SERIES", json.get("gapDetection").get("reasonCode").asText());
 
         assertEquals(1, count(json, "UPCOMING"), "the period being worked toward is shown");
         assertEquals(0, count(json, "MISSING"));
@@ -245,15 +245,18 @@ public class IssueListWireTest {
     // ------------------------------------------------------------- the other gates
 
     /**
-     * An IN_FORCE_AT_CUTOFF series is refused by name, with the reason a UI can act on.
+     * An IN_FORCE_AT_CUTOFF series is examined like any other cadenced series, and
+     * nothing is missing between two consecutive editions.
      *
      * Its issues overlap rather than tile -- the 2026 and 2027 firing-areas issues
-     * share 31 of their 32 members -- so a "missing year" between them is a
+     * share 31 of their 32 members -- so a "missing year" between them would be a
      * category error, and the row would offer to retro-create something that was
-     * never absent.
+     * never absent. The period after the newest edition is still the one being
+     * worked toward, so the UPCOMING row is there as it is for every series with
+     * a calendar.
      */
     @Test
-    public void anInForceSeriesIsGatedOffWithTheOverlapAsTheStatedReason() throws Exception {
+    public void anInForceSeriesIsExaminedAndHasNothingMissingBetweenEditions() throws Exception {
         PublicationSeries inForce = series(SeriesStatus.ACTIVE, SeriesCadence.YEARLY,
                 TimeRelation.IN_FORCE_AT_CUTOFF);
 
@@ -261,9 +264,12 @@ public class IssueListWireTest {
                 newestFirst(published(inForce, "y2026", wed(2)), published(inForce, "y2027", wed(54))),
                 wed(60)));
 
-        assertFalse(json.has("gapCount"));
-        assertEquals("RELATION_NOT_TILING", json.get("gapDetection").get("reasonCode").asText());
-        assertEquals(2, json.get("data").size(), "no pseudo-row was synthesized");
+        assertTrue(json.get("gapDetection").get("enabled").asBoolean());
+        assertEquals("CADENCED_SERIES", json.get("gapDetection").get("reasonCode").asText());
+        assertEquals(0, json.get("gapCount").asInt(), "the year between two in-force editions is not a gap");
+        assertEquals(0, count(json, "MISSING"));
+        assertEquals(1, count(json, "UPCOMING"), "the next edition is still owed");
+        assertEquals(3, json.get("data").size());
     }
 
     /**
@@ -293,8 +299,8 @@ public class IssueListWireTest {
      * reason this assertion used to pass while the running system got it wrong.
      * Passing PUBLISHED_IN_INTERVAL here built a series that cannot exist, and
      * that impossible input was the only one that reached NO_CADENCE: every real
-     * cadence-less series has a null relation, so the gate answered it with
-     * RELATION_NOT_TILING and an explanation about overlapping issues.
+     * cadence-less series has a null relation, so the gate of the day answered
+     * it with the overlap explanation meant for in-force series.
      */
     @Test
     public void aOneOffIsGatedOffBecauseThereIsNoPeriodToMiss() throws Exception {

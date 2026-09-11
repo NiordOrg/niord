@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The synthesizer that produces MISSING and UPCOMING rows. Pure, no database.
  *
  * Two of these exist because the API contract demands them in writing rather than
- * because the code looked risky: the in-force refusal (S6.4) and the name being
+ * because the code looked risky: the in-force coverage rule (S6.4) and the name being
  * derived from the interval END (S3.15).
  */
 public class GapSynthesisTest {
@@ -263,22 +263,80 @@ public class GapSynthesisTest {
     // ------------------------------------------------------------------ the gate
 
     /**
-     * An in-force series produces NO rows. The contract requires this in writing.
+     * An in-force series produces NO row between two consecutive editions, and
+     * the same forward row every cadenced series gets. The contract requires the
+     * first half in writing.
      *
      * Its issues overlap rather than tile -- the 2026 and 2027 firing-areas issues
      * share 31 of their 32 members -- so a "missing year" between them is a
      * category error, and a MISSING row would offer a retro-create for something
-     * that was never absent.
+     * that was never absent. But the 2028 edition is still owed when 2027 has
+     * closed, and until then it is the period being worked toward.
      */
     @Test
-    public void anInForceSeriesProducesNoRowsAtAll() {
+    public void anInForceSeriesHasNothingMissingBetweenEditionsAndStillAnUpcomingOne() {
         GapDetection.Gate gate = GapDetection.gate(TimeRelation.IN_FORCE_AT_CUTOFF, "YEARLY", true, false);
+        long year = 365L * 24 * 3600_000L;
 
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(gate, "dk-firing-areas",
                 List.of(issue("a", wed(2)), issue("b", wed(54))),
-                365L * 24 * 3600_000L, CPH, PATTERNS, null, wed(60));
+                year, CPH, PATTERNS, null, wed(60));
 
-        assertTrue(rows.isEmpty(), "a pseudo-row was synthesized for a series whose issues overlap by design");
+        assertEquals(1, rows.size(), "exactly the period being worked toward: " + rows);
+        assertSame(GapSynthesis.RowKind.UPCOMING, rows.get(0).kind());
+        assertEquals(wed(54), rows.get(0).intervalFrom());
+        assertEquals(new Date(wed(54).getTime() + year), rows.get(0).intervalTo());
+        assertEquals("b", rows.get(0).precedingPublicId());
+    }
+
+    /**
+     * A double week on an in-force weekly is not a gap.
+     *
+     * The weekly P&T list carries everything in force at its cut-off, so the
+     * fortnight between a holiday issue and the one before it was never uncovered
+     * -- there is no interval to read and none is needed. Only the period after
+     * the newest release is synthesized, and it is upcoming, not missing.
+     */
+    @Test
+    public void aDoubleWeekOnAnInForceWeeklyIsNotAGap() {
+        GapDetection.Gate gate = GapDetection.gate(TimeRelation.IN_FORCE_AT_CUTOFF, "WEEKLY", true, false);
+
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(gate, "weekly-pt",
+                List.of(issue("34", wed(34)), issue("36", wed(36))),
+                WEEK, CPH, PATTERNS, null, new Date(wed(36).getTime() + 3600_000L));
+
+        assertEquals(1, rows.size(), "a fortnight between in-force releases was read as a hole: " + rows);
+        assertSame(GapSynthesis.RowKind.UPCOMING, rows.get(0).kind());
+        assertEquals(wed(36), rows.get(0).intervalFrom());
+        assertEquals(wed(37), rows.get(0).intervalTo());
+    }
+
+    /**
+     * A withdrawn in-force week is missing again, exactly as on a tiling series.
+     *
+     * Withdrawing is the statement that what went out for that period should not
+     * stand, and the correction is made through the MISSING row's retro-create.
+     * The withdrawn issue is not coverage and not a neighbour: the row chains
+     * off the releases either side of it.
+     */
+    @Test
+    public void aWithdrawnInForceWeekIsMissingAgain() {
+        GapDetection.Gate gate = GapDetection.gate(TimeRelation.IN_FORCE_AT_CUTOFF, "WEEKLY", true, false);
+        GapSynthesis.Issue withdrawn = new GapSynthesis.Issue("35", wed(35), IntervalBoundSource.STAMPED,
+                null, false, true);
+
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(gate, "weekly-pt",
+                List.of(issue("34", wed(34)), withdrawn, issue("36", wed(36))),
+                WEEK, CPH, PATTERNS, null, new Date(wed(36).getTime() + 3600_000L));
+
+        assertEquals(2, rows.size(), rows.toString());
+        GapSynthesis.Row missing = rows.get(0);
+        assertSame(GapSynthesis.RowKind.MISSING, missing.kind());
+        assertEquals(wed(34), missing.intervalFrom());
+        assertEquals(wed(35), missing.intervalTo());
+        assertEquals("34", missing.precedingPublicId());
+        assertEquals("36", missing.followingPublicId());
+        assertSame(GapSynthesis.RowKind.UPCOMING, rows.get(1).kind());
     }
 
     /**

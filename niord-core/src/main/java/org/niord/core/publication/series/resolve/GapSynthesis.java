@@ -89,7 +89,9 @@ public final class GapSynthesis {
      *
      * intervalFrom is where its content period OPENED -- which for a chained
      * series is the previous issue's close, and is what says a double-week issue
-     * covered both weeks. null where nothing records it (the head of a chain).
+     * covered both weeks. null where nothing records it: the head of a chain,
+     * and every issue of a series whose issues do not tile, which carry no
+     * lower bound and whose coverage the gate says to read off the cut-offs.
      * open says the issue is still being worked on: its period is not missing,
      * it is late, and it is its own row.
      *
@@ -182,22 +184,41 @@ public final class GapSynthesis {
             return out;
         }
 
-        // Between consecutive issues a period is MISSING only where no issue's
-        // interval covers it. The next issue's interval start says what it
+        // Between consecutive issues a period is MISSING only where nothing covers
+        // it, and the gate says how coverage is read.
+        //
+        // On a TILING series the next issue's interval start says what it
         // covered: a double-week issue opens where the previous one closed and
         // leaves nothing uncovered, however long its window. Only where the
         // start is unknown does the release-slot arithmetic stand in, because
         // an unknown start cannot prove coverage.
+        //
+        // On a series whose issues do NOT tile -- in force at the cut-off, or
+        // not query-backed at all -- an issue has no start to read, and needs
+        // none: each release carries everything standing at its cut-off, so two
+        // consecutive releases cover the stretch between them by definition. The
+        // one thing that stretch can hold is a release that was withdrawn, which
+        // is the period decision 12 says is uncovered again.
         List<Issue> dated = covering.stream()
                 .filter(i -> i.effectiveCutoff() != null)
+                .toList();
+        List<Date> withdrawnCutoffs = issues.stream()
+                .filter(i -> i.retired() && i.effectiveCutoff() != null)
+                .map(Issue::effectiveCutoff)
                 .toList();
         for (int i = 1; i < dated.size(); i++) {
             Issue previous = dated.get(i - 1);
             Issue next = dated.get(i);
-            List<GapDetection.Gap> gaps = next.intervalFrom() != null
-                    ? GapDetection.uncovered(gate, previous.effectiveCutoff(), next.intervalFrom(), periodMillis)
-                    : GapDetection.gaps(gate, List.of(previous.effectiveCutoff(), next.effectiveCutoff()),
-                            periodMillis);
+            List<GapDetection.Gap> gaps;
+            if (!gate.tiling()) {
+                gaps = GapDetection.withdrawn(gate, previous.effectiveCutoff(), next.effectiveCutoff(),
+                        withdrawnCutoffs, periodMillis);
+            } else if (next.intervalFrom() != null) {
+                gaps = GapDetection.uncovered(gate, previous.effectiveCutoff(), next.intervalFrom(), periodMillis);
+            } else {
+                gaps = GapDetection.gaps(gate, List.of(previous.effectiveCutoff(), next.effectiveCutoff()),
+                        periodMillis);
+            }
             for (GapDetection.Gap gap : gaps) {
                 if (reCovered(covering, gap)) {
                     continue;

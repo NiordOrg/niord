@@ -71,22 +71,26 @@ public class IssueMemberVo implements IJsonSerializable {
     private String reasonNote;
 
     /**
-     * The frozen fields whose value no longer matches the live message.
+     * What has moved under this row since the document went out.
      *
-     * Names of fields, not values -- `type`, `status`, `publishDateTo`, and
-     * `exists` when the message is gone altogether. SURFACED, NEVER HEALED: the
-     * member row itself does not change, because it records what was published
-     * and the archived document is the proof of it. Absent on a LIVE list, where
-     * "the frozen value" does not exist to disagree with anything.
+     * Names of fields, not values -- `status`, `type`, and `exists` when the
+     * message is gone altogether. SURFACED, NEVER HEALED: the member row itself
+     * does not change, because it records what was published and the archived
+     * document is the proof of it. A row that drifted is still a member: it was
+     * published when the issue was decided at its cut-off, and what changed
+     * happened afterwards. Absent where nothing moved, and absent on a LIVE
+     * list, where "the frozen value" does not exist to disagree with anything.
      */
     private List<String> drift;
 
     /**
-     * The live message, present only when something drifted.
+     * The live message, on every FROZEN row.
      *
-     * Its presence is the flag. A field that were always there would have to be
-     * compared against the frozen half by every client that renders a row, and
-     * the comparison is the server's to make once.
+     * The status a reader wants beside a frozen row is the one the message has
+     * now, not the one it had when the document went out -- that one is
+     * "published" for every member by construction -- so it travels on every
+     * row rather than only where something moved. Absent on a LIVE list, whose
+     * rows already carry today's values.
      */
     private LiveMessageStateVo current;
 

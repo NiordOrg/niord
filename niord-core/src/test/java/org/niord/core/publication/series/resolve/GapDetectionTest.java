@@ -42,26 +42,56 @@ public class GapDetectionTest {
     /**
      * The half of the firing-areas fixture the corpus check defers to here.
      *
-     * That check asserts the two issues share 31 of 32 members. At that point there is
-     * no gap-detection code whose absence could be checked. Here there is, so the
-     * absence is asserted rather than merely omitted: for an in-force series NO
-     * tiling, NO gap check and NO overlap refusal runs.
+     * That check asserts the two issues share 31 of 32 members. An in-force series
+     * is examined like any other cadenced series -- a yearly publication that
+     * stops is late in exactly the way a weekly one is -- but its coverage is not
+     * read off intervals it does not have: the gate says so, and the release-slot
+     * arithmetic that would call the year between two editions "missing" is not
+     * what the synthesizer runs for it.
      */
     @Test
-    public void anInForceSeriesGetsNoGapDetectionAtAll() {
+    public void anInForceSeriesIsExaminedButItsCoverageIsReadOffTheCutoffs() {
         GapDetection.Gate gate = GapDetection.gate(TimeRelation.IN_FORCE_AT_CUTOFF, "YEARLY", true, false);
 
-        assertFalse(gate.enabled(), "gap detection ran for a series whose issues overlap by design");
-        assertTrue(gate.reason().contains("overlap"), "the reason should say why: " + gate.reason());
+        assertTrue(gate.enabled(), "an active yearly series is expected to keep producing, whatever it carries");
+        assertEquals(GapDetection.Reason.CADENCED_SERIES, gate.code());
+        assertFalse(gate.tiling(), "in-force issues carry no lower bound and do not tile");
 
-        // The 2026 and 2027 firing-areas cut-offs, a year apart. Under tiling
-        // logic the year between them looks like a missing period; it is not.
-        List<Date> cutoffs = List.of(at(1_767_225_600_000L), at(1_798_761_600_000L));
-        List<GapDetection.Gap> gaps = GapDetection.gaps(gate, cutoffs, YEAR);
+        // The 2026 and 2027 firing-areas cut-offs, a year apart. Nothing was
+        // withdrawn between them, so nothing is missing between them.
+        Date y2026 = at(1_767_225_600_000L);
+        Date y2027 = at(1_798_761_600_000L);
+        assertTrue(GapDetection.withdrawn(gate, y2026, y2027, List.of(), YEAR).isEmpty(),
+                "a MISSING period was produced between two consecutive in-force editions; they share 31 of "
+                        + "their 32 members, so nothing is missing between them");
+    }
 
-        assertTrue(gaps.isEmpty(),
-                "a MISSING pseudo-row was produced for an in-force series; those issues share 31 of their "
-                        + "32 members, so nothing is missing between them");
+    /**
+     * A double week on an in-force weekly is not a gap, and a withdrawn week is.
+     *
+     * Two consecutive releases cover the stretch between them whatever its
+     * length. What the stretch can hold is a release that was later withdrawn --
+     * and that period is uncovered again, exactly as it is on a tiling series.
+     */
+    @Test
+    public void betweenInForceReleasesOnlyAWithdrawnSlotIsMissing() {
+        GapDetection.Gate gate = GapDetection.gate(TimeRelation.IN_FORCE_AT_CUTOFF, "WEEKLY", true, false);
+        long start = 1_767_225_600_000L;
+        Date week34 = at(start);
+        Date week36 = at(start + 2 * WEEK);
+
+        assertTrue(GapDetection.withdrawn(gate, week34, week36, List.of(), WEEK).isEmpty(),
+                "a fortnight between two in-force releases is a double week, not a missing one");
+
+        // Week 35 was released and withdrawn: its slot is missing again.
+        List<GapDetection.Gap> gaps = GapDetection.withdrawn(gate, week34, week36,
+                List.of(at(start + WEEK)), WEEK);
+        assertEquals(1, gaps.size());
+        assertEquals(week34, gaps.get(0).from());
+        assertEquals(at(start + WEEK), gaps.get(0).to());
+
+        // A withdrawal outside the stretch says nothing about it.
+        assertTrue(GapDetection.withdrawn(gate, week34, week36, List.of(at(start + 5 * WEEK)), WEEK).isEmpty());
     }
 
     /** And the same input DOES produce gaps under the tiling relation, so the test proves something. */
@@ -69,6 +99,7 @@ public class GapDetectionTest {
     public void theSameInputProducesGapsWhenTheSeriesActuallyTiles() {
         GapDetection.Gate tiling = GapDetection.gate(TimeRelation.PUBLISHED_IN_INTERVAL, "WEEKLY", true, false);
         assertTrue(tiling.enabled());
+        assertTrue(tiling.tiling());
 
         long start = 1_767_225_600_000L;
         List<Date> withAMissingWeek = List.of(at(start), at(start + 3 * WEEK));
@@ -100,13 +131,30 @@ public class GapDetectionTest {
                 "a cadence-less series was explained as something else: " + gate.reason());
     }
 
-    /** A cadenced IN_FORCE series still gets the overlap explanation. */
+    /**
+     * A cadenced IN_FORCE series is expected to keep producing like any other.
+     *
+     * The weekly P&T list goes out every week whatever it carries. Gating it off
+     * for its content rule left it with no upcoming period and no warning when
+     * its newest cut-off had passed with nothing open -- the one case somebody
+     * opening the series is looking for.
+     */
     @Test
-    public void acadencedInForceSeriesStillReportsTheOverlap() {
+    public void acadencedInForceSeriesIsExpectedToKeepProducing() {
         GapDetection.Gate gate = GapDetection.gate(TimeRelation.IN_FORCE_AT_CUTOFF, "WEEKLY", true, false);
 
-        assertFalse(gate.enabled());
-        assertEquals(GapDetection.Reason.RELATION_NOT_TILING, gate.code());
+        assertTrue(gate.enabled());
+        assertEquals(GapDetection.Reason.CADENCED_SERIES, gate.code());
+        assertFalse(gate.tiling());
+    }
+
+    /** A series with no relation at all -- not query-backed -- reads its coverage off the cut-offs too. */
+    @Test
+    public void aSeriesWithNoRelationIsExaminedAndDoesNotTile() {
+        GapDetection.Gate gate = GapDetection.gate(null, "MONTHLY", true, false);
+
+        assertTrue(gate.enabled());
+        assertFalse(gate.tiling());
     }
 
     @Test
@@ -191,9 +239,12 @@ public class GapDetectionTest {
     /** A caller that forgets the gate still cannot produce a pseudo-row. */
     @Test
     public void aClosedGateReturnsNoGapsEvenIfTheCallerIgnoresIt() {
-        GapDetection.Gate closed = GapDetection.gate(TimeRelation.IN_FORCE_AT_CUTOFF, "YEARLY", true, false);
+        GapDetection.Gate closed = GapDetection.gate(TimeRelation.PUBLISHED_IN_INTERVAL, "YEARLY", false, false);
+        assertFalse(closed.enabled());
         List<Date> spread = new ArrayList<>(List.of(at(0), at(50 * YEAR)));
         assertTrue(GapDetection.gaps(closed, spread, YEAR).isEmpty(),
                 "fifty years of spread produced gaps through a closed gate");
+        assertTrue(GapDetection.withdrawn(closed, at(0), at(50 * YEAR), List.of(at(YEAR)), YEAR).isEmpty(),
+                "a withdrawn slot was produced through a closed gate");
     }
 }

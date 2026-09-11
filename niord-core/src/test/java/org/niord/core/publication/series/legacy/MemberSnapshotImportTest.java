@@ -364,6 +364,36 @@ public class MemberSnapshotImportTest {
         assertTrue(checked > 10_000, "only " + checked + " rows were checked");
     }
 
+    /**
+     * An imported member is frozen as PUBLISHED, whatever the message says today.
+     *
+     * The tag is the list a released document printed, and the archive carries
+     * nothing withdrawn before its cut-off -- so every message in it was
+     * published when the document went out. Freezing the live status instead
+     * recorded what the message was on import day, and a row saying "cancelled"
+     * about a message the document listed as in force made the imported issues
+     * read differently from the native ones: the cancel showed as the record on
+     * the one and as a change since on the other.
+     */
+    @Test
+    public void anImportedMemberIsFrozenAsPublishedWhateverTheMessageSaysToday() {
+        Publication p = LegacyEstateFixture.publications().stream()
+                .filter(x -> x.getMessageTag() != null).findFirst().orElseThrow();
+        PublicationIssue issue = new PublicationIssue();
+        MemberSnapshotImport.MemberFacts cancelledSince = new MemberSnapshotImport.MemberFacts(
+                "uid-c", "NM-002-26", "NM", "TEMPORARY_NOTICE", "CANCELLED", null, null);
+
+        List<IssueMember> members = MemberSnapshotImport.apply(
+                issue, p, List.of(facts("uid-a"), cancelledSince), Map.of());
+
+        for (IssueMember m : members) {
+            assertEquals("PUBLISHED", m.getFrozenStatus(),
+                    m.getMessageUid() + ": a member of a released document was published when it went out");
+        }
+        // The rest of the caption is still the live message: the best witness there is.
+        assertEquals("TEMPORARY_NOTICE", members.get(1).getFrozenType());
+    }
+
     /** A message missing any of the three is reported rather than written. */
     @Test
     public void amemberThatCannotBeFrozenIsNamed() {

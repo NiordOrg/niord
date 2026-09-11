@@ -21,6 +21,7 @@ import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.MemberSource;
 import org.niord.core.publication.series.MembershipProvenance;
 import org.niord.core.publication.series.PublicationIssue;
+import org.niord.model.message.Status;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -152,12 +153,25 @@ public final class MemberSnapshotImport {
                 m.setSortIndex(sortIndex++);
 
                 // The frozen caption. NOT NULL on three of these, and the whole
-                // point of the other three: what this message WAS at freeze, so a
-                // retired issue reads correctly however the message changed since.
+                // point of the other three: what this message WAS when the issue
+                // went out, so a retired issue reads correctly however the message
+                // changed since.
+                //
+                // THE STATUS IS PUBLISHED, NOT WHAT THE MESSAGE SAYS TODAY. The tag
+                // is the list a released document printed, and a message is in it
+                // because it was published when that document went out -- the
+                // archive carries nothing withdrawn before its cut-off (R-xxxii).
+                // Reading the live status instead wrote down what the message was
+                // on the day of the import, weeks or years later, and a row that
+                // says "cancelled" about a message the document listed as in force
+                // is not a record of the document. Message history cannot answer
+                // for the release moment either: production keeps a few hundred
+                // rows of it in total. The type and the dates are still read live,
+                // which is the best witness there is for them.
                 m.setFrozenShortId(facts.shortId());
                 m.setFrozenMainType(facts.mainType());
                 m.setFrozenType(facts.type());
-                m.setFrozenStatus(facts.status());
+                m.setFrozenStatus(Status.PUBLISHED.name());
                 m.setFrozenPublishDateFrom(facts.publishFrom());
                 m.setFrozenPublishDateTo(facts.publishTo());
 

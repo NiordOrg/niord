@@ -25,12 +25,23 @@ import java.util.List;
 /**
  * Gap detection, UPCOMING, and dormancy.
  *
- * All of it is GATED, and the gate is the interesting part. Gap detection only
- * makes sense where issues tile -- one ends, the next begins. Issues of an
- * IN_FORCE_AT_CUTOFF series OVERLAP: the 2026 and 2027 firing-areas issues share
- * 31 of their 32 members. Asking which year is "missing" between them is a
- * category error, and answering it produces a MISSING pseudo-row, a retro-create
- * affordance and a warning for something that was never absent.
+ * All of it is GATED, and the gate answers two questions. WHETHER a series is
+ * expected to keep producing is a matter of the calendar alone: a cadence, an
+ * ACTIVE status and a series that has not gone dormant. That is what a missing
+ * period means -- a cadence period nothing was released for -- and it means the
+ * same whatever the content rule, which is why a weekly in-force publication
+ * that stopped is late in exactly the way a weekly tiling one is.
+ *
+ * HOW coverage between two releases is read is where the content rule matters.
+ * Issues of a PUBLISHED_IN_INTERVAL series tile -- one ends, the next begins --
+ * and a hole between them is read off their intervals. Issues of an
+ * IN_FORCE_AT_CUTOFF series each carry everything in force at their cut-off and
+ * have no lower bound at all: the 2026 and 2027 firing-areas issues share 31 of
+ * their 32 members. Two consecutive releases of such a series leave nothing
+ * between them by definition, however far apart their cut-offs -- a double week
+ * is a double week, not a hole -- so a period between them is missing only
+ * where a release was cut off in it and later withdrawn. The gate carries which
+ * of the two readings applies, so the one synthesizer serves both.
  *
  * Dormancy is DERIVED, never stored. "We deliberately stopped" is RETIRED, which
  * is a decision and belongs in a column. "Nobody got round to it" is an
@@ -50,10 +61,8 @@ public final class GapDetection {
      * on the sentence would break the first time the sentence is improved.
      */
     public enum Reason {
-        /** The gate is open. */
-        TILING_SERIES,
-        /** Issues overlap rather than tile, so a missing period is a category error. */
-        RELATION_NOT_TILING,
+        /** The gate is open: an active series with a cadence. */
+        CADENCED_SERIES,
         /** A one-off has no period to be missing. */
         NO_CADENCE,
         /** Only an ACTIVE series is expected to keep producing. */
@@ -64,8 +73,17 @@ public final class GapDetection {
         CADENCE_PERIOD_UNKNOWN
     }
 
-    /** Why gap detection did or did not run. Carried so the answer is explainable. */
-    public record Gate(boolean enabled, Reason code, String reason) {
+    /**
+     * Why gap detection did or did not run, and how coverage is read when it did.
+     *
+     * Carried so the answer is explainable, and so the synthesizer reads coverage
+     * the way the series' content rule says rather than deciding for itself.
+     * tiling is true for a PUBLISHED_IN_INTERVAL series, whose issues carry a
+     * lower bound and can leave a hole between them; false for everything else,
+     * whose consecutive releases cover the stretch between their cut-offs by
+     * definition.
+     */
+    public record Gate(boolean enabled, Reason code, String reason, boolean tiling) {
     }
 
     /** A period with no issue. */
@@ -84,32 +102,26 @@ public final class GapDetection {
      * @param dormant whether it is dormant, derived
      */
     public static Gate gate(TimeRelation relation, String cadence, boolean active, boolean dormant) {
-        // CADENCE FIRST, and the order is the whole point. S-1 leaves a
-        // cadence-less series with no time relation at all, so asking about the
-        // relation first answered every cadence-less series with
-        // RELATION_NOT_TILING -- telling an admin that "issues of an
-        // IN_FORCE_AT_CUTOFF series overlap" about a publication that has no
-        // relation and no schedule. NO_CADENCE described exactly that series and
-        // could never be reached by one.
+        // The relation never closes the gate. It only says how coverage between
+        // two releases is read once the gate is open: an in-force series with a
+        // cadence is expected to keep releasing exactly as a tiling one is, and a
+        // cadence-less series has no relation worth asking about (S-1 leaves it
+        // with none), so NO_CADENCE has to be the first answer.
+        boolean tiling = relation == TimeRelation.PUBLISHED_IN_INTERVAL;
         if (cadence == null || "NONE".equals(cadence)) {
             return new Gate(false, Reason.NO_CADENCE,
-                    "this publication has no cadence, so there is no period it can be missing");
-        }
-        if (relation != TimeRelation.PUBLISHED_IN_INTERVAL) {
-            return new Gate(false, Reason.RELATION_NOT_TILING,
-                    "issues of an IN_FORCE_AT_CUTOFF series overlap rather than tile, so a missing period "
-                            + "is a category error rather than a gap");
+                    "this publication has no cadence, so there is no period it can be missing", tiling);
         }
         if (!active) {
             return new Gate(false, Reason.SERIES_NOT_ACTIVE,
-                    "only an ACTIVE series is expected to keep producing issues");
+                    "only an ACTIVE series is expected to keep producing issues", tiling);
         }
         if (dormant) {
             return new Gate(false, Reason.SERIES_DORMANT,
                     "a dormant series is already flagged as such; warning about every period since would "
-                            + "bury the one fact that matters");
+                            + "bury the one fact that matters", tiling);
         }
-        return new Gate(true, Reason.TILING_SERIES, "an active, tiling series with a cadence");
+        return new Gate(true, Reason.CADENCED_SERIES, "an active series with a cadence", tiling);
     }
 
     /**
@@ -128,7 +140,7 @@ public final class GapDetection {
         if (gate.enabled() && periodMillis <= 0) {
             return new Gate(false, Reason.CADENCE_PERIOD_UNKNOWN,
                     "the length of one " + cadence + " period could not be computed, so there is no "
-                            + "period to call missing");
+                            + "period to call missing", gate.tiling());
         }
         return gate;
     }
@@ -185,6 +197,50 @@ public final class GapDetection {
         for (int k = 0; k < missing; k++) {
             long from = previousClose.getTime() + k * periodMillis;
             out.add(new Gap(new Date(from), new Date(from + periodMillis), out.size()));
+        }
+        return out;
+    }
+
+    /**
+     * The periods between two consecutive releases of a series whose issues do
+     * NOT tile, where the only release cut off in the period was withdrawn.
+     *
+     * An in-force release carries everything in force at its cut-off, so two
+     * consecutive releases cover the whole stretch between them whatever its
+     * length: a fortnight between cut-offs is a double week, not a missing one,
+     * and this is what lets a holiday issue stand without a warning. What a
+     * stretch CAN hold is a release that was later withdrawn -- and withdrawing
+     * is the statement that what went out for that period should not stand, so
+     * the period is uncovered again and comes back as a MISSING row, exactly as
+     * it does on a tiling series (decision 12).
+     *
+     * The stretch is tiled from the previous release's cut-off, as uncovered()
+     * tiles it, with the same rounding slack for a release that drifted by
+     * hours; the last slot is the next release's own and is never a candidate.
+     *
+     * @param withdrawnCutoffs the cut-offs of every RETIRED issue of the series;
+     *                         those outside the stretch are ignored
+     */
+    public static List<Gap> withdrawn(Gate gate, Date previousCutoff, Date nextCutoff,
+                                      List<Date> withdrawnCutoffs, long periodMillis) {
+        List<Gap> out = new ArrayList<>();
+        if (!gate.enabled() || previousCutoff == null || nextCutoff == null || periodMillis <= 0
+                || withdrawnCutoffs == null || withdrawnCutoffs.isEmpty()) {
+            return out;
+        }
+        long elapsed = nextCutoff.getTime() - previousCutoff.getTime();
+        long slots = Math.round((double) elapsed / periodMillis) - 1;
+        for (int k = 0; k < slots; k++) {
+            long from = previousCutoff.getTime() + k * periodMillis;
+            long to = from + periodMillis;
+            // A cut-off belongs to the period it closes: strictly after the slot
+            // opens, at or before it closes -- the same half-open reading as
+            // membership at a shared cut-off.
+            boolean withdrawnHere = withdrawnCutoffs.stream()
+                    .anyMatch(c -> c != null && c.getTime() > from && c.getTime() <= to);
+            if (withdrawnHere) {
+                out.add(new Gap(new Date(from), new Date(to), out.size()));
+            }
         }
         return out;
     }
