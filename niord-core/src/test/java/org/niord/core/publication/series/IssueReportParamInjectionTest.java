@@ -211,7 +211,7 @@ public class IssueReportParamInjectionTest {
         PublicationIssue i = issue(series());
         em.flush();
         editService.update(i, new IssueEditService.IssueEdit(null, null, null, null, null, false,
-                null, "36+37", null, null, null, null), user());
+                null, "36+37", null, null, null), user());
         em.flush();
 
         Map<String, Object> params = paramsFromPublishing(i);

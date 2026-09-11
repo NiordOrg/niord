@@ -120,9 +120,9 @@ public class IssueEditService extends BaseService {
      * express the second thing at all.
      *
      * THE OVERRIDE FIELDS SAY "FOLLOW THE SERIES AGAIN" WITH A BLANK, and that is
-     * the one convention worth reading twice. `weekLabel`, `weekToLabel`,
-     * `yearLabel`, `reportId` and each entry of `fileNames` and of `names` are
-     * strings, and a string has an empty form -- so absent still means "leave it
+     * the one convention worth reading twice. `weekLabel`, `yearLabel`,
+     * `reportId` and each entry of `fileNames` and of `names` are strings, and a
+     * string has an empty form -- so absent still means "leave it
      * alone", exactly as every other field here does, and "" means "stop
      * overriding this". The criteria needed a separate flag only because a
      * document has no empty form.
@@ -149,7 +149,6 @@ public class IssueEditService extends BaseService {
                             boolean clearCriteriaOverride,
                             String edition,
                             String weekLabel,
-                            String weekToLabel,
                             String yearLabel,
                             Map<String, String> fileNames,
                             String reportId) {
@@ -173,7 +172,7 @@ public class IssueEditService extends BaseService {
                          Map<String, Object> reportParams, IssueCriteriaVo criteriaOverride,
                          boolean clearCriteriaOverride, String edition) {
             this(names, intervalFrom, intervalTo, reportParams, criteriaOverride,
-                    clearCriteriaOverride, edition, null, null, null, null, null);
+                    clearCriteriaOverride, edition, null, null, null, null);
         }
     }
 
@@ -348,7 +347,7 @@ public class IssueEditService extends BaseService {
      * exists to avoid.
      */
     private void applyNumberingLabels(PublicationIssue issue, IssueEdit edit, User actor) {
-        if (edit.weekLabel() == null && edit.weekToLabel() == null && edit.yearLabel() == null) {
+        if (edit.weekLabel() == null && edit.yearLabel() == null) {
             return;
         }
 
@@ -362,15 +361,6 @@ public class IssueEditService extends BaseService {
                 from.put("weekLabel", issue.getWeekLabel());
                 to.put("weekLabel", wanted);
                 issue.setWeekLabel(wanted);
-                changed = true;
-            }
-        }
-        if (edit.weekToLabel() != null) {
-            String wanted = PrintedNumbering.validated(edit.weekToLabel());
-            if (!Objects.equals(wanted, issue.getWeekToLabel())) {
-                from.put("weekToLabel", issue.getWeekToLabel());
-                to.put("weekToLabel", wanted);
-                issue.setWeekToLabel(wanted);
                 changed = true;
             }
         }

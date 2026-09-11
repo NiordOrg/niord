@@ -507,8 +507,19 @@ public class IssueListService {
         return close == null ? null : IssueNaming.derive(close, null, zone, null);
     }
 
-    /** The issue's name in the requested language, or in whichever it has. */
-    private static String nameOf(PublicationIssue issue, String lang) {
+    /**
+     * The issue's name in the requested language, or in whichever it has.
+     *
+     * Null only where no language has a name at all. The caller decides what to
+     * do with that: a row with nothing to show it under falls back to the
+     * series' own naming, and a field that merely mentions the issue is left out.
+     *
+     * Shared rather than private because every surface that names an issue has to
+     * name it the same way -- a second walk of the desc rows is how one screen
+     * comes to call an edition by its Danish title and the next one by its
+     * English.
+     */
+    static String nameOf(PublicationIssue issue, String lang) {
         String any = null;
         for (PublicationIssueDesc desc : issue.getDescs()) {
             if (desc.getName() == null || desc.getName().isBlank()) {

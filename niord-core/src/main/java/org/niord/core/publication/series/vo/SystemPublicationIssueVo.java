@@ -191,18 +191,17 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
      */
     private String weekLabel;
 
-    private String weekToLabel;
-
     private String yearLabel;
 
     /**
-     * The three, resolved -- exactly the strings the document and its file name
-     * will carry.
+     * The three numbers as they will be PRINTED -- exactly the strings the
+     * document and its file name will carry.
      *
-     * Emitted for the reason effectiveCutoff is: the coalesce decides what the
-     * header, the Document card and the PDF all say, and three clients
-     * re-implementing "label if there is one, else the number" is three chances
-     * for a screen to disagree with the file it is describing.
+     * Emitted for the reason effectiveCutoff is: what the header, the Document
+     * card and the PDF all say is one answer, and three clients re-implementing
+     * it is three chances for a screen to disagree with the file it is
+     * describing. The closing week has no label of its own and prints the derived
+     * number, which is empty for an edition covering a single period.
      */
     private String printedWeek;
 
@@ -506,14 +505,6 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     public void setWeekLabel(String weekLabel) {
         this.weekLabel = weekLabel;
-    }
-
-    public String getWeekToLabel() {
-        return weekToLabel;
-    }
-
-    public void setWeekToLabel(String weekToLabel) {
-        this.weekToLabel = weekToLabel;
     }
 
     public String getYearLabel() {

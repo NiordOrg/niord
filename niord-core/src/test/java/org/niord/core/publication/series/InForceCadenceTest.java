@@ -382,6 +382,40 @@ public class InForceCadenceTest {
         assertEquals(2026, published.getYear());
     }
 
+    /**
+     * And it PRINTS both weeks, with nothing typed anywhere for it to do so.
+     *
+     * The whole point of deriving the second week: ${weekTo} expands to it, so
+     * the title comes out "Uge 2+3, 2026" off the arithmetic alone. An edition
+     * whose columns said two weeks while its cover said one is what forced the
+     * pair to be typed by hand every time a week was skipped, in every language.
+     */
+    @Test
+    @Transactional
+    public void thedoubleWeekIsPrintedFromTheNumbersAlone() {
+        PublicationSeries s = inForceWeekly(NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        s.getDescs().get(0).setNameSuggestionPattern("Uge ${week}+${weekTo}, ${year}");
+        em.merge(s);
+        publishedAt(s, noon(2025, 12, 31));
+        PublicationIssue late = openIssue(s);
+        em.flush();
+
+        publish(late, noon(2026, 1, 14));
+
+        em.flush();
+        em.clear();
+        PublicationIssue published = em.find(PublicationIssue.class, late.getId());
+
+        assertEquals("Uge 2+3, 2026", published.getDescs().get(0).getName(),
+                "the second week did not reach the title, so the edition is called one week while "
+                        + "the columns beside it say two");
+        assertEquals("2", PrintedNumbering.printedWeek(published));
+        assertEquals("3", PrintedNumbering.printedWeekTo(published),
+                "the closing week is the derived number and prints as itself");
+        assertFalse(PrintedNumbering.isOverridden(published),
+                "the pair came out of the arithmetic; nothing was written down to produce it");
+    }
+
     /** The ordinary week is still one week, and is not a range. */
     @Test
     @Transactional

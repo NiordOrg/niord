@@ -148,7 +148,7 @@ public class PublicationApiContractTest {
         // and every mark the design puts on an overridden field is a comparison
         // the server already made -- emitted, so no client makes it differently.
         Set<String> systemIssueFields = declaredFields(SystemPublicationIssueVo.class);
-        for (String required : List.of("weekLabel", "weekToLabel", "yearLabel",
+        for (String required : List.of("weekLabel", "yearLabel",
                 "printedWeek", "printedWeekTo", "printedYear", "numberingOverridden",
                 "reportId", "seriesReportId", "reportOverridden",
                 "reportParams", "seriesReportParams")) {
@@ -590,9 +590,9 @@ public class PublicationApiContractTest {
      * nothing changes -- and a mapping with a renamed component would not compile
      * but a re-ORDERED one silently would, because these are all strings.
      *
-     * Five fields, and each is a thing the series decides that one edition
+     * Four fields, and each is a thing the series decides that one edition
      * occasionally has to decide for itself: what it is CALLED where its derived
-     * numbers print (three), what its documents are filed under, and which report
+     * week and year print, what its documents are filed under, and which report
      * sets it out.
      */
     @Test
@@ -602,7 +602,7 @@ public class PublicationApiContractTest {
                         .map(RecordComponent::getName).toList();
         String issues = read("src/main/java/org/niord/web/publication/PublicationIssueRestService.java");
 
-        for (String field : List.of("weekLabel", "weekToLabel", "yearLabel", "fileNames", "reportId")) {
+        for (String field : List.of("weekLabel", "yearLabel", "fileNames", "reportId")) {
             assertTrue(components.contains(field),
                     "the edit body carries no " + field + ", so the drawer that edits it has no way "
                             + "to save it");
@@ -616,7 +616,7 @@ public class PublicationApiContractTest {
      * And they reach the SERVICE record in the same order they are read off the
      * body.
      *
-     * Five consecutive components of one record, four of them String: a
+     * Four consecutive components of one record, three of them String: a
      * transposition compiles, passes every type check, and swaps the year label
      * with the week label on the cover of a published document. The order is
      * asserted rather than trusted.
@@ -626,8 +626,8 @@ public class PublicationApiContractTest {
         List<String> components =
                 Arrays.stream(IssueEditService.IssueEdit.class.getRecordComponents())
                         .map(RecordComponent::getName).toList();
-        assertEquals(List.of("weekLabel", "weekToLabel", "yearLabel", "fileNames", "reportId"),
-                components.subList(components.size() - 5, components.size()),
+        assertEquals(List.of("weekLabel", "yearLabel", "fileNames", "reportId"),
+                components.subList(components.size() - 4, components.size()),
                 "the edit record's override fields moved; editOf passes them positionally, so a "
                         + "transposition here silently prints the year where the week goes");
     }

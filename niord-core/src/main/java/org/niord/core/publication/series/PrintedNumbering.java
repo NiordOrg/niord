@@ -21,14 +21,21 @@ import org.niord.core.publication.series.resolve.IssueNaming;
 /**
  * What an issue PRINTS where its derived numbers would go.
  *
- * TWO DIFFERENT FACTS, deliberately in two different columns. The week, the
- * closing week and the year are DERIVED from the cut-off and are numbers:
- * everything that computes reads them -- the ordering, the timeline strip, gap
- * detection, the archive -- and nothing a person types can reach them. The
- * LABELS are free text and are what goes on the page: "36+37", "36 &amp; 37", "36
- * og 37" are all things this estate has published, and none of them is a number.
- * Sharing one column between the two meant either the arithmetic broke or the
- * cover did.
+ * TWO DIFFERENT FACTS, deliberately in different columns. The week, the closing
+ * week and the year are DERIVED from the cut-off and are numbers: everything
+ * that computes reads them -- the ordering, the timeline strip, gap detection,
+ * the archive -- and nothing a person types can reach them. The LABELS are free
+ * text and are what goes on the page: "36+37", "36 &amp; 37", "36 og 37" are all
+ * things this estate has published, and none of them is a number. Sharing one
+ * column between the two meant either the arithmetic broke or the cover did.
+ *
+ * A LABEL FOR THE WEEK AND ONE FOR THE YEAR, and none for the closing week,
+ * because the closing week already answers the case a label would be typed for.
+ * An edition whose period swallowed a week nobody published derives a second
+ * number of its own, and ${week}+${weekTo} prints "36+37" from the arithmetic;
+ * an edition written some other way puts the whole of it -- "36 og 37" -- in the
+ * week label, where the pattern that names it reads one field rather than two
+ * that have to agree.
  *
  * ONE RESOLUTION, HERE, because there are three printers and they must not
  * disagree: the name pattern, the file-name pattern (and the citation format
@@ -65,10 +72,9 @@ public final class PrintedNumbering {
                 issue == null ? null : issue.getWeek());
     }
 
-    /** What ${weekTo} prints: the label, else the derived closing week, else nothing. */
+    /** What ${weekTo} prints: the derived closing week, or nothing where there is none. */
     public static String printedWeekTo(PublicationIssue issue) {
-        return printed(issue == null ? null : issue.getWeekToLabel(),
-                issue == null ? null : issue.getWeekTo());
+        return asText(issue == null ? null : issue.getWeekTo());
     }
 
     /** What ${year} prints: the label, else the derived year. */
@@ -89,7 +95,6 @@ public final class PrintedNumbering {
         }
         IssueNaming.Labels labels = new IssueNaming.Labels(
                 trimmed(issue.getWeekLabel()),
-                trimmed(issue.getWeekToLabel()),
                 trimmed(issue.getYearLabel()));
         return labels.any() ? labels : IssueNaming.Labels.NONE;
     }
@@ -139,13 +144,18 @@ public final class PrintedNumbering {
 
     private static String printed(String label, Integer derived) {
         String trimmed = trimmed(label);
-        if (trimmed != null) {
-            return trimmed;
-        }
-        // Null rather than "null" or "": the caller injecting this into a report
-        // is handing FreeMarker the same absence it has always been handed for an
-        // issue with no cut-off to number by, and the token expander turns a
-        // missing value into the empty string on its own.
+        return trimmed != null ? trimmed : asText(derived);
+    }
+
+    /**
+     * A derived number as it prints.
+     *
+     * Null rather than "null" or "": the caller injecting this into a report is
+     * handing FreeMarker the same absence it is handed for an issue with no
+     * cut-off to number by, and the token expander turns a missing value into the
+     * empty string on its own.
+     */
+    private static String asText(Integer derived) {
         return derived == null ? null : String.valueOf(derived);
     }
 

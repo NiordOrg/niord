@@ -102,20 +102,27 @@ public final class IssueNaming {
      * text that goes on the page. A blank or absent label means the derived
      * number prints, which is what every issue does until somebody says otherwise.
      *
+     * THE WEEK AND THE YEAR, AND ${weekTo} IS ALWAYS THE DERIVED NUMBER. A window
+     * that swallowed a period the publication skipped carries a second week of
+     * its own, so ${week}+${weekTo} already prints "36+37" from the arithmetic; a
+     * publication that writes the pair some other way writes the whole of it into
+     * the week label, and the pattern that names the edition then reads one field
+     * rather than two that have to be kept in step.
+     *
      * BOTH VARIANTS OF A TOKEN TAKE THE LABEL, the zero-padded one included.
      * "36+37" has no two-digit form, and a pattern that asked for one would
      * otherwise print the derived 36 beside a title saying 36+37 -- the exact
      * disagreement the label exists to remove. A label is a decision about what
      * this edition is called, and it is printed as it was written.
      */
-    public record Labels(String week, String weekTo, String year) {
+    public record Labels(String week, String year) {
 
         /** Nothing overridden: every token renders the derived number. */
-        public static final Labels NONE = new Labels(null, null, null);
+        public static final Labels NONE = new Labels(null, null);
 
         /** Whether anything at all was written down. */
         public boolean any() {
-            return notBlank(week) || notBlank(weekTo) || notBlank(year);
+            return notBlank(week) || notBlank(year);
         }
 
         static boolean notBlank(String value) {
@@ -256,10 +263,6 @@ public final class IssueNaming {
         if (Labels.notBlank(labels.week())) {
             v.put("week", labels.week());
             v.put("week-2-digits", labels.week());
-        }
-        if (Labels.notBlank(labels.weekTo())) {
-            v.put("weekTo", labels.weekTo());
-            v.put("weekTo-2-digits", labels.weekTo());
         }
         if (Labels.notBlank(labels.year())) {
             v.put("year", labels.year());

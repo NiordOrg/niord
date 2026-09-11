@@ -98,6 +98,19 @@ public class IssueDraftService extends BaseService {
     // ------------------------------------------------------------------ the draft
 
     /**
+     * The draft, named in whichever language the predecessor has a name in.
+     *
+     * The form the callers with no language to state use. Every other field of a
+     * draft is language-independent -- an interval, a count and a set of
+     * observations are the same answer whoever asks -- so only the predecessor's
+     * name is affected, and a name in the wrong language is still a name.
+     */
+    public IssueDraftVo draft(PublicationSeries series, String afterPublicId,
+                              Date explicitFrom, Date explicitTo, Date now) {
+        return draft(series, afterPublicId, explicitFrom, explicitTo, now, null);
+    }
+
+    /**
      * The draft for one series.
      *
      * @param afterPublicId chain the interval off this issue's close, or null
@@ -106,9 +119,12 @@ public class IssueDraftService extends BaseService {
      * @param now           the moment the draft is being taken at; never a clock
      *                      read inside, so a report can ask what the draft looked
      *                      like at the instant it was rendered
+     * @param lang          the language the predecessor is NAMED in, and nothing
+     *                      else; the interval, the count and the observations are
+     *                      the same answer in every language
      */
     public IssueDraftVo draft(PublicationSeries series, String afterPublicId,
-                              Date explicitFrom, Date explicitTo, Date now) {
+                              Date explicitFrom, Date explicitTo, Date now, String lang) {
         List<IssueDraftWarningVo> warnings = new ArrayList<>();
         List<PublicationIssue> issues = issuesNewestFirst(series);
         boolean tiles = series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
@@ -254,6 +270,12 @@ public class IssueDraftService extends BaseService {
 
         vo.setDescs(suggestedDescs(series, numbers));
         vo.setChainedFromPublicId(predecessor == null ? null : predecessor.getPublicId());
+        // The id addresses the predecessor; the name is what the admin looking at
+        // this form recognises it by. Resolved through the list's own naming, so
+        // the edition is called the same thing here as in the table this form was
+        // opened from. Null where the predecessor is nameless in every language,
+        // which leaves the caller free to say nothing rather than print a slug.
+        vo.setChainedFromName(predecessor == null ? null : IssueListService.nameOf(predecessor, lang));
         vo.setPrecedingPublicId(predecessor == null ? null : predecessor.getPublicId());
         vo.setSeriesCriteria(series.getCriteria());
 

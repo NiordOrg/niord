@@ -199,6 +199,51 @@ public class IssueDraftTest {
     }
 
     /**
+     * And it comes back NAMED, not merely addressed.
+     *
+     * The id is a slug. A form that says the period follows on from
+     * "nm-w26-2026" is showing the person deciding whether the dates are right a
+     * database key, and the question they are actually answering is which
+     * edition this one comes after. Both travel: the id is what a link to that
+     * issue is built from, the name is what goes on the page.
+     */
+    @Test
+    @Transactional
+    public void thepredecessorIsNamedAsWellAsAddressed() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL, "EfS uge ${week}, ${year}");
+        PublicationIssue published =
+                publishedIssue(s, wednesday(2026, 6, 24), wednesday(2026, 7, 1));
+
+        IssueDraftVo draft = drafts.draft(s, published.getPublicId(), null, null, new Date(), "da");
+
+        assertEquals(published.getPublicId(), draft.getChainedFromPublicId(),
+                "the id addresses the issue, and a link to it is built from nothing else");
+        assertEquals("EfS uge 27, 2026", draft.getChainedFromName(),
+                "the draft names the previous edition by its identifier, which names nothing to a "
+                        + "person reading the form");
+
+        IssueDraftVo elsewhere =
+                drafts.draft(s, published.getPublicId(), null, null, new Date(), "fr");
+        assertEquals("EfS uge 27, 2026", elsewhere.getChainedFromName(),
+                "a language the edition has no name in left the row blank; the wrong language is "
+                        + "still a name and an identifier is not");
+    }
+
+    /** At the head of the chain there is nothing to name, and nothing is named. */
+    @Test
+    @Transactional
+    public void nothingToChainOffIsNamedNothing() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL, "EfS uge ${week}, ${year}");
+
+        IssueDraftVo draft = drafts.draft(s, null, null, null, new Date(), "da");
+
+        assertNull(draft.getChainedFromPublicId());
+        assertNull(draft.getChainedFromName(),
+                "a name for an issue that does not exist would put a title on the seam at the head "
+                        + "of the chain");
+    }
+
+    /**
      * The gap row hands its own bounds back, and gets its own marker back.
      *
      * A typed bound that lands exactly on an issue's close IS a chained bound.

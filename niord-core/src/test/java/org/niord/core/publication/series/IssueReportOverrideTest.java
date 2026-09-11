@@ -168,7 +168,7 @@ public class IssueReportOverrideTest {
 
     private static IssueEditService.IssueEdit reportId(String reportId) {
         return new IssueEditService.IssueEdit(null, null, null, null, null, false, null,
-                null, null, null, null, reportId);
+                null, null, null, reportId);
     }
 
     private boolean railPasses(PublicationIssue i, String code) {

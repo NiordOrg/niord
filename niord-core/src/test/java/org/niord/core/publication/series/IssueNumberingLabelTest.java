@@ -126,9 +126,9 @@ public class IssueNumberingLabelTest {
         return audit.forIssue(issue).stream().map(IssueAuditEntry::getAction).toList();
     }
 
-    private static IssueEditService.IssueEdit labels(String week, String weekTo, String year) {
+    private static IssueEditService.IssueEdit labels(String week, String year) {
         return new IssueEditService.IssueEdit(null, null, null, null, null, false, null,
-                week, weekTo, year, null, null);
+                week, year, null, null);
     }
 
     // ------------------------------------------------------------------- derived
@@ -157,7 +157,7 @@ public class IssueNumberingLabelTest {
     public void atypedWeekIsPrintedWhileTheDerivedWeekStands() {
         PublicationIssue issue = anIssue();
 
-        editService.update(issue, labels("36+37", null, null), user());
+        editService.update(issue, labels("36+37", null), user());
         em.flush();
 
         assertEquals("36+37", PrintedNumbering.printedWeek(issue),
@@ -177,7 +177,7 @@ public class IssueNumberingLabelTest {
     public void atypedWeekReachesTheFileName() {
         PublicationIssue issue = anIssue();
 
-        editService.update(issue, labels("36+37", null, null), user());
+        editService.update(issue, labels("36+37", null), user());
         em.flush();
 
         assertEquals("EfS-Uge-36+37-2026.pdf",
@@ -192,7 +192,7 @@ public class IssueNumberingLabelTest {
     public void atypedYearIsPrinted() {
         PublicationIssue issue = anIssue();
 
-        editService.update(issue, labels(null, null, "2025/2026"), user());
+        editService.update(issue, labels(null, "2025/2026"), user());
         em.flush();
 
         assertEquals("2025/2026", PrintedNumbering.printedYear(issue));
@@ -212,10 +212,10 @@ public class IssueNumberingLabelTest {
     @Transactional
     public void ablankLabelGoesBackToTheDerivedNumber() {
         PublicationIssue issue = anIssue();
-        editService.update(issue, labels("36+37", null, null), user());
+        editService.update(issue, labels("36+37", null), user());
         em.flush();
 
-        editService.update(issue, labels("", null, null), user());
+        editService.update(issue, labels("", null), user());
         em.flush();
 
         assertNull(issue.getWeekLabel(), "the label was not cleared");
@@ -237,7 +237,7 @@ public class IssueNumberingLabelTest {
     @Transactional
     public void anabsentLabelIsNotAClear() {
         PublicationIssue issue = anIssue();
-        editService.update(issue, labels("36+37", null, null), user());
+        editService.update(issue, labels("36+37", null), user());
         em.flush();
 
         editService.update(issue,
@@ -254,7 +254,7 @@ public class IssueNumberingLabelTest {
     @Transactional
     public void thetrailSaysWhatTheNumberingWasAndWhatItBecame() {
         PublicationIssue issue = anIssue();
-        editService.update(issue, labels("36+37", null, null), user());
+        editService.update(issue, labels("36+37", null), user());
         em.flush();
 
         IssueAuditEntry entry = audit.forIssue(issue).stream()
@@ -275,9 +275,9 @@ public class IssueNumberingLabelTest {
     @Transactional
     public void anunchangedLabelProducesNoEntry() {
         PublicationIssue issue = anIssue();
-        editService.update(issue, labels("36+37", null, null), user());
+        editService.update(issue, labels("36+37", null), user());
         em.flush();
-        editService.update(issue, labels("36+37", null, null), user());
+        editService.update(issue, labels("36+37", null), user());
         em.flush();
 
         assertEquals(1, actions(issue).stream().filter(a -> a == AuditAction.NUMBERING_CHANGED).count(),
@@ -295,7 +295,7 @@ public class IssueNumberingLabelTest {
 
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
-                        () -> editService.update(issue, labels(tooLong, null, null), user()));
+                        () -> editService.update(issue, labels(tooLong, null), user()));
         assertEquals(PrintedNumbering.INVALID, e.code());
     }
 
@@ -307,7 +307,7 @@ public class IssueNumberingLabelTest {
 
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
-                        () -> editService.update(issue, labels("36\n37", null, null), user()));
+                        () -> editService.update(issue, labels("36\n37", null), user()));
         assertEquals(PrintedNumbering.INVALID, e.code());
     }
 
@@ -321,7 +321,7 @@ public class IssueNumberingLabelTest {
     public void afreeTextLabelIsNotFormatChecked() {
         PublicationIssue issue = anIssue();
 
-        editService.update(issue, labels("36 og 37", null, null), user());
+        editService.update(issue, labels("36 og 37", null), user());
         em.flush();
 
         assertEquals("36 og 37", issue.getWeekLabel());
@@ -337,7 +337,7 @@ public class IssueNumberingLabelTest {
 
         IssueLifecycleService.TransitionRefusedException e =
                 assertThrows(IssueLifecycleService.TransitionRefusedException.class,
-                        () -> editService.update(issue, labels("36+37", null, null), user()));
+                        () -> editService.update(issue, labels("36+37", null), user()));
         assertEquals("ISSUE_NOT_OPEN", e.code());
     }
 
@@ -348,7 +348,7 @@ public class IssueNumberingLabelTest {
     @Transactional
     public void thewireCarriesTheLabelAndTheResolvedValue() {
         PublicationIssue issue = anIssue();
-        editService.update(issue, labels("36+37", null, null), user());
+        editService.update(issue, labels("36+37", null), user());
         em.flush();
 
         SystemPublicationIssueVo vo = issue.toVo(SystemPublicationIssueVo.class);

@@ -1304,6 +1304,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * WRITES NOTHING, which is what makes it safe to call while somebody drags a
      * date around. A GET for the same reason: it is a question, it is idempotent,
      * and it is bookmarkable from the row that asked it.
+     *
+     * `lang` names the language the issue this period chains off is TITLED in,
+     * and nothing else -- the interval, the count and the observations are the
+     * same answer whoever asks. A predecessor with no name in the requested
+     * language falls back to whichever it has, because the wrong language is
+     * still a name and an identifier is not one.
      */
     @GET
     @Path("/series/{seriesId}/issue-draft")
@@ -1314,11 +1320,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     public IssueDraftVo issueDraft(@PathParam("seriesId") String seriesId,
                                    @QueryParam("afterPublicId") String afterPublicId,
                                    @QueryParam("intervalFrom") Long intervalFrom,
-                                   @QueryParam("intervalTo") Long intervalTo) {
+                                   @QueryParam("intervalTo") Long intervalTo,
+                                   @QueryParam("lang") String lang) {
         return drafts.draft(required(seriesId), afterPublicId,
                 intervalFrom == null ? null : new Date(intervalFrom),
                 intervalTo == null ? null : new Date(intervalTo),
-                new Date());
+                new Date(), lang);
     }
 
     /** S11. Delete, guarded on having no issues. */

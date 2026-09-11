@@ -156,7 +156,7 @@ public class IssueFileNameOverrideTest {
 
     private static IssueEditService.IssueEdit fileNames(Map<String, String> names) {
         return new IssueEditService.IssueEdit(null, null, null, null, null, false, null,
-                null, null, null, names, null);
+                null, null, names, null);
     }
 
     private PublicationIssueDesc descOf(PublicationIssue issue, String lang) {

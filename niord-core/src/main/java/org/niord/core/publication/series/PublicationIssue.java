@@ -259,9 +259,10 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
      * Free text beside the number rather than instead of it, and the split is the
      * point. The columns above are derived from the cut-off and are arithmetic:
      * the list order, the timeline strip, gap detection and the archive all read
-     * them, and nothing a person types can reach any of that. These three carry
+     * them, and nothing a person types can reach any of that. These two carry
      * what goes on the cover -- "36+37", "36 og 37", "36 &amp; 37" are all in the
-     * estate -- and are read by everything that PRINTS. See PrintedNumbering.
+     * estate, and a double week is written into THIS field -- and are read by
+     * everything that PRINTS. See PrintedNumbering.
      *
      * Absent means the derived number prints, which is what every issue does
      * until somebody says otherwise, and is how "follow the cut-off again" is
@@ -269,10 +270,6 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
      */
     @Column(length = 64)
     private String weekLabel;
-
-    /** The same, for the closing week of a multi-week edition. */
-    @Column(length = 64)
-    private String weekToLabel;
 
     /**
      * The same, for the year.
@@ -638,14 +635,6 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         this.weekLabel = weekLabel;
     }
 
-    public String getWeekToLabel() {
-        return weekToLabel;
-    }
-
-    public void setWeekToLabel(String weekToLabel) {
-        this.weekToLabel = weekToLabel;
-    }
-
     public String getYearLabel() {
         return yearLabel;
     }
@@ -828,7 +817,6 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             // be printed. Both, because the drawer edits the first and every other
             // surface shows the second.
             sys.setWeekLabel(weekLabel);
-            sys.setWeekToLabel(weekToLabel);
             sys.setYearLabel(yearLabel);
             sys.setPrintedWeek(PrintedNumbering.printedWeek(this));
             sys.setPrintedWeekTo(PrintedNumbering.printedWeekTo(this));

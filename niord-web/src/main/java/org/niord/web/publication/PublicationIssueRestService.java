@@ -1343,8 +1343,8 @@ public class PublicationIssueRestService {
      * alone like every other field. An empty string is REFUSED rather than
      * treated as a clear -- see IssueEditService.
      *
-     * `names`, `weekLabel`, `weekToLabel`, `yearLabel`, `fileNames` and
-     * `reportId` are the per-edition overrides, and they read an empty string the
+     * `names`, `weekLabel`, `yearLabel`, `fileNames` and `reportId` are the
+     * per-edition overrides, and they read an empty string the
      * OTHER way round from the edition: "" means "follow the series again". They
      * are strings, so they have an empty form to say it with; a JSON null could
      * not be used for it, because absent and null arrive here as the same value
@@ -1365,7 +1365,6 @@ public class PublicationIssueRestService {
                                      Boolean clearCriteriaOverride,
                                      String edition,
                                      String weekLabel,
-                                     String weekToLabel,
                                      String yearLabel,
                                      Map<String, String> fileNames,
                                      String reportId,
@@ -1393,7 +1392,6 @@ public class PublicationIssueRestService {
                 Boolean.TRUE.equals(request.clearCriteriaOverride()),
                 request.edition(),
                 request.weekLabel(),
-                request.weekToLabel(),
                 request.yearLabel(),
                 request.fileNames(),
                 request.reportId());

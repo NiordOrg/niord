@@ -33,9 +33,10 @@ import java.util.List;
  * series and its issues; no row is written, no member is resolved into an issue,
  * and the counting probe below reads only.
  *
- * The three fields it adds are the ones a saved issue has no need of: what the
- * criteria would select over this interval, which issue the interval chains off,
- * and what an admin should know before pressing create.
+ * The fields it adds are the ones a saved issue has no need of: what the
+ * criteria would select over this interval, which issue the interval chains off
+ * -- by the id that addresses it and by the name a person reads it under -- and
+ * what an admin should know before pressing create.
  */
 public class IssueDraftVo extends SystemPublicationIssueVo {
 
@@ -59,6 +60,21 @@ public class IssueDraftVo extends SystemPublicationIssueVo {
      */
     private String chainedFromPublicId;
 
+    /**
+     * The same issue, under the name a person would recognise it by.
+     *
+     * BESIDE the id rather than instead of it, because the two answer different
+     * questions. The id addresses the issue -- it is what a link to it is built
+     * from -- and the name is what the admin deciding whether this period is
+     * right is actually looking at. A public id is a slug: "nm-w26-2026" names
+     * nothing to somebody reading a form.
+     *
+     * In the requested language, falling back to whichever language the
+     * predecessor has a name in. Null only where it has none at all, which leaves
+     * the caller free to say nothing rather than to print an identifier.
+     */
+    private String chainedFromName;
+
     /** What an admin should know before creating this issue. Never a refusal. */
     private List<IssueDraftWarningVo> warnings = new ArrayList<>();
 
@@ -76,6 +92,14 @@ public class IssueDraftVo extends SystemPublicationIssueVo {
 
     public void setChainedFromPublicId(String chainedFromPublicId) {
         this.chainedFromPublicId = chainedFromPublicId;
+    }
+
+    public String getChainedFromName() {
+        return chainedFromName;
+    }
+
+    public void setChainedFromName(String chainedFromName) {
+        this.chainedFromName = chainedFromName;
     }
 
     public List<IssueDraftWarningVo> getWarnings() {
