@@ -136,24 +136,17 @@ public class IssuePublishService extends BaseService {
     /**
      * What the caller asked for.
      *
-     * `names` is lang to name and is optional: the release dialog is the last
-     * place an issue can still be renamed, because the name goes onto the
-     * document and into every citation the moment this runs. Absent, and a
-     * language absent from it, leave the name alone. A name given here is a name
-     * somebody TYPED, so it travels through the ordinary rename path -- it stops
-     * tracking the interval and it is recorded -- rather than being written onto
-     * the desc here, where neither would happen.
+     * No name travels with a release. What an issue says differently from its
+     * series -- its name, its printed numbering, its file name, its report -- is
+     * one decision taken on the open issue through the edit path, and a release
+     * publishes the issue as it stands. A name typed at the last moment was a
+     * second way to say the same thing, and one that could disagree with the
+     * document it was typed beside.
      */
     public record PublishRequest(
             Set<String> acknowledgedWarnings,
             User actor,
-            Date explicitStamp,
-            Map<String, String> names) {
-
-        /** The three-field form, for a caller that is not renaming anything. */
-        public PublishRequest(Set<String> acknowledgedWarnings, User actor, Date explicitStamp) {
-            this(acknowledgedWarnings, actor, explicitStamp, null);
-        }
+            Date explicitStamp) {
 
         public static PublishRequest manual(User actor) {
             return new PublishRequest(Set.of(), actor, null);
@@ -296,21 +289,6 @@ public class IssuePublishService extends BaseService {
         PublishChecklistService.Checklist rail = checklist.compute(issue, stamp, false);
         refuseBlockingRows(issue, series, rail, stamp);
 
-        // --- 1c. THE NAMES, JUDGED --------------------------------------------
-        // A name the release dialog carried is APPLIED further down, after the
-        // restamp that would otherwise overwrite it. Whether it is acceptable is
-        // decided here, with every other refusal, because everything below this
-        // line mutates the issue: an unusable name found after the stamp would
-        // leave a cut-off written on an entity whose release was refused, and only
-        // the transaction rollback would take it off again.
-        //
-        // An EMPTIED field is not an unusable name. It says the release should
-        // title this edition the way its series titles every other one, which is
-        // the same thing it says in the edit drawer -- one convention, so an admin
-        // who cleared an override on Tuesday is not told on Friday that the field
-        // may not be empty.
-        edits.validateNames(issue, request.names());
-
         // --- 2. STAMP, before resolving -----------------------------------
         issue.setCutoffStampedAt(stamp);
         // NOW and an admin-chosen instant are stamped identically, and this column
@@ -329,15 +307,6 @@ public class IssuePublishService extends BaseService {
         // closes five days late, and the header, the file name and the citation
         // format all have to say which week actually went out.
         shape.restamp(issue, series);
-
-        // --- 2b. THE NAMES, where the release dialog carried any ---------------
-        // AFTER the restamp, for the reason the edit path states about its own
-        // ordering: the restamp re-derives the suggested name from the stamped
-        // period, so a rename applied before it would be overwritten by the
-        // derivation it was meant to replace. And BEFORE anything is frozen or
-        // written, because this name is what the document, the audit entry and
-        // every citation of this issue will carry.
-        edits.applyNames(issue, request.names(), request.actor());
 
         Frozen frozen = resolveFreezeAndWrite(issue, series, request, stamp, stamp, rail.resolution());
         List<String> unacknowledged = frozen.unacknowledgedWarnings();

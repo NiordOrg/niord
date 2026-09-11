@@ -1072,12 +1072,6 @@ public class PublicationIssueRestService {
         List<String> acknowledged = params == null ? List.of()
                 : (List<String>) params.getOrDefault("acknowledgedWarnings", List.of());
 
-        // The names the dialog carried, where an admin corrected one. This is the
-        // last moment the name can still change: from here it is on the document
-        // and in every citation of this issue. A language the caller did not send
-        // is left alone, so an unchanged name need not be round-tripped.
-        Map<String, String> names = nameMap(params);
-
         // The chosen cut-off, if any: the end of the content period, which the
         // admin may place in the past (a week published late, a gap recovered)
         // and never in the future -- a future cut-off would freeze the list
@@ -1097,7 +1091,7 @@ public class PublicationIssueRestService {
 
         IssuePublishService.PublishResult result = publishService.publish(issue.getId(),
                 new IssuePublishService.PublishRequest(Set.copyOf(acknowledged),
-                        userService.currentUser(), cutoff, names));
+                        userService.currentUser(), cutoff));
 
         log.info("Published issue {} of series {}: cut-off {}, {} members, {} unacknowledged warning(s)",
                 publicId, issue.getSeries() == null ? null : issue.getSeries().getSeriesId(),
@@ -1109,27 +1103,6 @@ public class PublicationIssueRestService {
         out.put("memberCount", result.memberCount());
         out.put("unacknowledgedWarnings", result.unacknowledgedWarnings());
         out.put("successorId", result.successorId());
-        return out;
-    }
-
-    /**
-     * The optional per-language names off an action body, or null for none.
-     *
-     * The value is carried EXACTLY as it arrived, null included. A blank or
-     * missing name is refused by the rename path with the same code the edit
-     * endpoint answers, and coercing a null to the text "null" here would store
-     * it as a name instead of being refused.
-     */
-    private static Map<String, String> nameMap(Map<String, Object> params) {
-        Object raw = params == null ? null : params.get("names");
-        if (!(raw instanceof Map<?, ?> map) || map.isEmpty()) {
-            return null;
-        }
-        Map<String, String> out = new LinkedHashMap<>();
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            out.put(String.valueOf(entry.getKey()),
-                    entry.getValue() == null ? null : String.valueOf(entry.getValue()));
-        }
         return out;
     }
 

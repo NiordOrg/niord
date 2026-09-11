@@ -532,16 +532,20 @@ public class PublicationApiContractTest {
     }
 
     /**
-     * Both dialogs that can name an issue have somewhere to put the name.
+     * The create body carries the names; the release body does not.
      *
-     * The create dialog prefills the series' suggestions and the release dialog
-     * is the last moment a name can still change -- from there it is on the
-     * document and in every citation. The create body is a record, so its shape
-     * is readable here; the publish body is a map, so what is pinned is that the
-     * endpoint reads the key at all.
+     * The create dialog prefills the series' suggestions, and correcting one there
+     * is one write rather than a create followed by a rename with a window
+     * between them where the issue is listed under a name nobody chose. A release
+     * publishes the issue as it stands: what an issue says differently from its
+     * series is decided on the open issue through the edit body, and a name typed
+     * at the last moment beside a document already rendered was a second way to
+     * say it, and one that could disagree with the file (decision 28). The create
+     * body is a record, so its shape is readable here; the publish body is a map,
+     * so what is pinned is that the endpoint no longer reads the key at all.
      */
     @Test
-    public void theCreateAndReleaseBodiesBothCarryNames() throws IOException {
+    public void theCreateBodyCarriesNamesAndTheReleaseBodyDoesNot() throws IOException {
         List<String> components =
                 Arrays.stream(PublicationIssueRestService.CreateIssueRequest.class.getRecordComponents())
                         .map(RecordComponent::getName).toList();
@@ -550,9 +554,9 @@ public class PublicationApiContractTest {
                         + "-- and between the two it is listed under a name nobody chose");
 
         String issues = read("src/main/java/org/niord/web/publication/PublicationIssueRestService.java");
-        assertTrue(issues.contains("nameMap(params)"),
-                "the publish endpoint no longer reads the names off its body, so the release dialog's "
-                        + "name field would be accepted and dropped");
+        assertFalse(issues.contains("nameMap(params)") || issues.contains("params.get(\"names\")"),
+                "the publish endpoint reads names off its body again; the name is tailored on the open "
+                        + "issue, never renamed at release");
     }
 
     /**
