@@ -106,7 +106,36 @@ public class GapDetectionTest {
         List<GapDetection.Gap> gaps = GapDetection.gaps(tiling, withAMissingWeek, WEEK);
 
         assertEquals(2, gaps.size(), "two weeks are missing between those cut-offs");
-        assertEquals(at(start + WEEK), gaps.get(0).from());
+        // A cut-off closes its period, so the first missing period OPENS at the
+        // first cut-off and the last one CLOSES a period before the second: the
+        // slots are the two weeks between the issues, not the second issue's own.
+        assertEquals(at(start), gaps.get(0).from());
+        assertEquals(at(start + WEEK), gaps.get(0).to());
+        assertEquals(at(start + 2 * WEEK), gaps.get(1).to());
+    }
+
+    /**
+     * The fallback and the coverage arithmetic tile from the same anchor.
+     *
+     * The two answer the same question for two shapes of issue -- one that knows
+     * where its period opened and one that does not -- and a next issue that
+     * opened exactly at the previous cut-off must get the same slots from both.
+     */
+    @Test
+    public void theFallbackAndTheCoverageArithmeticAgreeOnWhichPeriodsAreMissing() {
+        GapDetection.Gate tiling = GapDetection.gate(TimeRelation.PUBLISHED_IN_INTERVAL, "WEEKLY", true, false);
+        long start = 1_767_225_600_000L;
+
+        List<GapDetection.Gap> fromCutoffs = GapDetection.gaps(tiling,
+                List.of(at(start), at(start + 3 * WEEK)), WEEK);
+        List<GapDetection.Gap> fromCoverage = GapDetection.uncovered(tiling,
+                at(start), at(start + 2 * WEEK), WEEK);
+
+        assertEquals(fromCoverage.size(), fromCutoffs.size());
+        for (int i = 0; i < fromCoverage.size(); i++) {
+            assertEquals(fromCoverage.get(i).from(), fromCutoffs.get(i).from(), "slot " + i + " opens elsewhere");
+            assertEquals(fromCoverage.get(i).to(), fromCutoffs.get(i).to(), "slot " + i + " closes elsewhere");
+        }
     }
 
     /**

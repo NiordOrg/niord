@@ -146,7 +146,17 @@ public final class GapDetection {
     }
 
     /**
-     * The periods between consecutive issues where one is missing.
+     * The periods between consecutive issues where one is missing, read off the
+     * cut-offs alone.
+     *
+     * The fallback for a tiling issue whose content period has no recorded
+     * opening, where coverage cannot be proved and the release slots stand in.
+     * Tiled from the previous cut-off exactly as uncovered() tiles, because a
+     * cut-off CLOSES its period: with cut-offs on the Fridays of weeks 34 and 37,
+     * the missing periods are the ones closing on the Fridays of weeks 35 and 36.
+     * Anchored one period later, the slots were named after weeks 36 and 37 --
+     * the second being the next issue's own week, so the strip showed a missing
+     * cell beside the real one and a retro-create that overlapped it.
      *
      * Returns empty whenever the gate is closed, so a caller that forgets to
      * check still cannot produce a pseudo-row for an overlapping series.
@@ -166,7 +176,7 @@ public final class GapDetection {
             // tighter bound would report a gap every time somebody published late.
             long missing = Math.round((double) elapsed / periodMillis) - 1;
             for (int k = 0; k < missing; k++) {
-                long from = previous + (k + 1) * periodMillis;
+                long from = previous + k * periodMillis;
                 out.add(new Gap(new Date(from), new Date(from + periodMillis), out.size()));
             }
         }

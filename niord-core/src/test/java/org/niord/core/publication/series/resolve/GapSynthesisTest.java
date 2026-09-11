@@ -340,6 +340,31 @@ public class GapSynthesisTest {
     }
 
     /**
+     * A next issue with no recorded opening still gets its missing weeks named
+     * as the weeks BETWEEN the two issues, never as the next issue's own.
+     *
+     * The release-slot fallback used to tile from one period after the previous
+     * cut-off, so with issues in weeks 2 and 5 it named weeks 4 and 5 missing --
+     * the second beside the real week-5 cell, with a retro-create that overlapped
+     * it. A cut-off closes its period; the missing ones are weeks 3 and 4.
+     */
+    @Test
+    public void anUnknownOpeningNamesTheWeeksBetweenTheIssuesNotTheNextIssuesOwn() {
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(issue("a", wed(2)), issue("b", wed(5))),
+                WEEK, CPH, PATTERNS, null, new Date(wed(5).getTime() + 3600_000L));
+
+        List<Integer> missingWeeks = rows.stream()
+                .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING)
+                .map(r -> isoWeekOf(r.intervalTo()))
+                .toList();
+        assertEquals(List.of(3, 4), missingWeeks, "the weeks between the issues, and only those: " + rows);
+        assertEquals(wed(2), rows.get(0).intervalFrom(), "the first missing week opens at the previous cut-off");
+        assertEquals("a", rows.get(0).precedingPublicId());
+        assertEquals("b", rows.get(1).followingPublicId());
+    }
+
+    /**
      * A closed gate returns empty, and empty is NOT an answer about gaps.
      *
      * Every imported series is DRAFT, so on today's estate this is the branch that
