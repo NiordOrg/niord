@@ -1102,6 +1102,9 @@ public class PublicationIssueRestService {
         out.put("stampedAt", result.stampedAt().getTime());
         out.put("memberCount", result.memberCount());
         out.put("unacknowledgedWarnings", result.unacknowledgedWarnings());
+        // The successor's PUBLIC id: the only id a client can address an issue by.
+        // A client offered "the next issue is open, go to it" builds that link out
+        // of this value, and a row id would build one that resolves to nothing.
         out.put("successorId", result.successorId());
         return out;
     }

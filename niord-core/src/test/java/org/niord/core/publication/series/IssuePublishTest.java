@@ -30,6 +30,7 @@ import org.niord.core.publication.TestIds;
 import org.niord.core.publication.series.criteria.IssueCriteriaVo;
 import org.niord.core.publication.series.criteria.MessageMainTypeCriterionVo;
 import org.niord.core.publication.series.criteria.MessageSeriesCriterionVo;
+import org.niord.core.publication.series.resolve.IssueOrdering;
 import org.niord.core.publication.series.resolve.ResolutionWarningCode;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.vo.MessagePublication;
@@ -97,6 +98,11 @@ public class IssuePublishTest {
 
     @Inject
     EntityManager em;
+
+    // The successor is named by its public id, so it is looked up the way a client
+    // would have to: by the one address an issue has outside the database.
+    @Inject
+    PublicationIssueService issues;
 
     @Inject
     UserTransaction tx;
@@ -613,7 +619,7 @@ public class IssuePublishTest {
 
         em.flush();
         em.clear();
-        PublicationIssue successor = em.find(PublicationIssue.class, result.successorId());
+        PublicationIssue successor = issues.findByPublicId(result.successorId());
 
         assertEquals(all.getLanguages().size(), successor.getDescs().size(),
                 "the successor carries " + successor.getDescs().size() + " desc row(s) for a series "
@@ -652,7 +658,7 @@ public class IssuePublishTest {
 
         em.flush();
         em.clear();
-        PublicationIssue successor = em.find(PublicationIssue.class, result.successorId());
+        PublicationIssue successor = issues.findByPublicId(result.successorId());
         assertEquals(stamp, successor.getIntervalFrom(),
                 "the successor does not start at this issue's stamp; that chaining is what removes drift");
         assertEquals(IntervalBoundSource.STAMPED, successor.getIntervalFromSource(),
@@ -1499,6 +1505,131 @@ public class IssuePublishTest {
         assertEquals(request.orderedMessages().stream().map(m -> m.getId()).toList(),
                 groups.stream().flatMap(g -> g.messageIds().stream()).toList(),
                 "the sections and the printed list are two different documents");
+    }
+
+    /**
+     * A SOURCE WEEK THAT FILED NOTHING IS STILL A SECTION.
+     *
+     * The sections are the record of what the year covered, not of what happened
+     * to have rows. A year that quietly prints fifty-one of its fifty-two weeks
+     * is a document claiming a week was never covered, and there is nothing in
+     * the document for a reader to notice the claim by -- so the empty week keeps
+     * its place, in the order it was compiled in, with no message ids under it.
+     *
+     * The list comes from the snapshot header rather than from the frozen rows,
+     * because the rows are exactly what cannot answer for a week that filed
+     * nothing. The workbench states the same rule over the same list.
+     */
+    @Test
+    @Transactional
+    public void aweekThatFiledNothingIsStillASectionOfTheReleasedDocument() {
+        Compiled e = compiledEstate();
+        // Between the two weeks that did print, so an empty section at the END
+        // would not pass for the right answer.
+        PublicationIssue silent = frozenWeek(e.source(), new Date(1_699_100_000_000L),
+                new Date(1_699_150_000_000L), List.of());
+
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+        em.flush();
+
+        StubIssueRenderService.reset();
+        publishService.publish(annualIssue.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_699_300_000_000L)));
+        em.flush();
+
+        List<IssueRenderService.RenderGroup> groups = StubIssueRenderService.lastRequest().groups();
+        assertEquals(List.of(e.week1().getPublicId(), silent.getPublicId(), e.week2().getPublicId()),
+                groups.stream().map(IssueRenderService.RenderGroup::publicId).toList(),
+                "the week that filed nothing is missing from the document's sections, which now "
+                        + "claims the year never covered it");
+        assertEquals(List.of(), groups.get(1).messageIds(),
+                "the empty section was filled from somewhere");
+        assertEquals(List.of(e.a().getUid(), e.b().getUid()), groups.get(0).messageIds());
+        assertEquals(List.of(e.c().getUid()), groups.get(2).messageIds());
+
+        // And the header the sections were built from says the same three weeks.
+        assertEquals(String.join(",", e.week1().getPublicId(), silent.getPublicId(),
+                        e.week2().getPublicId()),
+                annualIssue.getSnapshotSourceIssueIds(),
+                "the document's sections and the issue's own record name different weeks");
+    }
+
+    /**
+     * And the PREVIEW draws the same document, off the survey.
+     *
+     * The preview has no snapshot to read -- nothing is frozen yet -- so it takes
+     * the covered weeks from the survey, which is the same list the freeze will
+     * write into the header. An admin who cannot see the empty week in the
+     * preview cannot see it before the release either.
+     */
+    @Test
+    @Transactional
+    public void apreviewSectionsTheSameWeeksTheReleaseWill() {
+        Compiled e = compiledEstate();
+        PublicationIssue silent = frozenWeek(e.source(), new Date(1_699_100_000_000L),
+                new Date(1_699_150_000_000L), List.of());
+
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+        em.flush();
+
+        StubIssueRenderService.reset();
+        publishService.preview(annualIssue.getId());
+
+        List<IssueRenderService.RenderGroup> groups = StubIssueRenderService.lastRequest().groups();
+        assertNotNull(groups, "a compiled preview was drawn as a flat list");
+        assertEquals(List.of(e.week1().getPublicId(), silent.getPublicId(), e.week2().getPublicId()),
+                groups.stream().map(IssueRenderService.RenderGroup::publicId).toList(),
+                "the preview and the release would section the same year differently");
+        assertEquals(List.of(), groups.get(1).messageIds());
+    }
+
+    /**
+     * A row whose source the covered list does not name still prints.
+     *
+     * Which weeks the document covers and which week owns each row are two
+     * different reads, and a member that vanished because they disagreed would
+     * be a notice missing from a published document with nothing to say it was
+     * ever there. So such a row gets a section of its own, after the covered
+     * ones and in arrival order -- and what came from no week at all stays last,
+     * under the heading that says it was added by hand.
+     */
+    @Test
+    public void arowWhoseSourceIsNotAmongTheCoveredWeeksGetsASectionAfterThem() {
+        List<IssueOrdering.Orderable> ordered = List.of(
+                orderable("uid-a"), orderable("uid-stray"), orderable("uid-b"), orderable("uid-hand"));
+
+        Map<String, String> sourceByUid = new java.util.LinkedHashMap<>();
+        sourceByUid.put("uid-a", "week-1");
+        sourceByUid.put("uid-stray", "week-gone");
+        sourceByUid.put("uid-b", "week-2");
+        // uid-hand names no source at all: a manual include.
+
+        List<IssueRenderService.RenderGroup> sections = IssuePublishService.sectionsOf(
+                ordered, sourceByUid, List.of("week-1", "week-2", "week-3"));
+
+        assertEquals(java.util.Arrays.asList("week-1", "week-2", "week-3", "week-gone", null),
+                sections.stream().map(IssueRenderService.RenderGroup::publicId).toList(),
+                "a covered week is out of order, or the row naming a week nobody covered was "
+                        + "dropped from the print");
+        assertEquals(List.of("uid-a"), sections.get(0).messageIds());
+        assertEquals(List.of("uid-b"), sections.get(1).messageIds());
+        assertEquals(List.of(), sections.get(2).messageIds(), "week 3 filed nothing and is empty");
+        assertEquals(List.of("uid-stray"), sections.get(3).messageIds());
+
+        IssueRenderService.RenderGroup manual = sections.get(sections.size() - 1);
+        assertTrue(manual.manual(), "what came from no week is not the last section");
+        assertEquals(List.of("uid-hand"), manual.messageIds());
+    }
+
+    /** A document with no grouping at all asks for no sections. */
+    @Test
+    public void sectionsOfAnUncompiledDocumentAreNone() {
+        assertNull(IssuePublishService.sectionsOf(List.of(orderable("uid-a")), null, null));
+    }
+
+    private static IssueOrdering.Orderable orderable(String uid) {
+        return new IssueOrdering.Orderable(uid, null, null, null, null, null, null, null, null);
     }
 
     /** And an ordinary weekly hands over no sections at all. */

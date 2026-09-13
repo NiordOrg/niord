@@ -168,6 +168,49 @@ public class AccumulatedReportTemplateTest {
         return model;
     }
 
+    /**
+     * The same year with a third week wedged between the two, which filed nothing.
+     *
+     * The document still covers it: it is one of the weeks the year was compiled
+     * from, and the ordered list simply has no row that came from it.
+     */
+    private Map<String, Object> yearWithAWeekThatPrintedNothing() {
+        List<MessageVo> messages = new ArrayList<>(List.of(
+                message("uid-11a", 101, Type.TEMPORARY_NOTICE),
+                message("uid-12a", 201, Type.TEMPORARY_NOTICE),
+                message("uid-hand", 900, Type.TEMPORARY_NOTICE)));
+
+        List<Map<String, Object>> groups = List.of(
+                group("week-11", "NtM 11/2024", 11, 2024, new Date(1_710_000_000_000L),
+                        List.of("uid-11a"), false),
+                group("week-12", "NtM 12/2024", 12, 2024, new Date(1_710_600_000_000L),
+                        List.of(), false),
+                group("week-13", "NtM 13/2024", 13, 2024, new Date(1_711_200_000_000L),
+                        List.of("uid-12a"), false),
+                group(null, null, null, null, null, List.of("uid-hand"), true));
+
+        Map<String, Object> model = new LinkedHashMap<>();
+        model.put("messages", messages);
+        model.put("groups", groups);
+        model.put("areaHeadings", true);
+        model.put("year", "2024");
+        model.put("edition", "1");
+        model.put("ISSN", "1397-999X");
+        model.put("timeZone", "Europe/Copenhagen");
+        return model;
+    }
+
+    /** How many times a string occurs. */
+    private static int occurrences(String html, String needle) {
+        int n = 0;
+        int at = 0;
+        while ((at = html.indexOf(needle, at)) >= 0) {
+            n++;
+            at += needle.length();
+        }
+        return n;
+    }
+
     /** The printed ids, in the order the document prints them. */
     private static List<String> printed(String html) {
         List<String> out = new ArrayList<>();
@@ -241,6 +284,54 @@ public class AccumulatedReportTemplateTest {
         // can be navigated by week.
         assertTrue(html.indexOf("pdf.toc") < html.indexOf("NtM 11/2024"),
                 "the table of contents does not precede the first week");
+    }
+
+    /**
+     * A week that filed nothing is still a section, and says so.
+     *
+     * The sections are the record of what the year covered, not of what happened
+     * to have rows: a year that quietly prints fifty-one of its fifty-two weeks
+     * is a document claiming a week was never covered, and there is nothing in it
+     * for a reader to notice the claim by. So the week is in the table of
+     * contents, it has its own heading and its own week and cut-off line, and
+     * where the tables would be there is one sentence.
+     */
+    @Test
+    public void aweekThatPrintedNothingIsListedAndPrintedWithASentence() throws Exception {
+        String html = render(yearWithAWeekThatPrintedNothing());
+
+        // Twice: once in the contents, once as the heading of its own section.
+        assertEquals(2, occurrences(html, "NtM 12/2024"),
+                "the week that filed nothing is not both listed and printed");
+        int listed = html.indexOf("NtM 12/2024");
+        int heading = html.lastIndexOf("NtM 12/2024");
+        assertTrue(listed > html.indexOf("pdf.toc"),
+                "the empty week is missing from the table of contents");
+        assertTrue(heading > listed, "the empty week has no heading of its own");
+
+        int sentence = html.indexOf("pdf.accumulated.no_messages");
+        assertTrue(sentence > heading,
+                "the empty week's section does not say that it printed nothing");
+        assertTrue(sentence < html.lastIndexOf("NtM 13/2024"),
+                "the sentence falls outside the section it belongs to");
+        assertEquals(1, occurrences(html, "pdf.accumulated.no_messages"),
+                "a section that printed something carries the sentence too");
+
+        // The info line is the same one a full week gets, so the reader can see
+        // WHICH week printed nothing and what it was closed at.
+        assertTrue(html.substring(heading, sentence).contains("pdf.accumulated.cutoff"),
+                "the empty week's section has no cut-off line");
+    }
+
+    /** And the weeks that did print are untouched by it. */
+    @Test
+    public void theWeeksAroundAnEmptyOnePrintExactlyAsBefore() throws Exception {
+        String html = render(yearWithAWeekThatPrintedNothing());
+
+        assertEquals(List.of("g0:uid-11a", "g2:uid-12a", "g3:uid-hand"), printed(html),
+                "an empty section changed what the sections that have rows print");
+        assertTrue(html.lastIndexOf("pdf.accumulated.added_by_hand") > html.lastIndexOf("NtM 13/2024"),
+                "what was added by hand is no longer the last section");
     }
 
     /**

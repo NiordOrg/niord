@@ -167,13 +167,23 @@ public class IssuePublishService extends BaseService {
                 .map(Enum::name).collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
-    /** What happened. */
+    /**
+     * What happened.
+     *
+     * @param successorId the PUBLIC id of the issue this release opened, or null
+     *                    where it opened none. The public id and not the database
+     *                    one, because this value exists to be followed: every
+     *                    address an issue has -- the link a client navigates to,
+     *                    the id a REST path carries -- is the public id, and
+     *                    handing back the row id produced a link that resolved to
+     *                    nothing.
+     */
     public record PublishResult(
             Integer issueId,
             Date stampedAt,
             int memberCount,
             List<String> unacknowledgedWarnings,
-            Integer successorId) {
+            String successorId) {
     }
 
     /**
@@ -351,7 +361,7 @@ public class IssuePublishService extends BaseService {
 
         em.merge(issue);
         return new PublishResult(issue.getId(), stamp, frozen.memberCount(), unacknowledged,
-                successor == null ? null : successor.getId());
+                successor == null ? null : successor.getPublicId());
     }
 
     /**
@@ -615,17 +625,12 @@ public class IssuePublishService extends BaseService {
      * and the difference is a source issue that contributed nothing: a week whose
      * own member list was empty is still a week this annual covers, and a header
      * built from the rows would silently drop it from the record of what was
-     * compiled.
+     * compiled. The document prints a section per entry of this same list, so
+     * the header and the sections cannot come to name different weeks.
      */
     private static String joinedSourceIssueIds(MemberResolutionService.Resolution resolution) {
-        if (resolution == null || resolution.survey() == null) {
-            return null;
-        }
-        List<String> ids = resolution.survey().published().stream()
-                .map(CompilationResolver.SourceIssue::publicId)
-                .filter(java.util.Objects::nonNull)
-                .toList();
-        return ids.isEmpty() ? null : String.join(",", ids);
+        List<String> ids = liveSourceIssueOrder(resolution);
+        return ids == null || ids.isEmpty() ? null : String.join(",", ids);
     }
 
     private static String joinedNames(Set<? extends Enum<?>> operands) {
@@ -826,14 +831,16 @@ public class IssuePublishService extends BaseService {
         Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
 
         // The LIVE half of the one grouping rule: nothing is frozen yet, so which
-        // source issue owns a row is what the resolution just decided.
+        // source issue owns a row -- and which weeks this document covers at all
+        // -- is what the resolution just decided.
         Map<String, String> sourceByUid = liveSourceIssueIds(resolution);
+        List<String> sourceIssueIds = liveSourceIssueOrder(resolution);
 
         List<IssuePreviewService.Preview> out = new ArrayList<>();
         for (PublicationIssueDesc desc : issue.getDescs()) {
             String lang = desc.getLang();
             byte[] bytes = renderService.render(renderRequest(issue, series, ordered, members, lang,
-                    renderGroups(ordered, sourceByUid, lang)));
+                    renderGroups(ordered, sourceByUid, sourceIssueIds, lang)));
             // Named from the cut-off the publish would use, not from the clock: a
             // preview of last year's accumulated list generated in January carries
             // last year's tokens, exactly as the published file will.
@@ -883,11 +890,13 @@ public class IssuePublishService extends BaseService {
         // language, so they are read once for the whole release.
         Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
 
-        // The FROZEN half of the one grouping rule. Step 6 has already written
-        // which source issue printed each row, and reading it back here is what
-        // makes the document's sections and the issue's own record the same
-        // statement -- an amend re-derives both together or neither.
+        // The FROZEN half of the one grouping rule. Steps 6 and 7 have already
+        // written which source issue printed each row and which weeks this
+        // release covered, and reading them back here is what makes the
+        // document's sections and the issue's own record the same statement --
+        // an amend re-derives both together or neither.
         Map<String, String> sourceByUid = frozenSourceIssueIds(issue);
+        List<String> sourceIssueIds = frozenSourceIssueOrder(issue);
 
         for (PublicationIssueDesc desc : issue.getDescs()) {
             if (desc.isFileSourceSticky()) {
@@ -899,7 +908,7 @@ public class IssuePublishService extends BaseService {
 
             // 10a
             renderService.renderToFile(renderRequest(issue, series, ordered, members, lang,
-                    renderGroups(ordered, sourceByUid, lang)), target);
+                    renderGroups(ordered, sourceByUid, sourceIssueIds, lang)), target);
 
             desc.setFileName(fileName);
             desc.setFilePath(issue.getRepoPath() + "/" + fileName);
@@ -993,62 +1002,116 @@ public class IssuePublishService extends BaseService {
     /**
      * The printed sections of this document, or null where it has none.
      *
-     * ONE builder for the release and the preview alike, over one input: a map
-     * from member uid to the source issue that owns it. Which source issue that
-     * is comes from a different place on each path -- the frozen rows after a
-     * release, the live resolution before one -- but what a section IS must not,
-     * or a preview would be drawn as one document and the release as another.
+     * ONE builder for the release and the preview alike, over two inputs: the
+     * source issues this document covers, in order, and a map from member uid to
+     * the source issue that owns it. Both come from a different place on each
+     * path -- the snapshot header and the frozen rows after a release, the
+     * survey and the live resolution before one -- but what a section IS must
+     * not, or a preview would be drawn as one document and the release another.
      *
-     * The sections are discovered from the ORDERED list rather than from the
-     * survey of the source series, and that is what keeps them honest in two
-     * ways: they come out in printed order, and a source issue that contributed
-     * nothing gets no empty heading. What the year covered is recorded on the
-     * issue's header; what it PRINTS is this.
+     * THE SECTIONS ARE THE RECORD OF WHAT THE YEAR COVERED, not of what happened
+     * to have rows, so a source issue that printed nothing still gets a section
+     * and that section says so. A year that quietly prints fifty-one of its
+     * fifty-two weeks is a document claiming a week was never covered, and there
+     * is nothing in it for a reader to notice the claim by. The screen states the
+     * same rule over the same list, and a document that stated the other one
+     * would disagree with the panel an admin released it from.
+     *
+     * The covered list and the rows are two different reads, so a row whose
+     * source is not among them gets a section of its own after the covered ones:
+     * a member must never vanish from the print because two reads disagreed. What
+     * came from no source issue at all stays last, under the heading that says it
+     * was added by hand.
      *
      * The headings are read live, in the render language, from the source issues
      * themselves -- a weekly's name and week numbers are editable, and a section
      * headed by a frozen copy of them would name something the reader cannot find.
      */
     private List<IssueRenderService.RenderGroup> renderGroups(List<IssueOrdering.Orderable> ordered,
-                                                             Map<String, String> sourceByUid, String lang) {
-        if (sourceByUid == null) {
+                                                             Map<String, String> sourceByUid,
+                                                             List<String> sourceIssueIds, String lang) {
+        List<IssueRenderService.RenderGroup> sections = sectionsOf(ordered, sourceByUid, sourceIssueIds);
+        if (sections == null) {
             return null; // not a compilation: one flat list, as every other document is
         }
+        Set<String> ids = new LinkedHashSet<>();
+        for (IssueRenderService.RenderGroup s : sections) {
+            if (s.publicId() != null) {
+                ids.add(s.publicId());
+            }
+        }
+        Map<String, org.niord.core.publication.series.vo.SourceIssueRefVo> named =
+                memberList.sourceRefsOf(ids, lang);
+
+        List<IssueRenderService.RenderGroup> groups = new ArrayList<>(sections.size());
+        for (IssueRenderService.RenderGroup s : sections) {
+            org.niord.core.publication.series.vo.SourceIssueRefVo ref =
+                    s.publicId() == null ? null : named.get(s.publicId());
+            groups.add(new IssueRenderService.RenderGroup(
+                    s.publicId(),
+                    ref == null ? null : ref.getName(),
+                    ref == null ? null : ref.getWeek(),
+                    ref == null ? null : ref.getWeekTo(),
+                    ref == null ? null : ref.getYear(),
+                    ref == null ? null : ref.getCutoff(),
+                    s.messageIds(),
+                    s.manual()));
+        }
+        return groups;
+    }
+
+    /**
+     * The sections and the rows in each, before anything is named.
+     *
+     * The whole of the sectioning rule and none of the lookups, so that which
+     * sections exist -- and which of them are empty -- is decided in one place
+     * that can be stated on its own. The naming that follows reads these and
+     * cannot change them.
+     *
+     * Package-private: the rule is the defect this document had, and it is worth
+     * asserting directly rather than only through a release.
+     */
+    static List<IssueRenderService.RenderGroup> sectionsOf(List<IssueOrdering.Orderable> ordered,
+                                                          Map<String, String> sourceByUid,
+                                                          List<String> sourceIssueIds) {
+        if (sourceByUid == null) {
+            return null;
+        }
         Map<String, List<String>> bySource = new LinkedHashMap<>();
+        // Every covered source issue first, and in the covered order, so the empty
+        // ones are already in place before a single row is looked at.
+        if (sourceIssueIds != null) {
+            for (String id : sourceIssueIds) {
+                bySource.computeIfAbsent(id, k -> new ArrayList<>());
+            }
+        }
         List<String> byHand = new ArrayList<>();
         for (IssueOrdering.Orderable o : ordered) {
             String sourceId = sourceByUid.get(o.uid());
             if (sourceId == null) {
                 byHand.add(o.uid());
             } else {
+                // A source the covered list does not name lands here, after the
+                // covered ones and in arrival order: the two facts come from
+                // different reads, and a row must never vanish from the print
+                // because they disagreed.
                 bySource.computeIfAbsent(sourceId, k -> new ArrayList<>()).add(o.uid());
             }
         }
 
-        Map<String, org.niord.core.publication.series.vo.SourceIssueRefVo> named =
-                memberList.sourceRefsOf(bySource.keySet(), lang);
-
-        List<IssueRenderService.RenderGroup> groups = new ArrayList<>();
+        List<IssueRenderService.RenderGroup> sections = new ArrayList<>();
         for (Map.Entry<String, List<String>> e : bySource.entrySet()) {
-            org.niord.core.publication.series.vo.SourceIssueRefVo ref = named.get(e.getKey());
-            groups.add(new IssueRenderService.RenderGroup(
-                    e.getKey(),
-                    ref == null ? null : ref.getName(),
-                    ref == null ? null : ref.getWeek(),
-                    ref == null ? null : ref.getWeekTo(),
-                    ref == null ? null : ref.getYear(),
-                    ref == null ? null : ref.getCutoff(),
-                    List.copyOf(e.getValue()),
-                    false));
+            sections.add(new IssueRenderService.RenderGroup(e.getKey(), null, null, null, null, null,
+                    List.copyOf(e.getValue()), false));
         }
         // Last, and headed as what it is. These members came from no earlier
         // document, so filing them under a week would print them under a heading
         // that says a week contained them when it did not.
         if (!byHand.isEmpty()) {
-            groups.add(new IssueRenderService.RenderGroup(null, null, null, null, null, null,
+            sections.add(new IssueRenderService.RenderGroup(null, null, null, null, null, null,
                     List.copyOf(byHand), true));
         }
-        return groups;
+        return sections;
     }
 
     /**
@@ -1073,6 +1136,41 @@ public class IssuePublishService extends BaseService {
             out.put(m.getMessageUid(), m.getSourceIssuePublicId());
         }
         return out;
+    }
+
+    /**
+     * Which source issues this release covered, in printed order, or null on an
+     * issue that compiled nothing.
+     *
+     * The snapshot header rather than the frozen rows, because the rows cannot
+     * answer for a week that filed nothing -- and that week is exactly the one a
+     * document has to keep printing a section for. It is the same column the
+     * sources panel reads, split by the same splitter, so the screen and the
+     * document name the same weeks in the same order.
+     */
+    private static List<String> frozenSourceIssueOrder(PublicationIssue issue) {
+        if (issue.getMembershipProvenance() != MembershipProvenance.COMPILED) {
+            return null;
+        }
+        return PublicationIssue.splitIds(issue.getSnapshotSourceIssueIds());
+    }
+
+    /**
+     * The same list before anything is frozen: the published sources the survey
+     * found over this window.
+     *
+     * The survey is what the freeze will write into the header, so a preview
+     * built from it is sectioned exactly as the release will be -- and an admin
+     * who sees an empty week in the preview sees it in the document.
+     */
+    private static List<String> liveSourceIssueOrder(MemberResolutionService.Resolution resolution) {
+        if (resolution == null || !resolution.compiled() || resolution.survey() == null) {
+            return null;
+        }
+        return resolution.survey().published().stream()
+                .map(CompilationResolver.SourceIssue::publicId)
+                .filter(java.util.Objects::nonNull)
+                .toList();
     }
 
     /** The same map before anything is frozen: what the live resolution decided. */

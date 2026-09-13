@@ -9,6 +9,12 @@
     partition the ordered "messages" list rather than duplicating it, so a section
     can never print something the list does not contain.
 
+    A section whose id list is empty is a week that printed nothing, and it is
+    still listed and still printed -- with its heading and one sentence in place
+    of the tables. The sections are the record of what the year covered, and a
+    year that quietly prints fifty-one of its fifty-two weeks is a document
+    claiming a week was never covered.
+
     A model with no groups still renders: the flat list under one heading. That is
     what a preview of an unsourced issue, or any other report pointed at this
     template, produces.
@@ -140,6 +146,12 @@
             border-bottom: 1px solid #999999;
             padding-bottom: 1mm;
         }
+        /* The sentence a section with nothing in it carries: the intro's text
+           size, and none of its cover-page spacing or page break. */
+        .group-empty {
+            font-size: 12px;
+            margin-top: 4mm;
+        }
     </style>
 
 </head>
@@ -180,10 +192,10 @@
         <h2>${text("pdf.toc")}</h2>
         <ol class='toc'>
             <#list groups as group>
-                <#-- A section nothing was filed under is not printed, so it is not listed. -->
-                <#if group.messageIds?has_content>
-                    <li><a href='#group_${group?index}'><@groupTitle group=group /></a></li>
-                </#if>
+                <#-- Every section, the empty ones included: the contents list what
+                     the year covered, and a week missing from it reads as a week
+                     that was never covered at all. -->
+                <li><a href='#group_${group?index}'><@groupTitle group=group /></a></li>
             </#list>
         </ol>
     </div>
@@ -199,33 +211,42 @@
 
     <#list groups as group>
         <#assign groupMessages = messagesOfGroup(group) />
+
+        <#-- EVERY section is printed, including one nothing was filed under. The
+             sections are the record of what the year covered, so a week that
+             printed nothing still gets its heading and says so in a sentence; a
+             year that quietly prints fifty-one of its fifty-two weeks is a
+             document claiming a week was never covered. -->
+
+        <#if !group?is_first>
+            <div class="page-break"></div>
+        </#if>
+
+        <div class="group-header">
+            <h3 id="group_${group?index}"><@groupTitle group=group /></h3>
+            <table class="group-info-line" width="100%">
+                <tr>
+                    <td width="40%" align="left">
+                        <#if !group.manual && group.week??>
+                            ${text('pdf.week')} ${group.week?c}<#if group.weekTo?? && group.weekTo != group.week> - ${group.weekTo?c}</#if><#if group.year??>, ${group.year?c}</#if>
+                        </#if>
+                    </td>
+                    <td width="30%" align="center">
+                        <#if group.cutoff??>
+                            <#-- ?datetime because a Date arrives without a declared kind -->
+                            ${text('pdf.accumulated.cutoff')}: ${group.cutoff?datetime?string["dd. MMMM yyyy"]}
+                        </#if>
+                    </td>
+                    <#-- No range where there are no numbers to range over. -->
+                    <td width="30%" align="right"><#if groupMessages?has_content><@numberRange msgs=groupMessages /></#if></td>
+                </tr>
+            </table>
+        </div>
+
         <#if groupMessages?has_content>
-
-            <#if !group?is_first>
-                <div class="page-break"></div>
-            </#if>
-
-            <div class="group-header">
-                <h3 id="group_${group?index}"><@groupTitle group=group /></h3>
-                <table class="group-info-line" width="100%">
-                    <tr>
-                        <td width="40%" align="left">
-                            <#if !group.manual && group.week??>
-                                ${text('pdf.week')} ${group.week?c}<#if group.weekTo?? && group.weekTo != group.week> - ${group.weekTo?c}</#if><#if group.year??>, ${group.year?c}</#if>
-                            </#if>
-                        </td>
-                        <td width="30%" align="center">
-                            <#if group.cutoff??>
-                                <#-- ?datetime because a Date arrives without a declared kind -->
-                                ${text('pdf.accumulated.cutoff')}: ${group.cutoff?datetime?string["dd. MMMM yyyy"]}
-                            </#if>
-                        </td>
-                        <td width="30%" align="right"><@numberRange msgs=groupMessages /></td>
-                    </tr>
-                </table>
-            </div>
-
             <@renderGroupBody msgs=groupMessages prefix="g${group?index}"/>
+        <#else>
+            <p class="group-empty">${text('pdf.accumulated.no_messages')}</p>
         </#if>
     </#list>
 

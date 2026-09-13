@@ -83,6 +83,11 @@ public class InForceCadenceTest {
     @Inject
     EntityManager em;
 
+    // The successor is named by its public id, so it is looked up the way a client
+    // would have to: by the one address an issue has outside the database.
+    @Inject
+    PublicationIssueService issues;
+
     // ------------------------------------------------------------------ fixtures
 
     /** Noon Copenhagen on a given day -- the shape the weekly cut-off has. */
@@ -187,7 +192,7 @@ public class InForceCadenceTest {
 
         em.flush();
         em.clear();
-        PublicationIssue successor = em.find(PublicationIssue.class, result.successorId());
+        PublicationIssue successor = issues.findByPublicId(result.successorId());
 
         assertEquals(IssueStatus.OPEN, successor.getStatus());
         assertNull(successor.getIntervalFrom(),
@@ -264,7 +269,7 @@ public class InForceCadenceTest {
 
         em.flush();
         em.clear();
-        PublicationIssue successor = em.find(PublicationIssue.class, result.successorId());
+        PublicationIssue successor = issues.findByPublicId(result.successorId());
         assertNull(successor.getIntervalFrom());
         assertEquals(noon(2027, 1, 14), successor.getIntervalTo(),
                 "an annual edition's successor closes a year on, not a week on");
@@ -302,7 +307,7 @@ public class InForceCadenceTest {
 
         em.flush();
         em.clear();
-        PublicationIssue successor = em.find(PublicationIssue.class, result.successorId());
+        PublicationIssue successor = issues.findByPublicId(result.successorId());
         assertEquals(new Date(stamp.getTime() + WEEK), successor.getIntervalTo(),
                 "the successor closes one period after a row nothing released, instead of one "
                         + "period after the cut-off this release recorded");
@@ -341,7 +346,7 @@ public class InForceCadenceTest {
 
         em.flush();
         em.clear();
-        PublicationIssue successor = em.find(PublicationIssue.class, result.successorId());
+        PublicationIssue successor = issues.findByPublicId(result.successorId());
         assertNull(successor.getIntervalFrom(),
                 "a series that selects nothing by query has no window to open");
         assertEquals(new Date(stamp.getTime() + WEEK), successor.getIntervalTo());
