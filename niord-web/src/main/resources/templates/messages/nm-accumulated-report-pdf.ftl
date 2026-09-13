@@ -162,9 +162,12 @@
 
 
 <#--
-    First page. The year is the one the issue was numbered with, and the volume
-    is counted from it -- never from the clock, which would stamp the year of
-    printing on a document of a year that has been over for months.
+    First page. ${year} is the year LABEL and prints exactly as it was typed:
+    free text, in letters as readily as in digits. The volume is counted from
+    ${yearNumber}, the year the numbering derived -- never from the label, which
+    is not arithmetic to do, and never from the clock, which would stamp the year
+    of printing on a document of a year that has been over for months. An issue
+    whose numbering derived no year prints no volume line at all.
 -->
 <h1>${text("pdf.accumulated.title")}</h1>
 
@@ -181,7 +184,7 @@
         </td>
         <td width="25%" align="center">ISSN ${ISSN!""}</td>
         <td width="25%" align="center">
-            <#if year?has_content>${text('pdf.volume', (year?number - 1884))}</#if>
+            <#if yearNumber??>${text('pdf.volume', (yearNumber - 1884))}</#if>
         </td>
         <td width="25%" align="right"><@numberRange msgs=messages /></td>
     </tr>

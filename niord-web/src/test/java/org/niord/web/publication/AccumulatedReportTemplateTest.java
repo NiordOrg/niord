@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -81,11 +82,25 @@ public class AccumulatedReportTemplateTest {
             </#macro>
             """;
 
-    /** The dictionary, stood in for: every label answers with its own key. */
+    /**
+     * The dictionary, stood in for: every label answers with its own key.
+     *
+     * A label that takes arguments answers with them in brackets after the key,
+     * because for one of them -- the volume -- the argument is the whole point:
+     * it is computed rather than printed, and a stub that swallowed it would let
+     * the document count the volume from anything at all.
+     */
     private static class KeyText implements TemplateMethodModelEx {
         @Override
         public Object exec(List arguments) {
-            return arguments.isEmpty() ? "" : String.valueOf(arguments.get(0));
+            if (arguments.isEmpty()) {
+                return "";
+            }
+            StringBuilder out = new StringBuilder(String.valueOf(arguments.get(0)));
+            for (int i = 1; i < arguments.size(); i++) {
+                out.append(i == 1 ? "(" : ",").append(String.valueOf(arguments.get(i)));
+            }
+            return arguments.size() > 1 ? out.append(")").toString() : out.toString();
         }
     }
 
@@ -162,6 +177,7 @@ public class AccumulatedReportTemplateTest {
         model.put("groups", groups);
         model.put("areaHeadings", true);
         model.put("year", "2024");
+        model.put("yearNumber", 2024);
         model.put("edition", "1");
         model.put("ISSN", "1397-999X");
         model.put("timeZone", "Europe/Copenhagen");
@@ -194,6 +210,7 @@ public class AccumulatedReportTemplateTest {
         model.put("groups", groups);
         model.put("areaHeadings", true);
         model.put("year", "2024");
+        model.put("yearNumber", 2024);
         model.put("edition", "1");
         model.put("ISSN", "1397-999X");
         model.put("timeZone", "Europe/Copenhagen");
@@ -284,6 +301,67 @@ public class AccumulatedReportTemplateTest {
         // can be navigated by week.
         assertTrue(html.indexOf("pdf.toc") < html.indexOf("NtM 11/2024"),
                 "the table of contents does not precede the first week");
+    }
+
+    /**
+     * The year prints as it was typed, and the volume is counted from the year
+     * the numbering derived.
+     *
+     * THE DEFECT THIS PINS. The volume line did the arithmetic on the printed
+     * year -- {@code year?number - 1884} -- and the printed year is a free-text
+     * label. A publication that writes its year out in words made {@code ?number}
+     * throw, and the whole document failed to render rather than losing one cell
+     * of one table. The label and the derived number are two different values and
+     * only one of them is arithmetic.
+     */
+    @Test
+    public void thevolumeIsCountedFromTheDerivedYearWhileTheCoverPrintsTheLabel() throws Exception {
+        Map<String, Object> model = yearOfTwoWeeks();
+        model.put("year", "Two thousand");
+        model.put("yearNumber", 2024);
+
+        String html = render(model);
+
+        assertTrue(html.contains("Two thousand"),
+                "the cover does not print the year the edition is called");
+        assertTrue(html.contains("pdf.volume(140)"),
+                "the volume is not counted from the year the numbering derived");
+    }
+
+    /**
+     * An edition the numbering derived no year for prints no volume, and still
+     * prints.
+     *
+     * A missing number is not a zero and not a guess: the cell is empty, and
+     * every other part of the document is unaffected.
+     */
+    @Test
+    public void anEditionWithNoDerivedYearPrintsNoVolumeAndStillRenders() throws Exception {
+        Map<String, Object> model = yearOfTwoWeeks();
+        model.remove("yearNumber");
+
+        String html = render(model);
+
+        assertTrue(html.contains("2024"), "the cover lost the year the edition is called");
+        assertFalse(html.contains("pdf.volume"),
+                "a volume was printed for an edition whose numbering derived no year to count from");
+        assertEquals(List.of("g0:uid-11a", "g0misc:uid-11b", "g1:uid-12a", "g1:uid-12b",
+                        "g2:uid-hand"),
+                printed(html),
+                "the missing volume changed what the document prints");
+    }
+
+    /** And a week written as two weeks is text to this document, never arithmetic. */
+    @Test
+    public void afreeTextWeekLabelRenders() throws Exception {
+        Map<String, Object> model = yearOfTwoWeeks();
+        model.put("week", "36+37");
+        model.put("weekTo", "");
+
+        String html = render(model);
+
+        assertTrue(html.contains("pdf.volume(140)"),
+                "a free-text week label reached arithmetic somewhere in the document");
     }
 
     /**

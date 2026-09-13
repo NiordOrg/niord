@@ -439,7 +439,8 @@ public final class SeriesValidator {
                             + "manual gate"));
         }
 
-        // S-23. week, year, weekTo and edition are INJECTED into every report
+        // S-23. week, year, weekTo and edition -- and the derived yearNumber and
+        // weekNumber beside them -- are INJECTED into every report
         // from the issue being rendered. Typing one as a report parameter puts a
         // second, fixed answer beside the derived one, and which of the two the
         // template reads is a question about parameter order rather than about
@@ -621,9 +622,14 @@ public final class SeriesValidator {
      * Matched case-insensitively and after trimming, because the failure this
      * prevents is a typo rather than an attack, and "Week " reaching a template
      * beside the injected week is the same problem spelled differently.
+     *
+     * Six names for four values: beside the four the document PRINTS, the render
+     * also carries the two numbers the numbering derived, for a template that has
+     * to compute from a year rather than print it. Typed here, either of those
+     * would put a fixed number under the name of a derived one.
      */
     public static final Set<String> RESERVED_REPORT_PARAMS =
-            Set.of("week", "weekto", "year", "edition");
+            Set.of("week", "weekto", "year", "edition", "yearnumber", "weeknumber");
 
     /**
      * Whether a stored zone name is one java.time can actually read.

@@ -970,8 +970,21 @@ public class IssuePublishService extends BaseService {
         // It is also what makes a printed label reach the report at all. The
         // heading, the title and the file name are three renderings of one
         // decision, and they read it through the same resolution -- see
-        // PrintedNumbering. Verified against the shipped templates: every one of
-        // them interpolates these tokens and none does arithmetic on them.
+        // PrintedNumbering.
+        //
+        // TWO KINDS OF TOKEN, AND THEY MUST NEVER BE CONFUSED. The four strings
+        // are what the document PRINTS, and they are free text: a week may be
+        // called "36+37" and a year anything an editor typed, in letters as
+        // readily as in digits. The two numbers below are what the numbering
+        // DERIVED, and they exist for the one kind of thing a template may
+        // legitimately compute from a year -- a volume counted from the year the
+        // publication started. A template that did the arithmetic on the printed
+        // string instead would fail the whole render the first time a year was
+        // written out in words.
+        //
+        // Either number may be absent, and FreeMarker then treats the variable as
+        // missing, so a template guards with ?? and prints nothing rather than
+        // printing a wrong number.
         // THE ZONE THE DOCUMENT'S DATES ARE PRINTED IN, taken from the series and
         // not from whoever is rendering it. A cut-off stamped at 23:00 UTC is the
         // next day in Copenhagen, so the zone decides which day a heading names --
@@ -983,6 +996,8 @@ public class IssuePublishService extends BaseService {
         params.put("weekTo", PrintedNumbering.printedWeekTo(issue));
         params.put("year", PrintedNumbering.printedYear(issue));
         params.put("edition", issue.getEdition());
+        params.put("yearNumber", issue.getYear());
+        params.put("weekNumber", issue.getWeek());
 
         boolean areaHeadings = "AREA".equalsIgnoreCase(series.getMessageSortBy());
 

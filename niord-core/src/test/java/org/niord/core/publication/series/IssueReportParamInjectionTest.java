@@ -219,6 +219,55 @@ public class IssueReportParamInjectionTest {
                 "the report still prints the derived week while the title says two");
     }
 
+    /**
+     * And the numbers the issue was DERIVED with travel beside the labels.
+     *
+     * A document may have to compute from a year rather than print it -- the
+     * accumulated edition counts its volume from the year the publication
+     * started -- and the printed year is free text, so the arithmetic cannot be
+     * done on it. These two are the derived numbers, and they are numbers.
+     */
+    @Test
+    @Transactional
+    public void thederivedNumbersAreInjectedBesideThePrintedLabels() {
+        PublicationIssue i = issue(series());
+        em.flush();
+
+        Map<String, Object> params = paramsFromPublishing(i);
+
+        assertInstanceOf(Integer.class, params.get("yearNumber"),
+                "a template that counts a volume from the year has nothing numeric to count from");
+        assertEquals(2026, params.get("yearNumber"));
+        assertInstanceOf(Integer.class, params.get("weekNumber"));
+        assertEquals(36, params.get("weekNumber"));
+    }
+
+    /**
+     * A year written out in words prints as it was written, and the volume is
+     * still counted.
+     *
+     * THE DEFECT THIS PINS. The accumulated template did its volume arithmetic on
+     * the printed year, and a label such as "Two thousand" made the conversion
+     * throw -- so the whole document failed to render rather than losing one cell
+     * of one table. The two values are separate, and only one of them is a number.
+     */
+    @Test
+    @Transactional
+    public void ayearLabelInWordsLeavesTheDerivedYearToCountFrom() {
+        PublicationIssue i = issue(series());
+        em.flush();
+        editService.update(i, new IssueEditService.IssueEdit(null, null, null, null, null, false,
+                null, null, "Two thousand", null, null), user());
+        em.flush();
+
+        Map<String, Object> params = paramsFromPublishing(i);
+
+        assertEquals("Two thousand", params.get("year"),
+                "the document prints a year the edition is not called");
+        assertEquals(2026, params.get("yearNumber"),
+                "the label overwrote the derived number, and the arithmetic a template does on it");
+    }
+
     /** The series' own parameters still travel, and the injection sits on top of them. */
     @Test
     @Transactional
@@ -343,12 +392,14 @@ public class IssueReportParamInjectionTest {
                         + "zone the request or the container happens to be in");
     }
 
-    /** And the reserved set is exactly the four the numbering supplies. */
+    /** And the reserved set is exactly what the numbering supplies. */
     @Test
     public void thereservedSetIsTheNumbering() {
-        assertEquals(java.util.Set.of("week", "weekto", "year", "edition"),
+        assertEquals(java.util.Set.of("week", "weekto", "year", "edition",
+                        "yearnumber", "weeknumber"),
                 SeriesValidator.RESERVED_REPORT_PARAMS,
-                "the reserved set moved; these four are injected from the edition's numbering and "
-                        + "typing one puts a second, fixed answer beside the derived one");
+                "the reserved set moved; every one of these is injected from the edition's "
+                        + "numbering and typing one puts a second, fixed answer beside the "
+                        + "derived one");
     }
 }

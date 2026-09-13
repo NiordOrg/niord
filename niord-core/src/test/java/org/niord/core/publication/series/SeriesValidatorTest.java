@@ -585,14 +585,21 @@ public class SeriesValidatorTest {
         assertFires("S-22", s);
     }
 
-    /** The four report parameters the issue supplies cannot be typed, in any spelling. */
+    /**
+     * The report parameters the issue supplies cannot be typed, in any spelling.
+     *
+     * The printed labels and the derived numbers alike: a typed yearNumber is the
+     * same mistake as a typed year, and it lands where a template does arithmetic
+     * rather than where one prints.
+     */
     @Test
     public void reservedReportParametersAreRefusedInAnySpelling() {
         PublicationSeries s = valid();
         s.getReportParams().put("landscape", "true");
         assertDoesNotFire("S-23", s);
 
-        for (String key : List.of("week", "weekTo", "WEEKTO", " year ", "Edition")) {
+        for (String key : List.of("week", "weekTo", "WEEKTO", " year ", "Edition",
+                "yearNumber", "WeekNumber")) {
             PublicationSeries t = valid();
             t.getReportParams().put(key, "1");
             assertFires("S-23", t);
