@@ -487,4 +487,62 @@ public class InForceCadenceTest {
         assertNull(published.getWeekTo(),
                 "a year is one period of a yearly publication, and it is not fifty-two weeks of one");
     }
+
+    // ------------------------------------------------- the successor's own year
+
+    /** The last instant of a year, in the series' zone: where an annual period closes. */
+    private static Date endOf(int year) {
+        return Date.from(ZonedDateTime.of(year, 12, 31, 23, 59, 59, 999_000_000, CPH).toInstant());
+    }
+
+    /**
+     * THE SUCCESSOR OF AN ANNUAL EDITION IS NAMED FOR THE YEAR IT CLOSES.
+     *
+     * Publishing the 2025 accumulated edition opens the 2026 one, closing at the
+     * end of 2026 -- and 31 December 2026 falls in ISO week 53, which a
+     * week-numbered publication would pair with 2026 and an annual one names for
+     * 2026 as well. What must not happen is the two disagreeing: the stored year
+     * and the name are derived from one set of numbers, so this asserts them
+     * together rather than either alone.
+     */
+    @Test
+    @Transactional
+    public void thesuccessorOfAnAnnualEditionIsNamedForTheYearItCloses() {
+        PublicationSeries s = series(SeriesCadence.YEARLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                NextIssueCreation.AUTO_ON_PUBLISH, SeriesStatus.ACTIVE);
+        s.setNumberingScheme(NumberingScheme.YEAR_EDITION);
+        s.setCutoffDefault(CutoffDefault.PERIOD_END);
+        s.getDescs().get(0).setNameSuggestionPattern("Accumulated NtM - ${year}");
+        // The edition selects nothing on purpose. What is under test is the issue
+        // this release OPENS, and a year-long window over the corpus this database
+        // is shared with trips the member cap -- which refuses the publish before a
+        // successor is ever minted, for a reason having nothing to do with naming.
+        IssueCriteriaVo selectsNothing = new IssueCriteriaVo();
+        MessageSeriesCriterionVo node = new MessageSeriesCriterionVo();
+        node.setValues(new ArrayList<>(List.of("no-such-message-series")));
+        selectsNothing.getCriteria().add(node);
+        s.setCriteria(selectsNothing);
+        em.merge(s);
+
+        PublicationIssue annual2025 = openIssue(s);
+        annual2025.setIntervalFrom(endOf(2024));
+        annual2025.setIntervalFromSource(IntervalBoundSource.STAMPED);
+        annual2025.setIntervalTo(endOf(2025));
+        annual2025.setIntervalToSource(IntervalBoundSource.NOMINAL);
+        em.merge(annual2025);
+        em.flush();
+
+        var result = publish(annual2025, endOf(2025));
+        assertNotNull(result.successorId());
+
+        em.flush();
+        em.clear();
+        PublicationIssue successor = issues.findByPublicId(result.successorId());
+
+        assertEquals(endOf(2026), successor.getIntervalTo(),
+                "the successor covers the year after the one just released");
+        assertEquals(2026, successor.getYear());
+        assertEquals("Accumulated NtM - 2026", successor.getDescs().get(0).getName(),
+                "the successor's name and its stored year name two different years");
+    }
 }

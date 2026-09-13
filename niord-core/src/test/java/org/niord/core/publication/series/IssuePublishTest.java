@@ -1584,6 +1584,73 @@ public class IssuePublishTest {
         assertEquals(List.of(), groups.get(1).messageIds());
     }
 
+    // ------------------------------------------- the instant a preview answers at
+
+    /**
+     * A PERIOD-END COMPILATION PREVIEWS AT ITS PLANNED END, NOT AT THE CLOCK.
+     *
+     * A preview is what the release would print, and the release of a period-end
+     * issue is stamped at the end of the period it describes -- the publish bounds
+     * its own window there. Previewed against the clock instead, an accumulated
+     * annual whose year closed long ago drew in every source issue published
+     * since: the recreated 2025 edition, previewed the following September,
+     * sectioned weeks 1 to 37 of 2026 after week 52 of 2025, and no release would
+     * ever have produced that document.
+     */
+    @Test
+    @Transactional
+    public void aperiodEndCompilationPreviewsAsOfItsPlannedEndRatherThanTheClock() {
+        Compiled e = compiledEstate();
+        e.annual().setCutoffDefault(CutoffDefault.PERIOD_END);
+        em.merge(e.annual());
+
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+        // The planned end falls between the two source weeks and is long past, so
+        // the second week is exactly what the clock would pull in and the planned
+        // instant would not.
+        annualIssue.setIntervalTo(new Date(1_699_150_000_000L));
+        annualIssue.setIntervalToSource(IntervalBoundSource.NOMINAL);
+        em.merge(annualIssue);
+        em.flush();
+
+        StubIssueRenderService.reset();
+        publishService.preview(annualIssue.getId());
+
+        List<IssueRenderService.RenderGroup> groups = StubIssueRenderService.lastRequest().groups();
+        assertEquals(List.of(e.week1().getPublicId()),
+                groups.stream().map(IssueRenderService.RenderGroup::publicId).toList(),
+                "the preview compiled a week published after the period it describes had closed");
+        assertEquals(List.of(e.a().getUid(), e.b().getUid()), groups.get(0).messageIds(),
+                "and printed that week's rows with it");
+    }
+
+    /**
+     * And a release-moment series still resolves as of now.
+     *
+     * Its cut-off IS the release action, so there is no planned instant to answer
+     * at and nothing about its preview moves. The same estate and the same past
+     * nominal close, differing only in where the series says its cut-off falls.
+     */
+    @Test
+    @Transactional
+    public void areleaseMomentCompilationStillPreviewsAsOfNow() {
+        Compiled e = compiledEstate();
+
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+        annualIssue.setIntervalTo(new Date(1_699_150_000_000L));
+        annualIssue.setIntervalToSource(IntervalBoundSource.NOMINAL);
+        em.merge(annualIssue);
+        em.flush();
+
+        StubIssueRenderService.reset();
+        publishService.preview(annualIssue.getId());
+
+        List<IssueRenderService.RenderGroup> groups = StubIssueRenderService.lastRequest().groups();
+        assertEquals(List.of(e.week1().getPublicId(), e.week2().getPublicId()),
+                groups.stream().map(IssueRenderService.RenderGroup::publicId).toList(),
+                "a release-moment preview stopped at a nominal close the release would not stop at");
+    }
+
     /**
      * A row whose source the covered list does not name still prints.
      *

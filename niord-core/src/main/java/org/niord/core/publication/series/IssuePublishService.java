@@ -798,12 +798,15 @@ public class IssuePublishService extends BaseService {
         }
 
         Date now = new Date();
+        // The instant this preview answers as of, which for a period-end issue
+        // whose period has closed is that planned end rather than the clock.
+        Date at = previewInstant(issue, series, now);
         MembershipRegime regime = MembershipRegime.of(series);
         IssueCriteriaVo effective = EffectiveCriteria.documentOf(issue);
         boolean hasMembership = regime == MembershipRegime.QUERY && effective != null;
         Set<String> curated = includes(issue);
         curated.removeAll(excludes(issue));
-        Interval window = new Interval(issue.getIntervalFrom(), now);
+        Interval window = new Interval(issue.getIntervalFrom(), at);
         MemberResolutionService.Resolution resolution;
         if (regime == MembershipRegime.COMPILED) {
             resolution = compilations.resolve(series.getSourceSeries(), window,
@@ -844,9 +847,40 @@ public class IssuePublishService extends BaseService {
             // Named from the cut-off the publish would use, not from the clock: a
             // preview of last year's accumulated list generated in January carries
             // last year's tokens, exactly as the published file will.
-            out.add(previews.record(issue, lang, fileNameFor(issue, series, desc, defaultCutoff(issue, series, now)), bytes));
+            //
+            // The PLANNED cut-off, uncapped, and that is why this is not the
+            // instant the window closed at. The name is a promise about the file
+            // the release will write, and the release of a period that has not
+            // closed yet will still stamp it at that period's end -- so a preview
+            // taken mid-period shows the name the document will have, while its
+            // contents are what stands today. The two coincide the moment the
+            // planned end is in the past, which is every case the window rule
+            // exists for.
+            out.add(previews.record(issue, lang,
+                    fileNameFor(issue, series, desc, defaultCutoff(issue, series, now)), bytes));
         }
         return out;
+    }
+
+    /**
+     * The instant a preview resolves as of.
+     *
+     * A PREVIEW IS WHAT THE RELEASE WOULD PRINT, and the release of a period-end
+     * issue is stamped at its planned end rather than at the moment somebody
+     * pressed the button -- {@link #resolveFreezeAndWrite} bounds its window at
+     * the cut-off it stamps. Resolved at the clock instead, an accumulated annual
+     * whose year closed long ago pulled in every source issue published since: the
+     * 2025 edition, previewed the following September, sectioned weeks 1-37 of
+     * 2026 after week 52 of 2025 -- a document no release would ever produce.
+     *
+     * CAPPED AT NOW, because a planned end still in the future is not a member set
+     * that exists: the period is still filling, and the preview answers for what
+     * stands today exactly as it always has. For a release-moment series the
+     * planned instant IS the clock, so nothing about a weekly preview moves.
+     */
+    private static Date previewInstant(PublicationIssue issue, PublicationSeries series, Date now) {
+        Date planned = defaultCutoff(issue, series, now);
+        return planned == null || planned.after(now) ? now : planned;
     }
 
     /**

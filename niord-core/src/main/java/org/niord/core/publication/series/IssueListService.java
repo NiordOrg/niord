@@ -392,8 +392,8 @@ public class IssueListService {
                 series.getStatus() == SeriesStatus.ACTIVE, dormant, periodMillis);
 
         return new Synthesis(gate, GapSynthesis.synthesize(gate, series.getSeriesId(),
-                ascending(issues), periodMillis, zone, patternsOf(series),
-                series.getFirstIssueStartsAt(), now), zone, periodMillis);
+                ascending(issues), periodMillis, zone, IssueShape.yearBasisOf(series),
+                patternsOf(series), series.getFirstIssueStartsAt(), now), zone, periodMillis);
     }
 
     /**
@@ -458,7 +458,7 @@ public class IssueListService {
             row.setWeekTo(issue.getWeekTo());
             row.setEdition(issue.getEdition());
         } else {
-            IssueNaming.Numbers numbers = numbersOf(issue.effectiveCutoff(), zone);
+            IssueNaming.Numbers numbers = numbersOf(issue.effectiveCutoff(), series, zone);
             if (numbers != null) {
                 row.setWeek(numbers.week());
                 row.setYear(numbers.year());
@@ -469,7 +469,7 @@ public class IssueListService {
         // strip has to agree with the list beside it.
         row.setLabel(nameOf(issue, lang));
         if (row.getLabel() == null) {
-            row.setLabel(fallbackLabel(series, numbersOf(issue.effectiveCutoff(), zone)));
+            row.setLabel(fallbackLabel(series, numbersOf(issue.effectiveCutoff(), series, zone)));
         }
         return row;
     }
@@ -484,7 +484,7 @@ public class IssueListService {
         row.setIntervalFrom(pseudo.intervalFrom());
         row.setIntervalTo(pseudo.intervalTo());
 
-        IssueNaming.Numbers numbers = numbersOf(pseudo.intervalTo(), zone);
+        IssueNaming.Numbers numbers = numbersOf(pseudo.intervalTo(), series, zone);
         if (numbers != null) {
             row.setWeek(numbers.week());
             row.setYear(numbers.year());
@@ -500,11 +500,17 @@ public class IssueListService {
     }
 
     /** The naming numbers for a period's close, or null where there is no close. */
-    private static IssueNaming.Numbers numbersOf(Date close, ZoneId zone) {
+    private static IssueNaming.Numbers numbersOf(Date close, PublicationSeries series, ZoneId zone) {
         // intervalFrom is deliberately not passed: it is what turns a name into
         // the "week 26+27" double form, and that belongs to an issue somebody
         // authored, not to a cell describing one period.
-        return close == null ? null : IssueNaming.derive(close, null, zone, null);
+        //
+        // The series decides which year the cell shows, exactly as it decides the
+        // year stored on a real issue. A cell derived on the ISO basis alone put
+        // "2026" beside an annual period closing 31 December 2025, next to a row
+        // whose own stored year said 2025.
+        return close == null ? null
+                : IssueNaming.derive(close, null, zone, null, IssueShape.yearBasisOf(series));
     }
 
     /**

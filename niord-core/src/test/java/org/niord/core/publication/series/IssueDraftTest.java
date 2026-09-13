@@ -511,6 +511,67 @@ public class IssueDraftTest {
                 draft.getWarnings().toString());
     }
 
+    // ===================================================== which year it suggests
+
+    /** The accumulated-annual shape: a year-numbered series cut off at its period end. */
+    private PublicationSeries annualSeries(String namePattern) {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL, namePattern);
+        s.setCadence(SeriesCadence.YEARLY);
+        s.setNumberingScheme(NumberingScheme.YEAR_EDITION);
+        s.setCutoffDefault(CutoffDefault.PERIOD_END);
+        em.flush();
+        return s;
+    }
+
+    /** An instant in the series' zone, to the minute. */
+    private static Date at(int year, int month, int day, int hour, int minute) {
+        return Date.from(ZonedDateTime.of(year, month, day, hour, minute, 0, 0, ZONE).toInstant());
+    }
+
+    /**
+     * THE DRAFT FOR AN ANNUAL PERIOD SUGGESTS THE YEAR IT CLOSES.
+     *
+     * 31 December 2025 at 23:59 falls in ISO week 1 of 2026, and the draft derived
+     * ${year} on the week basis whatever the series was numbered by. So the create
+     * form offered "Accumulated NtM - 2026" for the 2025 edition -- and the issue
+     * created from that form was renumbered 2025 by the shaping the moment it
+     * existed, leaving the form and the row it produced disagreeing about the one
+     * decision the form was asking about.
+     */
+    @Test
+    @Transactional
+    public void anAnnualDraftSuggestsTheYearThePeriodCloses() {
+        PublicationSeries s = annualSeries("Accumulated NtM - ${year}");
+
+        IssueDraftVo draft = drafts.draft(s, null, at(2025, 1, 1, 0, 0),
+                at(2025, 12, 31, 23, 59), new Date(), "da");
+
+        assertEquals(2025, draft.getYear(),
+                "the period closes in 2025; the ISO week its boundary lands in is 2026");
+        assertEquals("Accumulated NtM - 2025", nameOf(draft, "da"),
+                "the create form offered the 2025 edition under the following year's name");
+    }
+
+    /**
+     * And the weekly is untouched at exactly the same boundary.
+     *
+     * A week closing on Wednesday 31 December 2025 IS week 1 of 2026, which is the
+     * pairing the ISO week-year exists for. Asserted beside the annual case so a
+     * change to either shows up as a change to the other.
+     */
+    @Test
+    @Transactional
+    public void aweeklyDraftClosingOnNewYearsEveIsStillIsoWeekOneOfTheNextYear() {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL, "EfS uge ${week}, ${year}");
+
+        IssueDraftVo draft = drafts.draft(s, null, at(2025, 12, 24, 12, 0),
+                at(2025, 12, 31, 12, 0), new Date(), "da");
+
+        assertEquals(1, draft.getWeek());
+        assertEquals(2026, draft.getYear());
+        assertEquals("EfS uge 1, 2026", nameOf(draft, "da"));
+    }
+
     // ======================================================== persists nothing
 
     /**

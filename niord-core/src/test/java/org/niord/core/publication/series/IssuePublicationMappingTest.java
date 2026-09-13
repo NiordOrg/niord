@@ -26,6 +26,8 @@ import org.niord.model.publication.PublicationDescVo;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.publication.PublicationVo;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -254,6 +256,50 @@ public class IssuePublicationMappingTest {
         issue.setYear(2019);
 
         assertEquals("2/2019", IssuePublicationMapping.citationFormat(issue, "da"));
+    }
+
+    /** An issue with no stored numbers, closing at the end of 2025 in its own zone. */
+    private static PublicationIssue closingAtTheEndOf2025() {
+        PublicationIssue issue = issue();
+        issue.setWeek(null);
+        issue.setYear(null);
+        // The start is dropped with them: it is read only to detect a multi-period
+        // window, and an eight-year-old one would report this as a double week.
+        issue.setIntervalFrom(null);
+        issue.setCutoffStampedAt(Date.from(ZonedDateTime.of(2025, 12, 31, 23, 59, 0, 0,
+                ZoneId.of("Europe/Copenhagen")).toInstant()));
+        return issue;
+    }
+
+    /**
+     * WITH NO STORED NUMBERS, THE SERIES' OWN YEAR BASIS DECIDES.
+     *
+     * The fallback derivation is what the archive's un-numbered rows are cited
+     * by, and it took the ISO week-year whatever the publication was numbered by.
+     * An annual edition closing at 31 December 2025 23:59 falls in ISO week 1 of
+     * 2026, so the citation printed into a message named it for the year after
+     * the one it covers -- beside a neighbouring issue that HAS stored numbers and
+     * says 2025.
+     */
+    @Test
+    public void anIssueWithNoStoredNumbersIsCitedOnTheSeriesYearBasis() {
+        PublicationIssue issue = closingAtTheEndOf2025();
+        issue.getSeries().setNumberingScheme(NumberingScheme.YEAR_EDITION);
+        issue.getSeries().setCutoffDefault(CutoffDefault.PERIOD_END);
+        issue.getSeries().createDesc("da").setMessageReferenceFormat("Akkumuleret EfS ${year}");
+
+        assertEquals("Akkumuleret EfS 2025", IssuePublicationMapping.citationFormat(issue, "da"));
+    }
+
+    /** And a week-numbered publication at the same boundary is still week 1 of 2026. */
+    @Test
+    public void aweekNumberedIssueAtTheSameBoundaryIsStillCitedAsTheNextWeekYear() {
+        PublicationIssue issue = closingAtTheEndOf2025();
+        issue.getSeries().setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
+        issue.getSeries().setCutoffDefault(CutoffDefault.RELEASE_MOMENT);
+        issue.getSeries().createDesc("da").setMessageReferenceFormat("EfS ${week}/${year}");
+
+        assertEquals("EfS 1/2026", IssuePublicationMapping.citationFormat(issue, "da"));
     }
 
     /** No format anywhere is null, not an exception and not the word "null". */

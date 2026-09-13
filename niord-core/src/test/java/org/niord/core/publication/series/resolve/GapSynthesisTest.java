@@ -44,6 +44,8 @@ public class GapSynthesisTest {
 
     private static final long WEEK = 7L * 24 * 3600_000L;
     private static final ZoneId CPH = ZoneId.of("Europe/Copenhagen");
+    /** The week-numbered basis every weekly case below is named on. */
+    private static final IssueNaming.YearBasis ISO = IssueNaming.YearBasis.ISO_WEEK_YEAR;
     private static final Map<String, GapSynthesis.Patterns> PATTERNS =
             Map.of("en", new GapSynthesis.Patterns("NtM Week ${week} - ${year}",
                     "ntm-${year}-${week}.pdf"));
@@ -91,7 +93,7 @@ public class GapSynthesisTest {
     public void aDoubleWeekIssueChainedFromThePreviousCloseLeavesNothingMissing() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(chained("before", wed(9), wed(10)), chained("double", wed(10), wed(12))),
-                WEEK, CPH, PATTERNS, null, wed(12));
+                WEEK, CPH, ISO, PATTERNS, null, wed(12));
 
         assertEquals(0, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
                 "the double week covered both periods; nothing is missing");
@@ -102,7 +104,7 @@ public class GapSynthesisTest {
     public void aStretchNoIntervalCoversIsMissingOnePeriodAtATime() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(chained("before", wed(9), wed(10)), chained("after", wed(12), wed(13))),
-                WEEK, CPH, PATTERNS, null, wed(13));
+                WEEK, CPH, ISO, PATTERNS, null, wed(13));
 
         List<GapSynthesis.Row> missing = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).toList();
@@ -121,7 +123,7 @@ public class GapSynthesisTest {
     public void anOpenNewestIssueIsLateNotMissing() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(chained("published", wed(39), wed(40)), open("working", wed(40), wed(41))),
-                WEEK, CPH, PATTERNS, null, new Date(wed(43).getTime() + 3600_000L));
+                WEEK, CPH, ISO, PATTERNS, null, new Date(wed(43).getTime() + 3600_000L));
 
         assertEquals(0, rows.size(), "an open issue three weeks late is late, and is its own row");
     }
@@ -143,7 +145,7 @@ public class GapSynthesisTest {
     public void aRetiredWeeksPeriodComesBackAsMissing() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(week("w33", 33), retiredWeek("w34", 34), week("w35", 35)),
-                WEEK, CPH, PATTERNS, null, wed(35));
+                WEEK, CPH, ISO, PATTERNS, null, wed(35));
 
         List<GapSynthesis.Row> missing = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).toList();
@@ -191,7 +193,7 @@ public class GapSynthesisTest {
 
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(week("w33", 33), withdrawn, replacement, week("w35", 35)),
-                WEEK, CPH, PATTERNS, null, wed(35));
+                WEEK, CPH, ISO, PATTERNS, null, wed(35));
 
         assertEquals(0, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
                 "the week went out twice and reads as never covered: " + rows);
@@ -202,7 +204,7 @@ public class GapSynthesisTest {
     public void aPublishedWeekBetweenTwoOthersIsNotMissing() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(week("w33", 33), week("w34", 34), week("w35", 35)),
-                WEEK, CPH, PATTERNS, null, wed(35));
+                WEEK, CPH, ISO, PATTERNS, null, wed(35));
 
         assertEquals(0, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
                 "a tidy chain reported a gap: " + rows);
@@ -221,7 +223,7 @@ public class GapSynthesisTest {
     public void retiringTheNewestIssueLeavesItsOwnPeriodMissing() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(week("w33", 33), week("w34", 34), retiredWeek("w35", 35)),
-                WEEK, CPH, PATTERNS, null, new Date(wed(35).getTime() + 3600_000L));
+                WEEK, CPH, ISO, PATTERNS, null, new Date(wed(35).getTime() + 3600_000L));
 
         List<GapSynthesis.Row> missing = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).toList();
@@ -245,7 +247,7 @@ public class GapSynthesisTest {
     @Test
     public void aSeriesWhoseOnlyIssueIsRetiredSynthesizesFromItsDeclaredStart() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
-                List.of(retiredWeek("w11", 11)), WEEK, CPH, PATTERNS, wed(10), wed(13));
+                List.of(retiredWeek("w11", 11)), WEEK, CPH, ISO, PATTERNS, wed(10), wed(13));
 
         assertEquals(3, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
                 "weeks 11, 12 and 13 are uncovered, got " + rows);
@@ -280,7 +282,7 @@ public class GapSynthesisTest {
 
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(gate, "dk-firing-areas",
                 List.of(issue("a", wed(2)), issue("b", wed(54))),
-                year, CPH, PATTERNS, null, wed(60));
+                year, CPH, ISO, PATTERNS, null, wed(60));
 
         assertEquals(1, rows.size(), "exactly the period being worked toward: " + rows);
         assertSame(GapSynthesis.RowKind.UPCOMING, rows.get(0).kind());
@@ -303,7 +305,7 @@ public class GapSynthesisTest {
 
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(gate, "weekly-pt",
                 List.of(issue("34", wed(34)), issue("36", wed(36))),
-                WEEK, CPH, PATTERNS, null, new Date(wed(36).getTime() + 3600_000L));
+                WEEK, CPH, ISO, PATTERNS, null, new Date(wed(36).getTime() + 3600_000L));
 
         assertEquals(1, rows.size(), "a fortnight between in-force releases was read as a hole: " + rows);
         assertSame(GapSynthesis.RowKind.UPCOMING, rows.get(0).kind());
@@ -327,7 +329,7 @@ public class GapSynthesisTest {
 
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(gate, "weekly-pt",
                 List.of(issue("34", wed(34)), withdrawn, issue("36", wed(36))),
-                WEEK, CPH, PATTERNS, null, new Date(wed(36).getTime() + 3600_000L));
+                WEEK, CPH, ISO, PATTERNS, null, new Date(wed(36).getTime() + 3600_000L));
 
         assertEquals(2, rows.size(), rows.toString());
         GapSynthesis.Row missing = rows.get(0);
@@ -352,7 +354,7 @@ public class GapSynthesisTest {
     public void anUnknownOpeningNamesTheWeeksBetweenTheIssuesNotTheNextIssuesOwn() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("a", wed(2)), issue("b", wed(5))),
-                WEEK, CPH, PATTERNS, null, new Date(wed(5).getTime() + 3600_000L));
+                WEEK, CPH, ISO, PATTERNS, null, new Date(wed(5).getTime() + 3600_000L));
 
         List<Integer> missingWeeks = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING)
@@ -380,7 +382,7 @@ public class GapSynthesisTest {
         assertFalse(draft.reason().isBlank(), "the gate must carry the reason a caller reports instead of a count");
         assertTrue(GapSynthesis.synthesize(draft, "weekly-ntm",
                 List.of(issue("a", wed(2)), issue("b", wed(5))),
-                WEEK, CPH, PATTERNS, null, wed(6)).isEmpty());
+                WEEK, CPH, ISO, PATTERNS, null, wed(6)).isEmpty());
     }
 
     // ------------------------------------------------- a series with no issues
@@ -402,7 +404,7 @@ public class GapSynthesisTest {
         // Declared to start at week 10; it is now week 13, so weeks 10, 11 and 12
         // have closed and week 13 is the one being worked toward.
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
-                List.of(), WEEK, CPH, PATTERNS, wed(10), wed(13));
+                List.of(), WEEK, CPH, ISO, PATTERNS, wed(10), wed(13));
 
         assertFalse(rows.isEmpty(),
                 "an activated series with no issues produced no rows, so there is nothing to "
@@ -417,7 +419,7 @@ public class GapSynthesisTest {
     @Test
     public void theFirstSynthesizedPeriodStartsAtTheDeclaredStart() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
-                List.of(), WEEK, CPH, PATTERNS, wed(10), wed(13));
+                List.of(), WEEK, CPH, ISO, PATTERNS, wed(10), wed(13));
 
         assertEquals(wed(10), rows.get(0).intervalFrom(),
                 "the first interval must open where firstIssueStartsAt says; opening it a "
@@ -434,7 +436,7 @@ public class GapSynthesisTest {
     @Test
     public void aSeriesWithNoIssuesAndNoDeclaredStartSynthesizesNothing() {
         assertTrue(GapSynthesis.synthesize(tiling(), "weekly-ntm",
-                List.of(), WEEK, CPH, PATTERNS, null, wed(13)).isEmpty());
+                List.of(), WEEK, CPH, ISO, PATTERNS, null, wed(13)).isEmpty());
     }
 
     // ---------------------------------------------------------------- the rows
@@ -444,7 +446,7 @@ public class GapSynthesisTest {
     public void aMissingWeekBecomesOneRowPerMissingPeriod() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("before", wed(10)), issue("after", wed(13))),
-                WEEK, CPH, PATTERNS, null, wed(13));
+                WEEK, CPH, ISO, PATTERNS, null, wed(13));
 
         List<GapSynthesis.Row> missing = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).toList();
@@ -467,7 +469,7 @@ public class GapSynthesisTest {
     public void theSuggestedNameComesFromTheIntervalEndNotItsStart() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("before", wed(20)), issue("after", wed(22))),
-                WEEK, CPH, PATTERNS, null, wed(22));
+                WEEK, CPH, ISO, PATTERNS, null, wed(22));
 
         GapSynthesis.Row gap = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).findFirst().orElseThrow();
@@ -492,7 +494,7 @@ public class GapSynthesisTest {
     public void thePeriodBeingWorkedTowardIsTheOnlyUpcomingRow() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("newest", wed(30))),
-                WEEK, CPH, PATTERNS, null, new Date(wed(31).getTime() - 3600_000L));
+                WEEK, CPH, ISO, PATTERNS, null, new Date(wed(31).getTime() - 3600_000L));
 
         List<GapSynthesis.Row> upcoming = rows.stream()
                 .filter(r -> r.kind() == GapSynthesis.RowKind.UPCOMING).toList();
@@ -513,7 +515,7 @@ public class GapSynthesisTest {
     public void periodsAfterTheNewestIssueAreMissingUntilTheOneStillOpen() {
         List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("newest", wed(40))),
-                WEEK, CPH, PATTERNS, null, new Date(wed(42).getTime() + 3600_000L));
+                WEEK, CPH, ISO, PATTERNS, null, new Date(wed(42).getTime() + 3600_000L));
 
         assertEquals(2, rows.stream().filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).count(),
                 "weeks 41 and 42 came and went with nothing published");
@@ -522,12 +524,74 @@ public class GapSynthesisTest {
                 "the open period sorts last");
     }
 
+    // ------------------------------------------------------- which year a gap is in
+
+    /** An instant in Copenhagen, to the millisecond. */
+    private static Date cph(int year, int month, int day, int hour, int minute, int second, int milli) {
+        return Date.from(ZonedDateTime.of(year, month, day, hour, minute, second,
+                milli * 1_000_000, CPH).toInstant());
+    }
+
+    /**
+     * AN ANNUAL GAP IS NAMED FOR THE YEAR IT CLOSES.
+     *
+     * The archive's gap row and the issue a retro-create makes from it are two
+     * renderings of one period, so they have to agree about what the period is
+     * called. A year closing on 31 December 2025 at 23:59 falls in ISO week 1 of
+     * 2026, and derived on the week basis the row offered "NtM Week 1 - 2026" for
+     * the missing 2025 edition -- prefilling the create form with a name, and a
+     * file name, for the year after the one the period covers.
+     */
+    @Test
+    public void anAnnualGapIsNamedForTheYearItClosesNotTheIsoWeekItsBoundaryLandsIn() {
+        GapDetection.Gate gate = GapDetection.gate(TimeRelation.PUBLISHED_IN_INTERVAL, "YEARLY",
+                true, false);
+        Date close2024 = cph(2024, 12, 31, 23, 59, 59, 999);
+        long year = GapDetection.periodMillisOf("YEARLY", CPH, close2024);
+
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(gate, "accumulated-yearly-ntm",
+                List.of(issue("2024", close2024)),
+                year, CPH, IssueNaming.YearBasis.CALENDAR_YEAR, PATTERNS, null,
+                cph(2026, 1, 2, 12, 0, 0, 0));
+
+        GapSynthesis.Row missing = rows.stream()
+                .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).findFirst().orElseThrow();
+        assertEquals(cph(2025, 12, 31, 23, 59, 59, 999), missing.intervalTo(),
+                "the missing period is the one closing at the end of 2025");
+        assertEquals("NtM Week 1 - 2025", missing.suggestions().get("en").name(),
+                "the 2025 edition was offered under the following year's name");
+        assertEquals("ntm-2025-1.pdf", missing.suggestions().get("en").fileName(),
+                "and its file name -- which is the public download link -- with it");
+    }
+
+    /**
+     * And the weekly shape is untouched: a week closing on 31 December 2025 is
+     * still week 1 of 2026.
+     *
+     * The same boundary, the same zone, the other basis. This is the pairing the
+     * ISO week-year exists for, and the annual rule above must not have moved it.
+     */
+    @Test
+    public void aWeeklyGapClosingOnNewYearsEveIsStillIsoWeekOneOfTheNextYear() {
+        Date wed24Dec = cph(2025, 12, 24, 12, 0, 0, 0);
+
+        List<GapSynthesis.Row> rows = GapSynthesis.synthesize(tiling(), "weekly-ntm",
+                List.of(issue("w52", wed24Dec)),
+                WEEK, CPH, ISO, PATTERNS, null, cph(2026, 1, 2, 12, 0, 0, 0));
+
+        GapSynthesis.Row missing = rows.stream()
+                .filter(r -> r.kind() == GapSynthesis.RowKind.MISSING).findFirst().orElseThrow();
+        assertEquals(cph(2025, 12, 31, 12, 0, 0, 0), missing.intervalTo());
+        assertEquals("NtM Week 1 - 2026", missing.suggestions().get("en").name(),
+                "a week-numbered publication pairs its ISO week with the ISO week-year");
+    }
+
     /** A bound the cadence inferred says so, rather than passing as recorded. */
     @Test
     public void aBoundWithNoStampedNeighbourIsMarkedNominal() {
         GapSynthesis.Row upcoming = GapSynthesis.synthesize(tiling(), "weekly-ntm",
                 List.of(issue("newest", wed(50))),
-                WEEK, CPH, PATTERNS, null, new Date(wed(51).getTime() - 1000L)).get(0);
+                WEEK, CPH, ISO, PATTERNS, null, new Date(wed(51).getTime() - 1000L)).get(0);
 
         assertSame(IntervalBoundSource.STAMPED, upcoming.intervalFromSource(),
                 "it chains from a real stamped cut-off");

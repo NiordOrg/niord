@@ -165,17 +165,14 @@ public final class IssueNaming {
     /**
      * Derives the numbers for an issue closing at the given cut-off.
      *
-     * @param cutoff the EFFECTIVE cut-off -- the end of the window
-     * @param intervalFrom the start, used only to detect a multi-week issue
-     * @param zone the series' nominal cut-off timezone; never the JVM default
-     * @param edition the edition number, where the scheme has one
-     */
-    public static Numbers derive(Date cutoff, Date intervalFrom, ZoneId zone, Integer edition) {
-        return derive(cutoff, intervalFrom, zone, edition, YearBasis.ISO_WEEK_YEAR);
-    }
-
-    /**
-     * Derives the numbers for an issue closing at the given cut-off.
+     * THE BASIS IS ALWAYS ASKED FOR, and there is deliberately no overload that
+     * defaults it. There used to be, defaulting to the ISO week-year, and four
+     * naming paths -- a gap row's suggestion, a timeline cell, a create draft and
+     * the public mapping -- reached it without ever stating which year they
+     * meant. An annual edition closing at 31 December 2025 23:59 falls in ISO week
+     * 1 of 2026, so each of them named it "2026" while the issue's own stored year
+     * said 2025. A caller that has to name the basis cannot inherit the wrong one
+     * by omission.
      *
      * @param cutoff the EFFECTIVE cut-off -- the end of the window
      * @param intervalFrom the start, used only to detect a multi-week issue

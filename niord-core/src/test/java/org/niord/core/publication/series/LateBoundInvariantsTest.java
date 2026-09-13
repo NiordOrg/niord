@@ -44,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class LateBoundInvariantsTest {
 
     private static final ZoneId CPH = ZoneId.of("Europe/Copenhagen");
+    /** I-15 is about a week-numbered publication, which is what this basis names. */
+    private static final IssueNaming.YearBasis ISO = IssueNaming.YearBasis.ISO_WEEK_YEAR;
 
     private static Date at(int year, int month, int day, int hour) {
         return Date.from(ZonedDateTime.of(year, month, day, hour, 0, 0, 0, CPH).toInstant());
@@ -103,12 +105,12 @@ public class LateBoundInvariantsTest {
     @BindsRule({"I-15"})
     @Test
     public void theWeekAndYearComeFromTheIsoWeekYearNotTheCalendarYear() {
-        IssueNaming.Numbers newYear = IssueNaming.derive(at(2017, 1, 1, 12), null, CPH, null);
+        IssueNaming.Numbers newYear = IssueNaming.derive(at(2017, 1, 1, 12), null, CPH, null, ISO);
         assertEquals(52, newYear.week(), "1 Jan 2017 is in ISO week 52");
         assertEquals(2016, newYear.year(),
                 "and in week-year 2016; the calendar year would name a week that has not happened");
 
-        IssueNaming.Numbers lateDecember = IssueNaming.derive(at(2019, 12, 30, 12), null, CPH, null);
+        IssueNaming.Numbers lateDecember = IssueNaming.derive(at(2019, 12, 30, 12), null, CPH, null, ISO);
         assertEquals(1, lateDecember.week(), "30 Dec 2019 is already ISO week 1");
         assertEquals(2020, lateDecember.year(), "of week-year 2020 -- the same trap, reversed");
     }
@@ -122,9 +124,9 @@ public class LateBoundInvariantsTest {
         Date sundayLateUtc = Date.from(ZonedDateTime.of(2024, 1, 7, 23, 30, 0, 0,
                 ZoneId.of("UTC")).toInstant());
 
-        assertEquals(1, IssueNaming.derive(sundayLateUtc, null, ZoneId.of("UTC"), null).week(),
+        assertEquals(1, IssueNaming.derive(sundayLateUtc, null, ZoneId.of("UTC"), null, ISO).week(),
                 "in UTC it is still Sunday of week 1");
-        assertEquals(2, IssueNaming.derive(sundayLateUtc, null, CPH, null).week(),
+        assertEquals(2, IssueNaming.derive(sundayLateUtc, null, CPH, null, ISO).week(),
                 "in Copenhagen it is Monday, so week 2 -- reading the wrong zone misnames the issue");
     }
 
@@ -138,18 +140,18 @@ public class LateBoundInvariantsTest {
     @Test
     public void aspanningWindowGetsAWeekToAndASingleWeekDoesNot() {
         IssueNaming.Numbers spanning =
-                IssueNaming.derive(at(2026, 1, 14, 12), at(2025, 12, 31, 12), CPH, null);
+                IssueNaming.derive(at(2026, 1, 14, 12), at(2025, 12, 31, 12), CPH, null, ISO);
         assertEquals(2, spanning.week(), "the first week this issue closed opens the range");
         assertEquals(3, spanning.weekTo(), "and the cut-off week closes it");
 
         IssueNaming.Numbers ordinary =
-                IssueNaming.derive(at(2026, 1, 14, 12), at(2026, 1, 7, 12), CPH, null);
+                IssueNaming.derive(at(2026, 1, 14, 12), at(2026, 1, 7, 12), CPH, null, ISO);
         assertEquals(3, ordinary.week(), "an ordinary week is named for the week it closed in");
         assertNull(ordinary.weekTo(),
                 "a single period is not a range, however many ISO weeks its window touches");
 
         IssueNaming.Numbers single =
-                IssueNaming.derive(at(2026, 1, 14, 12), at(2026, 1, 12, 12), CPH, null);
+                IssueNaming.derive(at(2026, 1, 14, 12), at(2026, 1, 12, 12), CPH, null, ISO);
         assertNull(single.weekTo(),
                 "a window inside one week is not a range, and naming it 'uge 3+3' would be absurd");
     }

@@ -33,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class IssueNamingTest {
 
     private static final ZoneId DK = ZoneId.of("Europe/Copenhagen");
+    /** The week-numbered basis, which is what every weekly case below is named on. */
+    private static final IssueNaming.YearBasis ISO = IssueNaming.YearBasis.ISO_WEEK_YEAR;
 
     private static Date at(int year, int month, int day, int hour, int minute) {
         return Date.from(ZonedDateTime.of(year, month, day, hour, minute, 0, 0, DK).toInstant());
@@ -49,7 +51,7 @@ public class IssueNamingTest {
      */
     @Test
     public void aCutoffInIsoWeekOneOfTheNextYearTakesTheNextYear() {
-        IssueNaming.Numbers n = IssueNaming.derive(at(2025, 12, 31, 10, 0), null, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(at(2025, 12, 31, 10, 0), null, DK, null, ISO);
         assertEquals(1, n.week(), "31.12.2025 is in ISO week 1");
         assertEquals(2026, n.year(),
                 "the ISO week-year is 2026; taking the calendar year gives the legacy 'uge 1 - 2025' bug");
@@ -59,14 +61,14 @@ public class IssueNamingTest {
     @Test
     public void aCutoffInEarlyJanuaryCanBelongToThePreviousWeekYear() {
         // 1 January 2027 falls in ISO week 53 of 2026.
-        IssueNaming.Numbers n = IssueNaming.derive(at(2027, 1, 1, 10, 0), null, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(at(2027, 1, 1, 10, 0), null, DK, null, ISO);
         assertEquals(53, n.week());
         assertEquals(2026, n.year(), "1.1.2027 is in ISO week 53 of 2026");
     }
 
     @Test
     public void weekFiftyTwoIsOrdinary() {
-        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 12, 24, 10, 0), null, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 12, 24, 10, 0), null, DK, null, ISO);
         assertEquals(52, n.week());
         assertEquals(2026, n.year());
     }
@@ -82,7 +84,7 @@ public class IssueNamingTest {
     public void aWindowSpanningTwoWeeksCarriesBothNumbers() {
         Date from = at(2026, 1, 1, 10, 0);   // the previous cut-off, in week 1
         Date to = at(2026, 1, 15, 10, 0);    // two weeks later, week 3
-        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null, ISO);
 
         assertEquals(2, n.week(), "the first week this issue closed");
         assertEquals(3, n.weekTo(), "the cut-off week");
@@ -99,7 +101,7 @@ public class IssueNamingTest {
     public void anOrdinaryWeekStraddlingTwoIsoWeeksIsNotADoubleWeek() {
         Date from = at(2026, 1, 8, 10, 0);   // the previous cut-off, in week 2
         Date to = at(2026, 1, 15, 10, 0);    // one period later, week 3
-        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null, ISO);
 
         assertEquals(3, n.week(), "named for the week it closed in");
         assertNull(n.weekTo(), "a single period carries no second number");
@@ -114,7 +116,7 @@ public class IssueNamingTest {
     public void aSingleWeekWindowIsNamedForItsCutoffNotItsStart() {
         Date from = at(2026, 6, 29, 10, 0);
         Date to = at(2026, 7, 3, 10, 0);     // still week 27
-        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(to, from, DK, null, ISO);
 
         assertEquals(27, n.week());
         assertNull(n.weekTo(), "a single-week window carries no second number");
@@ -126,7 +128,7 @@ public class IssueNamingTest {
     @Test
     public void everyDeclaredTokenExpands() {
         // Week 7, so the padded variants are visibly different from the plain ones.
-        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 2, 12, 9, 5), null, DK, 3);
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 2, 12, 9, 5), null, DK, 3, ISO);
         Map<String, String> values = IssueNaming.valuesOf(n);
 
         assertEquals(IssueNaming.TOKENS, values.keySet(),
@@ -151,7 +153,7 @@ public class IssueNamingTest {
     /** The padded variants are IN, and production proves they are used: nm-w01-2026. */
     @Test
     public void theZeroPaddedVariantsAreAvailable() {
-        IssueNaming.Numbers week1 = IssueNaming.derive(at(2026, 1, 2, 10, 0), null, DK, null);
+        IssueNaming.Numbers week1 = IssueNaming.derive(at(2026, 1, 2, 10, 0), null, DK, null, ISO);
         assertEquals("nm-w01-2026",
                 IssueNaming.expand("nm-w${week-2-digits}-${year}", week1),
                 "without the padded token, a pattern that wants 'w01' is inexpressible");
@@ -160,7 +162,7 @@ public class IssueNamingTest {
     /** A DAILY series must be nameable, which is why the day tokens exist. */
     @Test
     public void aDailySeriesCanBeNamed() {
-        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 3, 5, 8, 0), null, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 3, 5, 8, 0), null, DK, null, ISO);
         assertEquals("Dagens EfS 05.03.2026",
                 IssueNaming.expand("Dagens EfS ${day-2-digits}.${month-2-digits}.${year}", n),
                 "shipping a DAILY cadence with no way to name its issues is worse than either alternative");
@@ -176,7 +178,7 @@ public class IssueNamingTest {
      */
     @Test
     public void anUnknownTokenFailsRatherThanSurvivingIntoTheOutput() {
-        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 2, 12, 9, 5), null, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 2, 12, 9, 5), null, DK, null, ISO);
 
         IssueNaming.UnknownTokenException e = assertThrows(IssueNaming.UnknownTokenException.class,
                 () -> IssueNaming.expand("Skydeomraader-${yeer}.pdf", n));
@@ -189,7 +191,7 @@ public class IssueNamingTest {
 
     @Test
     public void aFullyExpandedPatternKeepsItsLiteralText() {
-        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 7, 8, 10, 0), null, DK, null);
+        IssueNaming.Numbers n = IssueNaming.derive(at(2026, 7, 8, 10, 0), null, DK, null, ISO);
         assertEquals("EfS-Uge-28-2026.pdf",
                 IssueNaming.expand("EfS-Uge-${week}-${year}.pdf", n));
         assertEquals("EfS uge 28", IssueNaming.expand("EfS uge ${week}", n));
@@ -207,8 +209,8 @@ public class IssueNamingTest {
         // put this cut-off in different ISO weeks.
         Date cutoff = Date.from(ZonedDateTime.of(2026, 1, 4, 23, 30, 0, 0, ZoneId.of("UTC")).toInstant());
 
-        IssueNaming.Numbers utc = IssueNaming.derive(cutoff, null, ZoneId.of("UTC"), null);
-        IssueNaming.Numbers dk = IssueNaming.derive(cutoff, null, DK, null);
+        IssueNaming.Numbers utc = IssueNaming.derive(cutoff, null, ZoneId.of("UTC"), null, ISO);
+        IssueNaming.Numbers dk = IssueNaming.derive(cutoff, null, DK, null, ISO);
 
         assertEquals(1, utc.week(), "4.1.2026 23:30 UTC is still ISO week 1");
         assertEquals(2, dk.week(), "the same instant is 5.1 in Copenhagen, which is ISO week 2");
@@ -262,12 +264,12 @@ public class IssueNamingTest {
     public void aSingleWeekReleasedLateIsNotADoubleWeek() {
         Date from = at(2026, 7, 8, 9, 0);     // Wednesday, week 28 opened
         Date lateClose = at(2026, 7, 20, 9, 0); // released the Monday after next: twelve days
-        IssueNaming.Numbers late = IssueNaming.derive(lateClose, from, DK, null);
+        IssueNaming.Numbers late = IssueNaming.derive(lateClose, from, DK, null, ISO);
         assertEquals(30, late.week(), "named for the week it closed in");
         assertNull(late.weekTo(), "twelve days is one late week, not two");
 
         Date doubleClose = at(2026, 7, 22, 9, 0); // a full second period: fourteen days
-        IssueNaming.Numbers two = IssueNaming.derive(doubleClose, from, DK, null);
+        IssueNaming.Numbers two = IssueNaming.derive(doubleClose, from, DK, null, ISO);
         assertEquals(29, two.week(), "the first week no other issue closed");
         assertEquals(30, two.weekTo());
     }
@@ -314,11 +316,20 @@ public class IssueNamingTest {
                 IssueNaming.derive(d, null, DK, null, IssueNaming.YearBasis.CALENDAR_YEAR).week());
     }
 
-    /** The four-argument form keeps the ISO pairing, which is what a week needs. */
+    /**
+     * An unstated basis still pairs with a week, which is the safe half of the
+     * pair -- but no caller may reach it by omission.
+     *
+     * The overload that defaulted it is gone. It existed, and four naming paths
+     * used it without ever saying which year they meant, so an annual period
+     * closing on 31 December 2025 was named "2026" by each of them while the
+     * issue's own stored year said 2025. A null passed deliberately still behaves;
+     * a caller that simply forgot no longer compiles.
+     */
     @Test
-    public void theDefaultBasisIsTheIsoWeekYear() {
+    public void anUnstatedBasisStillPairsWithTheWeek() {
         Date d = at(2025, 12, 31, 10, 0);
-        assertEquals(IssueNaming.derive(d, null, DK, null, IssueNaming.YearBasis.ISO_WEEK_YEAR).year(),
-                IssueNaming.derive(d, null, DK, null).year());
+        assertEquals(IssueNaming.derive(d, null, DK, null, ISO).year(),
+                IssueNaming.derive(d, null, DK, null, null).year());
     }
 }

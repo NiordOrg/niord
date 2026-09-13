@@ -299,7 +299,11 @@ public final class IssuePublicationMapping {
                     at.getMonthValue(), at.getDayOfMonth(), edition);
         }
 
-        return IssueNaming.derive(basis, issue.getIntervalFrom(), zone, edition);
+        // On the series' own year basis, which is what the stored numbers above
+        // were derived on: an issue with no stored week and year must not be
+        // named for a different year than its neighbour that has them.
+        return IssueNaming.derive(basis, issue.getIntervalFrom(), zone, edition,
+                IssueShape.yearBasisOf(issue.getSeries()));
     }
 
     /** The edition, where it is a number. A non-numeric edition simply has no token value. */

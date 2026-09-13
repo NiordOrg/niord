@@ -242,8 +242,15 @@ public class IssueDraftService extends BaseService {
                 : predecessor != null && series.getCadence() == SeriesCadence.WEEKLY
                         ? predecessor.effectiveCutoff()
                         : null;
+        // The series decides which year ${year} means, exactly as it does for the
+        // issue this form creates. Left to the naming code's week-based default,
+        // the draft for an annual period closing 31 December 2025 suggested "2026"
+        // -- and the issue created from it was immediately renamed 2025 by the
+        // shaping, so the form and the row it produced disagreed about the one
+        // decision the form was asking about.
         IssueNaming.Numbers numbers = to == null ? null
-                : IssueNaming.derive(to, spanStart, zone, nextEdition());
+                : IssueNaming.derive(to, spanStart, zone, nextEdition(),
+                        IssueShape.yearBasisOf(series));
 
         IssueDraftVo vo = new IssueDraftVo();
         vo.setSeriesId(series.getSeriesId());

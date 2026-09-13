@@ -542,6 +542,83 @@ public class IssueTimelineTest {
         }
     }
 
+    // -------------------------------------------------- which year a cell is in
+
+    /** An instant in UTC, which is the zone a series with no desk falls back to. */
+    private static Date utc(int year, int month, int day, int hour, int minute) {
+        return Date.from(ZonedDateTime.of(year, month, day, hour, minute, 0, 0,
+                ZoneId.of("UTC")).toInstant());
+    }
+
+    /** The accumulated-annual shape: a year-numbered series cut off at its period end. */
+    private static PublicationSeries annual() {
+        PublicationSeries s = series(SeriesStatus.ACTIVE, SeriesCadence.YEARLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        s.setSeriesId("accumulated-yearly-ntm");
+        s.setNumberingScheme(NumberingScheme.YEAR_EDITION);
+        s.setCutoffDefault(CutoffDefault.PERIOD_END);
+        return s;
+    }
+
+    private static IssueTimelineRowVo cellClosing(IssueTimelineVo strip, Date close) {
+        return strip.getRows().stream()
+                .filter(r -> close.equals(r.getIntervalTo()))
+                .findFirst().orElseThrow(() -> new AssertionError("no cell closes at " + close));
+    }
+
+    /**
+     * AN ANNUAL CELL IS NUMBERED AND NAMED FOR THE YEAR IT CLOSES.
+     *
+     * 31 December 2025 at 23:59 falls in ISO week 1 of 2026, and the strip derived
+     * every cell on the week basis whatever the series was numbered by -- so the
+     * cell for the 2025 accumulated edition read "2026", beside an issue row whose
+     * own stored year said 2025. Both halves are asserted: the real cell, which
+     * falls back to this derivation where the issue carries no stored numbers, and
+     * the synthesized one, whose label is the name a retro-create would prefill.
+     */
+    @Test
+    public void anAnnualCellIsNumberedAndNamedForTheYearItCloses() {
+        PublicationSeries s = annual();
+        Date close2024 = utc(2024, 12, 31, 23, 59);
+        List<PublicationIssue> issues = newestFirst(published(s, "2024", close2024));
+
+        IssueTimelineVo strip = IssueListService.buildRecent(s, issues, 3,
+                utc(2026, 1, 2, 12, 0), "en");
+
+        // 31 December 2024 is a Tuesday, which ISO puts in week 1 of 2025.
+        assertEquals(2024, cellClosing(strip, close2024).getYear(),
+                "the 2024 edition's cell was numbered for the ISO week its boundary lands in");
+
+        IssueTimelineRowVo missing = cellClosing(strip, utc(2025, 12, 31, 23, 59));
+        assertEquals("MISSING", missing.getComputedStatus(), "the 2025 edition was never created");
+        assertEquals(2025, missing.getYear());
+        assertEquals("NtM Week 1 - 2025", missing.getLabel(),
+                "the gap cell offers the missing 2025 edition under the following year's name");
+    }
+
+    /**
+     * And a week-numbered series is untouched: the same boundary is week 1 of 2026.
+     *
+     * The rule the ISO week-year exists for, asserted beside the annual one so
+     * that a change to either shows up as a change to the other.
+     */
+    @Test
+    public void aWeeklyCellClosingOnNewYearsEveIsStillIsoWeekOneOfTheNextYear() {
+        PublicationSeries s = series(SeriesStatus.ACTIVE, SeriesCadence.WEEKLY,
+                TimeRelation.PUBLISHED_IN_INTERVAL);
+        s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
+        Date newYearsEve = utc(2025, 12, 31, 12, 0);
+        List<PublicationIssue> issues = newestFirst(published(s, "w1", newYearsEve));
+
+        IssueTimelineVo strip = IssueListService.buildRecent(s, issues, 3,
+                utc(2026, 1, 2, 12, 0), "en");
+
+        IssueTimelineRowVo cell = cellClosing(strip, newYearsEve);
+        assertEquals(1, cell.getWeek());
+        assertEquals(2026, cell.getYear(),
+                "a week-numbered publication pairs its ISO week with the ISO week-year");
+    }
+
     /** A released issue whose content period opened where the previous one closed. */
     private static PublicationIssue chained(PublicationSeries series, String publicId,
                                             Date openedAt, Date cutoff) {

@@ -130,6 +130,10 @@ public final class GapSynthesis {
      * @param issues ordered ASCENDING by effective cut-off. A retired one is
      *               passed in like any other and ignored for coverage: it no
      *               longer covers its period, and its period becomes a row here.
+     * @param yearBasis which year ${year} means for this series. Passed in rather
+     *                  than derived here because it is a publication rule about
+     *                  the series, and this class deliberately knows about
+     *                  instants and patterns rather than about series settings
      * @param patterns the naming patterns per language; may be empty
      */
     public static List<Row> synthesize(GapDetection.Gate gate,
@@ -137,6 +141,7 @@ public final class GapSynthesis {
                                        List<Issue> issues,
                                        long periodMillis,
                                        ZoneId zone,
+                                       IssueNaming.YearBasis yearBasis,
                                        Map<String, Patterns> patterns,
                                        Date firstIssueStartsAt,
                                        Date now) {
@@ -179,7 +184,8 @@ public final class GapSynthesis {
         // carries it: S-4 requires it of every interval-based series, for this.
         if (covering.isEmpty()) {
             if (firstIssueStartsAt != null && now != null) {
-                forward(out, seriesId, firstIssueStartsAt, null, periodMillis, zone, patterns, now);
+                forward(out, seriesId, firstIssueStartsAt, null, periodMillis, zone, yearBasis,
+                        patterns, now);
             }
             return out;
         }
@@ -225,7 +231,7 @@ public final class GapSynthesis {
                 }
                 out.add(row(RowKind.MISSING, seriesId, gap.from(), gap.to(),
                         latestAtOrBefore(covering, gap.from()), earliestAfter(covering, gap.to()),
-                        zone, patterns));
+                        zone, yearBasis, patterns));
             }
         }
 
@@ -251,7 +257,7 @@ public final class GapSynthesis {
         if (!newest.open() && newest.effectiveCutoff() != null && now != null
                 && newest.effectiveCutoff().getTime() <= now.getTime()) {
             forward(out, seriesId, newest.effectiveCutoff(), newest, periodMillis, zone,
-                    patterns, now);
+                    yearBasis, patterns, now);
         }
 
         out.sort((a, b) -> Long.compare(a.sortKey(), b.sortKey()));
@@ -296,13 +302,14 @@ public final class GapSynthesis {
      */
     private static void forward(List<Row> out, String seriesId, Date anchor, Issue preceding,
                                 long periodMillis, ZoneId zone,
+                                IssueNaming.YearBasis yearBasis,
                                 Map<String, Patterns> patterns, Date now) {
         Date from = anchor;
         while (true) {
             Date to = GapDetection.nextCutoff(from, periodMillis);
             boolean passed = to.getTime() <= now.getTime();
             out.add(row(passed ? RowKind.MISSING : RowKind.UPCOMING, seriesId, from, to,
-                    preceding, null, zone, patterns));
+                    preceding, null, zone, yearBasis, patterns));
             if (!passed) {
                 return;
             }
@@ -313,6 +320,7 @@ public final class GapSynthesis {
 
     private static Row row(RowKind kind, String seriesId, Date from, Date to,
                            Issue preceding, Issue following, ZoneId zone,
+                           IssueNaming.YearBasis yearBasis,
                            Map<String, Patterns> patterns) {
         return new Row(kind, seriesId, from, to,
                 // A preceding issue's stamped cut-off is a recorded bound. Anything
@@ -325,7 +333,7 @@ public final class GapSynthesis {
                 // cut-off, so a merged list is one sequence rather than two
                 // interleaved ones.
                 to.getTime(),
-                suggestions(to, zone, patterns));
+                suggestions(to, zone, yearBasis, patterns));
     }
 
     /**
@@ -367,14 +375,21 @@ public final class GapSynthesis {
      *
      * A real multi-week issue still names itself the other way. That is a property
      * of the issue somebody authored, not of a period nobody has authored yet.
+     *
+     * THE YEAR COMES FROM THE SERIES' OWN BASIS, on the same terms a real issue's
+     * does. A gap row and the issue it retro-creates are two renderings of one
+     * period, so a suggestion that named an annual period closing 31 December 2025
+     * "2026" -- the ISO week the boundary lands in -- put a name into the create
+     * form that the created issue immediately disagreed with.
      */
     private static Map<String, Suggestion> suggestions(Date to, ZoneId zone,
+                                                       IssueNaming.YearBasis yearBasis,
                                                        Map<String, Patterns> patterns) {
         Map<String, Suggestion> out = new LinkedHashMap<>();
         if (patterns == null || patterns.isEmpty()) {
             return out;
         }
-        IssueNaming.Numbers numbers = IssueNaming.derive(to, null, zone, null);
+        IssueNaming.Numbers numbers = IssueNaming.derive(to, null, zone, null, yearBasis);
         for (Map.Entry<String, Patterns> e : patterns.entrySet()) {
             Patterns p = e.getValue();
             if (p == null) {
