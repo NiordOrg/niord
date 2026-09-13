@@ -20,7 +20,7 @@ package org.niord.core.publication.series.resolve;
  * Something worth flagging about a resolution that is not, in itself, a miss.
  * The warnings list.
  *
- * Five codes, DISJOINT from CriteriaMissCode -- no value ever appears in both.
+ * Six codes, DISJOINT from CriteriaMissCode -- no value ever appears in both.
  * The older names CANCELLED_OR_EXPIRED_ALIVE_AT_CUTOFF, TYPE_MUTATED_SINCE_FREEZE
  * and PUBLISH_DATE_NULL are dropped rather than aliased: emitting one is a bug,
  * not a compatibility gesture.
@@ -37,7 +37,7 @@ public enum ResolutionWarningCode {
     /**
      * A member is CANCELLED or EXPIRED yet still a member: its publishDateTo
      * reaches the cut-off and it was withdrawn after the cut-off, or nothing dates
-     * the withdrawal. The ONLY acknowledgeable warning.
+     * the withdrawal. Acknowledgeable, as SOURCE_ISSUES_INCOMPLETE is.
      *
      * An exclusions panel is structurally blind to this class -- the messages ARE
      * members, so they never appear as exclusions -- which is why it is a warning
@@ -58,7 +58,20 @@ public enum ResolutionWarningCode {
     OVERLAPPING_ISSUE(false),
 
     /** The member count passed the configured limit. */
-    LIMIT_EXCEEDED(false);
+    LIMIT_EXCEEDED(false),
+
+    /**
+     * A compilation's period is not fully covered by published source issues:
+     * one of them is still open, or a stretch of the period has none at all.
+     *
+     * ACKNOWLEDGEABLE, and for the same reason CANCELLED_BUT_DATE_ALIVE is. The
+     * case it names is legitimate and recurring -- an annual released in early
+     * January before the last week of December is out -- so refusing it outright
+     * would block a release somebody is entitled to make. What it must not do is
+     * happen unnoticed: the document goes out claiming to be the year, and a
+     * missing week is invisible in a list of a thousand rows.
+     */
+    SOURCE_ISSUES_INCOMPLETE(true);
 
     private final boolean acknowledgeable;
 

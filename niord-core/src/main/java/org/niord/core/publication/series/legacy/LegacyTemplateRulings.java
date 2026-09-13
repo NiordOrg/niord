@@ -17,8 +17,14 @@
 package org.niord.core.publication.series.legacy;
 
 import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.CutoffDefault;
+import org.niord.core.publication.series.PageOrientation;
+import org.niord.core.publication.series.PageSize;
 import org.niord.core.publication.series.SeriesAvailability;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -279,6 +285,80 @@ public final class LegacyTemplateRulings {
     /** The six the ruling shares with every domain, for a report that shows what was applied. */
     public static List<String> sharedEverywhere() {
         return SHARED_EVERYWHERE;
+    }
+
+    /**
+     * A series legacy produced by hand that this system produces by compiling.
+     *
+     * Everything a compilation needs and the legacy template cannot say, because
+     * legacy had no such concept: the annual accumulated NtM was an uploaded PDF
+     * somebody assembled from the year's weeklies, and there is nothing in the
+     * template to read the source series, the report or the year the practice
+     * starts from off.
+     *
+     * @param firstIssueStartsAt where the compilation's chain opens. Not the first
+     *                           imported issue's date: the uploaded years before
+     *                           it were made by hand and are kept as they are, and
+     *                           the compiled chain starts where the source series'
+     *                           frozen rows are trustworthy
+     */
+    public record CompilationShape(String sourceSeriesId, String reportId, PageSize pageSize,
+                                   PageOrientation pageOrientation, boolean mapThumbnails,
+                                   CutoffDefault cutoffDefault, Date firstIssueStartsAt) {
+    }
+
+    /**
+     * The compilation rulings, by the seriesId they convert.
+     *
+     * A RULING, NOT A DERIVATION, for the same reason the availability table is
+     * one: nothing in the legacy estate distinguishes "a yearly PDF somebody
+     * assembled out of the weeklies" from "a yearly PDF somebody wrote", and the
+     * difference is editorial. Recorded here so a fresh restore and a re-run
+     * produce the converted series again rather than needing the conversion
+     * applied to a deployed database by hand.
+     */
+    private static final Map<String, CompilationShape> COMPILATION_BY_SERIES = new LinkedHashMap<>();
+
+    static {
+        // The accumulated annual NtM, converted IN PLACE: same seriesId, same
+        // category, and the sixteen uploaded issues from 2002 to 2016 keep their
+        // files and their NO_MEMBERSHIP headers untouched. What changes is what
+        // the series produces from here on -- the union of the year's weekly
+        // issues, printed as those weeks printed it.
+        //
+        // 2017 is where the chain opens because that is where the source series'
+        // frozen rows begin to be a complete record of what went out: every
+        // weekly issue from 2017 on is PUBLISHED, and the years before it were
+        // assembled by hand from documents rather than member lists.
+        COMPILATION_BY_SERIES.put("accumulated-yearly-ntm", new CompilationShape(
+                "weekly-ntm",
+                "nm-accumulated",
+                PageSize.A4,
+                PageOrientation.PORTRAIT,
+                // Off, because the document is a thousand notices long and a map
+                // thumbnail per notice is what turns it from large into unusable.
+                false,
+                // Yearly and not in-force, so the period's own end is the cut-off:
+                // the annual closes when the year does.
+                CutoffDefault.PERIOD_END,
+                Date.from(ZonedDateTime.of(2017, 1, 1, 0, 0, 0, 0,
+                        ZoneId.of("Europe/Copenhagen")).toInstant())));
+    }
+
+    /**
+     * The compilation ruling for a series, or null where there is none.
+     *
+     * Applied by the importer AFTER every series is persisted, because the ruling
+     * names another series as an operand and a foreign key cannot point at a row
+     * that does not exist yet.
+     */
+    public static CompilationShape compilationFor(String seriesId) {
+        return seriesId == null ? null : COMPILATION_BY_SERIES.get(seriesId);
+    }
+
+    /** Every compilation ruling, so a report shows what was applied. */
+    public static Map<String, CompilationShape> compilations() {
+        return Map.copyOf(COMPILATION_BY_SERIES);
     }
 
     /**

@@ -56,7 +56,7 @@ public enum CriteriaMissCode {
             case NOT_ALIVE_AT_CUTOFF -> NOT_ALIVE_AT_CUTOFF;
             case STATUS_NOT_PUBLIC -> STATUS_NOT_PUBLIC;
             case CRITERIA_MISMATCH -> CRITERION_MISMATCH;
-            case IN_INTERVAL, IN_FORCE_AT_CUTOFF, MANUAL_INCLUDE, MANUAL_EXCLUDE ->
+            case IN_INTERVAL, IN_FORCE_AT_CUTOFF, FROM_SOURCE_ISSUE, MANUAL_INCLUDE, MANUAL_EXCLUDE ->
                     throw new IllegalArgumentException(reason + " is not a criteria miss");
         };
     }

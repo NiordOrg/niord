@@ -18,8 +18,10 @@ package org.niord.web.publication;
 
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.series.ContentMode;
+import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.PublicationSeriesDescVo;
 import org.niord.core.publication.series.vo.SystemPublicationSeriesVo;
 
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -273,6 +276,87 @@ public class SeriesValidateEndpointTest {
                         + " rule(s), none of which an admin can fix by filling the form in:"
                         + System.lineSeparator()
                         + String.join(System.lineSeparator(), selfContradictions));
+    }
+
+    /**
+     * S-25 is judged against the source series' OWN fields, so the report has to
+     * look it up.
+     *
+     * The category and the domain stand in as nameless placeholders because the
+     * rules that read them only ask whether one was NAMED. S-25 asks what the
+     * named thing IS -- not this series, query-backed, not itself a compilation --
+     * and a placeholder answers yes to all three. "Check rules" would then come
+     * back clean on a compilation that cannot be published, and activation is
+     * gated on exactly that report.
+     */
+    @Test
+    public void thesourceSeriesIsLookedUpSoItsOwnRulesCanBeJudged() {
+        SystemPublicationSeriesVo vo = compilation();
+
+        PublicationSeries chained = new PublicationSeries();
+        chained.setSeriesId("another-compilation");
+        chained.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        chained.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+
+        List<Map<String, String>> errors = PublicationSeriesRestService.validationReport(
+                vo, INSTALLATION_LANGUAGES,
+                org.niord.core.publication.series.criteria.CriteriaValidator.ACCEPT_ALL,
+                id -> chained);
+
+        assertTrue(errors.stream().anyMatch(e -> "S-25".equals(e.get("rule"))),
+                "a compilation of a compilation passed the dry run, so the source was never "
+                        + "looked up. Got " + errors.stream().map(e -> e.get("rule")).toList());
+    }
+
+    /**
+     * A source that names nothing is ONE failure, against the field that names it.
+     *
+     * Not two. Leaving the candidate without a source would fire S-24 as well and
+     * tell the admin their compilation has no source, when what it has is a source
+     * that does not exist -- and only one of those sentences describes a control
+     * they can act on.
+     */
+    @Test
+    public void asourceThatNamesNothingIsReportedOnceAgainstItsOwnField() {
+        List<Map<String, String>> errors = PublicationSeriesRestService.validationReport(
+                compilation(), INSTALLATION_LANGUAGES,
+                org.niord.core.publication.series.criteria.CriteriaValidator.ACCEPT_ALL,
+                id -> null);
+
+        List<Map<String, String>> onTheSource = errors.stream()
+                .filter(e -> "sourceSeriesId".equals(e.get("field"))).toList();
+
+        assertEquals(1, onTheSource.size(),
+                "a dangling source produced " + onTheSource.size() + " rows: " + onTheSource);
+        assertEquals("S-25", onTheSource.get(0).get("rule"));
+    }
+
+    /** And a compilation naming a perfectly ordinary weekly trips neither rule. */
+    @Test
+    public void acompilationOfAWeeklyTripsNeitherSourceRule() {
+        PublicationSeries weekly = new PublicationSeries();
+        weekly.setSeriesId("weekly-ntm");
+        weekly.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        weekly.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
+
+        List<String> onTheSource = PublicationSeriesRestService.validationReport(
+                        compilation(), INSTALLATION_LANGUAGES,
+                        org.niord.core.publication.series.criteria.CriteriaValidator.ACCEPT_ALL,
+                        id -> weekly)
+                .stream().filter(e -> "sourceSeriesId".equals(e.get("field")))
+                .map(e -> e.get("rule") + ": " + e.get("message")).toList();
+
+        assertTrue(onTheSource.isEmpty(),
+                "a compilation of a weekly still failed " + onTheSource);
+    }
+
+    /** A compilation: query-backed, naming a source, with no criteria of its own. */
+    private static SystemPublicationSeriesVo compilation() {
+        SystemPublicationSeriesVo vo = completeSeries();
+        vo.setSeriesId("accumulated-yearly-ntm");
+        vo.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE.name());
+        vo.setSourceSeriesId("weekly-ntm");
+        return vo;
     }
 
     /** A minimally complete query-backed weekly series, used as the baseline to break. */

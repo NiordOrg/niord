@@ -145,16 +145,56 @@ public class MemberResolutionService extends BaseService {
     @Inject
     MessageNaming naming;
 
-    /** What a resolution produced: every decision, the members, and the diagnostics. */
+    /**
+     * What a resolution produced: every decision, the members, and the diagnostics.
+     *
+     * The last two components belong to the COMPILED regime alone and are null
+     * for every other. They are here rather than on a separate result type
+     * because every reader of a resolution -- the member list, the rail, the
+     * ordering, the freeze -- has to work for all three regimes, and a second
+     * type would mean each of them branching on which one it was handed.
+     *
+     * @param sourceOf which source issue owns each compiled uid; null unless this
+     *                 resolution was compiled, and never carries a manual include
+     * @param survey   what the source series looked like over the same window;
+     *                 null unless this resolution was compiled
+     */
     public record Resolution(
             Map<String, MemberDecision> decisions,
             List<String> candidateUids,
             Set<String> members,
             List<CriteriaMissVo> misses,
-            List<ResolutionWarningVo> warnings) {
+            List<ResolutionWarningVo> warnings,
+            Map<String, CompilationResolver.SourceRef> sourceOf,
+            CompilationResolver.Survey survey) {
+
+        /**
+         * The shape every query-backed and curated resolution has.
+         *
+         * Kept so the three factories and the resolve path below read as they did:
+         * a compilation is the only thing that answers the two extra questions,
+         * and making every other caller pass two nulls would say the opposite.
+         */
+        public Resolution(Map<String, MemberDecision> decisions, List<String> candidateUids,
+                          Set<String> members, List<CriteriaMissVo> misses,
+                          List<ResolutionWarningVo> warnings) {
+            this(decisions, candidateUids, members, misses, warnings, null, null);
+        }
 
         public int candidateCount() {
             return candidateUids.size();
+        }
+
+        /**
+         * Whether these members were compiled from another series' frozen rows.
+         *
+         * Asked of the RESOLUTION rather than of the series, because the callers
+         * that need it -- the ordering, the freeze, the member rows -- hold this
+         * and would otherwise each re-derive the regime from an entity they may
+         * not have.
+         */
+        public boolean compiled() {
+            return sourceOf != null;
         }
 
         /** A resolution for a series that has no membership at all. */
@@ -509,6 +549,60 @@ public class MemberResolutionService extends BaseService {
                     (Date) r[7],
                     (Date) r[8]));
         }
+        return out;
+    }
+
+    /**
+     * RI-17. The print order for one resolution, whichever regime produced it.
+     *
+     * ONE DEFINITION, and it exists because there are three callers that must
+     * agree to the row: publish step 5, the preview, and the live member list.
+     * What an admin reads on screen, what the preview renders and what the
+     * release prints are supposed to be the same list, and three copies of the
+     * branch is how they stop being.
+     *
+     * For anything but a compilation this is exactly IssueOrdering.order, so the
+     * weekly, in-force and curated paths are unchanged by construction.
+     *
+     * A COMPILATION IS ORDERED BY ITS SOURCES, not by the series' sort, and that
+     * is the whole shape of the document: the year reads as its weeks stapled
+     * together, each week in the order that week actually printed. So the rows
+     * that came from a source issue go first, by (source cut-off, the source's
+     * own sortIndex), and the uid breaks a tie that the two together cannot --
+     * two sources stamped at the same instant is not a state the chain allows,
+     * but an ordering that depends on it not happening is one that reorders a
+     * published document silently if it ever does.
+     *
+     * The manual includes follow, in the series' ordinary sort. They belong to no
+     * week, which is why the PDF gives them a section of their own at the end.
+     */
+    public static List<IssueOrdering.Orderable> orderFor(Resolution resolution,
+                                                         List<IssueOrdering.Orderable> members,
+                                                         IssueOrdering.SortSpec sort) {
+        if (resolution == null || !resolution.compiled()) {
+            return IssueOrdering.order(members, sort);
+        }
+        Map<String, CompilationResolver.SourceRef> owners = resolution.sourceOf();
+
+        List<IssueOrdering.Orderable> compiled = new ArrayList<>();
+        List<IssueOrdering.Orderable> byHand = new ArrayList<>();
+        for (IssueOrdering.Orderable o : members) {
+            (owners.containsKey(o.uid()) ? compiled : byHand).add(o);
+        }
+
+        compiled.sort((a, b) -> {
+            CompilationResolver.SourceRef left = owners.get(a.uid());
+            CompilationResolver.SourceRef right = owners.get(b.uid());
+            int byCutoff = left.cutoff().compareTo(right.cutoff());
+            if (byCutoff != 0) {
+                return byCutoff;
+            }
+            int bySort = Integer.compare(left.sortIndex(), right.sortIndex());
+            return bySort != 0 ? bySort : a.uid().compareTo(b.uid());
+        });
+
+        List<IssueOrdering.Orderable> out = new ArrayList<>(compiled);
+        out.addAll(IssueOrdering.order(byHand, sort));
         return out;
     }
 

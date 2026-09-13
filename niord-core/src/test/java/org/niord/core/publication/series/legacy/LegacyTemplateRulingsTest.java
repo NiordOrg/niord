@@ -23,11 +23,17 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.domain.Domain;
+import org.niord.core.publication.series.CutoffDefault;
+import org.niord.core.publication.series.PageOrientation;
+import org.niord.core.publication.series.PageSize;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesAvailability;
 import org.niord.core.publication.series.ContentMode;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +42,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -189,6 +196,89 @@ public class LegacyTemplateRulingsTest {
                     "nothing at all is filed under " + ruling.getValue() + ", so the editions "
                             + "ruled into it went nowhere");
         }
+    }
+
+    // ------------------------------------------------------------- compilations
+
+    /**
+     * The accumulated annual is ruled to COMPILE the weekly, and every field of
+     * that ruling is pinned.
+     *
+     * Legacy produced this publication by hand -- somebody assembled the year's
+     * weekly PDFs into one document -- so there is nothing in the template to read
+     * any of this off. It is a decision, and a decision written down once and
+     * applied by the importer is the only version that survives a fresh restore:
+     * the alternative is editing a deployed database and doing it again after the
+     * next rehearsal.
+     *
+     * The year matters as much as the source: the chain opens in 2017 because
+     * that is where the weekly series' frozen rows begin to be a complete record
+     * of what went out, and the sixteen uploaded issues before it stay exactly as
+     * they were imported.
+     */
+    @Test
+    public void theaccumulatedAnnualIsRuledToCompileTheWeekly() {
+        LegacyTemplateRulings.CompilationShape shape =
+                LegacyTemplateRulings.compilationFor("accumulated-yearly-ntm");
+
+        assertNotNull(shape, "the accumulated annual carries no compilation ruling, so every "
+                + "rehearsal and the go-live import produce the uploaded-document series again");
+        assertEquals("weekly-ntm", shape.sourceSeriesId());
+        assertEquals("nm-accumulated", shape.reportId());
+        assertEquals(PageSize.A4, shape.pageSize());
+        assertEquals(PageOrientation.PORTRAIT, shape.pageOrientation());
+        assertFalse(shape.mapThumbnails(),
+                "a map thumbnail on each of a thousand notices is what turns the document from "
+                        + "large into unusable");
+        assertEquals(CutoffDefault.PERIOD_END, shape.cutoffDefault(),
+                "the annual closes when the year does");
+        assertEquals(
+                Date.from(ZonedDateTime.of(2017, 1, 1, 0, 0, 0, 0,
+                        ZoneId.of("Europe/Copenhagen")).toInstant()),
+                shape.firstIssueStartsAt(),
+                "the compiled chain does not open at the start of 2017 in the owner's own zone");
+
+        assertNull(LegacyTemplateRulings.compilationFor("weekly-ntm"),
+                "the source series was itself ruled into a compilation; a compilation of a "
+                        + "compilation is refused by S-25 and would be a chain nobody can read");
+    }
+
+    /** Every ruled source series is one the same import produces. */
+    @Test
+    public void everyRuledCompilationSourceIsProducedByTheImport() {
+        LegacyImportService.Plan plan = plan();
+
+        for (Map.Entry<String, LegacyTemplateRulings.CompilationShape> ruling
+                : LegacyTemplateRulings.compilations().entrySet()) {
+            assertTrue(plan.series().stream()
+                            .anyMatch(s -> ruling.getKey().equals(s.getSeriesId())),
+                    "no series '" + ruling.getKey() + "' is produced, so the compilation ruling "
+                            + "for it can never apply");
+            assertTrue(plan.series().stream()
+                            .anyMatch(s -> ruling.getValue().sourceSeriesId().equals(s.getSeriesId())),
+                    "the source series '" + ruling.getValue().sourceSeriesId() + "' is not produced "
+                            + "by this import, so the conversion has nothing to point at");
+        }
+    }
+
+    /**
+     * The conversion is an APPLY-time step, and the plan still shows the series as
+     * legacy produced it.
+     *
+     * Deliberate, and worth pinning: the ruling names one series as an operand of
+     * another, and a foreign key cannot be set to a row that has not been written
+     * yet. It also keeps the dry run honest about what legacy actually holds.
+     */
+    @Test
+    public void thecompilationIsNotAppliedWhileTheEstateIsOnlyPlanned() {
+        PublicationSeries accumulated = plan().series().stream()
+                .filter(s -> "accumulated-yearly-ntm".equals(s.getSeriesId()))
+                .findFirst().orElse(null);
+
+        assertNotNull(accumulated);
+        assertNull(accumulated.getSourceSeries(),
+                "the plan already points the accumulated annual at a series that has not been "
+                        + "persisted yet; the write would fail on the foreign key");
     }
 
     // ------------------------------------------------------------------ domains

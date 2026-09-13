@@ -96,7 +96,7 @@ public class RailRefusalCatalogueTest {
     /**
      * A row applies unless it says otherwise.
      *
-     * The rail is fourteen rows on every issue and only a few of them can be in a
+     * The rail is fifteen rows on every issue and only a few of them can be in a
      * condition this issue is capable of. The default therefore has to be the
      * safe direction -- counted -- so that a row added later is counted until
      * somebody deliberately says it does not apply, rather than silently dropping
@@ -130,7 +130,13 @@ public class RailRefusalCatalogueTest {
         // The rows this table deliberately omits are the ones that never block: a
         // WARN describes the release rather than refusing it.
         List<String> warnings = List.of("INTERVAL_CHAINED", "MEMBERS_RESOLVED",
-                "NO_INEFFECTIVE_OVERRIDES", "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", "OVERLAPPING_ISSUE");
+                "NO_INEFFECTIVE_OVERRIDES", "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", "OVERLAPPING_ISSUE",
+                // A compilation released before its source series has finished the
+                // period is a legitimate, recurring act -- an annual put out in the
+                // first days of January -- so this warns and is acknowledged rather
+                // than refusing. The publish gate still stops an UNACKNOWLEDGED
+                // release on it, through the resolution warning it names.
+                "SOURCE_ISSUES_COMPLETE");
         for (String code : declared) {
             assertTrue(REFUSALS.containsKey(code) || warnings.contains(code),
                     code + " is neither a warning nor a row with a refusal code; if it can block a "

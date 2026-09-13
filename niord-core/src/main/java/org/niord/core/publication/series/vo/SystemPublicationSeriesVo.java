@@ -83,6 +83,19 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
     private Object criteria;
 
     /**
+     * The seriesId of the series this one compiles, under COMPILED_FROM_SOURCE.
+     *
+     * ADMIN-TIER ONLY, like the criteria above it and for the same reason: it is
+     * the operand of this publication's membership, and which other publication a
+     * document is assembled from is a question about how it is produced rather
+     * than about what it says. Nothing on the lean shape carries it.
+     *
+     * The immutable seriesId rather than the row id, so an export and an import
+     * into another installation resolve to the same series.
+     */
+    private String sourceSeriesId;
+
+    /**
      * The OWNER: the one domain this publication is administered from. Required.
      *
      * The editor never offers a picker for it -- a create seeds it from the
@@ -261,6 +274,14 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setCriteria(Object criteria) {
         this.criteria = criteria;
+    }
+
+    public String getSourceSeriesId() {
+        return sourceSeriesId;
+    }
+
+    public void setSourceSeriesId(String sourceSeriesId) {
+        this.sourceSeriesId = sourceSeriesId;
     }
 
     public String getDomainId() {

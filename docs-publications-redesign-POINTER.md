@@ -25,9 +25,11 @@ repository that changed it.
 
 Regenerate in `niord-app` with
 
-```
-node scripts/publications/gen-rule-ids.js --write
-node scripts/publications/gen-field-manifest.js --write
+```bash
+node scripts/publications/gen-rule-ids.js --write --out <this checkout>/niord-core/src/test/resources/rule-ids.txt
+node scripts/publications/gen-field-manifest.js --write --out <this checkout>/niord-core/src/test/resources/entity-fields.json
 ```
 
-then commit both repositories together.
+Without `--out` (or `NIORD_REPO=<this checkout>`) both scripts write into the checkout that sits beside
+`niord-app`, which is the right target only when that is the checkout the matching branch is in. Then
+commit both repositories together.

@@ -40,6 +40,7 @@ import org.niord.core.publication.series.vo.IssuePreviewVo;
 import org.niord.core.publication.series.vo.IssueWorkbenchVo;
 import org.niord.core.publication.series.vo.PublishCheckRowVo;
 import org.niord.core.publication.series.vo.PublishChecklistVo;
+import org.niord.core.publication.series.vo.SourceIssueVo;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.user.User;
 import org.niord.model.message.MainType;
@@ -1487,5 +1488,206 @@ public class IssueWorkbenchTest {
 
     private static int memberCountOf(PublishChecklistService.Checklist rail) {
         return memberCountOf(PublishChecklistVo.of(rail));
+    }
+
+    // ======================================================== a compilation
+
+    /**
+     * A compilation over the fixture's own series, with its own category.
+     *
+     * Built without going through {@link #series()} a second time, because that
+     * would move the message series the rest of the fixture's messages belong to
+     * -- and a compilation has no criteria to name one with anyway.
+     */
+    private PublicationSeries compilationOf(PublicationSeries source) {
+        PublicationCategory c = new PublicationCategory();
+        c.setCategoryId(TestIds.category());
+        c.setPriority(100);
+        em.persist(c);
+
+        PublicationSeries s = new PublicationSeries();
+        s.setSeriesId(TestIds.series());
+        s.setStatus(SeriesStatus.ACTIVE);
+        s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setReportId("some-report");
+        s.setCadence(SeriesCadence.YEARLY);
+        s.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        s.setReleaseMode(ReleaseMode.MANUAL_GATE);
+        s.setNextIssueCreation(NextIssueCreation.MANUAL);
+        s.setMessagePublication(MessagePublication.NONE);
+        s.setNumberingScheme(NumberingScheme.NONE);
+        s.setCategory(c);
+        s.setDomain(TestOwnerDomain.of(em));
+        s.getLanguages().add("da");
+        s.setSourceSeries(source);
+        s.createDesc("da").setName("Akkumuleret");
+        em.persist(s);
+        return s;
+    }
+
+    /** A source week, frozen by hand exactly as its own release would have left it. */
+    private PublicationIssue sourceWeek(PublicationSeries s, Date from, Date stamp,
+                                        IssueStatus status, int week, String name,
+                                        List<Message> members) {
+        PublicationIssue i = new PublicationIssue();
+        i.setSeries(s);
+        i.setPublicId(UUID.randomUUID().toString());
+        i.setRepoPath("publications/" + i.getPublicId());
+        i.setStatus(status);
+        i.setIntervalFrom(from);
+        i.setIntervalFromSource(IntervalBoundSource.STAMPED);
+        i.setWeek(week);
+        i.setYear(2023);
+        if (status == IssueStatus.PUBLISHED) {
+            i.setCutoffStampedAt(stamp);
+        } else {
+            i.setIntervalTo(stamp);
+        }
+        i.setMemberCount(members.size());
+        i.createDesc("da").setName(name);
+        em.persist(i);
+
+        int sortIndex = 0;
+        for (Message m : members) {
+            IssueMember row = new IssueMember();
+            row.setIssue(i);
+            row.setMessageUid(m.getUid());
+            row.setMessage(m);
+            row.setSortIndex(sortIndex++);
+            row.setFrozenShortId(m.getShortId());
+            row.setFrozenMainType(m.getMainType().name());
+            row.setFrozenType(m.getType().name());
+            row.setFrozenStatus(m.getStatus().name());
+            row.setFrozenPublishDateFrom(m.getPublishDateFrom());
+            row.setSource(MemberSource.CRITERIA);
+            em.persist(row);
+        }
+        return i;
+    }
+
+    /**
+     * The screen of a compilation: a sources panel instead of an omissions panel.
+     *
+     * The two are counterparts and never both present. An omission is a candidate
+     * the criteria considered and rejected, and a compilation considers nothing --
+     * so an empty omissions panel on one would be a claim about a query nobody
+     * ran. The question it has instead is whether the period is finished, and
+     * that is what the list answers: every source week that falls inside it,
+     * published and open alike, so the week still missing from the year is
+     * visible rather than buried in a thousand rows.
+     */
+    @Test
+    @Transactional
+    public void theworkbenchOfACompilationListsItsSourcesInsteadOfItsOmissions() {
+        PublicationSeries source = series();
+        PublicationSeries annual = compilationOf(source);
+
+        Message a = message("NM-A", Status.PUBLISHED);
+        Message b = message("NM-B", Status.PUBLISHED);
+        PublicationIssue week1 = sourceWeek(source, OPENS, new Date(OPENS.getTime() + 7 * DAY),
+                IssueStatus.PUBLISHED, 44, "EfS uge 44", List.of(a, b));
+        sourceWeek(source, new Date(OPENS.getTime() + 7 * DAY),
+                new Date(OPENS.getTime() + 14 * DAY), IssueStatus.OPEN, 45, "EfS uge 45", List.of());
+
+        PublicationIssue i = lifecycle.create(annual, new Date(OPENS.getTime() - DAY),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true);
+
+        assertNotNull(vo.getSources(), "a compilation's screen carries no sources panel at all");
+        assertEquals(List.of("PUBLISHED", "OPEN"),
+                vo.getSources().stream().map(SourceIssueVo::getStatus).toList(),
+                "the sources panel does not list the published and the still-open week in "
+                        + "cut-off order");
+        assertEquals("EfS uge 44", vo.getSources().get(0).getName(),
+                "the panel names no week, so every row reads as a uuid");
+        assertEquals(Integer.valueOf(44), vo.getSources().get(0).getWeek());
+        assertEquals(source.getSeriesId(), vo.getSources().get(0).getSeriesId());
+        assertEquals(Integer.valueOf(2), vo.getSources().get(0).getMemberCount());
+
+        assertNull(vo.getOmissions(),
+                "a compilation reported omissions; it runs no criteria, so an empty panel there "
+                        + "would state that a query dropped nothing");
+
+        assertNull(vo.getLateAfter(),
+                "a compilation was asked which members arrived after its cut-off; its members are "
+                        + "rows other issues printed, each judged at that issue's own cut-off, so a "
+                        + "message published in March is an ordinary member of a year closing in "
+                        + "December");
+        assertEquals(List.of(), vo.getAfterPlannedCutoff());
+
+        assertEquals(List.of("NM-A", "NM-B"),
+                vo.getMembers().stream().map(IssueMemberVo::getFrozenShortId).toList(),
+                "the live member list is not what the published week printed");
+        for (IssueMemberVo row : vo.getMembers()) {
+            assertEquals("COMPILED", row.getSource());
+            assertEquals("FROM_SOURCE_ISSUE", row.getReasonCode());
+            assertNotNull(row.getSourceIssue(), "a live compiled row names no source week");
+            assertEquals(week1.getPublicId(), row.getSourceIssue().getPublicId());
+            assertEquals("EfS uge 44", row.getSourceIssue().getName());
+            assertEquals(Integer.valueOf(44), row.getSourceIssue().getWeek());
+        }
+    }
+
+    /**
+     * A FROZEN compiled row names its week from the publicId it kept, and survives
+     * that week being deleted.
+     *
+     * The reason the row freezes a publicId and not a foreign key: a retired
+     * source issue is deletable, and a key would make this issue's record of what
+     * it printed depend on another issue's row surviving. What is lost when the
+     * week goes is the name and the numbering, which are read live anyway -- and
+     * the reference still says which issue it was.
+     */
+    @Test
+    @Transactional
+    public void afrozenCompiledRowNamesItsWeekAndSurvivesItsDeletion() {
+        PublicationSeries source = series();
+        PublicationSeries annual = compilationOf(source);
+
+        Message a = message("NM-A", Status.PUBLISHED);
+        PublicationIssue week = sourceWeek(source, OPENS, new Date(OPENS.getTime() + 7 * DAY),
+                IssueStatus.PUBLISHED, 44, "EfS uge 44", List.of(a));
+
+        PublicationIssue i = lifecycle.create(annual, new Date(OPENS.getTime() - DAY),
+                IntervalBoundSource.STAMPED, user());
+        i.setStatus(IssueStatus.PUBLISHED);
+        i.setCutoffStampedAt(new Date(OPENS.getTime() + 30 * DAY));
+        i.setSnapshotTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        i.setMembershipProvenance(MembershipProvenance.COMPILED);
+        em.merge(i);
+
+        IssueMember frozen = new IssueMember();
+        frozen.setIssue(i);
+        frozen.setMessageUid(a.getUid());
+        frozen.setMessage(a);
+        frozen.setSortIndex(0);
+        frozen.setFrozenShortId(a.getShortId());
+        frozen.setFrozenMainType(a.getMainType().name());
+        frozen.setFrozenType(a.getType().name());
+        frozen.setFrozenStatus(a.getStatus().name());
+        frozen.setSource(MemberSource.COMPILED);
+        frozen.setSourceIssuePublicId(week.getPublicId());
+        em.persist(frozen);
+        em.flush();
+
+        List<IssueMemberVo> named = memberList.members(i, "da");
+        assertEquals(1, named.size());
+        assertEquals("FROM_SOURCE_ISSUE", named.get(0).getReasonCode());
+        assertEquals("EfS uge 44", named.get(0).getSourceIssue().getName());
+        assertEquals(Integer.valueOf(44), named.get(0).getSourceIssue().getWeek());
+
+        // The week is gone. The compilation's own record of what it printed is not.
+        frozen.setSourceIssuePublicId("a-week-that-is-no-longer-here");
+        em.merge(frozen);
+        em.flush();
+
+        List<IssueMemberVo> orphaned = memberList.members(i, "da");
+        assertEquals("a-week-that-is-no-longer-here",
+                orphaned.get(0).getSourceIssue().getPublicId(),
+                "the row lost the id of the week that printed it when that week went away");
+        assertNull(orphaned.get(0).getSourceIssue().getName());
+        assertNull(orphaned.get(0).getSourceIssue().getWeek());
     }
 }

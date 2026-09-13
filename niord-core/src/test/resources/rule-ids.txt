@@ -1,6 +1,6 @@
 # Generated from DATA-MODEL.md section 8 by gen-rule-ids.js. Do not hand-edit.
 # Every id here must be bound to a test, or the build fails.
-# source-sha256: 0c48e46bbccc77f475f3b84f779ae811de93b41a3eedf0d5d6dab8c2f611f27e
+# source-sha256: 643fd1a0c7b594829749ab6c97f9d4b1f0a2ae246622f148771a3e63f0e77571
 S-1
 S-2
 S-3
@@ -19,6 +19,13 @@ S-15
 S-16
 S-17
 S-18
+S-19
+S-20
+S-21
+S-22
+S-23
+S-24
+S-25
 C-1
 C-2
 C-3
@@ -48,6 +55,7 @@ I-16
 I-17
 I-18
 I-19
+I-20
 D-1
 D-2
 D-3
@@ -93,3 +101,5 @@ RI-12
 RI-13
 RI-14
 RI-15
+RI-16
+RI-17

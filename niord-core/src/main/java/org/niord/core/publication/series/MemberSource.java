@@ -26,5 +26,15 @@ package org.niord.core.publication.series;
 public enum MemberSource {
     CRITERIA,
     OVERRIDE_INCLUDE,
-    IMPORTED
+    IMPORTED,
+
+    /**
+     * Carried over from a source issue that already printed it.
+     *
+     * A compilation runs no query: its members are the frozen rows of another
+     * series' published issues, so CRITERIA would claim a derivation that never
+     * happened and OVERRIDE_INCLUDE would claim a person decided it. The row also
+     * carries which source issue owns it, which no other source has an answer to.
+     */
+    COMPILED
 }

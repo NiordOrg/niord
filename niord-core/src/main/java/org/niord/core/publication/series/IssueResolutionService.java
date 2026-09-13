@@ -63,6 +63,9 @@ public class IssueResolutionService {
     MemberResolutionService resolver;
 
     @Inject
+    CompilationResolver compilations;
+
+    @Inject
     DomainSeriesExpander domains;
 
     /**
@@ -197,12 +200,9 @@ public class IssueResolutionService {
         }
 
         PublicationSeries series = issue.getSeries();
-        boolean queryBacked = series != null
-                && series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
-                && series.getTimeRelation() != null;
         // Whether this issue raises a membership question at all -- which is
         // exactly the condition under which a resolve is attempted below.
-        boolean membership = queryBacked || !includes.isEmpty();
+        boolean membership = MembershipRegime.of(series).hasMembership() || !includes.isEmpty();
 
         boolean frozen = isFrozen(issue);
         // The lower bound this resolve is actually taken over, decided once and
@@ -232,6 +232,10 @@ public class IssueResolutionService {
      * whole corpus. The curated branch is what the annexes need -- a series with
      * no criteria still has contents when somebody named them by hand.
      *
+     * The COMPILED arm asks no document anything. Its members are the frozen rows
+     * of another series' published issues, so it goes to the compilation resolver
+     * and never reaches the criteria path at all.
+     *
      * @return null where the issue has no membership semantics at all, or where
      *         its document cannot resolve
      */
@@ -253,10 +257,20 @@ public class IssueResolutionService {
     public MemberResolutionService.Resolution resolutionOf(PublicationIssue issue, Date from, Date at,
                                                            Set<String> includes, Set<String> excludes) {
         PublicationSeries series = issue.getSeries();
-        boolean queryBacked = series != null
-                && series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
-                && series.getTimeRelation() != null;
-        if (queryBacked) {
+        MembershipRegime regime = MembershipRegime.of(series);
+        if (regime == MembershipRegime.COMPILED) {
+            // No document, no candidates, nothing that can fail to resolve: the
+            // answer is a fact about other issues' frozen rows. It is still
+            // guarded, because a source whose issues carry no cut-off at all is a
+            // configuration problem and not a reason for the screen to fail.
+            try {
+                return compilations.resolve(series.getSourceSeries(),
+                        new Interval(from, at), includes, excludes);
+            } catch (RuntimeException e) {
+                return null;
+            }
+        }
+        if (regime == MembershipRegime.QUERY) {
             try {
                 ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue, domains);
                 if (criteria != null) {

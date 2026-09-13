@@ -102,6 +102,16 @@ public class IssueMemberVo implements IJsonSerializable {
      */
     private MemberCurationVo curation;
 
+    /**
+     * Which issue of the source series printed this row, on a compilation.
+     *
+     * ABSENT EVERYWHERE ELSE, and absent on a compilation's manual includes: a
+     * row somebody added by hand came from no source issue, and inventing one for
+     * it would put it under a heading nobody chose. That is what the final
+     * "added by hand" group in the document and on the screen is for.
+     */
+    private SourceIssueRefVo sourceIssue;
+
     public String getMessageUid() {
         return messageUid;
     }
@@ -212,6 +222,14 @@ public class IssueMemberVo implements IJsonSerializable {
 
     public void setCuration(MemberCurationVo curation) {
         this.curation = curation;
+    }
+
+    public SourceIssueRefVo getSourceIssue() {
+        return sourceIssue;
+    }
+
+    public void setSourceIssue(SourceIssueRefVo sourceIssue) {
+        this.sourceIssue = sourceIssue;
     }
 
 }

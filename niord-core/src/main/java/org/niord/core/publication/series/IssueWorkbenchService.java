@@ -168,7 +168,8 @@ public class IssueWorkbenchService {
         }
 
         IssueResolution resolved = resolutions.forIssue(issue, viewed, namedFrom);
-        Date lateAfter = lateReference(issue, at, frozen);
+        Date lateAfter = lateReference(issue, at, frozen,
+                MembershipRegime.of(issue.getSeries()) == MembershipRegime.COMPILED);
 
         IssueWorkbenchVo vo = new IssueWorkbenchVo();
         vo.setIssue(issue.toVo(SystemPublicationIssueVo.class));
@@ -219,12 +220,27 @@ public class IssueWorkbenchService {
         // published issue" rule: what a published issue left out is a question
         // about the release it made, and the answer would be computed against
         // today's corpus rather than against the one it was printed from.
-        if (resolved.resolution() != null) {
+        //
+        // AND NOT ON A COMPILATION, whose panel is the sources list below. An
+        // omission is a candidate the criteria considered and rejected, and a
+        // compilation considers nothing: its candidates are rows other issues
+        // already published. An empty omissions panel there would read as "the
+        // criteria dropped nothing", which is a claim about a query nobody ran.
+        if (resolved.resolution() != null && !resolved.resolution().compiled()) {
             // Through the resolver rather than off the VO directly: the sample's
             // short ids and titles are filled there, in one query over the capped
             // rows, and a panel listing omissions by uid alone is unreadable to
             // the editor who has to decide whether each one belongs in the issue.
             vo.setOmissions(resolver.omissions(resolved.resolution().misses(), lang));
+        }
+
+        // The sources panel, off the survey the one resolve already took. Absent
+        // on a frozen compilation for the same reason the omissions panel is:
+        // what it printed is settled, and the issue's own snapshot header names
+        // the source issues it holds.
+        if (resolved.resolution() != null && resolved.resolution().compiled()) {
+            vo.setSources(memberList.sources(resolved.resolution().survey(),
+                    issue.getSeries().getSourceSeries(), lang));
         }
         return vo;
     }
@@ -246,9 +262,18 @@ public class IssueWorkbenchService {
      * cut-off still to be chosen and nothing to be late for. Null too where an
      * open issue has no planned cut-off at all and the caller named no instant --
      * "after" needs something to be after.
+     *
+     * NULL ON A COMPILATION, and that is a statement about what the question
+     * means rather than a shortcut. "Published after the cut-off" asks whether a
+     * message slipped into the issue late, which is a fact about the MESSAGE'S
+     * publish date -- and a compilation selects nothing by publish date. Its
+     * members are rows that other issues printed, each judged at that issue's own
+     * cut-off, so a message published in March is a perfectly ordinary member of
+     * a year closing in December and listing it as late would say the opposite.
      */
-    private static Date lateReference(PublicationIssue issue, Date at, boolean frozen) {
-        if (frozen) {
+    private static Date lateReference(PublicationIssue issue, Date at, boolean frozen,
+                                      boolean compiled) {
+        if (frozen || compiled) {
             return null;
         }
         return at != null ? at : issue.getIntervalTo();

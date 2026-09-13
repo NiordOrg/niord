@@ -638,4 +638,170 @@ public class SeriesValidatorTest {
                         + "the database afterwards");
     }
 
+    // ------------------------------------------------------------ compilations
+
+    /**
+     * A compilation: query-backed, with no query.
+     *
+     * It generates a document exactly as any other query-backed series does, so
+     * the report and the print settings stay. What it does NOT carry is a criteria
+     * document or a liveness flag -- its members are what its source issues
+     * printed, judged at each of their own cut-offs.
+     */
+    private PublicationSeries compilation() {
+        PublicationSeries s = valid();
+        s.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        s.setCriteria(null);
+        s.setAliveAtCutoff(null);
+        s.setSourceSeries(weeklySource());
+        return s;
+    }
+
+    /** A perfectly ordinary weekly, which is what a compilation compiles. */
+    private PublicationSeries weeklySource() {
+        PublicationSeries source = new PublicationSeries();
+        source.setSeriesId("weekly-ntm");
+        source.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        source.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
+        return source;
+    }
+
+    /**
+     * The whole point of S-1 and S-2 being adjusted: this shape is valid.
+     *
+     * Written as a clean-baseline assertion rather than as three
+     * assertDoesNotFire calls, because the failure being guarded against is a
+     * rule firing that nobody thought to name -- which is precisely what a list
+     * of named exemptions cannot catch.
+     */
+    @Test
+    public void acompilationCarriesNoCriteriaAndNoLivenessFlag() {
+        assertClean(compilation());
+    }
+
+    /** And a query-backed series still needs both of them. */
+    @Test
+    public void aQueryBackedSeriesStillNeedsItsCriteriaAndItsLivenessAnswer() {
+        PublicationSeries noCriteria = valid();
+        noCriteria.setCriteria(null);
+        assertFires("S-1", noCriteria);
+
+        PublicationSeries noLiveness = valid();
+        noLiveness.setAliveAtCutoff(null);
+        assertFires("S-2", noLiveness);
+    }
+
+    /**
+     * S-4 reads TILING, not one relation by name.
+     *
+     * A compilation's issues chain off their predecessor exactly as a weekly's
+     * do, so it has a first interval to start and must say where it opens.
+     */
+    @BindsRule({"S-4"})
+    @Test
+    public void acompilationTilesAndSoNeedsItsFirstIntervalStart() {
+        PublicationSeries s = compilation();
+        s.setFirstIssueStartsAt(null);
+        assertFires("S-4", s);
+
+        // And an in-force series still has no interval to start.
+        PublicationSeries inForce = valid();
+        inForce.setTimeRelation(TimeRelation.IN_FORCE_AT_CUTOFF);
+        inForce.setAliveAtCutoff(true);
+        assertFires("S-4", inForce);
+    }
+
+    /**
+     * S-24. The source is set exactly where the relation compiles, and a
+     * compilation carries neither criteria nor a liveness flag.
+     */
+    @BindsRule({"S-24"})
+    @Test
+    public void thesourceSeriesIsSetExactlyWhereTheRelationCompiles() {
+        PublicationSeries noSource = compilation();
+        noSource.setSourceSeries(null);
+        assertFires("S-24", noSource);
+
+        // The other direction: a query-backed series naming a source it will
+        // never read. Left unrefused, nothing on the row says the derivation
+        // stopped running.
+        PublicationSeries notCompiled = valid();
+        notCompiled.setSourceSeries(weeklySource());
+        assertFires("S-24", notCompiled);
+
+        // A compilation with a criteria document, which would decide nothing.
+        PublicationSeries withCriteria = compilation();
+        withCriteria.setCriteria(valid().getCriteria());
+        assertFires("S-24", withCriteria);
+        assertTrue(SeriesValidator.validate(withCriteria, LANGS).stream()
+                        .anyMatch(e -> "S-24".equals(e.rule()) && "criteria".equals(e.field())),
+                "S-24 must name the criteria control, or the form has nothing to mark");
+
+        // And one with a liveness flag, which S-2 reports on its own field.
+        PublicationSeries withLiveness = compilation();
+        withLiveness.setAliveAtCutoff(Boolean.TRUE);
+        assertFires("S-2", withLiveness);
+    }
+
+    /**
+     * S-25. What a source series may be: not this one, query-backed, and not
+     * itself a compilation.
+     */
+    @BindsRule({"S-25"})
+    @Test
+    public void thesourceSeriesMustBeSomethingThereIsAPointInCompiling() {
+        PublicationSeries self = compilation();
+        PublicationSeries itself = new PublicationSeries();
+        itself.setSeriesId(self.getSeriesId());
+        itself.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        itself.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
+        self.setSourceSeries(itself);
+        assertFires("S-25", self);
+
+        PublicationSeries uploadedSource = compilation();
+        PublicationSeries uploaded = weeklySource();
+        uploaded.setContentMode(ContentMode.UPLOADED_FILE);
+        uploadedSource.setSourceSeries(uploaded);
+        assertFires("S-25", uploadedSource);
+
+        // NO CHAINS. A compilation of a compilation makes one issue's contents
+        // depend on a derivation two levels away that no header records.
+        PublicationSeries chained = compilation();
+        PublicationSeries alsoCompiled = weeklySource();
+        alsoCompiled.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        chained.setSourceSeries(alsoCompiled);
+        assertFires("S-25", chained);
+    }
+
+    /**
+     * The five rules that were implemented and unbound.
+     *
+     * They each have a case above; this is the binding that makes the manifest
+     * see them, and it sits on an assertion rather than on a comment so that
+     * deleting one of those cases takes the binding with it.
+     */
+    @BindsRule({"S-19", "S-20", "S-21", "S-22", "S-23"})
+    @Test
+    public void everyOwnerAndScheduleRuleHasACase() {
+        PublicationSeries noCategory = valid();
+        noCategory.setCategory(null);
+        assertFires("S-19", noCategory);
+
+        PublicationSeries unreadableZone = valid();
+        unreadableZone.setDomain(domainIn("Europe/Kopenhagen"));
+        assertFires("S-20", unreadableZone);
+
+        PublicationSeries calendarCutoffOnAWeekly = valid();
+        calendarCutoffOnAWeekly.setCutoffDefault(CutoffDefault.PERIOD_END);
+        assertFires("S-21", calendarCutoffOnAWeekly);
+
+        PublicationSeries automatic = valid();
+        automatic.setReleaseMode(ReleaseMode.AUTO_RELEASE);
+        assertFires("S-22", automatic);
+
+        PublicationSeries typedWeek = valid();
+        typedWeek.getReportParams().put("week", "12");
+        assertFires("S-23", typedWeek);
+    }
+
 }

@@ -159,6 +159,22 @@ public class IssueWorkbenchVo implements IJsonSerializable {
     /** Absent where nothing was resolved -- a frozen issue, or one with no query. */
     private IssueOmissionsVo omissions;
 
+    /**
+     * The source-series issues inside this issue's period, on a COMPILATION only.
+     *
+     * The counterpart to {@link #omissions}, and the two are never both present:
+     * a query-backed issue is asked what its criteria rejected, and a compilation
+     * rejects nothing -- its members are rows other issues already published. The
+     * question it has instead is whether the period is finished, which is what
+     * this list and the SOURCE_ISSUES_COMPLETE row answer between them.
+     *
+     * ABSENT rather than empty on every other regime, so a client can tell "this
+     * issue compiles nothing" from "it compiles a period no issue covers yet".
+     * Absent on a FROZEN compilation too, which takes no resolve at all: what it
+     * printed is settled, and its snapshot header names the issues it holds.
+     */
+    private List<SourceIssueVo> sources;
+
     public SystemPublicationIssueVo getIssue() {
         return issue;
     }
@@ -245,5 +261,13 @@ public class IssueWorkbenchVo implements IJsonSerializable {
 
     public void setOmissions(IssueOmissionsVo omissions) {
         this.omissions = omissions;
+    }
+
+    public List<SourceIssueVo> getSources() {
+        return sources;
+    }
+
+    public void setSources(List<SourceIssueVo> sources) {
+        this.sources = sources;
     }
 }

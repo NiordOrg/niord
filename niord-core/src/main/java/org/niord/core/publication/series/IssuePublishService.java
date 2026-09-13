@@ -30,7 +30,6 @@ import org.niord.core.publication.series.resolve.IssueOrdering;
 import org.niord.core.publication.series.resolve.MembershipReason;
 import org.niord.core.publication.series.resolve.ResolutionWarningVo;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
-import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 import org.slf4j.Logger;
@@ -107,6 +106,9 @@ public class IssuePublishService extends BaseService {
     MemberResolutionService resolver;
 
     @Inject
+    CompilationResolver compilations;
+
+    @Inject
     PublishChecklistService checklist;
 
     @Inject
@@ -132,6 +134,9 @@ public class IssuePublishService extends BaseService {
 
     @Inject
     IssueEditService edits;
+
+    @Inject
+    IssueMemberListService memberList;
 
     /**
      * What the caller asked for.
@@ -441,10 +446,14 @@ public class IssuePublishService extends BaseService {
         // The EFFECTIVE document, not the series' -- an issue carrying a
         // criteriaOverride selects by that, and asking the series here would let a
         // publish resolve one document and freeze another.
+        MembershipRegime regime = MembershipRegime.of(series);
         IssueCriteriaVo effective = EffectiveCriteria.documentOf(issue);
-        boolean hasMembership = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
-                && effective != null
-                && series.getTimeRelation() != null;
+        // A QUERY that can actually be run: the regime says this series selects by
+        // criteria, and the effective document says there is one to select with.
+        // The two are separate questions and always were -- roughly 48 publications
+        // have no membership at all, and a query-backed series with a null document
+        // is a different case again.
+        boolean hasMembership = regime == MembershipRegime.QUERY && effective != null;
         // Resolved ONCE, and held. Both the member query and the snapshot header
         // read it, and re-deriving it per use would make them depend on this
         // method not having changed the issue in between -- which it does, a few
@@ -475,7 +484,12 @@ public class IssuePublishService extends BaseService {
         // the one outcome the rail exists to close: the count the admin approved
         // and the set that gets frozen being two different answers.
         MemberResolutionService.Resolution resolution;
-        if (hasMembership) {
+        if (regime == MembershipRegime.COMPILED) {
+            resolution = railResolution != null
+                    ? railResolution
+                    : compilations.resolve(series.getSourceSeries(), window,
+                            includes(issue), excludes(issue));
+        } else if (hasMembership) {
             resolution = railResolution != null
                     ? railResolution
                     : resolver.resolve(resolved, window, includes(issue), excludes(issue));
@@ -508,16 +522,26 @@ public class IssuePublishService extends BaseService {
                 // inherits its domain's, which used to be passed as null here.
                 series.getDomain() == null ? null : series.getDomain().getMessageSortOrder());
         List<IssueOrdering.Orderable> ordered =
-                IssueOrdering.order(orderablesFor(members), sort);
+                MemberResolutionService.orderFor(resolution, orderablesFor(members), sort);
+        // Dense over the WHOLE list, compiled rows and manual includes alike: the
+        // index is the printed position, and a compilation's manual section is
+        // part of the same document.
         Map<String, Integer> sortIndex = IssueOrdering.assignSortIndex(ordered);
 
         // --- 6. FREEZE the member rows ------------------------------------
         freezeMembers(issue, ordered, sortIndex, resolution);
 
         // --- 7. FREEZE the snapshot header --------------------------------
+        // A COMPILATION'S HEADER RECORDS A DIFFERENT OPERAND, and the columns it
+        // leaves empty are as much of the record as the ones it fills. There was
+        // no criteria document, no liveness rule and no resolved operand list --
+        // the membership question was "which issues of the source series closed
+        // inside this period", and the answer is a set of issues that cannot be
+        // re-derived once more of them fall into it.
+        boolean compiled = regime == MembershipRegime.COMPILED;
         issue.setSnapshotFrozenAt(frozenAt);
         issue.setSnapshotTimeRelation(series.getTimeRelation());
-        issue.setSnapshotAliveAtCutoff(series.getAliveAtCutoff());
+        issue.setSnapshotAliveAtCutoff(compiled ? null : series.getAliveAtCutoff());
         // The interval the resolve ACTUALLY used. It exists because a later
         // retro-creation moves the live intervalFrom, and the frozen membership
         // must stay explainable against the bound it was computed with.
@@ -540,11 +564,23 @@ public class IssuePublishService extends BaseService {
         // frozen anywhere else, so recording the series' copy here would leave a
         // published issue with no truthful answer to "what did you select".
         issue.setCriteriaSnapshot(effective);
+        // I-20. The source series, and every source issue whose rows this release
+        // holds. The series id because it is the immutable name of the operand;
+        // the issue ids because the set of issues inside a period GROWS -- a
+        // weekly published next week whose cut-off falls inside last year does not
+        // belong to a release already made, and without the list nothing could say
+        // so afterwards. Ordered, so the header reads as the document does.
+        issue.setSnapshotSourceSeriesId(compiled ? series.getSourceSeries().getSeriesId() : null);
+        issue.setSnapshotSourceIssueIds(compiled ? joinedSourceIssueIds(resolution) : null);
         issue.setMemberCount(members.size());
         // NO_MEMBERSHIP is not the same as "the query returned nothing", and a
-        // reader who cannot tell them apart will assume the second.
-        issue.setMembershipProvenance(hasMembership
-                ? MembershipProvenance.EXACT : MembershipProvenance.NO_MEMBERSHIP);
+        // reader who cannot tell them apart will assume the second. COMPILED is
+        // its own honest answer for the same reason: EXACT would claim a query was
+        // run and reproduced, and UNION_SNAPSHOT is reserved for the legacy
+        // annuals whose member list cannot be re-derived at all.
+        issue.setMembershipProvenance(compiled
+                ? MembershipProvenance.COMPILED
+                : hasMembership ? MembershipProvenance.EXACT : MembershipProvenance.NO_MEMBERSHIP);
 
         // --- 8. appliedAtPublish on every override ------------------------
         // An exclude naming a uid the query never returned freezes false: it
@@ -570,6 +606,26 @@ public class IssuePublishService extends BaseService {
     /** An operand list as it was written, or null when there was none. */
     private static String joined(Set<String> operands) {
         return operands.isEmpty() ? null : String.join(",", operands);
+    }
+
+    /**
+     * The source issues this release compiled, in order, or null where none was.
+     *
+     * From the SURVEY the resolution carries rather than from the frozen rows,
+     * and the difference is a source issue that contributed nothing: a week whose
+     * own member list was empty is still a week this annual covers, and a header
+     * built from the rows would silently drop it from the record of what was
+     * compiled.
+     */
+    private static String joinedSourceIssueIds(MemberResolutionService.Resolution resolution) {
+        if (resolution == null || resolution.survey() == null) {
+            return null;
+        }
+        List<String> ids = resolution.survey().published().stream()
+                .map(CompilationResolver.SourceIssue::publicId)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        return ids.isEmpty() ? null : String.join(",", ids);
     }
 
     private static String joinedNames(Set<? extends Enum<?>> operands) {
@@ -650,8 +706,26 @@ public class IssuePublishService extends BaseService {
             MembershipReason reason = resolution.decisions().containsKey(o.uid())
                     ? resolution.decisions().get(o.uid()).reason()
                     : MembershipReason.MANUAL_INCLUDE;
+            // WHICH DERIVATION put the row here, recorded on the row itself. A
+            // compilation's manual includes are OVERRIDE_INCLUDE exactly as any
+            // other issue's are -- they belong to no source week and are printed in
+            // a section of their own -- and everything else came from a week that
+            // already printed it.
             member.setSource(reason == MembershipReason.MANUAL_INCLUDE
-                    ? MemberSource.OVERRIDE_INCLUDE : MemberSource.CRITERIA);
+                    ? MemberSource.OVERRIDE_INCLUDE
+                    : reason == MembershipReason.FROM_SOURCE_ISSUE
+                            ? MemberSource.COMPILED : MemberSource.CRITERIA);
+            // The owning source issue, as a publicId rather than a foreign key.
+            // This row is THIS issue's frozen record of what it printed, and a key
+            // would make that record depend on another issue's row surviving: a
+            // retired source issue is deletable, and an FK would either block the
+            // deletion or cascade into the compilation's own history. The publicId
+            // stays readable after one, and the week and name are read live beside
+            // it while the source is still there.
+            if (reason == MembershipReason.FROM_SOURCE_ISSUE && resolution.compiled()) {
+                CompilationResolver.SourceRef ref = resolution.sourceOf().get(o.uid());
+                member.setSourceIssuePublicId(ref == null ? null : ref.publicId());
+            }
             em.persist(member);
         }
     }
@@ -719,15 +793,22 @@ public class IssuePublishService extends BaseService {
         }
 
         Date now = new Date();
+        MembershipRegime regime = MembershipRegime.of(series);
         IssueCriteriaVo effective = EffectiveCriteria.documentOf(issue);
-        boolean hasMembership = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY
-                && effective != null && series.getTimeRelation() != null;
+        boolean hasMembership = regime == MembershipRegime.QUERY && effective != null;
         Set<String> curated = includes(issue);
         curated.removeAll(excludes(issue));
-        MemberResolutionService.Resolution resolution = hasMembership
-                ? resolver.resolve(EffectiveCriteria.resolvedFor(issue, domains),
-                        new Interval(issue.getIntervalFrom(), now), includes(issue), excludes(issue))
-                : MemberResolutionService.Resolution.curated(curated);
+        Interval window = new Interval(issue.getIntervalFrom(), now);
+        MemberResolutionService.Resolution resolution;
+        if (regime == MembershipRegime.COMPILED) {
+            resolution = compilations.resolve(series.getSourceSeries(), window,
+                    includes(issue), excludes(issue));
+        } else if (hasMembership) {
+            resolution = resolver.resolve(EffectiveCriteria.resolvedFor(issue, domains),
+                    window, includes(issue), excludes(issue));
+        } else {
+            resolution = MemberResolutionService.Resolution.curated(curated);
+        }
 
         IssueOrdering.SortSpec sort = IssueOrdering.resolveSort(
                 series.getMessageSortBy(),
@@ -736,17 +817,23 @@ public class IssuePublishService extends BaseService {
                 // The middle rung of the fallback: a series that names no sort
                 // inherits its domain's, which used to be passed as null here.
                 series.getDomain() == null ? null : series.getDomain().getMessageSortOrder());
-        List<IssueOrdering.Orderable> ordered = IssueOrdering.order(orderablesFor(resolution.members()), sort);
+        List<IssueOrdering.Orderable> ordered = MemberResolutionService.orderFor(
+                resolution, orderablesFor(resolution.members()), sort);
 
         // Loaded once for the whole preview rather than once per language: the
         // rows are the same either way, and the second language would otherwise
         // ask for every one of them again.
         Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
 
+        // The LIVE half of the one grouping rule: nothing is frozen yet, so which
+        // source issue owns a row is what the resolution just decided.
+        Map<String, String> sourceByUid = liveSourceIssueIds(resolution);
+
         List<IssuePreviewService.Preview> out = new ArrayList<>();
         for (PublicationIssueDesc desc : issue.getDescs()) {
             String lang = desc.getLang();
-            byte[] bytes = renderService.render(renderRequest(issue, series, ordered, members, lang));
+            byte[] bytes = renderService.render(renderRequest(issue, series, ordered, members, lang,
+                    renderGroups(ordered, sourceByUid, lang)));
             // Named from the cut-off the publish would use, not from the clock: a
             // preview of last year's accumulated list generated in January carries
             // last year's tokens, exactly as the published file will.
@@ -796,6 +883,12 @@ public class IssuePublishService extends BaseService {
         // language, so they are read once for the whole release.
         Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
 
+        // The FROZEN half of the one grouping rule. Step 6 has already written
+        // which source issue printed each row, and reading it back here is what
+        // makes the document's sections and the issue's own record the same
+        // statement -- an amend re-derives both together or neither.
+        Map<String, String> sourceByUid = frozenSourceIssueIds(issue);
+
         for (PublicationIssueDesc desc : issue.getDescs()) {
             if (desc.isFileSourceSticky()) {
                 continue; // an uploaded replacement is not regenerated over
@@ -805,7 +898,8 @@ public class IssuePublishService extends BaseService {
             Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
 
             // 10a
-            renderService.renderToFile(renderRequest(issue, series, ordered, members, lang), target);
+            renderService.renderToFile(renderRequest(issue, series, ordered, members, lang,
+                    renderGroups(ordered, sourceByUid, lang)), target);
 
             desc.setFileName(fileName);
             desc.setFilePath(issue.getRepoPath() + "/" + fileName);
@@ -837,7 +931,8 @@ public class IssuePublishService extends BaseService {
      */
     private IssueRenderService.RenderRequest renderRequest(PublicationIssue issue, PublicationSeries series,
                                                            List<IssueOrdering.Orderable> ordered,
-                                                           Map<String, Message> members, String lang) {
+                                                           Map<String, Message> members, String lang,
+                                                           List<IssueRenderService.RenderGroup> groups) {
         DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(lang);
         List<MessageVo> messages = new ArrayList<>(ordered.size());
         for (IssueOrdering.Orderable o : ordered) {
@@ -868,6 +963,13 @@ public class IssuePublishService extends BaseService {
         // decision, and they read it through the same resolution -- see
         // PrintedNumbering. Verified against the shipped templates: every one of
         // them interpolates these tokens and none does arithmetic on them.
+        // THE ZONE THE DOCUMENT'S DATES ARE PRINTED IN, taken from the series and
+        // not from whoever is rendering it. A cut-off stamped at 23:00 UTC is the
+        // next day in Copenhagen, so the zone decides which day a heading names --
+        // and the alternative is the request's current domain, which is the
+        // publishing user's desk on a manual release and nothing at all on an
+        // unattended one, where the container's zone would answer instead.
+        params.put("timeZone", series.cutoffZone().getId());
         params.put("week", PrintedNumbering.printedWeek(issue));
         params.put("weekTo", PrintedNumbering.printedWeekTo(issue));
         params.put("year", PrintedNumbering.printedYear(issue));
@@ -884,7 +986,107 @@ public class IssuePublishService extends BaseService {
                 series.getMapThumbnails(),
                 areaHeadings,
                 null,
-                params);
+                params,
+                groups);
+    }
+
+    /**
+     * The printed sections of this document, or null where it has none.
+     *
+     * ONE builder for the release and the preview alike, over one input: a map
+     * from member uid to the source issue that owns it. Which source issue that
+     * is comes from a different place on each path -- the frozen rows after a
+     * release, the live resolution before one -- but what a section IS must not,
+     * or a preview would be drawn as one document and the release as another.
+     *
+     * The sections are discovered from the ORDERED list rather than from the
+     * survey of the source series, and that is what keeps them honest in two
+     * ways: they come out in printed order, and a source issue that contributed
+     * nothing gets no empty heading. What the year covered is recorded on the
+     * issue's header; what it PRINTS is this.
+     *
+     * The headings are read live, in the render language, from the source issues
+     * themselves -- a weekly's name and week numbers are editable, and a section
+     * headed by a frozen copy of them would name something the reader cannot find.
+     */
+    private List<IssueRenderService.RenderGroup> renderGroups(List<IssueOrdering.Orderable> ordered,
+                                                             Map<String, String> sourceByUid, String lang) {
+        if (sourceByUid == null) {
+            return null; // not a compilation: one flat list, as every other document is
+        }
+        Map<String, List<String>> bySource = new LinkedHashMap<>();
+        List<String> byHand = new ArrayList<>();
+        for (IssueOrdering.Orderable o : ordered) {
+            String sourceId = sourceByUid.get(o.uid());
+            if (sourceId == null) {
+                byHand.add(o.uid());
+            } else {
+                bySource.computeIfAbsent(sourceId, k -> new ArrayList<>()).add(o.uid());
+            }
+        }
+
+        Map<String, org.niord.core.publication.series.vo.SourceIssueRefVo> named =
+                memberList.sourceRefsOf(bySource.keySet(), lang);
+
+        List<IssueRenderService.RenderGroup> groups = new ArrayList<>();
+        for (Map.Entry<String, List<String>> e : bySource.entrySet()) {
+            org.niord.core.publication.series.vo.SourceIssueRefVo ref = named.get(e.getKey());
+            groups.add(new IssueRenderService.RenderGroup(
+                    e.getKey(),
+                    ref == null ? null : ref.getName(),
+                    ref == null ? null : ref.getWeek(),
+                    ref == null ? null : ref.getWeekTo(),
+                    ref == null ? null : ref.getYear(),
+                    ref == null ? null : ref.getCutoff(),
+                    List.copyOf(e.getValue()),
+                    false));
+        }
+        // Last, and headed as what it is. These members came from no earlier
+        // document, so filing them under a week would print them under a heading
+        // that says a week contained them when it did not.
+        if (!byHand.isEmpty()) {
+            groups.add(new IssueRenderService.RenderGroup(null, null, null, null, null, null,
+                    List.copyOf(byHand), true));
+        }
+        return groups;
+    }
+
+    /**
+     * Which source issue owns each frozen row, or null on an issue that compiled
+     * nothing.
+     *
+     * The provenance is the question, not the series': a release records what IT
+     * did, and a series switched off the compiled regime afterwards must not make
+     * the document of an issue that WAS compiled re-draw itself flat on the next
+     * amend.
+     */
+    private Map<String, String> frozenSourceIssueIds(PublicationIssue issue) {
+        if (issue.getMembershipProvenance() != MembershipProvenance.COMPILED) {
+            return null;
+        }
+        Map<String, String> out = new LinkedHashMap<>();
+        for (IssueMember m : em.createQuery(
+                        "SELECT m FROM IssueMember m WHERE m.issue = :i "
+                                + "AND m.sourceIssuePublicId IS NOT NULL ORDER BY m.sortIndex",
+                        IssueMember.class)
+                .setParameter("i", issue).getResultList()) {
+            out.put(m.getMessageUid(), m.getSourceIssuePublicId());
+        }
+        return out;
+    }
+
+    /** The same map before anything is frozen: what the live resolution decided. */
+    private static Map<String, String> liveSourceIssueIds(MemberResolutionService.Resolution resolution) {
+        if (resolution == null || !resolution.compiled()) {
+            return null;
+        }
+        Map<String, String> out = new LinkedHashMap<>();
+        resolution.sourceOf().forEach((uid, ref) -> {
+            if (ref != null && ref.publicId() != null) {
+                out.put(uid, ref.publicId());
+            }
+        });
+        return out;
     }
 
     /**
@@ -1100,7 +1302,7 @@ public class IssuePublishService extends BaseService {
         // instant, so it has one bound and the create path refuses a second; its
         // successor therefore opens with no start at all, and the shaping below
         // reads the instant just stamped as the anchor to measure its close from.
-        if (series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL) {
+        if (series.getTimeRelation() != null && series.getTimeRelation().tiles()) {
             next.setIntervalFrom(stamp);
             next.setIntervalFromSource(IntervalBoundSource.STAMPED);
         } else {

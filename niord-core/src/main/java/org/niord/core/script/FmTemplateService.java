@@ -162,11 +162,19 @@ public class FmTemplateService extends BaseService {
         }
 
 
-        Domain domain = domainService.currentDomain();
-        String timeZone = (domain != null && StringUtils.isNotBlank(domain.getTimeZone()))
-                ? domain.getTimeZone()
-                : TimeZone.getDefault().getID();
-        templateBuilder.getData().put(TIME_ZONE_PROPERTY, timeZone);
+        // The zone dates are printed in. A caller that already knows which zone
+        // the document belongs to keeps it: a publication's dates belong to the
+        // domain that OWNS it, and the request's current domain is not always
+        // that one -- an unattended release has no request domain at all and
+        // would otherwise print in whatever zone the container runs in.
+        // Otherwise the request's domain answers, as it always has.
+        if (templateBuilder.getData().get(TIME_ZONE_PROPERTY) == null) {
+            Domain domain = domainService.currentDomain();
+            String timeZone = (domain != null && StringUtils.isNotBlank(domain.getTimeZone()))
+                    ? domain.getTimeZone()
+                    : TimeZone.getDefault().getID();
+            templateBuilder.getData().put(TIME_ZONE_PROPERTY, timeZone);
+        }
 
         Locale locale = app.getLocale(templateBuilder.getLanguage());
 

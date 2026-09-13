@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.QueryParam;
 import org.junit.jupiter.api.Test;
 import org.niord.core.publication.series.vo.IssueMemberVo;
+import org.niord.core.publication.series.vo.SourceIssueRefVo;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -87,5 +88,50 @@ public class IssueMemberWireTest {
         assertTrue(json.contains("Hals Barre. Fyr slukket."), "the title is empty on the wire");
         assertTrue(json.contains("NM-114-25"),
                 "the short id is what the title is read beside, not a replacement for it");
+    }
+
+    /**
+     * A compiled row names the source issue that printed it, and nothing else does.
+     *
+     * The member table on a compilation is drawn GROUPED by this reference -- a
+     * heading per source week, its rows beneath in that week's own order -- so a
+     * reference that does not reach the wire is a list that renders as one
+     * undifferentiated thousand rows. The absence matters as much: a manual
+     * include belongs to no week, and a key present-but-null is what the screen
+     * uses to put it in the final "added by hand" group.
+     */
+    @Test
+    public void acompiledRowNamesTheSourceIssueThatPrintedIt() throws Exception {
+        SourceIssueRefVo source = new SourceIssueRefVo();
+        source.setPublicId("nm-w12-2024");
+        source.setSeriesId("weekly-ntm");
+        source.setWeek(12);
+        source.setYear(2024);
+        source.setCutoff(new java.util.Date(1_711_000_000_000L));
+        source.setName("EfS uge 12 - 2024");
+
+        IssueMemberVo compiled = new IssueMemberVo();
+        compiled.setMessageUid("d3f1c0a2-0000-4000-8000-000000000002");
+        compiled.setSource("COMPILED");
+        compiled.setReasonCode("FROM_SOURCE_ISSUE");
+        compiled.setSourceIssue(source);
+
+        String json = new ObjectMapper().writeValueAsString(compiled);
+
+        assertTrue(json.contains("\"sourceIssue\""),
+                "the member row does not put its source issue on the wire; the grouped member "
+                        + "table has nothing to draw its headings from");
+        for (String part : new String[] {"nm-w12-2024", "weekly-ntm", "\"week\":12", "\"year\":2024",
+                "EfS uge 12 - 2024"}) {
+            assertTrue(json.contains(part),
+                    "the source issue reference is missing " + part + " on the wire: " + json);
+        }
+
+        IssueMemberVo byHand = new IssueMemberVo();
+        byHand.setMessageUid("d3f1c0a2-0000-4000-8000-000000000003");
+        byHand.setSource("OVERRIDE_INCLUDE");
+        assertTrue(!new ObjectMapper().writeValueAsString(byHand).contains("sourceIssue"),
+                "a row nobody compiled carries a source issue; inventing one would print it under "
+                        + "a heading nobody chose");
     }
 }

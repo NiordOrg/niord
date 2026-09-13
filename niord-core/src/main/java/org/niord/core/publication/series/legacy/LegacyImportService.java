@@ -420,6 +420,19 @@ public class LegacyImportService extends BaseService {
                 .setParameter("ids", seriesIds)
                 .executeUpdate();
 
+        // A series that compiles another one holds a foreign key into the same
+        // table the delete below empties, and the constraint is RESTRICT. The
+        // import writes both ends of exactly that pairing -- the accumulated
+        // annual and the weekly it compiles are both imported rows -- so a single
+        // bulk delete over the pair fails or succeeds depending on which row
+        // InnoDB reaches first, because foreign keys are checked per row and not
+        // per statement. Cleared first, like the language and availability rows,
+        // so the escape hatch does not depend on an order nobody chose.
+        em.createQuery(
+                        "UPDATE PublicationSeries s SET s.sourceSeries = NULL WHERE s.id IN :ids")
+                .setParameter("ids", seriesIds)
+                .executeUpdate();
+
         int series = em.createQuery(
                         "DELETE FROM PublicationSeries s WHERE s.id IN :ids")
                 .setParameter("ids", seriesIds)
@@ -1116,6 +1129,17 @@ public class LegacyImportService extends BaseService {
                 // on anything else).
                 continue;
             }
+            if (LegacyTemplateRulings.compilationFor(series.getSeriesId()) != null) {
+                // A series ruled to COMPILE another one. It is query-backed by the
+                // time the import finishes and it still has no criteria, because
+                // its members are the frozen rows of another series' published
+                // issues -- so a document proposed here would be a second answer
+                // to the membership question that nothing ever runs. Said out loud
+                // rather than left to the ordering: today the conversion happens
+                // after this planning step, and a reader should not have to know
+                // that to see why the series has no document.
+                continue;
+            }
 
             Publication template = templateById.get(e.getKey());
             if (template == null) {
@@ -1432,7 +1456,7 @@ public class LegacyImportService extends BaseService {
                     && series.getNominalCutoffMonth() == null) {
                 series.setNominalCutoffMonth(NominalSchedule.monthOf(cutoffs, zone));
             }
-            if (series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL
+            if (series.getTimeRelation() != null && series.getTimeRelation().tiles()
                     && series.getFirstIssueStartsAt() == null) {
                 series.setFirstIssueStartsAt(NominalSchedule.firstIntervalStartOf(
                         issues.stream().map(PublicationIssue::getIntervalFrom).toList()));
@@ -1583,7 +1607,7 @@ public class LegacyImportService extends BaseService {
 
         if (LegacyIssueTranslation.isYearly(legacy, series)) {
             boolean inForce = series != null
-                    && series.getTimeRelation() == org.niord.core.publication.series.resolve.TimeRelation.IN_FORCE_AT_CUTOFF;
+                    && series.getTimeRelation() == TimeRelation.IN_FORCE_AT_CUTOFF;
             // An in-force annual is decided at the END of a day, because the
             // changeover is a day's work -- and it is the LATER of the day its
             // window opens and the day it was released, because the window is
@@ -2074,6 +2098,10 @@ public class LegacyImportService extends BaseService {
             series.setCategory(category);
             em.persist(series);
         }
+        // AFTER every series is in the database, and it has to be: the ruling
+        // names one series as an operand of another, and a foreign key cannot
+        // point at a row that has not been written yet.
+        convertCompilations(plan);
         int written = 0;
         for (PublicationIssue issue : plan.issues().values()) {
             em.persist(issue);
@@ -2109,6 +2137,76 @@ public class LegacyImportService extends BaseService {
         log.info("legacy import wrote {} series, {} issues, {} member rows",
                 plan.series().size(), plan.issues().size(),
                 plan.members().values().stream().mapToInt(List::size).sum());
+    }
+
+    /**
+     * Turn the series legacy assembled by hand into ones this system compiles.
+     *
+     * The accumulated annual NtM is the case, and converting it IN PLACE is the
+     * whole ruling: same seriesId, same category, and its sixteen uploaded issues
+     * keep their files and their NO_MEMBERSHIP headers exactly as the import
+     * wrote them. Those are a record of documents somebody produced by hand, and
+     * nothing here re-decides them -- a frozen issue takes no checklist and no
+     * resolve, so nothing ever asks them for a report. What changes is what the
+     * series produces from the first issue created after the import.
+     *
+     * DONE AS AN IMPORT RULING rather than by hand on a deployed database,
+     * because a correction applied to one database fixes one dataset: every
+     * rehearsal and the go-live run would otherwise produce the unconverted
+     * series again and need the same edit repeating under a clock.
+     *
+     * The criteria and liveness fields are nulled EXPLICITLY rather than left as
+     * they are. A compilation runs no query -- S-24 refuses both on one -- and a
+     * leftover document would be a second answer to the membership question
+     * sitting beside the one that is actually used.
+     */
+    private void convertCompilations(Plan plan) {
+        Map<String, PublicationSeries> planned = new LinkedHashMap<>();
+        for (PublicationSeries s : plan.series()) {
+            planned.put(s.getSeriesId(), s);
+        }
+
+        for (PublicationSeries series : plan.series()) {
+            LegacyTemplateRulings.CompilationShape shape =
+                    LegacyTemplateRulings.compilationFor(series.getSeriesId());
+            if (shape == null) {
+                continue;
+            }
+            PublicationSeries source = planned.get(shape.sourceSeriesId());
+            if (source == null) {
+                // An installation whose estate does not carry the source series at
+                // all. Noted rather than refused: the ruling is a correction to
+                // one estate's shape, and an import that cannot apply it has still
+                // imported everything the archive holds.
+                note(plan, "COMPILATION_SOURCE_MISSING", series.getSeriesId(), null,
+                        "'" + series.getSeriesId() + "' is ruled to compile '"
+                                + shape.sourceSeriesId() + "', and this estate carries no such "
+                                + "series. The series is imported unconverted, as the uploaded "
+                                + "document series it was.");
+                continue;
+            }
+
+            series.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+            series.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+            series.setCriteria(null);
+            series.setAliveAtCutoff(null);
+            series.setSourceSeries(source);
+            series.setReportId(shape.reportId());
+            series.setPageSize(shape.pageSize());
+            series.setPageOrientation(shape.pageOrientation());
+            series.setMapThumbnails(shape.mapThumbnails());
+            series.setCutoffDefault(shape.cutoffDefault());
+            series.setFirstIssueStartsAt(shape.firstIssueStartsAt());
+            em.merge(series);
+
+            note(plan, "SERIES_COMPILED_FROM_SOURCE", series.getSeriesId(), null,
+                    "'" + series.getSeriesId() + "' was imported as an uploaded-document series "
+                            + "and is converted to compile '" + shape.sourceSeriesId() + "': its "
+                            + "future issues hold the union of that series' published issues, and "
+                            + "its imported issues keep their files untouched. The chain opens at "
+                            + shape.firstIssueStartsAt() + ", so every year from then to the last "
+                            + "imported issue shows as an uncovered period on the strip.");
+        }
     }
 
     // ----------------------------------------------------------------- helpers
@@ -2178,6 +2276,12 @@ public class LegacyImportService extends BaseService {
     private void note(Plan plan, String code, Publication legacy, String detail) {
         plan.report().getNotes().add(new LegacyImportReportVo.ProblemVo(
                 code, legacy.getPublicationId(), titleOf(legacy), detail));
+    }
+
+    /** The same, for a decision about a planned series rather than a legacy row. */
+    private void note(Plan plan, String code, String seriesId, String title, String detail) {
+        plan.report().getNotes().add(
+                new LegacyImportReportVo.ProblemVo(code, seriesId, title, detail));
     }
 
     /** The title, for the report only. Never used as a key: titles are not stable, and an issue keyed on one is an issue that moves when somebody edits a heading. */

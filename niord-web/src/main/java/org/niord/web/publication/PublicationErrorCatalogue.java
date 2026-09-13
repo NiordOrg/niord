@@ -73,6 +73,12 @@ public final class PublicationErrorCatalogue {
         put("RETRO_CREATE_NOT_APPLICABLE", 400);
         put("SERIES_INVALID", 400);
 
+        // 400, not 404: the thing that does not exist is a value INSIDE the body,
+        // not the resource being addressed. A 404 here would tell a client the
+        // series it is saving is gone, which is the opposite of what happened --
+        // the save is fine and one field of it names nothing.
+        put("SOURCE_SERIES_NOT_FOUND", 400);
+
         // 400, not 409: a state conflict may succeed once the state changes, and
         // this one never will. seriesId is the import/export key and the citation
         // handle, so it is immutable after create -- retrying the same rename is
@@ -205,6 +211,11 @@ public final class PublicationErrorCatalogue {
         // "something cites this" leaves an admin searching the estate by hand.
         put("ISSUE_CITED", 409);
         put("SERIES_HAS_ISSUES", 409);
+        // 409: another series compiles this one, so deleting it would empty that
+        // publication's membership. A state conflict that CAN clear -- pointing
+        // the compilation elsewhere, or deleting it first, makes the identical
+        // request succeed -- which is what separates it from the 400 group.
+        put("SERIES_IS_COMPILED", 409);
         // 409: the series is a one-off and already holds its one issue. A state
         // conflict that CAN clear -- reclassifying the series as UNSCHEDULED makes
         // the same request succeed -- so it is 409 rather than 400.

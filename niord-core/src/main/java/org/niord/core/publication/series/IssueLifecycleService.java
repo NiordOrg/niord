@@ -20,7 +20,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.niord.core.publication.series.resolve.IssueNaming;
-import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 
@@ -171,7 +170,7 @@ public class IssueLifecycleService extends BaseService {
      */
     public void assertNoOverlap(PublicationSeries series, Date intervalFrom, PublicationIssue ignoring) {
         if (series == null || intervalFrom == null
-                || series.getTimeRelation() != TimeRelation.PUBLISHED_IN_INTERVAL) {
+                || series.getTimeRelation() == null || !series.getTimeRelation().tiles()) {
             return;
         }
         List<PublicationIssue> released = em.createQuery(
@@ -210,7 +209,7 @@ public class IssueLifecycleService extends BaseService {
     @Transactional
     public PublicationIssue retroCreate(PublicationSeries series, Date intervalFrom, Date intervalTo,
                                         User actor) {
-        if (series.getTimeRelation() != TimeRelation.PUBLISHED_IN_INTERVAL) {
+        if (series.getTimeRelation() == null || !series.getTimeRelation().tiles()) {
             throw new TransitionRefusedException("RETRO_CREATE_NOT_APPLICABLE",
                     "this series' issues overlap rather than tile, so there is no missing period to recover");
         }
@@ -461,6 +460,20 @@ public class IssueLifecycleService extends BaseService {
         if (issues > 0) {
             throw new TransitionRefusedException("SERIES_HAS_ISSUES",
                     "the series has " + issues + " issue(s); retire it instead of deleting it");
+        }
+        // A series another one compiles is the operand of that one's membership.
+        // The database refuses the delete anyway -- the foreign key is RESTRICT --
+        // but it does so inside the flush, as a constraint violation naming a
+        // column, on a screen whose only other option is "retire". Said here it is
+        // a sentence naming the publication that depends on this one.
+        List<String> compiledBy = em.createQuery(
+                        "SELECT s.seriesId FROM PublicationSeries s WHERE s.sourceSeries = :s",
+                        String.class)
+                .setParameter("s", series).getResultList();
+        if (!compiledBy.isEmpty()) {
+            throw new TransitionRefusedException("SERIES_IS_COMPILED",
+                    "the series is compiled by " + String.join(", ", compiledBy)
+                            + "; point that publication at another source, or delete it first");
         }
         em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.series = :s")
                 .setParameter("s", series).executeUpdate();

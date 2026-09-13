@@ -1121,4 +1121,406 @@ public class IssuePublishTest {
         assertEquals(IssueStatus.OPEN, i.getStatus());
     }
 
+    // ========================================================== a compilation
+
+    /** A weekly, two published weeks of it, and the annual that compiles them. */
+    private record Compiled(PublicationSeries source, PublicationSeries annual,
+                            PublicationIssue week1, PublicationIssue week2,
+                            Message a, Message b, Message c) {
+    }
+
+    /**
+     * The estate a compiled release is taken over.
+     *
+     * The source weeks are frozen BY HAND rather than published through the
+     * transaction, because what is under test here is what the COMPILATION's
+     * publish writes -- and producing the same rows through two full releases
+     * first would make every assertion below depend on each of their ten steps.
+     */
+    private Compiled compiledEstate() {
+        PublicationSeries source = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+
+        PublicationSeries annual = series(SeriesCadence.YEARLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        annual.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        // A compilation runs no query and judges no liveness; S-24 refuses both.
+        annual.setCriteria(null);
+        annual.setAliveAtCutoff(null);
+        annual.setSourceSeries(source);
+        em.merge(annual);
+
+        Message a = compiledMessage("NM-A");
+        Message b = compiledMessage("NM-B");
+        Message c = compiledMessage("NM-C");
+
+        PublicationIssue week1 = frozenWeek(source, new Date(1_699_000_000_000L),
+                new Date(1_699_100_000_000L), List.of(a, b));
+        PublicationIssue week2 = frozenWeek(source, new Date(1_699_100_000_000L),
+                new Date(1_699_200_000_000L), List.of(c));
+
+        em.flush();
+        return new Compiled(source, annual, week1, week2, a, b, c);
+    }
+
+    private Message compiledMessage(String shortId) {
+        Message m = new Message();
+        m.setUid(UUID.randomUUID().toString());
+        m.setMessageSeries(messageSeries("dma-nm"));
+        m.setShortId(shortId);
+        m.setMainType(MainType.NM);
+        m.setType(Type.TEMPORARY_NOTICE);
+        m.setStatus(Status.PUBLISHED);
+        m.setPublishDateFrom(new Date(1_699_000_000_000L));
+        em.persist(m);
+        return m;
+    }
+
+    /** A published source week with its member rows already frozen, in print order. */
+    private PublicationIssue frozenWeek(PublicationSeries s, Date from, Date stamp,
+                                        List<Message> members) {
+        PublicationIssue i = issue(s, from);
+        i.setStatus(IssueStatus.PUBLISHED);
+        i.setCutoffStampedAt(stamp);
+        i.setPublishedAt(stamp);
+        i.setMemberCount(members.size());
+        em.merge(i);
+        int sortIndex = 0;
+        for (Message m : members) {
+            IssueMember row = new IssueMember();
+            row.setIssue(i);
+            row.setMessageUid(m.getUid());
+            row.setMessage(m);
+            row.setSortIndex(sortIndex++);
+            row.setFrozenShortId(m.getShortId());
+            row.setFrozenMainType(m.getMainType().name());
+            row.setFrozenType(m.getType().name());
+            row.setFrozenStatus(m.getStatus().name());
+            row.setFrozenPublishDateFrom(m.getPublishDateFrom());
+            row.setSource(MemberSource.CRITERIA);
+            em.persist(row);
+        }
+        return i;
+    }
+
+    private List<IssueMember> frozenRowsOf(PublicationIssue issue) {
+        return em.createQuery(
+                        "SELECT m FROM IssueMember m WHERE m.issue = :i ORDER BY m.sortIndex",
+                        IssueMember.class)
+                .setParameter("i", issue).getResultList();
+    }
+
+    /**
+     * Step 6 on a compilation: every row says which week printed it.
+     *
+     * The publicId is the whole record of the grouping. The document is drawn as
+     * a section per source week and the screen as a heading per source week, and
+     * neither can be reconstructed from the member set afterwards -- the source
+     * issues inside a period GROW, so asking again next year would answer for a
+     * different set of weeks than the one this release actually compiled.
+     *
+     * A MANUAL INCLUDE carries none, and that is the second half of the rule: it
+     * came from no week, so inventing one would print it under a heading nobody
+     * chose. It is what the final "added by hand" section exists for.
+     */
+    @Test
+    @Transactional
+    public void acompiledReleaseFreezesWhichSourceIssuePrintedEachRow() {
+        Compiled e = compiledEstate();
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+
+        Message byHand = compiledMessage("NM-BY-HAND");
+        org.niord.core.user.User author = new org.niord.core.user.User();
+        author.setUsername(TestIds.id("curator-"));
+        em.persist(author);
+        IssueOverride include = new IssueOverride();
+        include.setIssue(annualIssue);
+        include.setAuthor(author);
+        include.setMessageUid(byHand.getUid());
+        include.setKind(OverrideKind.INCLUDE);
+        include.setReason("it belongs in the year although no week printed it");
+        em.persist(include);
+        em.flush();
+
+        publishService.publish(annualIssue.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_699_300_000_000L)));
+        em.flush();
+
+        List<IssueMember> rows = frozenRowsOf(annualIssue);
+        assertEquals(List.of("NM-A", "NM-B", "NM-C", "NM-BY-HAND"),
+                rows.stream().map(IssueMember::getFrozenShortId).toList(),
+                "the frozen rows are not the two weeks in their own order with the manual "
+                        + "include last");
+
+        assertEquals(List.of(MemberSource.COMPILED, MemberSource.COMPILED, MemberSource.COMPILED,
+                        MemberSource.OVERRIDE_INCLUDE),
+                rows.stream().map(IssueMember::getSource).toList(),
+                "a compiled row was frozen as a criteria row; nothing ran a query for it");
+
+        assertEquals(List.of(e.week1().getPublicId(), e.week1().getPublicId(),
+                        e.week2().getPublicId()),
+                rows.subList(0, 3).stream().map(IssueMember::getSourceIssuePublicId).toList(),
+                "the rows do not name the weeks that printed them");
+        assertNull(rows.get(3).getSourceIssuePublicId(),
+                "a message somebody added by hand was filed under a week that never printed it");
+    }
+
+    /**
+     * I-20. Step 7 on a compilation records the operand it actually used.
+     *
+     * The source SERIES because that is the immutable name of what was compiled,
+     * and the source ISSUES because the set of issues whose cut-off falls inside
+     * a period GROWS: a weekly published next month whose stamp lands in last
+     * year does not belong to a release already made, and without the list
+     * nothing could ever say which weeks this document holds.
+     *
+     * The columns it leaves EMPTY are as much of the record: there was no
+     * criteria document, no liveness rule and no resolved operand list, and a
+     * value in any of them would describe a query that was never run.
+     */
+    @BindsRule({"I-20"})
+    @Test
+    @Transactional
+    public void acompiledReleaseRecordsItsSourceSeriesAndEverySourceIssue() {
+        Compiled e = compiledEstate();
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+        em.flush();
+
+        publishService.publish(annualIssue.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_699_300_000_000L)));
+        em.flush();
+
+        assertEquals(MembershipProvenance.COMPILED, annualIssue.getMembershipProvenance(),
+                "a compiled release recorded EXACT, which claims a query was run and reproduced");
+        assertEquals(TimeRelation.COMPILED_FROM_SOURCE, annualIssue.getSnapshotTimeRelation());
+        assertEquals(e.source().getSeriesId(), annualIssue.getSnapshotSourceSeriesId());
+        assertEquals(e.week1().getPublicId() + "," + e.week2().getPublicId(),
+                annualIssue.getSnapshotSourceIssueIds(),
+                "the header does not name every source issue whose rows this release holds, in "
+                        + "cut-off order");
+
+        assertNull(annualIssue.getSnapshotAliveAtCutoff(),
+                "the header states a liveness rule; none was applied, and each source week judged "
+                        + "liveness at its own cut-off");
+        assertNull(annualIssue.getCriteriaSnapshot(),
+                "the header carries a criteria document a compilation never had");
+        assertNull(annualIssue.getSnapshotSeriesIds());
+        assertNull(annualIssue.getSnapshotMainTypes());
+        assertNull(annualIssue.getSnapshotAreaIds());
+        assertNull(annualIssue.getSnapshotCategoryIds());
+        assertNull(annualIssue.getSnapshotChartNumbers());
+    }
+
+    /** And an ordinary weekly release is untouched by any of it. */
+    @Test
+    @Transactional
+    public void anordinaryReleaseCarriesNoCompilationHeaderAtAll() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_700_000_000_000L)));
+        em.flush();
+
+        assertEquals(MembershipProvenance.EXACT, i.getMembershipProvenance());
+        assertNull(i.getSnapshotSourceSeriesId(),
+                "a query-backed release recorded a source series; the two new header columns are "
+                        + "the compiled regime's alone");
+        assertNull(i.getSnapshotSourceIssueIds());
+        assertNotNull(i.getSnapshotAliveAtCutoff(),
+                "the ordinary header stopped recording the liveness rule it resolved under");
+        for (IssueMember m : frozenRowsOf(i)) {
+            assertNull(m.getSourceIssuePublicId(),
+                    "a criteria row was filed under a source issue");
+        }
+    }
+
+    /**
+     * A year released short of one of its weeks is refused until somebody says so.
+     *
+     * Releasing early is legitimate and recurring -- an annual put out in the
+     * first days of January, before the last week of December is published -- so
+     * this is an acknowledgement rather than a block. What it stops is doing it
+     * without noticing: a week missing from a document of a thousand notices is
+     * invisible, and the fifteenth rail row and this refusal are the same fact
+     * said to the two readers that need it.
+     */
+    @Test
+    @Transactional
+    public void acompilationWhoseSourcePeriodIsUnfinishedIsRefusedUntilItIsAcknowledged() {
+        Compiled e = compiledEstate();
+        // A third week, still open, whose period closes inside the annual's.
+        PublicationIssue openWeek = issue(e.source(), new Date(1_699_200_000_000L));
+        openWeek.setIntervalTo(new Date(1_699_250_000_000L));
+        em.merge(openWeek);
+
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+        em.flush();
+
+        IssuePublishService.WarningsNotAcknowledgedException refused =
+                assertThrows(IssuePublishService.WarningsNotAcknowledgedException.class,
+                        () -> publishService.publish(annualIssue.getId(),
+                                new IssuePublishService.PublishRequest(Set.of(), null,
+                                        new Date(1_699_300_000_000L))));
+        assertTrue(refused.codes().contains(ResolutionWarningCode.SOURCE_ISSUES_INCOMPLETE.name()),
+                "the release was refused for something other than the unfinished period: "
+                        + refused.codes());
+        assertEquals(IssueStatus.OPEN, annualIssue.getStatus(),
+                "a refused publish flipped the status anyway");
+
+        // Acknowledged, it goes out -- carrying the two weeks that ARE published.
+        publishService.publish(annualIssue.getId(),
+                new IssuePublishService.PublishRequest(
+                        Set.of(ResolutionWarningCode.SOURCE_ISSUES_INCOMPLETE.name()), null,
+                        new Date(1_699_300_000_000L)));
+        em.flush();
+        assertEquals(IssueStatus.PUBLISHED, annualIssue.getStatus());
+        assertEquals(3, frozenRowsOf(annualIssue).size());
+    }
+
+    /**
+     * An amend RE-DERIVES from the sources, at the original cut-off.
+     *
+     * The same rule as for any native issue, and it is what makes the regime
+     * usable: a source week retired or amended after the annual went out changes
+     * what the annual should hold, and the amend is how that correction reaches
+     * it. The cut-off is NOT re-taken, so the window is the one the release was
+     * decided over -- an amend must never silently re-decide which weeks are in
+     * the year.
+     */
+    @Test
+    @Transactional
+    public void anamendOfACompilationReDerivesFromTheSources() {
+        Compiled e = compiledEstate();
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+        em.flush();
+
+        publishService.publish(annualIssue.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_699_300_000_000L)));
+        em.flush();
+        assertEquals(3, frozenRowsOf(annualIssue).size());
+
+        // The second week is withdrawn: what went out for that period should not
+        // stand, so the year must stop carrying what it printed.
+        e.week2().setStatus(IssueStatus.RETIRED);
+        em.merge(e.week2());
+        em.flush();
+
+        publishService.amend(annualIssue.getId(),
+                new IssuePublishService.AmendRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, "the second week was withdrawn"));
+        em.flush();
+
+        List<IssueMember> rows = frozenRowsOf(annualIssue);
+        assertEquals(List.of("NM-A", "NM-B"),
+                rows.stream().map(IssueMember::getFrozenShortId).toList(),
+                "the amend did not re-derive from the sources; the year still prints a week that "
+                        + "was withdrawn");
+        assertEquals(e.week1().getPublicId(), annualIssue.getSnapshotSourceIssueIds(),
+                "the header still names the withdrawn week among the sources it holds");
+        assertEquals(new Date(1_699_300_000_000L), annualIssue.getCutoffStampedAt(),
+                "the amend moved the cut-off, which would re-decide which weeks are in the year");
+    }
+
+    /**
+     * What reaches the RENDERER is the document's sections, not a flat list.
+     *
+     * The renderer has no way to work out where a section begins: the ordered
+     * list it prints is uids and nothing else, and which week owned each of them
+     * is a fact only the release knows. So the sections travel in the request,
+     * and this is the assertion that they do -- in printed order, named as the
+     * weeks are named, with what somebody added by hand in a section of its own
+     * at the end, belonging to no week.
+     *
+     * The ids inside a section are a partition of the ordered list rather than a
+     * copy of it: a section that carried its own messages could print one the
+     * document does not contain, and nothing downstream would notice.
+     */
+    @Test
+    @Transactional
+    public void acompiledReleaseHandsTheRendererOneSectionPerSourceIssue() {
+        Compiled e = compiledEstate();
+        // Named apart, because a section is headed by the week's own name and a
+        // fixture in which every week is called the same thing cannot tell whether
+        // the heading came from the right one.
+        e.week1().getDescs().get(0).setName("Week one");
+        e.week2().getDescs().get(0).setName("Week two");
+        em.merge(e.week1());
+        em.merge(e.week2());
+
+        PublicationIssue annualIssue = issue(e.annual(), new Date(1_698_900_000_000L));
+        Message byHand = compiledMessage("NM-BY-HAND");
+        org.niord.core.user.User author = new org.niord.core.user.User();
+        author.setUsername(TestIds.id("curator-"));
+        em.persist(author);
+        IssueOverride include = new IssueOverride();
+        include.setIssue(annualIssue);
+        include.setAuthor(author);
+        include.setMessageUid(byHand.getUid());
+        include.setKind(OverrideKind.INCLUDE);
+        include.setReason("it belongs in the year although no week printed it");
+        em.persist(include);
+        em.flush();
+
+        StubIssueRenderService.reset();
+        publishService.publish(annualIssue.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_699_300_000_000L)));
+        em.flush();
+
+        IssueRenderService.RenderRequest request = StubIssueRenderService.lastRequest();
+        assertNotNull(request, "the release rendered nothing at all");
+        List<IssueRenderService.RenderGroup> groups = request.groups();
+        assertNotNull(groups, "a compiled release handed the renderer a flat list");
+
+        assertEquals(List.of(e.week1().getPublicId(), e.week2().getPublicId()),
+                groups.subList(0, 2).stream().map(IssueRenderService.RenderGroup::publicId).toList(),
+                "the sections are not the source weeks in cut-off order");
+        assertEquals(List.of("Week one", "Week two"),
+                groups.subList(0, 2).stream().map(IssueRenderService.RenderGroup::name).toList(),
+                "the sections are not headed by the weeks that printed them");
+        assertEquals(List.of(e.a().getUid(), e.b().getUid()), groups.get(0).messageIds(),
+                "the first week's section is not its own rows in its own order");
+        assertEquals(List.of(e.c().getUid()), groups.get(1).messageIds());
+
+        IssueRenderService.RenderGroup manual = groups.get(groups.size() - 1);
+        assertTrue(manual.manual(), "the last section is not the one added by hand");
+        assertNull(manual.publicId(), "the manual section names a week that never printed it");
+        assertEquals(List.of(byHand.getUid()), manual.messageIds());
+        assertEquals(3, groups.size(), "the document grew a section nothing was filed under");
+
+        // And the sections partition the list the renderer prints, exactly.
+        assertEquals(request.orderedMessages().stream().map(m -> m.getId()).toList(),
+                groups.stream().flatMap(g -> g.messageIds().stream()).toList(),
+                "the sections and the printed list are two different documents");
+    }
+
+    /** And an ordinary weekly hands over no sections at all. */
+    @Test
+    @Transactional
+    public void anordinaryReleaseHandsTheRendererNoGroups() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_699_000_000_000L));
+        em.flush();
+
+        StubIssueRenderService.reset();
+        publishService.publish(i.getId(),
+                new IssuePublishService.PublishRequest(IssuePublishService.PublishRequest.ALL_WARNINGS,
+                        null, new Date(1_700_000_000_000L)));
+        em.flush();
+
+        IssueRenderService.RenderRequest request = StubIssueRenderService.lastRequest();
+        assertNotNull(request);
+        assertNull(request.groups(),
+                "a query-backed release declared sections; a document with no sections must ask "
+                        + "for none, or every template would have to know which regime it is in");
+    }
+
 }

@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,6 +52,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MessageIssueLookupTest {
 
     private static final long HOUR = 3600_000L;
+
+    /**
+     * The compiled arm, for the cases that must never reach it.
+     *
+     * It THROWS rather than answering false, because "the branch was not taken"
+     * and "the branch was taken and said no" are the same assertion result and
+     * only one of them is what these cases mean. A query-backed issue routed
+     * through the compiled union would be a defect the negative assertions below
+     * would otherwise pass straight over.
+     */
+    private static final MessageIssueLookup.CompiledUnion NO_COMPILATION = (issue, uid, at) -> {
+        throw new AssertionError("the compiled arm was reached for a series that compiles nothing");
+    };
 
     // ------------------------------------------------------------- builders
 
@@ -120,7 +134,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(queryBackedSeries(), new Date(now.getTime() - 48 * HOUR));
 
         assertTrue(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
-                null, now));
+                null, now, NO_COMPILATION));
     }
 
     /**
@@ -136,7 +150,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(queryBackedSeries(), new Date(now.getTime() - 48 * HOUR));
 
         assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() + HOUR)),
-                null, now));
+                null, now, NO_COMPILATION));
     }
 
     /** A message the series' criteria do not select is not in it. */
@@ -148,7 +162,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(series, new Date(now.getTime() - 48 * HOUR));
 
         assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
-                null, now),
+                null, now, NO_COMPILATION),
                 "a TEMPORARY_NOTICE is not selected by a PRELIMINARY_NOTICE-only series");
     }
 
@@ -169,7 +183,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(queryBackedSeries(), new Date(now.getTime() - 48 * HOUR));
 
         assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
-                OverrideKind.EXCLUDE, now));
+                OverrideKind.EXCLUDE, now, NO_COMPILATION));
     }
 
     /**
@@ -186,7 +200,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(curatedSeries(), null);
 
         assertTrue(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
-                OverrideKind.INCLUDE, now));
+                OverrideKind.INCLUDE, now, NO_COMPILATION));
     }
 
     /** An INCLUDE also overrides a query that would have rejected the message. */
@@ -196,7 +210,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(queryBackedSeries(), new Date(now.getTime() - 48 * HOUR));
 
         assertTrue(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() + HOUR)),
-                OverrideKind.INCLUDE, now));
+                OverrideKind.INCLUDE, now, NO_COMPILATION));
     }
 
     /** With no override, a series that selects nothing by query reports nothing. */
@@ -206,7 +220,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(curatedSeries(), new Date(now.getTime() - 48 * HOUR));
 
         assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
-                null, now),
+                null, now, NO_COMPILATION),
                 "a series whose contents are named by hand must not gain members from a query");
     }
 
@@ -224,7 +238,7 @@ public class MessageIssueLookupTest {
         Date now = new Date();
         PublicationIssue issue = openIssue(queryBackedSeries(), new Date(now.getTime() - 48 * HOUR));
 
-        assertFalse(MessageIssueLookup.wouldContain(issue, null, null, now));
+        assertFalse(MessageIssueLookup.wouldContain(issue, null, null, now, NO_COMPILATION));
     }
 
     /**
@@ -239,7 +253,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(queryBackedSeries(), null);
 
         assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
-                null, now));
+                null, now, NO_COMPILATION));
     }
 
     /** A query-backed series with no criteria document has nothing to resolve. */
@@ -251,7 +265,7 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(series, new Date(now.getTime() - 48 * HOUR));
 
         assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
-                null, now));
+                null, now, NO_COMPILATION));
     }
 
     /**
@@ -270,6 +284,92 @@ public class MessageIssueLookupTest {
         PublicationIssue issue = openIssue(series, new Date(now.getTime() - 48 * HOUR));
 
         assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
-                null, now));
+                null, now, NO_COMPILATION));
+    }
+
+    // --------------------------------------------------------- the compiled arm
+
+    /** A compilation: query-backed, no criteria, and a source series to compile. */
+    private static PublicationSeries compilationOf(PublicationSeries source) {
+        PublicationSeries s = new PublicationSeries();
+        s.setSeriesId("accumulated-yearly-ntm");
+        s.setStatus(SeriesStatus.ACTIVE);
+        s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        s.setSourceSeries(source);
+        return s;
+    }
+
+    /**
+     * A compilation asks its sources, not the criteria path.
+     *
+     * The message has facts that the source series' own criteria would select,
+     * and they are beside the point: what decides a compiled membership is
+     * whether a PUBLISHED source issue inside the period already printed the
+     * message. Routing it through the predicate would answer about the
+     * compilation's own criteria -- which is null -- and report every member of
+     * every annual as absent.
+     */
+    @Test
+    public void acompilationIsAnsweredFromItsSourceIssues() {
+        Date now = new Date();
+        PublicationIssue issue = openIssue(compilationOf(queryBackedSeries()),
+                new Date(now.getTime() - 48 * HOUR));
+
+        assertTrue(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
+                null, now, (i, uid, at) -> true));
+        assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
+                null, now, (i, uid, at) -> false));
+    }
+
+    /** The union is asked about the message the facts name, at the instant asked for. */
+    @Test
+    public void thecompiledUnionIsAskedAboutThisMessageAtThisInstant() {
+        Date now = new Date();
+        PublicationIssue issue = openIssue(compilationOf(queryBackedSeries()),
+                new Date(now.getTime() - 48 * HOUR));
+
+        MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)), null, now,
+                (i, uid, at) -> {
+                    assertEquals("uid-1", uid, "the union was asked about a different message");
+                    assertEquals(now, at, "the union was asked at a different instant");
+                    return true;
+                });
+    }
+
+    /**
+     * An override still settles it outright on a compilation.
+     *
+     * The precedence is the publish path's own, and it does not change with the
+     * regime: a curator who excluded a message from the annual has decided
+     * something the union does not know about, and the union is not consulted.
+     */
+    @Test
+    public void anOverrideStillBeatsTheCompiledUnion() {
+        Date now = new Date();
+        PublicationIssue issue = openIssue(compilationOf(queryBackedSeries()),
+                new Date(now.getTime() - 48 * HOUR));
+
+        assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
+                OverrideKind.EXCLUDE, now, NO_COMPILATION));
+        assertTrue(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
+                OverrideKind.INCLUDE, now, NO_COMPILATION));
+    }
+
+    /**
+     * A compilation that names no source yet is not a compilation to ask about.
+     *
+     * It is the half-configured state the create form produces, and it resolves
+     * by overrides alone -- so it takes the ordinary query arm, where a null
+     * criteria document then answers nothing.
+     */
+    @Test
+    public void acompilationWithNoSourceIsNotAskedOfTheUnion() {
+        Date now = new Date();
+        PublicationSeries s = compilationOf(null);
+        PublicationIssue issue = openIssue(s, new Date(now.getTime() - 48 * HOUR));
+
+        assertFalse(MessageIssueLookup.wouldContain(issue, published(new Date(now.getTime() - HOUR)),
+                null, now, NO_COMPILATION));
     }
 }

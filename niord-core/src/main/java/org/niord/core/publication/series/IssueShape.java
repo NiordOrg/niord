@@ -140,7 +140,8 @@ public class IssueShape extends BaseService {
      * recovering a known period -- keeps it; this only fills a bound nobody set.
      */
     private void shapeInterval(PublicationIssue issue, PublicationSeries series, Date now) {
-        boolean tiles = series != null && series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
+        boolean tiles = series != null && series.getTimeRelation() != null
+                && series.getTimeRelation().tiles();
 
         // The instant the period hangs off: the bound the caller supplied, else
         // the close of the newest issue that has one, else the series' declared
@@ -390,7 +391,8 @@ public class IssueShape extends BaseService {
      * question about every publication in the estate.
      */
     private Date spanStart(PublicationIssue issue, PublicationSeries series) {
-        if (series == null || series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL) {
+        if (series == null
+                || (series.getTimeRelation() != null && series.getTimeRelation().tiles())) {
             return issue.getIntervalFrom();
         }
         if (series.getCadence() != SeriesCadence.WEEKLY) {

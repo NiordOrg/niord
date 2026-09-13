@@ -35,6 +35,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * S12. The issue that does not exist yet.
@@ -62,6 +63,9 @@ public class IssueDraftService extends BaseService {
 
     @Inject
     MemberResolutionService memberResolver;
+
+    @Inject
+    CompilationResolver compilations;
 
     @Inject
     IssueLifecycleService lifecycle;
@@ -127,7 +131,7 @@ public class IssueDraftService extends BaseService {
                               Date explicitFrom, Date explicitTo, Date now, String lang) {
         List<IssueDraftWarningVo> warnings = new ArrayList<>();
         List<PublicationIssue> issues = issuesNewestFirst(series);
-        boolean tiles = series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
+        boolean tiles = series.getTimeRelation() != null && series.getTimeRelation().tiles();
         ZoneId zone = series.cutoffZone();
 
         // WHERE THE PERIOD OPENS, and how firm that bound is.
@@ -249,9 +253,10 @@ public class IssueDraftService extends BaseService {
         vo.setStatus(IssueStatus.OPEN.name());
         vo.setComputedStatus(IssueStatus.OPEN.name());
 
-        // IN_FORCE_AT_CUTOFF carries NO lower bound -- §4.2 refuses one outright,
-        // so the draft must not prefill a form with a value the create rejects.
-        // The bound is still used above to work out where the period closes.
+        // A RELATION THAT DOES NOT TILE carries NO lower bound -- an in-force issue
+        // is refused one outright -- so the draft must not prefill a form with a
+        // value the create rejects. The bound is still used above to work out
+        // where the period closes.
         vo.setIntervalFrom(tiles ? from : null);
         vo.setIntervalFromSource(tiles && fromSource != null ? fromSource.name() : null);
         vo.setIntervalTo(to);
@@ -345,6 +350,24 @@ public class IssueDraftService extends BaseService {
         IssueCriteriaVo document = series.getCriteria();
         if (cutoff == null) {
             return null;   // no interval; the reason is already among the warnings
+        }
+        // A COMPILATION HAS A COUNT TOO, and it is the number the gap row exists
+        // to show. It selects nothing by query -- it has no criteria document at
+        // all -- but its members are a fact about the source series' published
+        // issues, so the question "how many would this year hold" has an answer
+        // before the issue is created, and an admin filling in a missing year is
+        // deciding on it. Answered by the same derivation the create would use,
+        // with no curation: a draft has no overrides yet.
+        if (MembershipRegime.of(series) == MembershipRegime.COMPILED) {
+            try {
+                return compilations.resolve(series.getSourceSeries(), new Interval(from, cutoff),
+                        Set.of(), Set.of()).members().size();
+            } catch (RuntimeException e) {
+                warnings.add(new IssueDraftWarningVo(CRITERIA_UNRESOLVABLE,
+                        "the source series' published issues could not be read over this interval, "
+                                + "so no count was taken: " + e.getMessage()));
+                return null;
+            }
         }
         if (document == null || series.getTimeRelation() == null) {
             warnings.add(new IssueDraftWarningVo(NO_MEMBERSHIP_CRITERIA,

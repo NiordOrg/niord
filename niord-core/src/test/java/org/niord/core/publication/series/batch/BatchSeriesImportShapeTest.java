@@ -86,6 +86,27 @@ public class BatchSeriesImportShapeTest {
         assertTrue(src.contains("series.setStatus(keep);"));
     }
 
+    /**
+     * A named source series is resolved, and a missing one drops the row.
+     *
+     * The failure it guards is quiet: a compilation whose source is not in this
+     * installation resolves nothing, so it would import looking configured and
+     * publish empty issues. The category precedent is the same shape and is
+     * asserted the same way, one line above the field it protects.
+     */
+    @Test
+    public void amissingSourceSeriesDropsTheRowRatherThanImportingAnEmptyCompilation()
+            throws IOException {
+        String src = read();
+        assertTrue(src.contains("seriesService.findBySeriesId(vo.getSourceSeriesId().trim())"),
+                "the source series is not resolved, so sourceSeriesId in a file reaches nothing");
+        assertTrue(src.contains("import the source first"),
+                "a source this installation does not have must drop the row with a sentence that "
+                        + "says what to do about it, not fail at the flush");
+        assertTrue(src.contains("series.setSourceSeries(source);"),
+                "the resolved source never reaches the series");
+    }
+
     private static String read() throws IOException {
         assertTrue(Files.isRegularFile(PROCESSOR),
                 "missing " + PROCESSOR + " -- this test reads source, so a move breaks it silently "

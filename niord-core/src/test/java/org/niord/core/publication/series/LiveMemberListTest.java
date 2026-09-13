@@ -331,4 +331,78 @@ public class LiveMemberListTest {
         assertEquals(0L, em.createQuery("SELECT COUNT(x) FROM IssueMember x WHERE x.issue = :i", Long.class)
                 .setParameter("i", i).getSingleResult());
     }
+
+    /**
+     * And it reports one for a COMPILATION, through the same rule.
+     *
+     * The count on the series list and the strip goes through the shared
+     * resolution, so it answers for whichever regime the series is in. Left to
+     * the criteria path a compilation would answer null -- there is no document
+     * to resolve -- and a running annual would show a blank where every other
+     * open issue shows how full it is.
+     */
+    @Test
+    @Transactional
+    public void thelistReportsTheLiveCountForACompilationToo() {
+        PublicationSeries source = series();
+        Message a = message("NM-001");
+        Message b = message("NM-002");
+
+        PublicationCategory c = new PublicationCategory();
+        c.setCategoryId(TestIds.category());
+        c.setPriority(100);
+        em.persist(c);
+
+        PublicationSeries annual = new PublicationSeries();
+        annual.setSeriesId(TestIds.series());
+        annual.setStatus(SeriesStatus.ACTIVE);
+        annual.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        annual.setReportId("some-report");
+        annual.setCadence(SeriesCadence.YEARLY);
+        annual.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        annual.setReleaseMode(ReleaseMode.MANUAL_GATE);
+        annual.setNextIssueCreation(NextIssueCreation.MANUAL);
+        annual.setMessagePublication(MessagePublication.NONE);
+        annual.setNumberingScheme(NumberingScheme.NONE);
+        annual.setCategory(c);
+        annual.setDomain(TestOwnerDomain.of(em));
+        annual.getLanguages().add("da");
+        annual.setSourceSeries(source);
+        annual.createDesc("da").setName("Akkumuleret");
+        em.persist(annual);
+
+        // One published week of the source, frozen by hand as its release left it.
+        PublicationIssue week = new PublicationIssue();
+        week.setSeries(source);
+        week.setPublicId(UUID.randomUUID().toString());
+        week.setRepoPath("publications/" + week.getPublicId());
+        week.setStatus(IssueStatus.PUBLISHED);
+        week.setIntervalFrom(OPENS);
+        week.setIntervalFromSource(IntervalBoundSource.STAMPED);
+        week.setCutoffStampedAt(new Date(OPENS.getTime() + WEEK));
+        week.createDesc("da").setName("EfS uge 44");
+        em.persist(week);
+        int sortIndex = 0;
+        for (Message m : List.of(a, b)) {
+            IssueMember row = new IssueMember();
+            row.setIssue(week);
+            row.setMessageUid(m.getUid());
+            row.setMessage(m);
+            row.setSortIndex(sortIndex++);
+            row.setFrozenShortId(m.getShortId());
+            row.setFrozenMainType(m.getMainType().name());
+            row.setFrozenType(m.getType().name());
+            row.setFrozenStatus(m.getStatus().name());
+            row.setSource(MemberSource.CRITERIA);
+            em.persist(row);
+        }
+
+        PublicationIssue i = lifecycle.create(annual, new Date(OPENS.getTime() - 3600_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        assertEquals(Integer.valueOf(2), memberList.liveMemberCount(i),
+                "the running annual reported no live count at all; the shared resolution has to "
+                        + "answer for the compiled regime as it does for a query");
+    }
 }

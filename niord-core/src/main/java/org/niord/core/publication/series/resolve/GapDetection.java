@@ -107,7 +107,7 @@ public final class GapDetection {
         // cadence is expected to keep releasing exactly as a tiling one is, and a
         // cadence-less series has no relation worth asking about (S-1 leaves it
         // with none), so NO_CADENCE has to be the first answer.
-        boolean tiling = relation == TimeRelation.PUBLISHED_IN_INTERVAL;
+        boolean tiling = relation != null && relation.tiles();
         if (cadence == null || "NONE".equals(cadence)) {
             return new Gate(false, Reason.NO_CADENCE,
                     "this publication has no cadence, so there is no period it can be missing", tiling);

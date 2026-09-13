@@ -23,11 +23,14 @@ import jakarta.transaction.Transactional;
 
 import org.niord.core.publication.MessageNaming;
 import org.niord.core.publication.series.resolve.IssueOrdering;
+import org.niord.core.publication.series.resolve.MembershipReason;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueMemberVo;
 import org.niord.core.publication.series.vo.LiveMessageStateVo;
 import org.niord.core.publication.series.vo.IssueOverrideVo;
 import org.niord.core.publication.series.vo.MemberCurationVo;
+import org.niord.core.publication.series.vo.SourceIssueRefVo;
+import org.niord.core.publication.series.vo.SourceIssueVo;
 import org.niord.model.message.Status;
 
 import java.util.ArrayList;
@@ -238,6 +241,17 @@ public class IssueMemberListService {
 
         Map<String, LiveFacts> live = liveFacts(frozen);
         Map<String, String> titles = titlesOf(live.keySet(), lang);
+        // The source issues this list was compiled from, in ONE query over the
+        // distinct ids: a compiled annual holds a thousand rows across fifty
+        // weeks, and a lookup per row would be a thousand round-trips to draw
+        // fifty headings.
+        Set<String> sourceIds = new LinkedHashSet<>();
+        for (IssueMember m : frozen) {
+            if (m.getSourceIssuePublicId() != null) {
+                sourceIds.add(m.getSourceIssuePublicId());
+            }
+        }
+        Map<String, SourceIssueRefVo> sources = sourceRefsOf(sourceIds, lang);
 
         List<IssueMemberVo> out = new ArrayList<>();
         for (IssueMember m : frozen) {
@@ -259,6 +273,12 @@ public class IssueMemberListService {
             // disagree with the first.
             vo.setReasonCode(deriveReason(m, issue));
             vo.setReasonNote(m.getReasonNote());
+
+            // Null on every row of every other regime, and on a compilation's
+            // manual includes. Asked before the lookup because an immutable empty
+            // map refuses a null key rather than answering absent.
+            vo.setSourceIssue(m.getSourceIssuePublicId() == null
+                    ? null : sources.get(m.getSourceIssuePublicId()));
 
             IssueOverride override = m.getOverride() != null
                     ? m.getOverride() : overrides.get(m.getMessageUid());
@@ -329,8 +349,12 @@ public class IssueMemberListService {
                         : IssueOrdering.Direction.valueOf(series.getMessageSortOrder().name()),
                 series == null || series.getDomain() == null
                         ? null : series.getDomain().getMessageSortOrder());
-        List<IssueOrdering.Orderable> ordered =
-                IssueOrdering.order(resolver.orderablesFor(resolution.members()), sort);
+        // The SAME order publish and the preview use, from the one definition of
+        // it: what an admin reads on screen and what the renderer prints are
+        // supposed to be the same list, and a compilation's order comes from its
+        // sources rather than from the series' sort.
+        List<IssueOrdering.Orderable> ordered = MemberResolutionService.orderFor(
+                resolution, resolver.orderablesFor(resolution.members()), sort);
         Map<String, Integer> sortIndex = IssueOrdering.assignSortIndex(ordered);
 
         // The live facts for the rows, in one query, the same way the frozen half
@@ -339,6 +363,19 @@ public class IssueMemberListService {
         // which is what the row is FOR.
         Map<String, LiveFacts> facts = liveFactsOf(sortIndex.keySet());
         Map<String, String> titles = titlesOf(facts.keySet(), lang);
+        // The same one-query lookup the frozen half uses, off the resolution's
+        // owner map instead of off frozen columns that do not exist yet. One
+        // builder for both halves, because the screen renders the same headings
+        // before and after a release and two builders would let them differ.
+        Set<String> sourceIds = new LinkedHashSet<>();
+        if (resolution.compiled()) {
+            for (CompilationResolver.SourceRef ref : resolution.sourceOf().values()) {
+                if (ref.publicId() != null) {
+                    sourceIds.add(ref.publicId());
+                }
+            }
+        }
+        Map<String, SourceIssueRefVo> sources = sourceRefsOf(sourceIds, lang);
 
         List<IssueMemberVo> out = new ArrayList<>();
         for (IssueOrdering.Orderable o : ordered) {
@@ -356,15 +393,27 @@ public class IssueMemberListService {
             vo.setFrozenPublishDateFrom(fact == null ? null : fact.publishDateFrom());
             vo.setFrozenPublishDateTo(fact == null ? null : fact.publishDateTo());
 
-            // A row is here because the query selected it, or because somebody put
-            // it here. The include overrides are the only ones that can produce a
-            // member; an exclude removes one, so it never has a row to be the
-            // reason for.
+            // A row is here because a derivation selected it, or because somebody
+            // put it here. The include overrides are the only ones that can
+            // produce a member; an exclude removes one, so it never has a row to
+            // be the reason for.
+            //
+            // WHICH DERIVATION comes off the resolution rather than off the series,
+            // because the resolution is what actually produced this row: a
+            // compiled row carries a source issue and a criteria row does not, and
+            // asking the series would be re-deriving the regime a second time
+            // beside the answer that already knows.
             boolean manual = override != null && override.getKind() == OverrideKind.INCLUDE;
-            vo.setSource(manual ? MemberSource.OVERRIDE_INCLUDE.name() : MemberSource.CRITERIA.name());
+            boolean fromSource = !manual && resolution.compiled()
+                    && resolution.sourceOf().containsKey(uid);
+            vo.setSource(manual ? MemberSource.OVERRIDE_INCLUDE.name()
+                    : fromSource ? MemberSource.COMPILED.name() : MemberSource.CRITERIA.name());
             vo.setReasonCode(manual ? "MANUAL_INCLUDE"
+                    : fromSource ? MembershipReason.FROM_SOURCE_ISSUE.name()
                     : series != null && series.getTimeRelation() == TimeRelation.IN_FORCE_AT_CUTOFF
                             ? "IN_FORCE_AT_CUTOFF" : "IN_INTERVAL");
+            vo.setSourceIssue(fromSource
+                    ? sources.get(resolution.sourceOf().get(uid).publicId()) : null);
             vo.setCuration(curationOf(override));
             out.add(vo);
         }
@@ -385,8 +434,113 @@ public class IssueMemberListService {
         if (m.getSource() == MemberSource.IMPORTED) {
             return "IMPORTED";
         }
+        // Off the ROW's own source, not off the snapshot relation, and the
+        // difference matters on a compilation: its manual includes carry
+        // OVERRIDE_INCLUDE and are answered above, while everything else came from
+        // a source issue and says so.
+        if (m.getSource() == MemberSource.COMPILED) {
+            return MembershipReason.FROM_SOURCE_ISSUE.name();
+        }
         return TimeRelation.IN_FORCE_AT_CUTOFF == issue.getSnapshotTimeRelation()
                 ? "IN_FORCE_AT_CUTOFF" : "IN_INTERVAL";
+    }
+
+    /**
+     * The sources panel: every source-series issue inside the period, named.
+     *
+     * Off the survey the resolution already took, so the panel, the
+     * SOURCE_ISSUES_COMPLETE row and the warning the publish gate enforces are
+     * one answer. A panel that surveyed the source series for itself would be a
+     * second answer to the same question, and the one an admin is reading would
+     * not be the one the release enforced.
+     *
+     * The names come from the same one-query lookup the member rows use.
+     */
+    public List<SourceIssueVo> sources(CompilationResolver.Survey survey,
+                                       PublicationSeries source, String lang) {
+        if (survey == null) {
+            return null;
+        }
+        Set<String> ids = new LinkedHashSet<>();
+        for (CompilationResolver.SourceIssue s : survey.sources()) {
+            if (s.publicId() != null) {
+                ids.add(s.publicId());
+            }
+        }
+        Map<String, SourceIssueRefVo> named = sourceRefsOf(ids, lang);
+
+        List<SourceIssueVo> out = new ArrayList<>();
+        for (CompilationResolver.SourceIssue s : survey.sources()) {
+            SourceIssueVo vo = new SourceIssueVo();
+            vo.setPublicId(s.publicId());
+            vo.setSeriesId(source == null ? null : source.getSeriesId());
+            vo.setWeek(s.week());
+            vo.setWeekTo(s.weekTo());
+            vo.setYear(s.year());
+            vo.setCutoff(s.cutoff());
+            vo.setStatus(s.status());
+            vo.setMemberCount(s.memberCount());
+            vo.setIntervalFrom(s.intervalFrom());
+            SourceIssueRefVo ref = s.publicId() == null ? null : named.get(s.publicId());
+            vo.setName(ref == null ? null : ref.getName());
+            out.add(vo);
+        }
+        return out;
+    }
+
+    /**
+     * The source issues a compiled list points at, named and numbered, in ONE
+     * query.
+     *
+     * THE MEMBER ROW FREEZES A PUBLIC ID AND NOTHING ELSE, so everything the
+     * heading shows is read here and read live. That is deliberate: a weekly's
+     * name and its week numbers are corrected during an import and its name is
+     * editable afterwards, and a compilation that had frozen copies of them would
+     * head its sections with values that no longer match the issues they link to.
+     *
+     * A source issue that is GONE is not an error. A retired issue is deletable,
+     * and deleting one must not take the record of what a published annual
+     * printed with it -- so the id has no entry here, the row's reference carries
+     * the publicId alone, and the heading degrades to "an issue that is no longer
+     * here" rather than disappearing.
+     *
+     * Public because the RENDERER needs the same headings: the sections of a
+     * compiled document are the source issues, named and numbered exactly as the
+     * screen names them, and a second lookup would be a second answer to the one
+     * question of what a week is called.
+     */
+    public Map<String, SourceIssueRefVo> sourceRefsOf(Collection<String> publicIds, String lang) {
+        if (publicIds.isEmpty()) {
+            return Map.of();
+        }
+        List<String> all = new ArrayList<>(publicIds);
+        Map<String, SourceIssueRefVo> out = new LinkedHashMap<>();
+        for (int from = 0; from < all.size(); from += LOOKUP_CHUNK) {
+            List<String> chunk = all.subList(from, Math.min(from + LOOKUP_CHUNK, all.size()));
+            for (PublicationIssue i : em.createQuery(
+                            "SELECT DISTINCT i FROM PublicationIssue i LEFT JOIN FETCH i.descs "
+                                    + "WHERE i.publicId IN (:ids)", PublicationIssue.class)
+                    .setParameter("ids", chunk)
+                    .getResultList()) {
+                SourceIssueRefVo vo = new SourceIssueRefVo();
+                vo.setPublicId(i.getPublicId());
+                vo.setSeriesId(i.getSeries() == null ? null : i.getSeries().getSeriesId());
+                vo.setWeek(i.getWeek());
+                vo.setWeekTo(i.getWeekTo());
+                vo.setYear(i.getYear());
+                vo.setCutoff(i.effectiveCutoff());
+                vo.setName(IssueListService.nameOf(i, lang));
+                out.put(i.getPublicId(), vo);
+            }
+        }
+        for (String id : publicIds) {
+            if (!out.containsKey(id)) {
+                SourceIssueRefVo vo = new SourceIssueRefVo();
+                vo.setPublicId(id);
+                out.put(id, vo);
+            }
+        }
+        return out;
     }
 
     // ------------------------------------------------------------------ drift

@@ -105,6 +105,26 @@ public class BatchPublicationSeriesImportProcessor extends AbstractItemHandler {
             }
         }
 
+        // The series this one compiles, by its immutable seriesId -- the only
+        // handle that survives an export and an import into another installation.
+        //
+        // A NAMED SOURCE THAT IS NOT HERE DROPS THE ROW, exactly as an unknown
+        // category or domain does, and for the same reason: a compilation whose
+        // source is missing resolves nothing, so importing it would produce a
+        // series that looks configured and publishes empty. The file may also
+        // simply list the source AFTER the compilation, in which case the row is
+        // dropped with a sentence naming what to do about it.
+        PublicationSeries source = null;
+        if (vo.getSourceSeriesId() != null && !vo.getSourceSeriesId().isBlank()) {
+            source = seriesService.findBySeriesId(vo.getSourceSeriesId().trim());
+            if (source == null) {
+                getLog().warning("Skipping series " + vo.getSeriesId() + ": it compiles '"
+                        + vo.getSourceSeriesId() + "', and no series of that id is in this "
+                        + "installation yet -- import the source first");
+                return null;
+            }
+        }
+
         PublicationSeries existing = seriesService.findBySeriesId(vo.getSeriesId());
         PublicationSeries series = existing == null ? new PublicationSeries() : existing;
 
@@ -137,6 +157,14 @@ public class BatchPublicationSeriesImportProcessor extends AbstractItemHandler {
         if (domain != null) {
             series.setDomain(domain);
         }
+
+        // AN ABSENT sourceSeriesId CLEARS IT, unlike the two references above.
+        // Those sit on NOT NULL columns where absence can only mean "unchanged";
+        // this one is the operand of an optional regime, and a document that says
+        // nothing about it describes a series that compiles nothing. Leaving a
+        // stale source behind would make the imported series disagree with the
+        // file it was imported from.
+        series.setSourceSeries(source);
         // The sharing list, through the resolver both editors use, so a file and a
         // form mean the same thing: deduplicated, the owner stripped, an inactive
         // domain kept and an unknown one refused. A document that says nothing

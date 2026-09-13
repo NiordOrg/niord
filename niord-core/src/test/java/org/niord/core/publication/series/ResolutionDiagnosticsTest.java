@@ -57,6 +57,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * when the UI renders and translates all twelve and two-thirds of them never
  * arrive.
  *
+ * A thirteenth arrived with the compiled regime, on the warnings side, and it is
+ * covered here on the same terms as the rest.
+ *
  * The two vocabularies are also asserted disjoint. An earlier wording of the
  * spec mixed four values drawn from across both, which is exactly how that
  * mismatch starts.
@@ -68,6 +71,9 @@ public class ResolutionDiagnosticsTest {
 
     @Inject
     MemberResolutionService resolver;
+
+    @Inject
+    CompilationResolver compilations;
 
     @Inject
     EntityManager em;
@@ -86,10 +92,12 @@ public class ResolutionDiagnosticsTest {
                 .map(Enum::name).collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
 
         assertEquals(6, misses.size(), "the omissions vocabulary is not six codes");
-        // Five, since type drift left. It is not a fact about a resolution -- a
-        // resolution has no frozen snapshot to compare against -- and the member
-        // list already answers it per row, against the live message.
-        assertEquals(5, warnings.size(), "the warnings vocabulary is not five codes");
+        // Six. Type drift left -- it is not a fact about a resolution, which has
+        // no frozen snapshot to compare against, and the member list already
+        // answers it per row against the live message -- and the compiled regime
+        // brought one of its own: a period whose source series has not finished
+        // publishing it.
+        assertEquals(6, warnings.size(), "the warnings vocabulary is not six codes");
 
         Set<String> both = new LinkedHashSet<>(misses);
         both.retainAll(warnings);
@@ -102,10 +110,17 @@ public class ResolutionDiagnosticsTest {
                     gone + " came back; it was dropped rather than aliased");
         }
 
-        assertEquals(1, EnumSet.allOf(ResolutionWarningCode.class).stream()
+        // TWO are acknowledgeable, and both name a condition an admin can decide
+        // to release in rather than fix: a member cancelled yet still open at the
+        // cut-off, and a compilation whose period the source series has not
+        // finished. Every other warning describes the release without gating it.
+        assertEquals(2, EnumSet.allOf(ResolutionWarningCode.class).stream()
                         .filter(ResolutionWarningCode::isAcknowledgeable).count(),
-                "exactly one warning is acknowledgeable, and it is CANCELLED_BUT_DATE_ALIVE");
+                "the acknowledgeable warnings are CANCELLED_BUT_DATE_ALIVE and "
+                        + "SOURCE_ISSUES_INCOMPLETE, and nothing else: a code with no control to "
+                        + "clear it refuses the same release for ever");
         assertTrue(ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.isAcknowledgeable());
+        assertTrue(ResolutionWarningCode.SOURCE_ISSUES_INCOMPLETE.isAcknowledgeable());
     }
 
     // ------------------------------------------------------------- the twelve cases
@@ -209,6 +224,23 @@ public class ResolutionDiagnosticsTest {
                 huge.members().size() + " members did not trip the " + MemberResolutionService.MEMBER_LIMIT + " limit");
         warningsSeen.add(ResolutionWarningCode.LIMIT_EXCEEDED);
 
+        // SOURCE_ISSUES_INCOMPLETE. A compilation whose period still holds a
+        // source issue nobody has published -- the annual put out in the first
+        // days of January, before the last week of December is out. It is the
+        // second acknowledgeable warning, and the publish gate refuses an
+        // unacknowledged release on it, because a week missing from a document of
+        // a thousand notices is invisible to the person releasing it.
+        MemberResolutionService.Resolution compiled = compilations.resolve(
+                sourceSeriesWithAnUnfinishedWeek(new Date(cutoff.getTime() - 1000)),
+                window, Set.of(), Set.of());
+        Optional<ResolutionWarningVo> unfinished =
+                compiled.warning(ResolutionWarningCode.SOURCE_ISSUES_INCOMPLETE);
+        assertTrue(unfinished.isPresent(),
+                "a period with an unpublished source week raised nothing, so the year could go "
+                        + "out short of it without a word");
+        assertTrue(unfinished.get().acknowledgeable());
+        warningsSeen.add(ResolutionWarningCode.SOURCE_ISSUES_INCOMPLETE);
+
         // --- coverage ------------------------------------------------------
         Set<CriteriaMissCode> missingMisses = EnumSet.allOf(CriteriaMissCode.class);
         missingMisses.removeAll(missesSeen);
@@ -226,6 +258,54 @@ public class ResolutionDiagnosticsTest {
 
     private static MessageFacts facts(String uid, Date from, Date to, Status status, Type type, String series) {
         return new MessageFacts(uid, from, to, status, type, series);
+    }
+
+    /**
+     * A weekly series with one issue nobody has published, closing inside the
+     * window.
+     *
+     * Its own series and its own issue rather than anything in the corpus,
+     * because what this case is about is the state of a source series at one
+     * instant -- and a fixture that depended on which weeks a shared database
+     * happens to have open would stop exercising the code without going red.
+     */
+    private PublicationSeries sourceSeriesWithAnUnfinishedWeek(Date closes) {
+        org.niord.core.publication.PublicationCategory c =
+                new org.niord.core.publication.PublicationCategory();
+        c.setCategoryId(org.niord.core.publication.TestIds.category());
+        c.setPriority(100);
+        em.persist(c);
+
+        PublicationSeries s = new PublicationSeries();
+        s.setSeriesId(org.niord.core.publication.TestIds.series());
+        s.setStatus(SeriesStatus.ACTIVE);
+        s.setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        s.setReportId("some-report");
+        s.setCadence(SeriesCadence.WEEKLY);
+        s.setTimeRelation(TimeRelation.PUBLISHED_IN_INTERVAL);
+        s.setAliveAtCutoff(Boolean.FALSE);
+        s.setReleaseMode(ReleaseMode.MANUAL_GATE);
+        s.setNextIssueCreation(NextIssueCreation.MANUAL);
+        s.setMessagePublication(org.niord.core.publication.vo.MessagePublication.NONE);
+        s.setNumberingScheme(NumberingScheme.NONE);
+        s.setCategory(c);
+        s.setDomain(TestOwnerDomain.of(em));
+        s.getLanguages().add("da");
+        s.createDesc("da").setName("Weekly source");
+        em.persist(s);
+
+        PublicationIssue i = new PublicationIssue();
+        i.setSeries(s);
+        i.setPublicId(java.util.UUID.randomUUID().toString());
+        i.setRepoPath("publications/" + i.getPublicId());
+        i.setStatus(IssueStatus.OPEN);
+        i.setIntervalFrom(new Date(closes.getTime() - 24 * 3600_000L));
+        i.setIntervalFromSource(IntervalBoundSource.STAMPED);
+        i.setIntervalTo(closes);
+        i.createDesc("da").setName("An unfinished week");
+        em.persist(i);
+        em.flush();
+        return s;
     }
 
     private List<MessageFacts> corpusOf(String seriesId) {

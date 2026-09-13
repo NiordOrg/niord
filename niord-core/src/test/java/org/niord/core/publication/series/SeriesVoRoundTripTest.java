@@ -32,6 +32,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -65,7 +66,12 @@ public class SeriesVoRoundTripTest {
             // availableDomainIds and the resource looks each one up, refusing an
             // id that names nothing or names an inactive domain. Round-tripping
             // the Domain objects would assert something no caller can do.
-            "availableDomains");
+            "availableDomains",
+            // The series a compilation compiles. The wire carries sourceSeriesId
+            // and the resource resolves it, refusing an id that names nothing
+            // with SOURCE_SERIES_NOT_FOUND -- so round-tripping the entity would
+            // assert a journey no caller can make.
+            "sourceSeries");
 
     /**
      * Fields deliberately off the wire entirely.
@@ -121,7 +127,12 @@ public class SeriesVoRoundTripTest {
             // field that must never be written from a body: updateFromVo drops it
             // deliberately, because the optimistic-lock guard compares it and a
             // client that could assign it would control its own guard.
-            "version", "the optimistic-lock counter, on VersionedEntity; compared, never assigned");
+            "version", "the optimistic-lock counter, on VersionedEntity; compared, never assigned",
+            // The id form of the source-series reference, on the same terms as
+            // domainId above it: resolved by the REST layer and by the batch
+            // import, each of which refuses an id that names no series rather
+            // than leaving a compilation with nothing to compile.
+            "sourceSeriesId", "the id of the source-series reference, resolved by the REST layer");
 
     /**
      * Every field on the wire is either a stored setting or a declared derivation.
@@ -155,6 +166,41 @@ public class SeriesVoRoundTripTest {
                     + "Either updateFromVo/toVo is missing a field an admin can edit and lose, or the "
                     + "field is derived -- in which case add it to DERIVED_ON_THE_VO with the reason.");
         }
+    }
+
+    /**
+     * The source series reaches the wire, and only as its seriesId.
+     *
+     * It is excluded from the round-trip probe above because the resource
+     * resolves it, so the one thing nothing else asserts is that the READ half
+     * happens at all -- and a source that never reaches the wire is a compilation
+     * whose editor cannot show what it compiles, and whose export cannot carry it
+     * into the next installation.
+     */
+    @Test
+    public void thesourceSeriesTravelsAsItsSeriesId() {
+        PublicationSeries source = new PublicationSeries();
+        source.setSeriesId("weekly-ntm");
+
+        PublicationSeries compilation = new PublicationSeries();
+        compilation.setSeriesId("accumulated-yearly-ntm");
+        compilation.setSourceSeries(source);
+
+        assertEquals("weekly-ntm",
+                compilation.toVo(SystemPublicationSeriesVo.class).getSourceSeriesId());
+
+        // And a series that compiles nothing says nothing, rather than an empty
+        // string a client would have to tell apart from a real id.
+        assertNull(new PublicationSeries().toVo(SystemPublicationSeriesVo.class).getSourceSeriesId());
+
+        // The lean shape does not declare it at all, so it cannot leak however the
+        // caller got hold of the object.
+        assertFalse(java.util.Arrays.stream(
+                        org.niord.core.publication.series.vo.PublicationSeriesVo.class
+                                .getDeclaredFields())
+                        .anyMatch(f -> "sourceSeriesId".equals(f.getName())),
+                "the public series shape declares sourceSeriesId; which other publication a "
+                        + "document is assembled from is not a public question");
     }
 
     @Test

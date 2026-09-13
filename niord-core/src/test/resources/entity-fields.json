@@ -1,6 +1,6 @@
 {
   "note": "Generated from DATA-MODEL.md sections 3.1-3.10 by gen-field-manifest.js. Do not hand-edit.",
-  "sourceSha256": "7642e0452c2417e37ae5d3a66df3cc3828ac571622462ab7db195fd626022d55",
+  "sourceSha256": "144e11f162469b8e981a92e112e0701977c2a875c742bfb648ec52a23469ce6d",
   "entities": [
     {
       "entity": "PublicationSeries",
@@ -155,7 +155,7 @@
         },
         {
           "name": "timeRelation",
-          "ddl": "timeRelation enum('PUBLISHED_IN_INTERVAL','IN_FORCE_AT_CUTOFF')",
+          "ddl": "timeRelation enum('PUBLISHED_IN_INTERVAL','IN_FORCE_AT_CUTOFF','COMPILED_FROM_SOURCE') **(the third value added 2026-09-13 by V18__compilation_series.sql, the V4 MODIFY idiom)**",
           "nullable": true,
           "notNull": false,
           "unique": false
@@ -170,6 +170,13 @@
         {
           "name": "criteria",
           "ddl": "criteria TEXT + @Convert(JpaCriteriaAttributeConverter.class)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "sourceSeries",
+          "ddl": "sourceSeries_id INTEGER FK → PublicationSeries(id), index pub_series_source_k",
           "nullable": true,
           "notNull": false,
           "unique": false
@@ -564,7 +571,7 @@
         },
         {
           "name": "membershipProvenance",
-          "ddl": "membershipProvenance enum('EXACT','EXPLAINED_DIFF','UNION_SNAPSHOT','NO_MEMBERSHIP','IMPORTED') **(IMPORTED added 2026-08-23 by V4__membership_provenance_imported.sql, ruling B5-iv)**",
+          "ddl": "membershipProvenance enum('EXACT','EXPLAINED_DIFF','UNION_SNAPSHOT','NO_MEMBERSHIP','IMPORTED','COMPILED') **(IMPORTED added 2026-08-23 by V4__membership_provenance_imported.sql, ruling B5-iv; COMPILED added 2026-09-13 by V18__compilation_series.sql)**",
           "nullable": true,
           "notNull": false,
           "unique": false
@@ -614,6 +621,20 @@
         {
           "name": "snapshotSeriesIds",
           "ddl": "snapshotSeriesIds TEXT + JSON converter",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotSourceSeriesId",
+          "ddl": "snapshotSourceSeriesId VARCHAR(64)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "snapshotSourceIssueIds",
+          "ddl": "snapshotSourceIssueIds TEXT (comma-separated publicIds, in cut-off order)",
           "nullable": true,
           "notNull": false,
           "unique": false
@@ -926,9 +947,16 @@
         },
         {
           "name": "source",
-          "ddl": "source enum('CRITERIA','OVERRIDE_INCLUDE','IMPORTED') NOT NULL",
+          "ddl": "source enum('CRITERIA','OVERRIDE_INCLUDE','IMPORTED','COMPILED') NOT NULL **(COMPILED added 2026-09-13 by V18__compilation_series.sql)**",
           "nullable": false,
           "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "sourceIssuePublicId",
+          "ddl": "sourceIssuePublicId VARCHAR(36), index issue_member_source_issue_k",
+          "nullable": true,
+          "notNull": false,
           "unique": false
         },
         {

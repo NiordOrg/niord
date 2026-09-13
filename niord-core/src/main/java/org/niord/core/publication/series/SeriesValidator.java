@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The series rules, S-1 to S-18, plus the desc rules and the criteria rules.
+ * The series rules, S-1 to S-25, plus the desc rules and the criteria rules.
  *
  * Enforcement lives in the service layer because that is where this repository
  * already puts it -- there is no @Check anywhere in niord, and Hibernate's update
@@ -79,6 +79,13 @@ public final class SeriesValidator {
         }
 
         boolean queryBacked = s.getContentMode() == ContentMode.GENERATED_FROM_QUERY;
+        // A COMPILATION IS QUERY-BACKED AND CARRIES NO QUERY, which is the one
+        // exception to the all-or-nothing shape below. Its members are another
+        // series' frozen rows, so there is no criteria document to require and no
+        // liveness question to answer -- liveness was judged at each source
+        // issue's own cut-off. Everything else about the shape is unchanged: it
+        // still generates a document, so it still names a report.
+        boolean compiled = s.getTimeRelation() == TimeRelation.COMPILED_FROM_SOURCE;
 
         // S-1. The query-backed shape is all-or-nothing. A series that declares it
         // generates from a query but carries no query resolves everything.
@@ -87,7 +94,7 @@ public final class SeriesValidator {
                 e.add(new FieldError("S-1", "timeRelation",
                         "a query-backed series must declare which time predicate it uses"));
             }
-            if (s.getCriteria() == null) {
+            if (!compiled && s.getCriteria() == null) {
                 e.add(new FieldError("S-1", "criteria",
                         "a query-backed series must carry a criteria document; a null one means NO query, "
                                 + "which is not the same as an empty one"));
@@ -117,13 +124,18 @@ public final class SeriesValidator {
         }
 
         // S-2. aliveAtCutoff is meaningful only where there is a query to apply it to.
-        if (queryBacked && s.getAliveAtCutoff() == null) {
+        if (queryBacked && !compiled && s.getAliveAtCutoff() == null) {
             e.add(new FieldError("S-2", "aliveAtCutoff",
                     "a query-backed series must state whether it filters on liveness; leaving it null makes "
                             + "'does not filter' and 'filters and everything passed' indistinguishable"));
         }
-        if (!queryBacked && s.getAliveAtCutoff() != null) {
-            e.add(new FieldError("S-2", "aliveAtCutoff", "only a query-backed series has a liveness filter"));
+        if ((!queryBacked || compiled) && s.getAliveAtCutoff() != null) {
+            e.add(new FieldError("S-2", "aliveAtCutoff",
+                    compiled
+                            ? "a compilation applies no liveness filter of its own; each source issue "
+                                    + "judged liveness at its own cut-off, and re-judging it here would "
+                                    + "drop what those issues rightly carried"
+                            : "only a query-backed series has a liveness filter"));
         }
 
         // S-3. In-force membership IS a liveness question; false would empty it.
@@ -142,14 +154,14 @@ public final class SeriesValidator {
         // field and does not render it, so demanding it here failed activation for
         // a control the form does not have -- a query-backed one-off could never
         // leave DRAFT at all.
-        boolean interval = s.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
+        boolean interval = s.getTimeRelation() != null && s.getTimeRelation().tiles();
         if (interval && !s.isOneOff() && s.getFirstIssueStartsAt() == null) {
             e.add(new FieldError("S-4", "firstIssueStartsAt",
                     "an interval-based series needs a start for its first interval"));
         }
         if (!interval && s.getFirstIssueStartsAt() != null) {
             e.add(new FieldError("S-4", "firstIssueStartsAt",
-                    "only PUBLISHED_IN_INTERVAL has an interval to start"));
+                    "only a series whose issues tile has an interval to start"));
         }
 
         // S-5 to S-7. The nominal schedule must match the cadence it describes.
@@ -435,6 +447,67 @@ public final class SeriesValidator {
         for (String key : reservedReportParams(s.getReportParams())) {
             e.add(new FieldError("S-23", "reportParams." + key,
                     "'" + key + "' is taken from the issue and cannot be typed here"));
+        }
+
+        // S-24. The source series is set exactly where the relation compiles.
+        //
+        // Both directions, and the second is the one that bites: a series switched
+        // from a compilation back to a query would otherwise keep a source nothing
+        // reads, and the next reader of the row could not tell whether the
+        // derivation was still running.
+        //
+        // The criteria and liveness legs are reported HERE rather than through
+        // S-1 and S-2, because on a compilation they are not a missing half of a
+        // shape -- they are a value that contradicts the regime, and the sentence
+        // an admin needs names the regime.
+        if (compiled) {
+            if (s.getSourceSeries() == null) {
+                e.add(new FieldError("S-24", "sourceSeriesId",
+                        "a compilation is assembled from another series' published issues and must name "
+                                + "which; without one there is nothing to compile"));
+            }
+            if (s.getCriteria() != null) {
+                e.add(new FieldError("S-24", "criteria",
+                        "a compilation selects no messages of its own: its members are what its source "
+                                + "issues already printed, so a criteria document here would decide "
+                                + "nothing and read as though it did"));
+            }
+        } else if (s.getSourceSeries() != null) {
+            e.add(new FieldError("S-24", "sourceSeriesId",
+                    "only a compilation is assembled from another series; this one selects by "
+                            + (queryBacked ? "criteria" : "nothing")
+                            + ", so the source would never be read"));
+        }
+
+        // S-25. What a source series may be.
+        //
+        // NO CHAINS, and that is the clause worth arguing for: a compilation of a
+        // compilation would make one issue's contents depend on a derivation two
+        // levels away, with nothing in either snapshot header recording the middle
+        // one -- so a reader asking years later what the document contained would
+        // have to re-derive a step that is no longer reproducible.
+        //
+        // Not itself, for the obvious reason and one less obvious: a self-source
+        // would compile an issue's own predecessors into it and grow without bound
+        // as the chain lengthened.
+        if (s.getSourceSeries() != null) {
+            PublicationSeries source = s.getSourceSeries();
+            if (source.getSeriesId() != null && source.getSeriesId().equals(s.getSeriesId())) {
+                e.add(new FieldError("S-25", "sourceSeriesId",
+                        "a series cannot compile itself; every issue of it would hold its own "
+                                + "predecessors"));
+            }
+            if (source.getContentMode() != ContentMode.GENERATED_FROM_QUERY) {
+                e.add(new FieldError("S-25", "sourceSeriesId",
+                        "'" + source.getSeriesId() + "' is " + source.getContentMode()
+                                + ", so its issues have no frozen member rows to compile"));
+            }
+            if (source.getTimeRelation() == TimeRelation.COMPILED_FROM_SOURCE) {
+                e.add(new FieldError("S-25", "sourceSeriesId",
+                        "'" + source.getSeriesId() + "' is itself a compilation, and compilations do not "
+                                + "chain: the header would record a source whose own contents are a "
+                                + "derivation nothing wrote down"));
+            }
         }
 
         // C-1 to C-10, on the criteria document itself.

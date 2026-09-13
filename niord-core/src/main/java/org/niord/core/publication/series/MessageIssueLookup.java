@@ -67,6 +67,9 @@ import java.util.Set;
 @ApplicationScoped
 public class MessageIssueLookup extends BaseService {
 
+    @jakarta.inject.Inject
+    CompilationResolver compilations;
+
     /** How a message came to be in an issue: recorded, or resolved just now. */
     public enum Membership {
         /** Frozen at publication. A fact about a document that exists. */
@@ -77,6 +80,21 @@ public class MessageIssueLookup extends BaseService {
 
     /** One issue a message is in, and on what basis. */
     public record MessageIssue(PublicationIssue issue, Membership membership) {
+    }
+
+    /**
+     * Whether a compilation's union already holds a message at one instant.
+     *
+     * A collaborator rather than a branch inside {@link #wouldContain}, because
+     * that method is static and free of the entity manager on purpose: the
+     * override precedence it encodes is one deleted branch away from telling an
+     * editor a message is in an issue a curator explicitly removed it from, and a
+     * plain unit test has to be able to pin it. The compiled answer is a query,
+     * so it arrives as a function and a test hands in its own.
+     */
+    @FunctionalInterface
+    public interface CompiledUnion {
+        boolean holds(PublicationIssue issue, String messageUid, Date at);
     }
 
     /**
@@ -113,7 +131,7 @@ public class MessageIssueLookup extends BaseService {
             if (issue.getId() == null || seen.contains(issue.getId())) {
                 continue;
             }
-            if (wouldContain(issue, facts, overrides.get(issue.getId()), at)) {
+            if (wouldContain(issue, facts, overrides.get(issue.getId()), at, this::compiledUnionHolds)) {
                 seen.add(issue.getId());
                 out.add(new MessageIssue(issue, Membership.LIVE));
             }
@@ -179,6 +197,25 @@ public class MessageIssueLookup extends BaseService {
         return out;
     }
 
+    /**
+     * The compiled arm, bound to this bean's persistence context.
+     *
+     * ONE existence query per issue asked, never the union: the panel renders
+     * once per message an editor opens, and a running annual's union is a
+     * thousand rows it would throw away.
+     */
+    private boolean compiledUnionHolds(PublicationIssue issue, String messageUid, Date at) {
+        // An issue whose period has not opened yet describes no window at all, and
+        // Interval refuses one. This panel renders whenever an editor opens a
+        // message, so the honest answer is "not yet a member" rather than a 500
+        // from a screen that was only asking a question.
+        if (issue.getIntervalFrom() == null || !issue.getIntervalFrom().before(at)) {
+            return false;
+        }
+        return compilations.contains(issue.getSeries().getSourceSeries(),
+                new Interval(issue.getIntervalFrom(), at), messageUid);
+    }
+
     /** The facts membership turns on, or null when the message is gone. */
     private MessageFacts factsOf(String messageUid) {
         List<Message> rows = em.createQuery(
@@ -215,7 +252,7 @@ public class MessageIssueLookup extends BaseService {
      * editor a message is in an issue a curator explicitly removed it from.
      */
     static boolean wouldContain(PublicationIssue issue, MessageFacts facts,
-                                OverrideKind override, Date now) {
+                                OverrideKind override, Date now, CompiledUnion compiled) {
         if (override == OverrideKind.EXCLUDE) {
             return false;
         }
@@ -224,11 +261,19 @@ public class MessageIssueLookup extends BaseService {
         }
 
         PublicationSeries series = issue.getSeries();
-        if (facts == null || series == null
-                || series.getContentMode() != ContentMode.GENERATED_FROM_QUERY
-                || series.getTimeRelation() == null
+        MembershipRegime regime = MembershipRegime.of(series);
+        if (facts == null || regime == MembershipRegime.NONE
                 || issue.getIntervalFrom() == null) {
             return false;
+        }
+        if (regime == MembershipRegime.COMPILED) {
+            // A compilation runs no predicate: the answer is whether one of the
+            // source series' published issues inside this period already printed
+            // the message. It is a query, so it arrives as a collaborator rather
+            // than being taken here -- which is also what keeps the override
+            // precedence above testable without a database.
+            return compiled != null
+                    && compiled.holds(issue, facts.uid(), now);
         }
         try {
             // The EFFECTIVE document, so this panel and the publish screen cannot

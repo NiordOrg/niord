@@ -22,6 +22,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.domain.Domain;
 import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategory;
@@ -29,10 +30,12 @@ import org.niord.core.publication.PublicationDesc;
 import org.niord.core.publication.TestIds;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
+import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.SeriesStatus;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.model.publication.PublicationType;
 
 import java.util.LinkedHashMap;
@@ -169,6 +172,13 @@ public class LegacyImportServiceTest {
         em.createQuery("DELETE FROM PublicationIssue i WHERE i.legacyPublicationId IS NOT NULL")
                 .executeUpdate();
         em.createQuery("DELETE FROM PublicationSeriesDesc d WHERE d.entity.legacyTemplateId IS NOT NULL")
+                .executeUpdate();
+        // A compiled series points at another row of the same table, and the
+        // constraint is RESTRICT -- so the delete below fails or succeeds on the
+        // order the database happens to walk the rows in unless the column is
+        // cleared first.
+        em.createQuery("UPDATE PublicationSeries s SET s.sourceSeries = NULL "
+                        + "WHERE s.legacyTemplateId IS NOT NULL")
                 .executeUpdate();
         em.createQuery("DELETE FROM PublicationSeries s WHERE s.legacyTemplateId IS NOT NULL")
                 .executeUpdate();
@@ -377,6 +387,135 @@ public class LegacyImportServiceTest {
         } finally {
             cleanUpImported();
         }
+    }
+
+    /**
+     * The conversion ruling, at the only level that proves it: after apply(),
+     * the accumulated annual COMPILES the weekly.
+     *
+     * The ruling is the reason the conversion is an import step rather than an
+     * edit on a deployed database -- so what has to hold is that a run produces
+     * the compiled series, not merely that the table names it. The branch that
+     * would hide a regression is silent by design: a source series the plan does
+     * not carry is noted and the series imports unconverted, which is the right
+     * behaviour for an estate that has no such series and indistinguishable from
+     * a rename that broke the ruling.
+     *
+     * Planned from a CONTROLLED pair whose titles author the two ruled ids, for
+     * the same reason the write-path probe above is: an estate-wide plan over a
+     * shared database can never come back clean, so the write path would never be
+     * reached.
+     */
+    @Test
+    @Transactional
+    public void applyConvertsTheAccumulatedAnnualIntoACompilationOfTheWeekly() {
+        ensureDomain("niord-nm");
+        ensureDomain(LegacyTemplateRulings.DEFAULT_DOMAIN);
+
+        LegacyTemplateRulings.CompilationShape shape =
+                LegacyTemplateRulings.compilationFor("accumulated-yearly-ntm");
+        assertNotNull(shape, "the ruling this case is about is gone from the table");
+
+        Publication weeklyTemplate = legacyTemplate("Weekly NTM", null);
+        Publication annualTemplate = legacyTemplate("Accumulated Yearly NTM", null);
+        Publication weeklyIssue = legacyPublication("Weekly NTM 1", weeklyTemplate);
+        Publication annualIssue = legacyPublication("Accumulated Yearly NTM 1", annualTemplate);
+        try {
+            LegacyImportService.Plan plan = importService.planFrom(
+                    List.of(weeklyTemplate, annualTemplate), List.of(weeklyIssue, annualIssue));
+
+            assertTrue(plan.isClean(), "the controlled pair should plan cleanly; problems: "
+                    + plan.report().getProblems().stream()
+                            .map(x -> x.getCode() + " " + x.getDetail()).toList());
+
+            // What the imported issue looked like before the conversion ran. The
+            // ruling converts the SERIES and leaves the documents somebody
+            // assembled by hand exactly as the import wrote them.
+            PublicationIssue planned = plan.issues().get(annualIssue.getPublicationId());
+            assertNotNull(planned, "the annual's own edition is not in the plan");
+            Object provenanceBefore = planned.getMembershipProvenance();
+            String repoPathBefore = planned.getRepoPath();
+
+            importService.apply(plan);
+            em.flush();
+
+            PublicationSeries annual = seriesById("accumulated-yearly-ntm");
+            assertEquals(ContentMode.GENERATED_FROM_QUERY, annual.getContentMode(),
+                    "the annual is still the uploaded-document series legacy held; every future "
+                            + "issue of it would be a file somebody assembles by hand");
+            assertEquals(TimeRelation.COMPILED_FROM_SOURCE, annual.getTimeRelation());
+            assertNotNull(annual.getSourceSeries(), "the converted series names no source at all");
+            assertEquals("weekly-ntm", annual.getSourceSeries().getSeriesId(),
+                    "the annual compiles the wrong series");
+            assertNull(annual.getCriteria(),
+                    "a compilation runs no query, and a leftover document is a second answer to "
+                            + "the membership question sitting beside the one that is used");
+            assertNull(annual.getAliveAtCutoff(),
+                    "liveness was judged at each source issue's own cut-off; a flag here is a "
+                            + "second answer S-24 refuses");
+            assertEquals(shape.reportId(), annual.getReportId());
+            assertEquals(shape.cutoffDefault(), annual.getCutoffDefault(),
+                    "the annual closes when the year does, so the period's own end is its cut-off");
+            assertEquals(shape.firstIssueStartsAt(), annual.getFirstIssueStartsAt(),
+                    "the compiled chain opens where the source series' frozen rows begin to be a "
+                            + "complete record of what went out");
+
+            // The weekly it compiles is untouched: a compilation of a compilation
+            // is refused by S-25, and the source is an ordinary series.
+            PublicationSeries weekly = seriesById("weekly-ntm");
+            assertNull(weekly.getSourceSeries(), "the source series was itself converted");
+
+            PublicationIssue imported = em.createQuery(
+                            "SELECT i FROM PublicationIssue i WHERE i.publicId = :id",
+                            PublicationIssue.class)
+                    .setParameter("id", annualIssue.getPublicationId())
+                    .getSingleResult();
+            assertEquals(provenanceBefore, imported.getMembershipProvenance(),
+                    "the conversion re-decided an issue somebody produced by hand years ago");
+            assertEquals(repoPathBefore, imported.getRepoPath(), "the document moved (R6)");
+            assertEquals(0L, (long) em.createQuery(
+                            "SELECT COUNT(m) FROM IssueMember m WHERE m.issue = :i", Long.class)
+                    .setParameter("i", imported).getSingleResult(),
+                    "the conversion resolved members for an issue that is an uploaded file");
+
+            // A decision about a planned SERIES is recorded against its seriesId,
+            // which is what a row with no legacy publication behind it has.
+            List<String> codes = plan.report().getNotes().stream()
+                    .filter(n -> "accumulated-yearly-ntm".equals(n.getPublicationId()))
+                    .map(LegacyImportReportVo.ProblemVo::getCode)
+                    .toList();
+            assertTrue(codes.contains("SERIES_COMPILED_FROM_SOURCE"),
+                    "the report does not say the series was converted, so an admin reading it "
+                            + "cannot tell why the strip shows uncovered years: " + codes);
+            assertFalse(codes.contains("COMPILATION_SOURCE_MISSING"),
+                    "the ruling could not find its source series, and the import went ahead with "
+                            + "the unconverted series: " + codes);
+        } finally {
+            cleanUpImported();
+        }
+    }
+
+    /** A domain the rulings name, created on first use. */
+    @Transactional
+    void ensureDomain(String domainId) {
+        if (em.createQuery("SELECT COUNT(d) FROM Domain d WHERE d.domainId = :id", Long.class)
+                .setParameter("id", domainId).getSingleResult() > 0) {
+            return;
+        }
+        Domain d = new Domain();
+        d.setDomainId(domainId);
+        d.setName(domainId);
+        d.setTimeZone("Europe/Copenhagen");
+        em.persist(d);
+        em.flush();
+    }
+
+    private PublicationSeries seriesById(String seriesId) {
+        return em.createQuery(
+                        "SELECT s FROM PublicationSeries s WHERE s.seriesId = :id",
+                        PublicationSeries.class)
+                .setParameter("id", seriesId)
+                .getSingleResult();
     }
 
     /**

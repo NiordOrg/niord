@@ -45,5 +45,21 @@ public enum MembershipProvenance {
      *
      * Added by V4__membership_provenance_imported.sql.
      */
-    IMPORTED
+    IMPORTED,
+
+    /**
+     * Derived from another series' published issues, exactly and reproducibly.
+     *
+     * Not EXACT, although the rule behind it is deterministic: EXACT means the
+     * CRITERIA reproduce the membership, and a compilation has no criteria at
+     * all -- anything that re-resolved an EXACT row here would run a null
+     * document and read the empty answer back as a divergence. Not
+     * UNION_SNAPSHOT either: that value is reserved for the legacy annuals,
+     * which hold more than any single instant produces and which nothing can
+     * re-derive at all. This membership is derived by a rule that is written
+     * down and testable.
+     *
+     * Added by V18__compilation_series.sql.
+     */
+    COMPILED
 }

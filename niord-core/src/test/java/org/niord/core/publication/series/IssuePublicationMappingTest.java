@@ -21,6 +21,7 @@ import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.vo.SystemPublicationVo;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.model.publication.PublicationDescVo;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.publication.PublicationVo;
@@ -117,6 +118,33 @@ public class IssuePublicationMappingTest {
 
         issue.setSeries(null);
         assertEquals(PublicationType.NONE, typeOf(issue));
+    }
+
+    /**
+     * A COMPILATION is a message report like any other generated series.
+     *
+     * The whole reason the regime is a time relation rather than a fifth content
+     * mode. PublicationType has four values and the mapping onto it is a total
+     * bijection the message editor's picker inverts, so a fifth mode would have
+     * had no honest answer here -- and every downstream consumer would have
+     * needed a new arm to learn that an accumulated annual is a document like the
+     * weeklies it compiles.
+     */
+    @Test
+    public void acompilationIsAMessageReportLikeAnyOtherGeneratedSeries() {
+        PublicationIssue issue = issue();
+        issue.getSeries().setContentMode(ContentMode.GENERATED_FROM_QUERY);
+        issue.getSeries().setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        issue.getSeries().setSourceSeries(new PublicationSeries());
+
+        assertEquals(PublicationType.MESSAGE_REPORT, typeOf(issue),
+                "a compilation stopped being a message report, so the public list and the "
+                        + "message editor's publication picker would both lose it");
+
+        PublicationVo vo = IssuePublicationMapping.toPublicationVo(issue, "da");
+        assertEquals(issue.getPublicId(), vo.getPublicationId());
+        assertEquals(issue.getPublicFrom(), vo.getPublishDateFrom(),
+                "a compiled issue's public window is the stamped cut-off, as for any other issue");
     }
 
     /**

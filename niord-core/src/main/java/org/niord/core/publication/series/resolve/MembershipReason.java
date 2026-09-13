@@ -36,6 +36,16 @@ public enum MembershipReason {
     /** Included: a curator added it by hand. */
     MANUAL_INCLUDE,
 
+    /**
+     * Included: its source issue printed it.
+     *
+     * A compilation's ordinary reason, and the counterpart of IN_INTERVAL on a
+     * query-backed series. No message fact decided it -- the source issue did,
+     * at its own cut-off -- so it is never a criteria miss and never something an
+     * omissions panel can report.
+     */
+    FROM_SOURCE_ISSUE,
+
     /** Excluded: status is not one of the public statuses. */
     STATUS_NOT_PUBLIC,
 

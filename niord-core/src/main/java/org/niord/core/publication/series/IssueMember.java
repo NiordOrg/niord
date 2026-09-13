@@ -55,7 +55,8 @@ import org.niord.core.model.BaseEntity;
                 columnNames = { "issue_id", "messageUid" }),
         indexes = {
                 @Index(name = "issue_member_issue_sort_k", columnList = "issue_id,sortIndex"),
-                @Index(name = "issue_member_uid_k", columnList = "messageUid")
+                @Index(name = "issue_member_uid_k", columnList = "messageUid"),
+                @Index(name = "issue_member_source_issue_k", columnList = "sourceIssuePublicId")
         })
 public class IssueMember extends BaseEntity<Integer> {
 
@@ -100,6 +101,20 @@ public class IssueMember extends BaseEntity<Integer> {
     @NotNull
     @Column(nullable = false)
     private MemberSource source;
+
+    /**
+     * Which source issue printed this row, on a compiled issue. Null everywhere else.
+     *
+     * A PUBLIC ID AND NOT A FOREIGN KEY, deliberately. This row is the
+     * compilation's own frozen record of what its document contained. A retired
+     * source issue is deletable, and a foreign key would either block that or
+     * need a cascade rule -- both of which make one issue's record depend on
+     * another issue's row surviving. The publicId stays readable after the source
+     * is gone, and the name, week and year are read live by publicId in one query
+     * per list while it is still there.
+     */
+    @Column(length = 36)
+    private String sourceIssuePublicId;
 
     @Column(length = 512)
     private String reasonNote;
@@ -193,6 +208,14 @@ public class IssueMember extends BaseEntity<Integer> {
 
     public void setSource(MemberSource source) {
         this.source = source;
+    }
+
+    public String getSourceIssuePublicId() {
+        return sourceIssuePublicId;
+    }
+
+    public void setSourceIssuePublicId(String sourceIssuePublicId) {
+        this.sourceIssuePublicId = sourceIssuePublicId;
     }
 
     public String getReasonNote() {

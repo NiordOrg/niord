@@ -584,10 +584,15 @@ public class IssueEditService extends BaseService {
         }
 
         if (wanted != null) {
-            if (series == null || series.getContentMode() != ContentMode.GENERATED_FROM_QUERY) {
+            // A COMPILATION IS REFUSED HERE TOO, and it is query-backed. Its
+            // members are what its source issues printed, so it has no criteria to
+            // override: a document typed here would sit on the issue deciding
+            // nothing and reading as though it decided everything.
+            if (series == null || series.getContentMode() != ContentMode.GENERATED_FROM_QUERY
+                    || (series.getTimeRelation() != null && series.getTimeRelation().compiled())) {
                 throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_NOT_APPLICABLE",
-                        "only a query-backed series selects by criteria, so an override on this "
-                                + "issue would decide nothing");
+                        "only a series that selects by criteria has criteria to override, so an "
+                                + "override on this issue would decide nothing");
             }
             // The same validator the series form runs, with the same resolver
             // behind it. Every operand is looked up: an area, a chart or a message

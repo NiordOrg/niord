@@ -75,6 +75,17 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     private String snapshotTimeRelation;
 
+    /**
+     * On a compiled issue: which series it was assembled from, and which issues
+     * of that series its rows came from, in the order they were compiled.
+     *
+     * Null on every other regime, so Jackson omits both and no client has to
+     * distinguish "not a compilation" from "a compilation that found nothing".
+     */
+    private String snapshotSourceSeriesId;
+
+    private List<String> snapshotSourceIssueIds;
+
     private String supersedesPublicId;
 
     private String legacyPublicationId;
@@ -353,6 +364,22 @@ public class SystemPublicationIssueVo extends PublicationIssueVo {
 
     public void setSnapshotTimeRelation(String snapshotTimeRelation) {
         this.snapshotTimeRelation = snapshotTimeRelation;
+    }
+
+    public String getSnapshotSourceSeriesId() {
+        return snapshotSourceSeriesId;
+    }
+
+    public void setSnapshotSourceSeriesId(String snapshotSourceSeriesId) {
+        this.snapshotSourceSeriesId = snapshotSourceSeriesId;
+    }
+
+    public List<String> getSnapshotSourceIssueIds() {
+        return snapshotSourceIssueIds;
+    }
+
+    public void setSnapshotSourceIssueIds(List<String> snapshotSourceIssueIds) {
+        this.snapshotSourceIssueIds = snapshotSourceIssueIds;
     }
 
     public String getSupersedesPublicId() {

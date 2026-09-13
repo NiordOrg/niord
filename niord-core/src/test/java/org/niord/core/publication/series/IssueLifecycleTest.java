@@ -284,6 +284,35 @@ public class IssueLifecycleTest {
     }
 
     /**
+     * And a series ANOTHER ONE COMPILES is refused in words, not by the database.
+     *
+     * The foreign key is RESTRICT, so the delete could not have gone through in
+     * any case -- but it would have failed inside the flush as a constraint
+     * violation naming a column, on a screen whose only other option is "retire".
+     * Reachable on a source series that has no issues yet: a weekly created this
+     * morning and already named by an annual somebody is configuring.
+     */
+    @Test
+    @Transactional
+    public void aSeriesAnotherOneCompilesCannotBeDeleted() {
+        PublicationSeries source = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationSeries annual = series(TimeRelation.COMPILED_FROM_SOURCE);
+        annual.setCriteria(null);
+        annual.setAliveAtCutoff(null);
+        annual.setSourceSeries(source);
+        em.merge(annual);
+        em.flush();
+
+        IssueLifecycleService.TransitionRefusedException e =
+                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                        () -> lifecycle.deleteSeries(source));
+        assertEquals("SERIES_IS_COMPILED", e.code());
+        assertTrue(e.getMessage().contains(annual.getSeriesId()),
+                "the refusal should name the publication that depends on this one: "
+                        + e.getMessage());
+    }
+
+    /**
      * A series that accumulated a TRAIL can still be deleted.
      *
      * An audit entry owns a foreign key to the row it describes and nothing
@@ -404,7 +433,7 @@ public class IssueLifecycleTest {
 
     // ================================================================= checklist
 
-    /** All fourteen rail codes are emitted, every time. */
+    /** All fifteen rail codes are emitted, every time. */
     @Test
     @Transactional
     public void theRailEmitsEveryCodeItDeclares() {
@@ -416,7 +445,7 @@ public class IssueLifecycleTest {
         PublishChecklistService.Checklist result =
                 checklist.compute(i, new Date(1_700_000_000_000L), false);
 
-        assertEquals(14, PublishChecklistService.CODES.size(), "the rail is not fourteen codes");
+        assertEquals(15, PublishChecklistService.CODES.size(), "the rail is not fifteen codes");
         assertEquals(PublishChecklistService.CODES.size(), result.rows().size(),
                 "the rail emitted " + result.rows().size() + " rows; the UI renders and translates all "
                         + PublishChecklistService.CODES.size());
@@ -604,11 +633,12 @@ public class IssueLifecycleTest {
      * Named as a set rather than counted, because a count agrees with itself
      * whichever five rows dropped out: a first issue of a generated, non-citable
      * series has no neighbour to bracket, no chain to join, no file to
-     * pre-exist and nobody to cite it. The remaining nine are the answers, and
-     * every one of the fourteen is still emitted.
+     * pre-exist and nobody to cite it -- and it compiles nothing, so the source
+     * coverage row has no sources to be short of either. The rest are the
+     * answers, and every one of the fifteen is still emitted.
      *
      * It is also the guard that the query-backed case is UNCHANGED: this series
-     * resolves a member list, so all five membership rows are among the nine.
+     * resolves a member list, so all five membership rows are among them.
      */
     @Test
     @Transactional
@@ -629,13 +659,135 @@ public class IssueLifecycleTest {
                 .filter(r -> !r.applicable())
                 .map(PublishChecklistService.CheckRow::code).toList();
         assertEquals(List.of("INTERVAL_CHAINED", "FILE_PRESENT_PER_LANGUAGE",
-                        "REFERENCE_FORMAT_COMPLETE", "CUTOFF_AFTER_PREVIOUS", "CUTOFF_BEFORE_SUCCESSOR"),
+                        "REFERENCE_FORMAT_COMPLETE", "CUTOFF_AFTER_PREVIOUS", "CUTOFF_BEFORE_SUCCESSOR",
+                        "SOURCE_ISSUES_COMPLETE"),
                 inapplicable,
                 "the rows this issue cannot be in are not the ones expected");
 
         assertEquals(PublishChecklistService.CODES.size() - inapplicable.size(),
                 rows.stream().filter(PublishChecklistService.CheckRow::applicable).count(),
                 "applicable and inapplicable must partition the rail");
+    }
+
+    /**
+     * A COMPILATION answers three of the rows differently, and only three.
+     *
+     * Each of the three is a question decided somewhere other than this release,
+     * and answering it here would be answering it twice: the member ceiling
+     * guards against a query nobody bounded, and seven of the nine accumulated
+     * years in the estate hold more than a thousand rows that were each published
+     * one week at a time; the liveness re-judgement was made at every source
+     * issue's own cut-off, and re-making it in December would drop what February
+     * rightly printed; and the source coverage is the only question a compilation
+     * has that nothing else does.
+     *
+     * Everything else applies to it exactly as it does to any other tiling,
+     * rendering series -- which is the point of making the regime a time relation
+     * rather than a content mode.
+     */
+    @Test
+    @Transactional
+    public void therailAnswersACompilationOnItsOwnThreeRows() {
+        PublicationSeries source = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationSeries s = compilation(source);
+
+        PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        List<PublishChecklistService.CheckRow> rows =
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows();
+        assertEquals(PublishChecklistService.CODES.size(), rows.size());
+
+        PublishChecklistService.CheckRow limit = rowOf(rows, "MEMBER_LIMIT");
+        assertFalse(limit.applicable(),
+                "the member ceiling was applied to a compilation; seven of the nine accumulated "
+                        + "years hold more than a thousand members, so it would refuse exactly the "
+                        + "releases the regime exists for");
+        assertTrue(limit.passed(), "no inapplicable BLOCK row may fail");
+        assertEquals("NOT_APPLICABLE.BOUNDED_BY_SOURCES", limit.detailCode());
+
+        PublishChecklistService.CheckRow alive = rowOf(rows, "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF");
+        assertFalse(alive.applicable(),
+                "liveness was re-judged at the compilation's cut-off; a notice cancelled in March "
+                        + "would be reported as a problem with the year that published it in February");
+        assertEquals("NOT_APPLICABLE.JUDGED_AT_SOURCE", alive.detailCode());
+        assertEquals("CANCELLED_BUT_DATE_ALIVE", alive.acknowledgeCode(),
+                "the row dropped its acknowledgement code when it stopped applying; the dialog "
+                        + "renders a control for the code the row names");
+
+        PublishChecklistService.CheckRow sources = rowOf(rows, "SOURCE_ISSUES_COMPLETE");
+        assertTrue(sources.applicable(), "a compilation was not asked whether its period is covered");
+        assertEquals(PublishChecklistService.Severity.WARN, sources.severity());
+        assertEquals("SOURCE_ISSUES_INCOMPLETE", sources.acknowledgeCode());
+        assertTrue(sources.passed(),
+                "a period the source series has no open or uncovered week in reported as "
+                        + "incomplete: " + sources.detail());
+
+        for (String applies : List.of("MEMBERS_RESOLVED", "NO_INEFFECTIVE_OVERRIDES",
+                "OVERLAPPING_ISSUE", "REPORT_CONFIGURED", "INTERVAL_PRESENT")) {
+            assertTrue(rowOf(rows, applies).applicable(),
+                    applies + " stopped applying to a compilation; it tiles and it renders, exactly "
+                            + "as any other interval series does");
+        }
+    }
+
+    /** An OPEN source issue inside the period is what the fifteenth row warns about. */
+    @Test
+    @Transactional
+    public void thesourceCoverageRowReportsAWeekThatIsStillOpen() {
+        PublicationSeries source = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        PublicationSeries s = compilation(source);
+
+        PublicationIssue week = lifecycle.create(source, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        week.setIntervalTo(new Date(1_699_500_000_000L));
+        week.setWeek(51);
+        week.setYear(2023);
+        em.merge(week);
+
+        PublicationIssue i = lifecycle.create(s, new Date(1_699_000_000_000L),
+                IntervalBoundSource.STAMPED, user());
+        em.flush();
+
+        PublishChecklistService.CheckRow row = rowOf(
+                checklist.compute(i, new Date(1_700_000_000_000L), false).rows(),
+                "SOURCE_ISSUES_COMPLETE");
+
+        assertFalse(row.passed(),
+                "the year was reported complete while a week of it is still open; an annual "
+                        + "released in early January would go out short of December without a word");
+        assertEquals("SOURCE_ISSUES_COMPLETE.incomplete", row.detailCode());
+        assertEquals(Integer.valueOf(1), row.detailParams().get("openCount"));
+        assertEquals(List.of("51/2023"), row.detailParams().get("openWeeks"),
+                "the open week is not named by the numbering the admin knows it by");
+    }
+
+    /** The row this issue can be in, or a failure that names the whole rail. */
+    private static PublishChecklistService.CheckRow rowOf(
+            List<PublishChecklistService.CheckRow> rows, String code) {
+        return rows.stream().filter(r -> r.code().equals(code)).findFirst()
+                .orElseThrow(() -> new AssertionError("the rail emitted no " + code + " row: "
+                        + rows.stream().map(PublishChecklistService.CheckRow::code).toList()));
+    }
+
+    /**
+     * A compilation over one source series.
+     *
+     * Its own category and its own owner, like every other fixture here, so two
+     * cases in this file cannot collide on a seriesId.
+     */
+    private PublicationSeries compilation(PublicationSeries source) {
+        PublicationSeries s = series(TimeRelation.PUBLISHED_IN_INTERVAL);
+        s.setCadence(SeriesCadence.YEARLY);
+        s.setTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        // Neither of these belongs on a compilation: it runs no query and judges
+        // no liveness, and S-24 refuses both.
+        s.setCriteria(null);
+        s.setAliveAtCutoff(null);
+        s.setSourceSeries(source);
+        em.merge(s);
+        return s;
     }
 
     /**

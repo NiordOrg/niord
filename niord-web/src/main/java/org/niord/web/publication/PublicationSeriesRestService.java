@@ -527,6 +527,28 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
             series.setDomain(domain);
         }
 
+        // THE SOURCE SERIES IS CLEARABLE, unlike the category and the owner above,
+        // and the asymmetry is the point. Those two are NOT NULL columns where
+        // absence can only mean "unchanged"; this one is the operand of an
+        // optional regime, and switching a series off COMPILED_FROM_SOURCE is
+        // exactly the edit that has to be able to send nothing and mean it. S-24
+        // then refuses the pairing in either direction.
+        //
+        // A value naming no series is REFUSED rather than ignored, by the
+        // category's argument: inventing nothing silently would leave a
+        // compilation whose derivation reads no issues and whose issues publish
+        // empty, with every row of the form looking correct.
+        if (vo.getSourceSeriesId() == null || vo.getSourceSeriesId().isBlank()) {
+            series.setSourceSeries(null);
+        } else {
+            PublicationSeries source = seriesService.findBySeriesId(vo.getSourceSeriesId().trim());
+            if (source == null) {
+                throw new IssueLifecycleService.TransitionRefusedException("SOURCE_SERIES_NOT_FOUND",
+                        "no publication series '" + vo.getSourceSeriesId() + "' to compile");
+            }
+            series.setSourceSeries(source);
+        }
+
         availabilityResolver.apply(series, vo);
     }
 
@@ -679,6 +701,12 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // form reads this to decide whether the citation channel is still editable
         // (S-18). Absent would leave that control disabled on a brand-new series.
         source.setPublishedIssueCount(0);
+
+        // THE SOURCE SERIES TRAVELS, deliberately, and it is not cleared here with
+        // firstIssueStartsAt above it. That field is a fact about when the original
+        // began; this one is configuration -- "another compilation of the same
+        // weekly" is exactly why somebody copies a compilation -- and S-24 would
+        // refuse the copy outright if it arrived without one.
         return source;
     }
 
@@ -721,6 +749,19 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         TimeRelation relation = request.timeRelation() == null
                 ? TimeRelation.PUBLISHED_IN_INTERVAL
                 : parseEnum(TimeRelation.class, request.timeRelation(), "timeRelation");
+
+        // A COMPILATION HAS NO PREDICATE TO PREVIEW. Its members are the frozen
+        // rows of another series' published issues, so there is no document being
+        // typed and nothing for a probe to run -- the issue screen's sources panel
+        // is the counterpart, and it answers about a real issue over a real
+        // period. Refused with the same coded refusal a malformed document gets,
+        // because the editor fires this on every edit and a 500 is nothing it can
+        // act on.
+        if (relation.compiled()) {
+            throw new IssueLifecycleService.TransitionRefusedException("CRITERIA_INVALID",
+                    "a compilation selects no messages by criteria, so there is no document to "
+                            + "preview; its members are what its source series' issues printed");
+        }
 
         // An in-force probe has no lower bound, exactly as a real in-force issue has
         // none -- passing one would preview a narrower set than the series produces.
@@ -1258,7 +1299,13 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         String[] languages = app.getLanguages();
         return validationReport(vo,
                 languages == null ? Set.of() : new LinkedHashSet<>(List.of(languages)),
-                operands);
+                operands,
+                // THE SOURCE SERIES IS LOOKED UP FOR REAL, unlike the category and
+                // the domain, which stand in as nameless placeholders. S-25 reads
+                // the source's OWN fields -- its id, its content mode, its relation
+                // -- so a placeholder would pass every clause of it and the dry run
+                // would come back clean on a source that cannot be compiled.
+                seriesService::findBySeriesId);
     }
 
     /**
@@ -1285,6 +1332,24 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
             SystemPublicationSeriesVo vo,
             Set<String> installationLanguages,
             org.niord.core.publication.series.criteria.CriteriaValidator.OperandResolver resolver) {
+        return validationReport(vo, installationLanguages, resolver, id -> null);
+    }
+
+    /**
+     * The same report, able to look a source series up.
+     *
+     * The fourth argument is a LOOKUP rather than a resolved series because the
+     * report is taken over a body that has not been saved: what the admin typed
+     * names a series or it does not, and only the endpoint holds a persistence
+     * context to find out. A caller with none passes one that finds nothing, and
+     * the report then says the source names nothing -- which is the honest answer
+     * for a caller that cannot check.
+     */
+    static List<Map<String, String>> validationReport(
+            SystemPublicationSeriesVo vo,
+            Set<String> installationLanguages,
+            org.niord.core.publication.series.criteria.CriteriaValidator.OperandResolver resolver,
+            java.util.function.Function<String, PublicationSeries> sourceLookup) {
         List<Map<String, String>> out = new ArrayList<>();
         if (vo == null) {
             return out;
@@ -1324,6 +1389,29 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
                 candidate.getAvailableDomains().add(new Domain());
             }
         }
+        // The source series, looked up for real. S-25 reads the source's own
+        // fields, so a nameless placeholder would pass every clause of it.
+        //
+        // WHEN THE ID NAMES NOTHING the report says so as an S-25 failure and the
+        // candidate still gets a stand-in, so S-24 does not ALSO fire and tell the
+        // admin their compilation has no source when what it has is a source that
+        // does not exist. The save answers the same question as
+        // SOURCE_SERIES_NOT_FOUND, which is the coded refusal for the same fact.
+        String sourceSeriesId = vo.getSourceSeriesId();
+        if (sourceSeriesId != null && !sourceSeriesId.isBlank()) {
+            PublicationSeries source = sourceLookup.apply(sourceSeriesId.trim());
+            if (source == null) {
+                Map<String, String> row = new LinkedHashMap<>();
+                row.put("rule", "S-25");
+                row.put("field", "sourceSeriesId");
+                row.put("message", "no publication series '" + sourceSeriesId + "' to compile");
+                out.add(row);
+                source = new PublicationSeries();
+                source.setSeriesId(sourceSeriesId.trim());
+            }
+            candidate.setSourceSeries(source);
+        }
+
         // The dry run resolves operands for real, so "Check rules" answers the same
         // question the save will. A report that passed on a dangling operand and a
         // save that refused it would be two definitions of a valid series, and the
@@ -1485,11 +1573,42 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // /search-details, which is the one property this format has.
         Map<String, Integer> released = seriesService.publishedIssueCounts();
         List<SystemPublicationSeriesVo> out = new ArrayList<>();
-        for (PublicationSeries s : seriesService.findAll()) {
+        for (PublicationSeries s : sourcesBeforeCompilations(seriesService.findAll())) {
             SystemPublicationSeriesVo vo = s.toVo(SystemPublicationSeriesVo.class);
             vo.setPublishedIssueCount(
                     PublicationSeriesService.publishedIssueCountOf(released, s.getSeriesId()));
             out.add(vo);
+        }
+        return out;
+    }
+
+    /**
+     * The export order: a source series before any series that compiles it.
+     *
+     * THE FILE IS READ IN THE ORDER IT IS WRITTEN. The importer resolves a
+     * compilation's source by seriesId against what the installation already
+     * holds and drops the row when it finds nothing, so a file listing the
+     * compilation first loses it -- and the estate's own ids sort that way
+     * ("accumulated-yearly-ntm" before "weekly-ntm"), which means the default
+     * alphabetical order is precisely the losing one.
+     *
+     * Two tiers rather than a topological sort, because S-25 refuses a chain: a
+     * compilation's source is never itself a compilation, so "the sources, then
+     * the compilations" is the whole dependency graph. Within each tier the
+     * alphabetical order the query established is preserved, so an export of an
+     * estate without compilations is byte-identical to what it always was.
+     */
+    static List<PublicationSeries> sourcesBeforeCompilations(List<PublicationSeries> series) {
+        List<PublicationSeries> out = new ArrayList<>(series.size());
+        for (PublicationSeries s : series) {
+            if (s.getSourceSeries() == null) {
+                out.add(s);
+            }
+        }
+        for (PublicationSeries s : series) {
+            if (s.getSourceSeries() != null) {
+                out.add(s);
+            }
         }
         return out;
     }

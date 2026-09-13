@@ -118,7 +118,11 @@ public class PublicationApiContractTest {
     public void thePublicShapesCannotCarryOperationalFields() {
         Set<String> publicSeriesFields = declaredFields(PublicationSeriesVo.class);
         for (String leaky : List.of("criteria", "releaseMode", "timeRelation",
-                "reportId", "legacyTemplateId")) {
+                "reportId", "legacyTemplateId",
+                // Which other publication a compilation is assembled from is an
+                // answer about how the document is produced, on the same terms as
+                // the criteria beside it. A public reader is not asking it.
+                "sourceSeriesId")) {
             assertFalse(publicSeriesFields.contains(leaky),
                     "PublicationSeriesVo declares " + leaky + "; a field that is not there cannot leak, "
                             + "which is the whole reason for the split");
@@ -186,7 +190,7 @@ public class PublicationApiContractTest {
     public void everyRailRowFieldReachesTheWire() {
         // A row with a value in every component, so nothing is dropped merely for
         // being null -- and one component (acknowledgeCode) that is null on
-        // thirteen of the fourteen real rows, checked separately below.
+        // thirteen of the fifteen real rows, checked separately below.
         PublishChecklistService.CheckRow row = new PublishChecklistService.CheckRow(
                 "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", PublishChecklistService.Severity.WARN,
                 false, true, true, "CANCELLED_BUT_DATE_ALIVE",
@@ -202,7 +206,7 @@ public class PublicationApiContractTest {
         }
         assertTrue(wire.has("applicable"),
                 "the rail no longer says which of its rows this issue can even be in; a verdict counted "
-                        + "over all fourteen rows counts checks that never ran");
+                        + "over all fifteen rows counts checks that never ran");
 
         // The row's detail travels in BOTH forms, and the client needs the coded
         // one: `detail` is English, composed on the server, and a Danish screen

@@ -230,6 +230,22 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     @Column(columnDefinition = "TEXT")
     private String snapshotChartNumbers;
 
+    /**
+     * The source series this compiled issue was assembled from, and the issues of
+     * it whose rows it holds. Null on every other regime.
+     *
+     * BOTH, by the same argument that produced snapshotSeriesIds beside them: the
+     * OPERAND is a series, and the ANSWER is a set of issues that cannot be
+     * re-derived once more of them fall inside the period. A weekly retired or
+     * published later moves the union, so a reader asking years afterwards what
+     * this annual actually compiled has no other source.
+     */
+    @Column(length = 64)
+    private String snapshotSourceSeriesId;
+
+    @Column(columnDefinition = "TEXT")
+    private String snapshotSourceIssueIds;
+
     @Column(length = 255)
     private String snapshotDomainId;
 
@@ -563,6 +579,22 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
         this.snapshotChartNumbers = snapshotChartNumbers;
     }
 
+    public String getSnapshotSourceSeriesId() {
+        return snapshotSourceSeriesId;
+    }
+
+    public void setSnapshotSourceSeriesId(String snapshotSourceSeriesId) {
+        this.snapshotSourceSeriesId = snapshotSourceSeriesId;
+    }
+
+    public String getSnapshotSourceIssueIds() {
+        return snapshotSourceIssueIds;
+    }
+
+    public void setSnapshotSourceIssueIds(String snapshotSourceIssueIds) {
+        this.snapshotSourceIssueIds = snapshotSourceIssueIds;
+    }
+
     public String getSnapshotDomainId() {
         return snapshotDomainId;
     }
@@ -802,6 +834,11 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
             sys.setMembershipProvenance(membershipProvenance == null ? null : membershipProvenance.name());
             sys.setSnapshotIntervalFrom(snapshotIntervalFrom);
             sys.setSnapshotTimeRelation(snapshotTimeRelation == null ? null : snapshotTimeRelation.name());
+            // The compiled header. Split back into a list on the wire because it
+            // is one: a comma-joined string is a storage form, and a client that
+            // had to split it would be deciding the separator a second time.
+            sys.setSnapshotSourceSeriesId(snapshotSourceSeriesId);
+            sys.setSnapshotSourceIssueIds(splitIds(snapshotSourceIssueIds));
             sys.setSupersedesPublicId(supersedes == null ? null : supersedes.getPublicId());
             sys.setLegacyPublicationId(legacyPublicationId);
             sys.setRepoPath(repoPath);
@@ -846,6 +883,28 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
      */
     public Date effectiveCutoff() {
         return cutoffStampedAt != null ? cutoffStampedAt : intervalTo;
+    }
+
+    /**
+     * A comma-joined id column as the list it stands for.
+     *
+     * Null stays null, and it is not the same as an empty list: "this issue
+     * compiled nothing" and "this issue compiled nothing because it is not a
+     * compilation" are different facts, and only the first is worth a row on a
+     * sources panel.
+     */
+    private static List<String> splitIds(String joined) {
+        if (joined == null || joined.isBlank()) {
+            return joined == null ? null : List.of();
+        }
+        List<String> out = new ArrayList<>();
+        for (String part : joined.split(",")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                out.add(trimmed);
+            }
+        }
+        return out;
     }
 
 }

@@ -320,6 +320,29 @@ public class IssueReportParamInjectionTest {
                 "an edit that sent no parameter map wrote one anyway");
     }
 
+    /**
+     * The document is dated in the SERIES' zone, not in the renderer's.
+     *
+     * Every date a template prints is read in the zone the model carries, and
+     * without this one it is the zone of whoever happened to press publish --
+     * their current domain -- or, on an unattended release where there is no
+     * request domain at all, the zone the container runs in. A cut-off stamped at
+     * 23:00 UTC is the next day in Copenhagen, so that choice decides which day
+     * a heading names.
+     */
+    @Test
+    @Transactional
+    public void thedocumentIsDatedInTheZoneTheSeriesOwns() {
+        PublicationIssue i = issue(series());
+        em.flush();
+
+        Map<String, Object> params = paramsFromPublishing(i);
+
+        assertEquals("Europe/Copenhagen", params.get("timeZone"),
+                "the render carries no zone of its own, so the dates in it are read in whatever "
+                        + "zone the request or the container happens to be in");
+    }
+
     /** And the reserved set is exactly the four the numbering supplies. */
     @Test
     public void thereservedSetIsTheNumbering() {

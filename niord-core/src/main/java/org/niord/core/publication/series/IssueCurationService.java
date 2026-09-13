@@ -49,6 +49,9 @@ public class IssueCurationService extends BaseService {
     MemberResolutionService resolver;
 
     @Inject
+    CompilationResolver compilations;
+
+    @Inject
     org.niord.core.publication.series.criteria.DomainSeriesExpander domains;
 
     /**
@@ -78,32 +81,44 @@ public class IssueCurationService extends BaseService {
     }
 
     /**
-     * Whether the issue's own criteria already select this message.
+     * Whether the issue's own derivation already puts this message in it.
      *
-     * The frozen rows for an issue that has them, the live resolution for one that
-     * does not. A resolution that cannot be taken -- an unresolvable document, a
-     * series with no query -- answers "no": refusing a curation because the
-     * criteria could not be run would block the one action that still works on a
-     * misconfigured series.
+     * The frozen rows for an issue that has them, the live derivation for one that
+     * does not -- the criteria for a query-backed issue, the compiled union for a
+     * compilation. A derivation that cannot be taken -- an unresolvable document,
+     * a series with no query and no source -- answers "no": refusing a curation
+     * because the criteria could not be run would block the one action that still
+     * works on a misconfigured series.
      */
     private boolean selectedByCriteria(PublicationIssue issue, String messageUid) {
+        // BOTH DERIVED SOURCES, because the question is "did this issue's own
+        // derivation put it here" and a compilation's derivation writes COMPILED.
+        // An include on top of a row a source issue already printed records a
+        // decision nobody made, exactly as one on top of a criteria match does.
         Long frozen = em.createQuery(
                         "SELECT COUNT(m) FROM IssueMember m WHERE m.issue = :i AND m.messageUid = :uid "
-                                + "AND m.source = :criteria", Long.class)
+                                + "AND m.source IN :derived", Long.class)
                 .setParameter("i", issue)
                 .setParameter("uid", messageUid)
-                .setParameter("criteria", MemberSource.CRITERIA)
+                .setParameter("derived", List.of(MemberSource.CRITERIA, MemberSource.COMPILED))
                 .getSingleResult();
         if (frozen > 0) {
             return true;
         }
 
         PublicationSeries series = issue.getSeries();
-        if (series == null || series.getContentMode() != ContentMode.GENERATED_FROM_QUERY
-                || series.getTimeRelation() == null) {
+        MembershipRegime regime = MembershipRegime.of(series);
+        if (regime == MembershipRegime.NONE) {
             return false;
         }
         try {
+            if (regime == MembershipRegime.COMPILED) {
+                // ONE existence query, and never the union: this is asked per
+                // message on a curation, and a running annual's union is upwards
+                // of a thousand rows that would be thrown away.
+                return compilations.contains(series.getSourceSeries(),
+                        new Interval(issue.getIntervalFrom(), new Date()), messageUid);
+            }
             ResolvedCriteria criteria = EffectiveCriteria.resolvedFor(issue, domains);
             if (criteria == null) {
                 return false;

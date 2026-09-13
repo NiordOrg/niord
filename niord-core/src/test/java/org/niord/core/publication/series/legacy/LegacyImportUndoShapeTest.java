@@ -81,6 +81,17 @@ public class LegacyImportUndoShapeTest {
                         + "without.");
     }
 
+    @Test
+    public void theUndoClearsTheCompiledSourceBeforeDeletingTheSeries() throws IOException {
+        String src = read();
+        assertTrue(src.contains("UPDATE PublicationSeries s SET s.sourceSeries = NULL"),
+                "the undo does not clear sourceSeries. A series that compiles another one holds a "
+                        + "foreign key into the very table the undo empties, and the import writes "
+                        + "both ends of that pairing -- so the single bulk delete over them fails "
+                        + "or succeeds depending on which row the database reaches first, because "
+                        + "foreign keys are checked per row and not per statement.");
+    }
+
     /** The order is children first, and the parents last. */
     @Test
     public void theDeletesAreOrderedChildrenFirst() throws IOException {
@@ -89,16 +100,21 @@ public class LegacyImportUndoShapeTest {
         int languages = src.indexOf("DELETE FROM PublicationSeries_languages");
         int available = src.indexOf("DELETE FROM PublicationSeries_AvailableDomain");
         int issues = src.indexOf("DELETE FROM PublicationIssue i WHERE i.series.id IN :ids");
+        int sourceCleared = src.indexOf("UPDATE PublicationSeries s SET s.sourceSeries = NULL");
         int series = src.indexOf("DELETE FROM PublicationSeries s WHERE s.id IN :ids");
 
-        assertTrue(overrides > 0 && languages > 0 && available > 0 && issues > 0 && series > 0,
-                "one of the five deletes the ordering is about has moved or been renamed");
+        assertTrue(overrides > 0 && languages > 0 && available > 0 && issues > 0
+                        && sourceCleared > 0 && series > 0,
+                "one of the six statements the ordering is about has moved or been renamed");
         assertTrue(overrides < issues,
                 "the overrides must go before the issues they point at");
         assertTrue(languages < series,
                 "the language rows must go before the series they point at");
         assertTrue(available < series,
                 "and so must the availability rows");
+        assertTrue(sourceCleared < series,
+                "the compiled-source column must be cleared before the series that hold it are "
+                        + "deleted, or the delete fails on its own table's foreign key");
     }
 
     private static String read() throws IOException {

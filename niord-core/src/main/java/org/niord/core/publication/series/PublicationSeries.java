@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
@@ -144,6 +145,32 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     @Column(columnDefinition = "TEXT")
     @Convert(converter = JpaCriteriaAttributeConverter.class)
     private IssueCriteriaVo criteria;
+
+    /**
+     * The series this one COMPILES, under COMPILED_FROM_SOURCE and nowhere else.
+     *
+     * An entity reference rather than a seriesId text, unlike the publicId a
+     * compiled member row carries, and the two differ because they answer
+     * different kinds of question. This is live configuration: the derivation
+     * reads the source's issues on every resolve, so a source that has been
+     * deleted is a broken series and the database saying so is the right outcome.
+     * The member row is a frozen record of what was printed, which has to survive
+     * the source issue being deleted.
+     *
+     * S-24 requires it exactly where the relation is COMPILED_FROM_SOURCE, and
+     * S-25 refuses a source that is this series, is not query-backed, or is
+     * itself a compilation -- no chains, because a chain would make one issue's
+     * contents depend on a derivation two levels away with nothing recording the
+     * middle one.
+     */
+    // The constraint is NAMED so that every shape of this schema names it the
+    // same: the migration adds it by that name and skips it when it is already
+    // there, and a database whose tables were created from these annotations
+    // instead would otherwise carry a generated name and gain a second identical
+    // constraint the first time the migration ran over it.
+    @ManyToOne
+    @JoinColumn(foreignKey = @ForeignKey(name = "FK_pub_series_source_series"))
+    private PublicationSeries sourceSeries;
 
     @ManyToOne(optional = false)
     @NotNull
@@ -392,6 +419,14 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
 
     public void setCriteria(IssueCriteriaVo criteria) {
         this.criteria = criteria;
+    }
+
+    public PublicationSeries getSourceSeries() {
+        return sourceSeries;
+    }
+
+    public void setSourceSeries(PublicationSeries sourceSeries) {
+        this.sourceSeries = sourceSeries;
     }
 
     public PublicationCategory getCategory() {
@@ -661,6 +696,10 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         // references the value object carries by id, exactly as the owner and the
         // category are, and this class has no persistence context to resolve them
         // in -- the resource does it and refuses an id that names nothing.
+        // sourceSeries is the same kind of thing for the same reason: the wire
+        // carries a seriesId, and resolving it is the resource's job, which
+        // refuses an id naming no series rather than quietly leaving a
+        // compilation with nothing to compile.
         SeriesAvailability sentAvailability =
                 enumOf(SeriesAvailability.class, vo.getAvailability(), "availability");
         if (sentAvailability != null) {
@@ -832,6 +871,11 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             sys.setAliveAtCutoff(aliveAtCutoff);
             sys.setFirstIssueStartsAt(firstIssueStartsAt);
             sys.setCriteria(criteria);
+            // BY ITS IMMUTABLE seriesId, like every other reference on this shape.
+            // The row id is an internal number that means nothing across an export
+            // and an import into another installation, which is the one journey
+            // this field has to survive.
+            sys.setSourceSeriesId(sourceSeries == null ? null : sourceSeries.getSeriesId());
             sys.setDomainId(domain == null ? null : domain.getDomainId());
             sys.setAvailability(availability == null ? null : availability.name());
             // The owner is never in the list, on the wire or in the table: it is

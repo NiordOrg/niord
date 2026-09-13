@@ -44,7 +44,7 @@ import java.util.Set;
  * disagrees with the thing that actually enforces it, and the disagreement only
  * shows up when somebody is trying to release.
  *
- * Fourteen codes, and all fourteen ship together. Shipping a subset means the UI
+ * Fifteen codes, and all fifteen ship together. Shipping a subset means the UI
  * renders and translates rows the backend never emits, which reads as "this
  * check passed" rather than "this check does not exist".
  */
@@ -68,7 +68,7 @@ public class PublishChecklistService extends BaseService {
      * for a code nobody ticked.
      *
      * `applicable` says whether this issue can be in the condition the row
-     * describes at all. All fourteen rows are emitted for every issue -- a client
+     * describes at all. All fifteen rows are emitted for every issue -- a client
      * that renders only the rows it received cannot tell "this check passed" from
      * "this check does not exist" -- but a row about a question this issue does
      * not raise is not an answer about this issue, and counting it as one is how
@@ -172,7 +172,22 @@ public class PublishChecklistService extends BaseService {
          * The series' issues do not tile, so a row that presumes they do is
          * asking a question this series cannot be in the wrong about.
          */
-        IN_FORCE_SERIES("in-force series");
+        IN_FORCE_SERIES("in-force series"),
+
+        /**
+         * The member list is the union of issues that were each released on their
+         * own, so the ceiling that protects against a runaway query cannot apply.
+         */
+        BOUNDED_BY_SOURCES("the union is bounded by issues already published one by one"),
+
+        /**
+         * Liveness was decided at each source issue's own cut-off, and re-judging
+         * it at this one would drop what those issues rightly carried.
+         */
+        JUDGED_AT_SOURCE("liveness was judged at each source issue's cut-off"),
+
+        /** The series compiles nothing, so it has no source issues to be short of. */
+        NOT_COMPILED("the series does not compile another series' issues");
 
         private final String phrase;
 
@@ -213,7 +228,13 @@ public class PublishChecklistService extends BaseService {
             "MEMBER_LIMIT",
             "NO_INEFFECTIVE_OVERRIDES",
             "CANCELLED_MEMBERS_ALIVE_AT_CUTOFF",
-            "OVERLAPPING_ISSUE");
+            "OVERLAPPING_ISSUE",
+            // Appended rather than placed beside the other membership rows, and
+            // deliberately: the order is the order the rail renders in, and every
+            // client that pins it -- the screen, the tests, the catalogue -- reads
+            // a row's position as stable. A row inserted in the middle would
+            // renumber all of them for one that only applies to one regime.
+            "SOURCE_ISSUES_COMPLETE");
 
     @Inject
     IssueResolutionService resolutions;
@@ -292,7 +313,7 @@ public class PublishChecklistService extends BaseService {
         List<CheckRow> rows = new ArrayList<>();
 
         boolean queryBacked = series.getContentMode() == ContentMode.GENERATED_FROM_QUERY;
-        boolean interval = series.getTimeRelation() == TimeRelation.PUBLISHED_IN_INTERVAL;
+        boolean interval = series.getTimeRelation() != null && series.getTimeRelation().tiles();
 
         // An IN-FORCE series: one whose issues answer "what is in force at this
         // instant" instead of each covering a period of its own. Consecutive
@@ -321,6 +342,14 @@ public class PublishChecklistService extends BaseService {
         // the reason that fits the kind. OVERLAPPING_ISSUE is different: it hangs
         // off the member list, and a series without one already says so.
         boolean inForce = series.getTimeRelation() == TimeRelation.IN_FORCE_AT_CUTOFF;
+
+        // A COMPILATION tiles and renders like any other interval series, so most
+        // of the rail applies to it unchanged. Three rows do not, and each of them
+        // is a question decided somewhere else: the member ceiling, which guards
+        // against a query nobody bounded; the liveness re-judgement, which each
+        // source issue already made at its own cut-off; and the coverage of the
+        // source period, which only a compilation has at all.
+        boolean compiled = MembershipRegime.of(series) == MembershipRegime.COMPILED;
 
         // 1
         rows.add(row("ISSUE_OPEN", Severity.BLOCK,
@@ -492,7 +521,15 @@ public class PublishChecklistService extends BaseService {
                                 "count", memberCount)
                         : detailFor(Inapplicable.NO_MEMBERSHIP)));
 
-        rows.add(membership
+        // The ceiling exists to catch a query that selected the corpus. A
+        // compilation cannot be in that condition: every one of its members is a
+        // row some issue of the source series already printed, one release at a
+        // time, and seven of the nine accumulated years in the estate hold more
+        // than a thousand of them. Blocking on it would make the feature
+        // unreleasable for exactly the years it was built for.
+        rows.add(compiled
+                ? notApplicable("MEMBER_LIMIT", Severity.BLOCK, Inapplicable.BOUNDED_BY_SOURCES)
+                : membership
                 ? row("MEMBER_LIMIT", Severity.BLOCK,
                         memberCount <= MemberResolutionService.MEMBER_LIMIT,
                         detail("MEMBER_LIMIT.of",
@@ -521,10 +558,18 @@ public class PublishChecklistService extends BaseService {
         var aliveButWithdrawn = resolution == null
                 ? Optional.<ResolutionWarningVo>empty()
                 : resolution.warning(ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE);
+        //
+        // Not applicable to a compilation, and the reason is the point of the
+        // regime: each source issue judged liveness at ITS OWN cut-off, which is
+        // what made it print the message. Asking the question again at the
+        // compilation's cut-off would report a notice cancelled in March as a
+        // problem with the year that rightly published it in February.
         rows.add(new CheckRow("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF", Severity.WARN,
-                aliveButWithdrawn.isEmpty(), membership, true,
+                aliveButWithdrawn.isEmpty(), membership && !compiled, true,
                 ResolutionWarningCode.CANCELLED_BUT_DATE_ALIVE.name(),
-                membership
+                compiled
+                        ? detailFor(Inapplicable.JUDGED_AT_SOURCE)
+                        : membership
                         ? aliveButWithdrawn
                                 .map(w -> detail("CANCELLED_MEMBERS_ALIVE_AT_CUTOFF.count",
                                         w.count() + " member(s) cancelled or expired after the "
@@ -565,6 +610,26 @@ public class PublishChecklistService extends BaseService {
                         : notApplicable("OVERLAPPING_ISSUE", Severity.WARN,
                                 Inapplicable.NO_MEMBERSHIP));
 
+        // 15. Is the period this compilation covers actually finished?
+        //
+        // A WARN and acknowledgeable, because releasing early is a legitimate act
+        // and a recurring one: an annual put out in the first days of January,
+        // before the last week of December is published, is the ordinary case
+        // rather than a mistake. What is not acceptable is doing it without
+        // noticing -- a missing week is invisible in a list of a thousand rows --
+        // so the resolver raises SOURCE_ISSUES_INCOMPLETE and the publish gate
+        // refuses an unacknowledged release on it, exactly as it does for a
+        // cancelled member that is still alive at the cut-off.
+        //
+        // Read off the SURVEY the resolution already carries rather than taken
+        // again here: the panel on the screen, this row and the warning the gate
+        // enforces are one answer, and two of them computing coverage separately
+        // is how the rail comes to say "complete" about a year the release then
+        // refuses.
+        rows.add(compiled
+                ? sourceIssuesRow(resolution == null ? null : resolution.survey(), series)
+                : notApplicable("SOURCE_ISSUES_COMPLETE", Severity.WARN, Inapplicable.NOT_COMPILED));
+
         List<String> blocking = new ArrayList<>();
         for (CheckRow r : rows) {
             if (r.severity() == Severity.BLOCK && !r.passed()) {
@@ -572,6 +637,74 @@ public class PublishChecklistService extends BaseService {
             }
         }
         return new Checklist(rows, blocking.isEmpty(), blocking, resolution);
+    }
+
+    /**
+     * The fifteenth row, off the coverage survey.
+     *
+     * It keeps its acknowledgement code whether it passes or not, and whether the
+     * survey came back at all: the publish dialog renders a control for the code
+     * the row names, and a row that dropped it on the way out would be a refusal
+     * with nothing to tick.
+     *
+     * A null survey means no resolve was taken -- a source series whose issues
+     * carry no cut-off, which the resolution service swallows so the screen still
+     * renders -- and the row says so rather than claiming the period is covered.
+     *
+     * A WINDOW WITH NO SOURCE ISSUE AT ALL PASSES, with a count of zero. The row
+     * answers "is anything open or uncovered BETWEEN the sources", and between no
+     * sources there is nothing; a period before the source series began, or after
+     * its last issue, is not a gap by the same rule that leaves the tail after
+     * the last week out. What says the compilation is empty is MEMBERS_RESOLVED,
+     * which reads zero beside it.
+     */
+    private static CheckRow sourceIssuesRow(CompilationResolver.Survey survey,
+                                            PublicationSeries series) {
+        String acknowledge = ResolutionWarningCode.SOURCE_ISSUES_INCOMPLETE.name();
+        if (survey == null) {
+            return new CheckRow("SOURCE_ISSUES_COMPLETE", Severity.WARN, false, true, true,
+                    acknowledge,
+                    detail("SOURCE_ISSUES_COMPLETE.incomplete",
+                            "the source series could not be surveyed",
+                            "count", 0, "openCount", 0, "missingCount", 0,
+                            "openWeeks", List.of(),
+                            "missingFrom", List.of(), "missingTo", List.of(),
+                            "zone", zoneOf(series).getId()));
+        }
+        int published = survey.published().size();
+        if (survey.complete()) {
+            return new CheckRow("SOURCE_ISSUES_COMPLETE", Severity.WARN, true, true, true,
+                    acknowledge,
+                    detail("SOURCE_ISSUES_COMPLETE.complete",
+                            published + " source issue(s), none open and none missing",
+                            "count", published));
+        }
+        // The weeks by their own numbering, which is how the admin knows them,
+        // and the uncovered stretches as instants: a gap is bounded by two
+        // cut-offs and has no week number of its own to be named by.
+        List<String> openWeeks = new ArrayList<>();
+        for (CompilationResolver.SourceIssue s : survey.open()) {
+            openWeeks.add(s.week() == null ? String.valueOf(s.publicId())
+                    : s.week() + "/" + s.year());
+        }
+        List<Long> missingFrom = new ArrayList<>();
+        List<Long> missingTo = new ArrayList<>();
+        for (CompilationResolver.SourceIssue s : survey.missing()) {
+            missingFrom.add(epoch(s.intervalFrom()));
+            missingTo.add(epoch(s.cutoff()));
+        }
+        return new CheckRow("SOURCE_ISSUES_COMPLETE", Severity.WARN, false, true, true,
+                acknowledge,
+                detail("SOURCE_ISSUES_COMPLETE.incomplete",
+                        survey.open().size() + " source issue(s) still open and "
+                                + survey.missing().size() + " uncovered stretch(es) inside the period",
+                        "count", published,
+                        "openCount", survey.open().size(),
+                        "missingCount", survey.missing().size(),
+                        "openWeeks", List.copyOf(openWeeks),
+                        "missingFrom", List.copyOf(missingFrom),
+                        "missingTo", List.copyOf(missingTo),
+                        "zone", zoneOf(series).getId()));
     }
 
     /**
