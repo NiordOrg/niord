@@ -1,6 +1,6 @@
 {
   "note": "Generated from DATA-MODEL.md sections 3.1-3.10 by gen-field-manifest.js. Do not hand-edit.",
-  "sourceSha256": "5b6e87f6c1fd8c04f4adc9d960516508942d9bfb66896580f0a824c9fdc1b513",
+  "sourceSha256": "0e3aff12080621dfb7d52c2706ad3e09f4671df3d2e07ae8bf3a220c62ea3f9b",
   "entities": [
     {
       "entity": "PublicationSeries",
@@ -91,6 +91,13 @@
           "unique": false
         },
         {
+          "name": "kind",
+          "ddl": "kind enum('SCHEDULED','UNSCHEDULED','ONE_OFF') NOT NULL DEFAULT 'SCHEDULED'",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
           "name": "cadence",
           "ddl": "cadence enum('NONE','DAILY','WEEKLY','MONTHLY','YEARLY') NOT NULL",
           "nullable": false,
@@ -99,7 +106,7 @@
         },
         {
           "name": "nominalCutoffDay",
-          "ddl": "nominalCutoffDay enum('MONDAY','SUNDAY')",
+          "ddl": "nominalCutoffDay enum('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY') **(corrected 2026-08-23 — the DDL transcribed the MONDAY…SUNDAY ellipsis as a two-element list, so the weekly EfS could not record its Wednesday release; see V3__cutoff_day_all_seven.sql)**",
           "nullable": true,
           "notNull": false,
           "unique": false
@@ -175,10 +182,10 @@
           "unique": false
         },
         {
-          "name": "domain",
-          "ddl": "domain_id INTEGER FK",
-          "nullable": true,
-          "notNull": false,
+          "name": "availability",
+          "ddl": "availability enum('OWNER_ONLY','SELECTED_DOMAINS','ALL_DOMAINS') NOT NULL",
+          "nullable": false,
+          "notNull": true,
           "unique": false
         },
         {
@@ -564,7 +571,7 @@
         },
         {
           "name": "membershipProvenance",
-          "ddl": "membershipProvenance enum('EXACT','EXPLAINED_DIFF','UNION_SNAPSHOT','NO_MEMBERSHIP')",
+          "ddl": "membershipProvenance enum('EXACT','EXPLAINED_DIFF','UNION_SNAPSHOT','NO_MEMBERSHIP','IMPORTED') **(IMPORTED added 2026-08-23 by V4__membership_provenance_imported.sql, ruling B5-iv)**",
           "nullable": true,
           "notNull": false,
           "unique": false
@@ -675,6 +682,27 @@
           "unique": false
         },
         {
+          "name": "weekLabel",
+          "ddl": "weekLabel VARCHAR(64)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "yearLabel",
+          "ddl": "yearLabel VARCHAR(64)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "reportId",
+          "ddl": "reportId VARCHAR(64)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
           "name": "edition",
           "ddl": "edition VARCHAR(64)",
           "nullable": true,
@@ -732,6 +760,13 @@
         {
           "name": "nameOverridden",
           "ddl": "nameOverridden BIT(1) NOT NULL, columnDefinition = \"BIT(1) default 0\"",
+          "nullable": false,
+          "notNull": true,
+          "unique": false
+        },
+        {
+          "name": "fileNameOverridden",
+          "ddl": "fileNameOverridden BIT(1) NOT NULL, default 0",
           "nullable": false,
           "notNull": true,
           "unique": false
