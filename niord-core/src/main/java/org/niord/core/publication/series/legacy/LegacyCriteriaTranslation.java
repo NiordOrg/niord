@@ -31,10 +31,8 @@ import java.util.TreeSet;
  * The criteria document for an imported series.
  *
  * Without one an imported series is unusable: S-1 refuses to activate a
- * query-backed series with a null criteria, so the series stays DRAFT, the
- * shadow diff skips every one of its releases as NO_MEMBERSHIP_SEMANTICS, and
- * the two-consecutive-green-weeks precondition can never be met. The archive
- * imports and then cannot be verified or cut over.
+ * query-backed series with a null criteria, so the series stays DRAFT and can
+ * never publish another edition. The archive imports and then stops there.
  *
  * TWO SOURCES, AND THEY ARE DIFFERENT IN KIND.
  *
@@ -57,11 +55,9 @@ import java.util.TreeSet;
  * LegacyFilterTranslator records that it dropped them.
  *
  * THIS IS A PROPOSAL, NOT A FACT. The series lands DRAFT precisely so an admin
- * reviews the translation before activating, and the shadow diff is what checks
- * it against reality: it resolves this document over each historical interval
- * and compares the result to the frozen members, per release, with the delta.
- * A document that is wrong shows up there as missing/extra rather than as a
- * quietly wrong publication.
+ * reviews the translation before activating, with the frozen members of every
+ * imported release beside it to read it against. A document that is wrong is
+ * caught there rather than by the first native publish going out on it.
  */
 public final class LegacyCriteriaTranslation {
 

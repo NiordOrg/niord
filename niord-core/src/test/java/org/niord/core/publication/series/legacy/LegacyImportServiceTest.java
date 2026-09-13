@@ -423,7 +423,7 @@ public class LegacyImportServiceTest {
      * because @Transactional cannot carry one.
      *
      * LEAVING THE METHOD BARE DOES NOT LEAVE IT UNTRANSACTED, which is what this
-     * test asserted first and what cost a second cutover rehearsal. The service
+     * test asserted first and what cost a second go-live rehearsal. The service
      * extends a base class annotated @Transactional at class level, and that
      * binding is @Inherited: a method with no binding of its own is wrapped by
      * the REQUIRED interceptor on the DEFAULT budget, invisibly. The import then

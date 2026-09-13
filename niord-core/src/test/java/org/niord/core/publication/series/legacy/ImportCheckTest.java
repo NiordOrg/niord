@@ -16,8 +16,6 @@
 
 package org.niord.core.publication.series.legacy;
 
-import org.niord.core.publication.TestIds;
-import org.niord.core.publication.series.TestOwnerDomain;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -25,8 +23,6 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.series.BindsRule;
-import org.niord.core.publication.series.ContentMode;
-import org.niord.core.publication.series.PublicationSeries;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,24 +38,24 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The pre-flight, and the trigger audit that has to be read before cutover.
+ * The import check, and the trigger audit that has to be read alongside it.
  *
  * The pass reports rather than throws, because it is a checklist an admin runs
  * and reads. What must not happen is a violation going unnoticed, so the test
  * asserts the shape of the answer and that the report exists at all -- an absent
- * report is a failed pre-flight, not a clean one.
+ * report is a failed check, not a clean one.
  */
 @QuarkusTest
 @EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
         disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
-public class CutoverPreflightTest {
+public class ImportCheckTest {
 
     /** Committed whether or not it is empty; see theTriggerAuditIsCommittedEmptyOrNot. */
     private static final Path REPORT =
-            Path.of("src", "test", "resources", "fixtures", "cutover-trigger-audit.md");
+            Path.of("src", "test", "resources", "fixtures", "import-check-trigger-audit.md");
 
     @Inject
-    CutoverPreflightService preflight;
+    ImportCheckService importCheck;
 
     @Inject
     EntityManager em;
@@ -67,8 +63,8 @@ public class CutoverPreflightTest {
     /** The pass runs over the imported estate and answers in one shape. */
     @Test
     @Transactional
-    public void thePreflightRunsAndReportsEveryCheck() {
-        CutoverPreflightService.Preflight result = preflight.run();
+    public void theCheckRunsAndReportsEveryAssertion() {
+        ImportCheckService.ImportCheck result = importCheck.run();
 
         assertNotNull(result.violations());
         assertNotNull(result.triggerAudit());
@@ -77,45 +73,45 @@ public class CutoverPreflightTest {
         for (String key : List.of("importedIssues", "seriesWithACurrentIssue", "idCollisions",
                 "triggersNamingAWeeklyTag", "duplicateMemberships", "duplicateOverrides")) {
             assertTrue(result.counts().containsKey(key),
-                    "the pre-flight must report " + key + "; a check that runs and says nothing is "
+                    "the check must report " + key + "; an assertion that runs and says nothing is "
                             + "indistinguishable from one that did not run");
         }
     }
 
     /**
-     * The per-series sheet: the diff's verdict, the missing periods, the kind.
+     * The per-series sheet: the missing periods, and the kind.
      *
-     * Steps 4 and 5 of the rehearsal read these, and before they were here they
-     * were answerable only by calling two other endpoints and counting rows in a
-     * third. A checklist ticked from three moments can be ticked against three
-     * different states of the estate, which is precisely what a cutover window
+     * Several rows of the rehearsal checklist read these, and before they were
+     * here they were answerable only by calling other endpoints and counting
+     * rows. A checklist ticked from three moments can be ticked against three
+     * different states of the estate, which is precisely what the go-live window
      * cannot afford.
      */
     @Test
     @Transactional
-    public void thePreflightDescribesEverySeries() {
-        CutoverPreflightService.Preflight result = preflight.run();
+    public void theCheckDescribesEverySeries() {
+        ImportCheckService.ImportCheck result = importCheck.run();
 
         assertNotNull(result.series());
         for (String key : List.of("series", "uncoveredPeriods")) {
             assertTrue(result.counts().containsKey(key),
-                    "the pre-flight must report " + key);
+                    "the check must report " + key);
         }
         // Every kind is named whether or not the estate has one: an absent kind
-        // and a kind with no series read alike on a sheet, and step 5 is ticked by
-        // comparing the three numbers against expected ones.
+        // and a kind with no series read alike on a sheet, and the estate-shape
+        // step is ticked by comparing the three numbers against expected ones.
         for (org.niord.core.publication.series.SeriesKind kind
                 : org.niord.core.publication.series.SeriesKind.values()) {
             assertTrue(result.counts().containsKey("seriesOfKind" + kind.name()),
-                    "step 5 compares SCHEDULED / UNSCHEDULED / ONE_OFF against expected counts, so "
-                            + "every kind is reported even at zero: " + result.counts().keySet());
+                    "the estate-shape step compares SCHEDULED / UNSCHEDULED / ONE_OFF against "
+                            + "expected counts, so every kind is reported even at zero: "
+                            + result.counts().keySet());
         }
 
         result.series().forEach((seriesId, row) -> {
             assertEquals(seriesId, row.seriesId());
             assertNotNull(row.status(), "a row with no status cannot be judged");
             assertNotNull(row.kind());
-            assertTrue(row.consecutiveGreen() >= 0);
             // Absent, not zero, where gap detection did not run. A closed gate is
             // the absence of a finding; "0 gaps" claims something nobody checked.
             if (!row.gapDetectionEnabled()) {
@@ -128,24 +124,22 @@ public class CutoverPreflightTest {
     }
 
     /**
-     * Neither a gap nor an unproven series makes the pre-flight dirty.
+     * A gap does not make the check dirty.
      *
      * A gap is a fact about an archive that predates this system -- the estate has
-     * had them since 2017 -- and readiness is the FLIP's own precondition,
-     * refused at the flip with its own code. Folding either into `clear` would
-     * stop the pre-flight ever passing on an estate in exactly the state
-     * everybody expects, and a check that can never come back clean is a check
-     * people learn to ignore.
+     * had them since 2017 -- and folding it into `clear` would stop the check ever
+     * passing on an estate in exactly the state everybody expects, and a check
+     * that can never come back clean is a check people learn to ignore.
      */
     @Test
     @Transactional
-    public void gapsAndReadinessAreReportedButDoNotMakeThePreflightDirty() {
-        CutoverPreflightService.Preflight result = preflight.run();
+    public void gapsAreReportedButDoNotMakeTheCheckDirty() {
+        ImportCheckService.ImportCheck result = importCheck.run();
 
-        for (CutoverPreflightService.Violation v : result.violations()) {
-            assertFalse(v.code().contains("GAP") || v.code().contains("READINESS"),
-                    "the pre-flight raised " + v.code() + " as a violation; gaps and readiness are "
-                            + "reported per series and judged elsewhere");
+        for (ImportCheckService.Violation v : result.violations()) {
+            assertFalse(v.code().contains("GAP"),
+                    "the check raised " + v.code() + " as a violation; gaps are reported per series "
+                            + "and judged elsewhere");
         }
     }
 
@@ -153,17 +147,17 @@ public class CutoverPreflightTest {
      * I-18 is asserted across every imported issue, and the id space does not
      * collide.
      *
-     * Both are cheap to state and one-way to get wrong: after the flip a second
-     * current issue is serving the public, and a colliding id means one citation
-     * resolves to whichever document the query found first.
+     * Both are cheap to state and one-way to get wrong: once an imported issue is
+     * published a second current issue is serving the public, and a colliding id
+     * means one citation resolves to whichever document the query found first.
      */
     @BindsRule({"I-18"})
     @Test
     @Transactional
     public void theEstateHasOneCurrentIssuePerSeriesAndNoCollidingIds() {
-        CutoverPreflightService.Preflight result = preflight.run();
+        ImportCheckService.ImportCheck result = importCheck.run();
 
-        List<CutoverPreflightService.Violation> fatal = result.violations().stream()
+        List<ImportCheckService.Violation> fatal = result.violations().stream()
                 .filter(v -> v.code().startsWith("I18_") || v.code().startsWith("X1_"))
                 .toList();
 
@@ -175,7 +169,7 @@ public class CutoverPreflightTest {
     /**
      * The trigger audit is emitted as a committed file, empty or not.
      *
-     * An absent report is a failed pre-flight rather than a clean one: "we found
+     * An absent report is a failed check rather than a clean one: "we found
      * nothing" and "nobody looked" are indistinguishable afterwards, and the
      * failure being guarded against is a mailing that silently stops going out.
      */
@@ -236,99 +230,6 @@ public class CutoverPreflightTest {
     }
 
     /**
-     * A series with nothing to compare is exempt ON THE SHEET, not only at the flip.
-     *
-     * Step 4 of the rehearsal is ticked from these rows, so a row reading "0
-     * consecutive green of 0 runs, not ready" against a publication that is a
-     * single uploaded document sends an operator looking for evidence that
-     * cannot exist -- and, on the estate that produced this defect, made the
-     * bulk flip refuse everything.
-     *
-     * Both halves are asserted together, because the useful claim is the
-     * DIFFERENCE: the query-backed series beside it, which the diff really could
-     * compare, must still read not ready with the same zero runs.
-     */
-    @Test
-    @Transactional
-    public void aSeriesWithNoMembershipToCompareIsReportedExempt() {
-        PublicationSeries uploaded = seedSeries(ContentMode.UPLOADED_FILE, false);
-        PublicationSeries generated = seedSeries(ContentMode.GENERATED_FROM_QUERY, true);
-        em.flush();
-        try {
-            java.util.Map<String, CutoverPreflightService.SeriesRow> rows = preflight.run().series();
-
-            CutoverPreflightService.SeriesRow u = rows.get(uploaded.getSeriesId());
-            assertNotNull(u, "every series in the estate gets a row: " + rows.keySet());
-            assertTrue(u.exempt(), "an uploaded document has no member list the diff could reproduce");
-            assertTrue(u.meetsCutoverPrecondition());
-            assertEquals(0, u.runs());
-
-            CutoverPreflightService.SeriesRow g = rows.get(generated.getSeriesId());
-            assertNotNull(g);
-            assertFalse(g.exempt(), "a query-backed series with criteria CAN be compared");
-            assertFalse(g.meetsCutoverPrecondition(),
-                    "and with no comparisons it has no evidence, which is a different answer "
-                            + "from having nothing to compare");
-        } finally {
-            em.remove(uploaded);
-            em.remove(generated);
-            em.flush();
-        }
-    }
-
-    /**
-     * The smallest series the pre-flight will describe, in the given shape.
-     *
-     * The series is removed again by the caller; the category is REUSED under a
-     * fixed id instead, because it is what the series points at and a fresh one
-     * per run would accumulate a row per test on a database every test shares.
-     */
-    private PublicationSeries seedSeries(ContentMode mode, boolean withCriteria) {
-        org.niord.core.publication.PublicationCategory c = em.createQuery(
-                        "SELECT c FROM PublicationCategory c WHERE c.categoryId = :id",
-                        org.niord.core.publication.PublicationCategory.class)
-                .setParameter("id", "preflight-probe")
-                .getResultStream().findFirst().orElse(null);
-        if (c == null) {
-            c = new org.niord.core.publication.PublicationCategory();
-            c.setCategoryId("preflight-probe");
-            c.setPriority(900);
-            c.setPublish(false);
-            em.persist(c);
-        }
-
-        PublicationSeries s = new PublicationSeries();
-        s.setSeriesId(TestIds.id("preflight-"));
-        s.setStatus(org.niord.core.publication.series.SeriesStatus.ACTIVE);
-        s.setKind(org.niord.core.publication.series.SeriesKind.ONE_OFF);
-        s.setCadence(org.niord.core.publication.series.SeriesCadence.NONE);
-        s.setContentMode(mode);
-        s.setCutoffDefault(org.niord.core.publication.series.CutoffDefault.RELEASE_MOMENT);
-        s.setReleaseMode(org.niord.core.publication.series.ReleaseMode.MANUAL_GATE);
-        s.setNextIssueCreation(org.niord.core.publication.series.NextIssueCreation.MANUAL);
-        s.setNumberingScheme(org.niord.core.publication.series.NumberingScheme.NONE);
-        s.setPublicAuthority(org.niord.core.publication.series.PublicAuthority.LEGACY);
-        s.setCategory(c);
-        // Every publication names the desk that owns it: the column is NOT NULL and
-        // S-20a refuses a save without one, so a fixture that left it out no longer
-        // describes a state the system can be in.
-        s.setDomain(TestOwnerDomain.of(em));
-        s.getLanguages().add("da");
-        s.createDesc("da").setName("Pre-flight probe");
-        if (withCriteria) {
-            org.niord.core.publication.series.criteria.IssueCriteriaVo doc =
-                    new org.niord.core.publication.series.criteria.IssueCriteriaVo();
-            org.niord.core.publication.series.criteria.MessageSeriesCriterionVo node =
-                    new org.niord.core.publication.series.criteria.MessageSeriesCriterionVo();
-            node.setValues(new java.util.ArrayList<>(List.of("dma-nm")));
-            doc.getCriteria().add(node);
-            s.setCriteria(doc);
-        }
-        em.persist(s);
-        return s;
-    }
-
-    /**
      * The ownerless count is on the sheet, and on this database it reads zero.
      *
      * An absent number and a zero read alike on a checklist somebody ticks, so the
@@ -336,24 +237,24 @@ public class CutoverPreflightTest {
      *
      * ZERO IS ALL THIS PATH CAN EVER SEE HERE, and that is worth stating rather
      * than dressing up: V13 made the owner column NOT NULL on this database, so
-     * the query behind the finding cannot return a row. Running the whole
-     * pre-flight therefore proves the count key exists and nothing else -- the
-     * shape of a finding when there IS one is asserted below, on the builder.
+     * the query behind the finding cannot return a row. Running the whole check
+     * therefore proves the count key exists and nothing else -- the shape of a
+     * finding when there IS one is asserted below, on the builder.
      */
     @Test
     @Transactional
     public void theOwnerlessCountIsAlwaysOnTheSheet() {
-        CutoverPreflightService.Preflight result = preflight.run();
+        ImportCheckService.ImportCheck result = importCheck.run();
 
-        assertNotNull(result.counts().get(CutoverPreflightService.OWNERLESS_COUNT),
-                "the pre-flight does not say how many publications have no owner; an absent number "
+        assertNotNull(result.counts().get(ImportCheckService.OWNERLESS_COUNT),
+                "the check does not say how many publications have no owner; an absent number "
                         + "and zero read alike on a sheet somebody ticks");
 
         long ownerless = em.createQuery(
                         "SELECT COUNT(s) FROM PublicationSeries s WHERE s.domain IS NULL", Long.class)
                 .getSingleResult();
         assertEquals((int) ownerless,
-                result.counts().get(CutoverPreflightService.OWNERLESS_COUNT).intValue(),
+                result.counts().get(ImportCheckService.OWNERLESS_COUNT).intValue(),
                 "the reported count disagrees with the estate it describes");
     }
 
@@ -366,30 +267,31 @@ public class CutoverPreflightTest {
      * on: the CODE, which a runbook greps the report for; the COUNT KEY, which the
      * checklist reads and compares against an expected number; and the MESSAGE,
      * because a violation that says a publication is wrong without saying what to
-     * do about it stops a cutover for as long as it takes somebody to work it out.
+     * do about it holds the window open for as long as it takes somebody to work
+     * it out.
      */
     @Test
     public void anownerlessPublicationIsAViolationThatSaysWhatToDo() {
-        List<CutoverPreflightService.Violation> violations = new ArrayList<>();
+        List<ImportCheckService.Violation> violations = new ArrayList<>();
         Map<String, Integer> counts = new LinkedHashMap<>();
 
-        CutoverPreflightService.reportOwnerless(
+        ImportCheckService.reportOwnerless(
                 List.of("stranded-series", "another-stranded-series"), violations, counts);
 
-        assertEquals(2, counts.get(CutoverPreflightService.OWNERLESS_COUNT),
+        assertEquals(2, counts.get(ImportCheckService.OWNERLESS_COUNT),
                 "the count key the checklist reads must carry the number of findings");
         assertEquals(2, violations.size(),
                 "an ownerless publication must be a VIOLATION, not a note: it appears on no admin "
                         + "list, nobody administers it, and it has no timezone to read a cut-off in");
 
-        CutoverPreflightService.Violation first = violations.get(0);
+        ImportCheckService.Violation first = violations.get(0);
         assertEquals("SERIES_WITHOUT_OWNER", first.code(),
                 "the code is the external handle a runbook greps for; renaming it silently breaks "
                         + "the step that reads it");
-        assertEquals(CutoverPreflightService.SERIES_WITHOUT_OWNER, first.code());
+        assertEquals(ImportCheckService.SERIES_WITHOUT_OWNER, first.code());
         assertEquals("stranded-series", first.subject(),
                 "the finding must name the publication, or the operator has to find it themselves");
-        assertTrue(first.detail().contains("Assign one before the flip"),
+        assertTrue(first.detail().contains("Assign one before the import"),
                 "the finding must say what to do about it: " + first.detail());
     }
 

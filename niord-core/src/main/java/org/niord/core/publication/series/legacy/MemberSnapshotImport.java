@@ -176,8 +176,8 @@ public final class MemberSnapshotImport {
                 m.setFrozenPublishDateTo(facts.publishTo());
 
                 // IMPORTED, not CRITERIA: nothing here was derived by running a
-                // query. Labelling these CRITERIA would tell the replay it may
-                // check them against one, which is the claim the import is careful not
+                // query. Labelling these CRITERIA would claim a re-resolution
+                // reproduces them, which is the claim the import is careful not
                 // to make.
                 m.setSource(MemberSource.IMPORTED);
                 rows.add(m);

@@ -1,7 +1,7 @@
-# Cutover pre-flight — mailing-list trigger audit
+# Import check — mailing-list trigger audit
 
-Emitted by `CutoverPreflightService.auditTriggers()`, reached at
-`GET /rest/publication-series/cutover-preflight`. **Committed whether or not it finds anything**,
+Emitted by `ImportCheckService.auditTriggers()`, reached at
+`GET /rest/publication-series/import-check`. **Committed whether or not it finds anything**,
 because "we found no triggers" and "nobody ran the audit" are indistinguishable after the fact, and the
 failure being guarded against is silent.
 
@@ -50,7 +50,7 @@ The weekly `nm-wNN-YYYY` tags belong to the NM publication machinery — `dma-nm
 
 So G-12's premise — "a mailing list keyed on the tag naming convention silently stops matching after C8"
 — has no instance in this system. Not "none found today": the two features do not overlap. A new
-NM-driven mailing list could reintroduce the risk, which is why the audit stays in the pre-flight.
+NM-driven mailing list could reintroduce the risk, which is why the audit stays in the import check.
 
 Worth noting: none uses `publication=` either, so `B4.4`'s cure is not exercised by any live trigger.
 
@@ -75,11 +75,11 @@ Found by Rasmus asking whether these lists use tags at all.
 | Cadenced issues derive their window | `R8` | A cadenced issue is `MANUAL`, so the first native publish does not cap it |
 | The id space does not collide | `X-1` | Two issues share a `publicId`, or a natively created issue reuses a legacy `publicationId` |
 
-All three are one-way after `B7.1`: once `publicAuthority` flips, a wrong window or a colliding id is
-being served to the public, and the fix is a migration rather than an edit.
+All three are one-way after the import: once an imported issue has been published, a wrong window
+or a colliding id is being served to the public, and the fix is a migration rather than an edit.
 
 **On 2026-08-24 all three passed VACUOUSLY.** The response carried `importedIssues: 0` — the import has
-not been run, so there were no rows to check and `"clear": true` asserted nothing. A green pre-flight
+not been run, so there were no rows to check and `"clear": true` asserted nothing. A green check
 over an empty set is not evidence.
 
 **They become meaningful only after `POST /import-legacy` has run.** The dry run

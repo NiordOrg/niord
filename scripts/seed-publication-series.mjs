@@ -24,11 +24,9 @@
  *   5. the issue can be published                             (the transaction)
  *   6. and it reports whether the issue reaches the PUBLIC list  (the union)
  *
- * Step 6 currently reports a GAP rather than passing, and that is the most
- * useful thing this script does: publicAuthority can be set at create and never
- * changed afterwards, so there is no way to flip an existing series from LEGACY
- * to NEW. That flip is the whole of B7.1. The public adapter has therefore never
- * served a NEW-authority row anywhere but a test, and cannot be made to.
+ * Step 6 is the one that exercises the public adapter end to end: a published
+ * issue in a publishing category is on the public list, and nothing has to be
+ * switched on for it to be there.
  *
  * Usage:
  *   node scripts/seed-publication-series.mjs [--no-publish] [--base <url>]
@@ -181,7 +179,6 @@ async function main() {
         releaseMode: 'MANUAL_GATE',
         nextIssueCreation: 'MANUAL',
         messagePublication: 'EXTERNAL',
-        publicAuthority: 'LEGACY',
         languages: ['da'],
         // The discriminator is "kind", not "type", and its values are the camelCase
         // names from the @JsonSubTypes list -- not the CriterionKind constants. The
@@ -272,13 +269,9 @@ async function main() {
         console.log(`        warnings, unacknowledged and not fatal: ${warnings.join('; ')}`);
     }
 
-    // 5. The union. It cannot run yet, and that is the finding.
-    //
-    // publicAuthority is settable only on create, and create forces DRAFT then
-    // ACTIVE -- there is NO endpoint anywhere that flips an existing series from
-    // LEGACY to NEW. That flip is the whole of B7.1, so as things stand cutover
-    // has no API. Recorded here rather than worked around, because a seed that
-    // reached past the API to set a column would hide exactly this.
+    // 5. The union. A published issue is served from the new model as soon as it
+    // is published -- there is nothing to switch on -- so this step either passes
+    // or has found a real regression in the public adapter.
     const at = published.stampedAt;
     const publicList = await fetch(
         `${BASE}/public/v1/publications?lang=da&from=${at}&to=${at}`).then(r => r.json());
@@ -288,10 +281,9 @@ async function main() {
         ok('the published issue is on the PUBLIC list',
             'the new half of the union serves a real row');
     } else {
-        console.log('  --. GAP   the issue is PUBLISHED but its series is still LEGACY, and there is '
-            + 'no\n        endpoint to flip publicAuthority. The union step cannot run, and\n'
-            + '        B7.1 -- the cutover itself -- has no API. This is the seed\n'
-            + '        reporting a missing capability, not a failure.');
+        fail('the published issue is on the PUBLIC list',
+            'a PUBLISHED issue in a publishing category is served unconditionally, so the new '
+            + 'half of the union is not returning it');
     }
 
     // Nothing to clean up: the issue is published, so both deletes are refused.

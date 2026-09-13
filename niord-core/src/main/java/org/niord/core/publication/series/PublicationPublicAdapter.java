@@ -37,7 +37,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The public face of publications, during and after the transition.
+ * The public face of publications.
+ *
+ * THE UNION: the public list is the new-model issues plus the legacy rows no
+ * published issue has taken over. A legacy row is served until the issue
+ * imported from it has been published; from that publish on, the issue is
+ * served in its place and the legacy row is excluded. Nothing switches the two
+ * halves on or off -- the union is a fact about the data, and a series whose
+ * rows have never been imported keeps being served from the legacy half
+ * indefinitely.
  *
  * THE MAPPING IS THE POINT, and it is not the one the field names suggest.
  *
@@ -50,7 +58,7 @@ import java.util.Map;
  * interval onto the window instead -- the only mapping the names invite -- and
  * every issue carries the previous period's window, so under the default
  * from = to = now the newest issue is never current and the site shows last
- * week's EfS from the moment of cutover.
+ * week's EfS from the first publish on.
  *
  * The minus one millisecond is required rather than tidy: the legacy overlap
  * helper is closed at both ends, so an exactly-equal boundary makes two issues
@@ -127,7 +135,7 @@ public class PublicationPublicAdapter extends BaseService {
     }
 
     /**
-     * Issues of series that have cut over.
+     * The new-model half: every published issue, whatever its series.
      *
      * The eligibility predicate: PUBLISHED only -- a RETIRED ISSUE disappears
      * from the listing, which is what retiring an issue means -- and the window
@@ -138,13 +146,12 @@ public class PublicationPublicAdapter extends BaseService {
         // that side; it does not mean now. See legacyHalf for why that matters.
         StringBuilder jpql = new StringBuilder(
                 "SELECT i FROM PublicationIssue i JOIN i.series s JOIN s.category c "
-                        + "WHERE s.publicAuthority = :authority "
                         // The category publish flag applies to BOTH halves.
-                        // legacyHalf has always had it; without it here a cut-over
-                        // series in a non-publishing category puts its issues on
-                        // the public site the moment it is flipped, while the
-                        // legacy rows it replaced were correctly hidden.
-                        + "AND c.publish = TRUE "
+                        // legacyHalf has always had it; without it here a series
+                        // in a non-publishing category puts its issues on the
+                        // public site the moment one is published, while the
+                        // legacy rows they replace are correctly hidden.
+                        + "WHERE c.publish = TRUE "
                         + "AND i.status = :published "
                         + "AND i.publicFrom IS NOT NULL");
         if (to != null) {
@@ -155,7 +162,6 @@ public class PublicationPublicAdapter extends BaseService {
         }
 
         TypedQuery<PublicationIssue> q = em.createQuery(jpql.toString(), PublicationIssue.class)
-                .setParameter("authority", PublicAuthority.NEW)
                 .setParameter("published", IssueStatus.PUBLISHED);
         if (to != null) {
             q.setParameter("to", to);
@@ -167,10 +173,11 @@ public class PublicationPublicAdapter extends BaseService {
     }
 
     /**
-     * Legacy rows, minus anything a cut-over series has already taken over.
+     * Legacy rows, minus anything a published issue has already taken over.
      *
-     * The exclusion is by legacyPublicationId rather than by series, because a
-     * series cuts over as a whole but its legacy rows are individual.
+     * The exclusion is by legacyPublicationId and row by row: each legacy row
+     * stands until the issue imported from it is published, so a series whose
+     * import is partial keeps serving the rest of its back catalogue.
      */
     private List<Publication> legacyHalf(Date from, Date to) {
         // status, mainType and the category publish flag are the filter the public
@@ -218,13 +225,11 @@ public class PublicationPublicAdapter extends BaseService {
                 // resurrects the document it replaced, with no duplicate id and no
                 // ERROR to notice it. publishedAt settles both: set at publish,
                 // never cleared, including by retire.
-                + "  AND i.publishedAt IS NOT NULL "
-                + "  AND i.series.publicAuthority = :authority)");
+                + "  AND i.publishedAt IS NOT NULL)");
 
         TypedQuery<Publication> q = em.createQuery(jpql.toString(), Publication.class)
                 .setParameter("active", PublicationStatus.ACTIVE)
-                .setParameter("mainType", PublicationMainType.PUBLICATION)
-                .setParameter("authority", PublicAuthority.NEW);
+                .setParameter("mainType", PublicationMainType.PUBLICATION);
         if (to != null) {
             q.setParameter("to", to);
         }
@@ -308,7 +313,7 @@ public class PublicationPublicAdapter extends BaseService {
      *
      * Order matters: a new issue first, then a legacy row. An imported issue
      * carries the legacy id as its own publicId, so checking legacy first would
-     * keep serving the old row forever after cutover.
+     * keep serving the old row forever once the issue exists.
      */
     @Transactional
     public PublicPublication resolve(String publicationId) {

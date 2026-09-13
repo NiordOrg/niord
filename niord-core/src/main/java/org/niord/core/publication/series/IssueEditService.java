@@ -566,8 +566,7 @@ public class IssueEditService extends BaseService {
      *
      * A document equal to the series' is stored as no override at all. It is not
      * a deviation, and recording it as one would label the issue "tilpasset for
-     * denne udgave" while it selects exactly what the series does -- and would
-     * make the shadow diff skip a week that had nothing wrong with it.
+     * denne udgave" while it selects exactly what the series does.
      */
     private void applyCriteriaOverride(PublicationIssue issue, IssueEdit edit, User actor) {
         if (!edit.clearCriteriaOverride() && edit.criteriaOverride() == null) {

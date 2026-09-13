@@ -83,7 +83,6 @@ public class PublicationSeriesPersistenceTest {
         s.setMessagePublication(MessagePublication.NONE);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setCategory(aCategory());
         // Every publication names the desk that owns it: the column is NOT NULL and
         // S-20a refuses a save without one, so a fixture that left it out no longer

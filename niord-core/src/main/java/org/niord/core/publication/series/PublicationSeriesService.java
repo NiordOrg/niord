@@ -20,7 +20,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.FlushModeType;
 import jakarta.persistence.TypedQuery;
-import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
@@ -56,9 +55,6 @@ public class PublicationSeriesService extends BaseService {
     @Inject
     IssueAuditService audit;
 
-    @Inject
-    ShadowDiffService shadowDiff;
-
     /** Looks a series up by its human-authored, stable id. */
     public PublicationSeries findBySeriesId(String seriesId) {
         return em.createQuery("SELECT s FROM PublicationSeries s WHERE s.seriesId = :seriesId",
@@ -82,23 +78,6 @@ public class PublicationSeriesService extends BaseService {
     }
 
     /**
-     * Every series whose public reads are answered by the given model.
-     *
-     * Status-blind on purpose. The public adapter does not read the series status
-     * either -- what it reads is this column -- so a series retired after a
-     * cutover keeps serving the public from the new half. A rollback that skipped
-     * it would leave exactly the rows nobody is watching pointed at the model
-     * being rolled back.
-     */
-    public List<PublicationSeries> findByPublicAuthority(PublicAuthority authority) {
-        return em.createQuery(
-                        "SELECT s FROM PublicationSeries s WHERE s.publicAuthority = :authority "
-                                + "ORDER BY s.seriesId", PublicationSeries.class)
-                .setParameter("authority", authority)
-                .getResultList();
-    }
-
-    /**
      * How often a series comes out, as the order its strip is drawn in.
      *
      * The SAME order the dashboard reads its cards in -- the weeklies an editor
@@ -116,12 +95,16 @@ public class PublicationSeriesService extends BaseService {
     /**
      * The series one desk's period strip is drawn for.
      *
-     * The SAME set the admin list shows -- narrowed to the ones with a calendar,
-     * to the ones without, or neither: the strip and the card grid are two halves
-     * of one screen, and a server that picked a different set would leave cards
-     * with no strip and strips with no card. The rule is written here, once,
-     * rather than copied out of the frontend -- where it lives today -- because
-     * the two drifting apart is a per-desk failure nothing reports.
+     * The SAME set the dashboard groups into cards: every series the desk owns
+     * that is not a one-off and stands at ACTIVE or DRAFT, an imported draft
+     * exactly as much as one an admin started by hand -- narrowed to the ones
+     * with a calendar, to the ones without, or neither. Where a draft came from
+     * is provenance, not a status, so it decides nothing here. The strip and the
+     * card grid are two halves of one screen, and a server that picked a
+     * different set would leave cards with no strip and strips with no card. The
+     * rule is written here, once, rather than copied out of the frontend --
+     * where it also lives -- because the two drifting apart is a per-desk
+     * failure nothing reports.
      *
      * The reading ORDER already spans both kinds: CADENCE_ORDER ends at NONE, so
      * an unnarrowed read comes back weeklies first and the calendar-less series
@@ -159,7 +142,7 @@ public class PublicationSeriesService extends BaseService {
         TypedQuery<PublicationSeries> query = em.createQuery(
                         "SELECT s FROM PublicationSeries s WHERE s.domain.domainId = :domain "
                                 + "AND s.kind <> :oneOff "
-                                + "AND (s.status = :active OR (s.status = :draft AND s.importSource IS NULL))"
+                                + "AND (s.status = :active OR s.status = :draft)"
                                 // No cadence predicate at all when both kinds are wanted --
                                 // rather than the pair of reads concatenated -- so the sort and
                                 // the cap below see one list and the cap bounds the answer.
@@ -352,57 +335,6 @@ public class PublicationSeriesService extends BaseService {
         PublicationSeries saved = update(series);
         audit.series(saved, actor, target == SeriesStatus.ACTIVE ? AuditAction.SERIES_ACTIVATED : AuditAction.SERIES_RETIRED,
                 trimmed);
-        return saved;
-    }
-
-    /**
-     * Which model serves this series to the public.
-     *
-     * The single irreversible-feeling step of the cutover, and the reason it is
-     * an action of its own rather than a field on a save: flipping authority
-     * changes what every anonymous reader sees, and it must not be reachable by
-     * an admin editing a name. Both directions are audited, and flipping BACK is
-     * a first-class action -- a rollback nobody has rehearsed is not a rollback.
-     *
-     * The precondition is the shadow diff's own answer: two consecutive green
-     * comparisons by release order, or a series that cannot be compared at all
-     * and is exempt by rule. `force` exists because a precondition that cannot
-     * be overridden gets worked around in the database instead, where nothing is
-     * recorded -- so it is allowed, it demands a reason, and the audit entry says
-     * it was forced.
-     */
-    public PublicationSeries setPublicAuthority(PublicationSeries series, PublicAuthority target,
-                                                boolean force, String reason, User actor) {
-        String trimmed = IssueLifecycleService.requireReason(reason,
-                "changing which model serves '" + series.getSeriesId() + "' to the public must say why");
-
-        PublicAuthority from = series.getPublicAuthority();
-        if (target == PublicAuthority.NEW && from != PublicAuthority.NEW) {
-            if (series.getStatus() != SeriesStatus.ACTIVE) {
-                throw new IssueLifecycleService.TransitionRefusedException("SERIES_NOT_ACTIVE",
-                        "'" + series.getSeriesId() + "' is " + series.getStatus() + ". A series serves "
-                                + "the public only once it is active.");
-            }
-            ShadowDiffService.Readiness readiness =
-                    ShadowDiffService.readinessOf(shadowDiff.forSeries(series.getSeriesId()), series);
-            if (!readiness.ready() && !force) {
-                throw new IssueLifecycleService.TransitionRefusedException("NOT_READY_FOR_CUTOVER",
-                        "'" + series.getSeriesId() + "' has " + readiness.consecutiveGreen()
-                                + " consecutive green comparison(s) of " + readiness.runs() + " run(s), "
-                                + readiness.skipped() + " skipped. The precondition is "
-                                + ShadowDiffService.REQUIRED_GREEN_RELEASES + ", or a series with no "
-                                + "membership to compare. Pass force with a reason to flip anyway.");
-            }
-        }
-
-        series.setPublicAuthority(target);
-        PublicationSeries saved = update(series);
-
-        Map<String, Object> detail = new LinkedHashMap<>();
-        detail.put("from", from == null ? null : from.name());
-        detail.put("to", target.name());
-        detail.put("forced", force);
-        audit.seriesAuthority(saved, actor, detail, trimmed);
         return saved;
     }
 

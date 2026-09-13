@@ -46,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *        /rest/repo/file/..., so it would have 404'd -- while the imported rows
  *        beside it worked, because those carry legacy's link verbatim
  *
- * All four are implemented and asserted now. Had this file been left to Phase Z
- * as convenient, they would have reached cutover as prose, and D-8 would have
+ * All four are implemented and asserted now. Had this file been left to the end
+ * as convenient, they would have reached go-live as prose, and D-8 would have
  * shipped a public API emitting links that do not resolve.
  *
  * Named ...Test so Surefire actually runs it. It was PendingInvariants first,

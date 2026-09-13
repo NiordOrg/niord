@@ -78,7 +78,6 @@ public class SeriesKindTest {
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.NONE);
         s.setCategory(c);

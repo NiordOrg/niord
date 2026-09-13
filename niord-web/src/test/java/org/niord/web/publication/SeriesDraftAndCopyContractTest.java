@@ -156,8 +156,6 @@ public class SeriesDraftAndCopyContractTest {
                 + "the import's already-imported check ambiguous");
         assertNull(copy.getImportSource(), "a hand-made series carrying it would be deleted by an "
                 + "import undo");
-        assertEquals("LEGACY", copy.getPublicAuthority(), "a copy must not arrive already answering "
-                + "for a publication that has never published anything");
         assertNull(copy.getFirstIssueStartsAt(), "when the ORIGINAL began is not a setting");
         assertNull(copy.getCreated(), "the timestamps date the row it was copied from");
         assertNull(copy.getUpdated());
@@ -214,7 +212,6 @@ public class SeriesDraftAndCopyContractTest {
         vo.setStatus("ACTIVE");
         vo.setLegacyTemplateId("11111111-2222-3333-4444-555555555555");
         vo.setImportSource("publications.json");
-        vo.setPublicAuthority("NEW");
         vo.setFirstIssueStartsAt(new Date(1_500_000_000_000L));
         vo.setCreated(new Date(1_500_000_000_000L));
         vo.setUpdated(new Date(1_700_000_000_000L));

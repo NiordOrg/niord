@@ -137,7 +137,6 @@ public class IssuePickerTest {
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(publication);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
@@ -506,7 +505,7 @@ public class IssuePickerTest {
             declared.add(f.getName());
         }
         for (String leaky : List.of("criteria", "criteriaOverride", "reportId", "reportParams",
-                "repoPath", "filePath", "memberCount", "publicAuthority", "releaseMode",
+                "repoPath", "filePath", "memberCount", "releaseMode",
                 "cutoffStampedAt", "snapshotIntervalFrom")) {
             assertFalse(declared.contains(leaky),
                     "PublicationIssuePickerVo declares " + leaky + "; a field that is not there "

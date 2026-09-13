@@ -32,11 +32,12 @@ import java.util.Set;
  *
  * WHY THIS EXISTS. Every defect in the import so far -- the content interval, the
  * unreleased cut-off, the bounds check, the double-counted release lag -- was
- * found by deploying, importing 1,077 rows, and reading the shadow diff. That is
- * a twenty-minute round trip for a one-line question, and it needs somebody to
- * push the deploy button. The interesting behaviour does not need the whole
- * estate: it needs consecutive releases of one cadenced series, with the real
- * publish dates, because the bugs live at the interval boundaries.
+ * found by deploying, importing 1,077 rows, and reading what came out against
+ * what the archive holds. That is a twenty-minute round trip for a one-line
+ * question, and it needs somebody to push the deploy button. The interesting
+ * behaviour does not need the whole estate: it needs consecutive releases of one
+ * cadenced series, with the real publish dates, because the bugs live at the
+ * interval boundaries.
  *
  * WHAT IS REAL HERE. The publish dates, types and statuses are the archive's own,
  * harvested from the frozen member snapshots. So are the release times, which is
@@ -44,11 +45,12 @@ import java.util.Set;
  * release that actually closed it reproduce exactly.
  *
  * WHAT IS NOT. A frozen member records the message AS IT WAS at freeze. The live
- * archive has moved on -- roughly three quarters of the members a replay reports
- * missing are now CANCELLED or EXPIRED, which is a property of time passing
- * rather than of any code. A local replay cannot show that and will look greener
- * than the real one. It is the right trade: the decay is unfixable and uniform,
- * while everything the slice does reproduce is a bug somebody can act on.
+ * archive has moved on -- roughly three quarters of the members a re-resolution
+ * against the live archive comes up short are now CANCELLED or EXPIRED, which is
+ * a property of time passing rather than of any code. The slice cannot show that
+ * and will look cleaner than the real estate does. It is the right trade: the
+ * decay is unfixable and uniform, while everything the slice does reproduce is a
+ * bug somebody can act on.
  */
 public final class EstateSlice {
 
@@ -119,7 +121,7 @@ public final class EstateSlice {
      * A series as the import actually shaped it, criteria and all.
      *
      * Harvested rather than reconstructed. Which time relation a series has, and
-     * which criteria nodes, is the thing a replay is checking the consequences
+     * which criteria nodes, is the thing a re-resolution exposes the consequences
      * of -- rebuilding it from a guess here would test the guess.
      */
     public record Series(String seriesId, String cadence, String timeRelation,
@@ -184,9 +186,10 @@ public final class EstateSlice {
      * template was created, one edition published from it, and the message tag
      * reused -- so two or three publications point at the same members.
      *
-     * It matters to any replay because two issues claiming the same content cannot
-     * both be right about the period they cover, and no interval fixes that. A
-     * replay should say so rather than count it as a disagreement it caused.
+     * It matters to anything re-resolving them because two issues claiming the
+     * same content cannot both be right about the period they cover, and no
+     * interval fixes that. Anything comparing them should say so rather than
+     * count it as a disagreement it caused.
      */
     public static Set<String> issuesSharingAMemberSet() {
         Map<String, List<String>> byMembership = new LinkedHashMap<>();

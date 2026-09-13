@@ -149,7 +149,7 @@ public class UnreleasedIssueWindowTest {
      * THE WHOLE CHANGE, row by row, so a reader can check it rather than trust it.
      *
      * Printed as well as asserted: this is the one place the estate-wide effect is
-     * visible, and "which rows moved" is the question asked of a cut-over run
+     * visible, and "which rows moved" is the question asked of an import run
      * afterwards.
      */
     @Test

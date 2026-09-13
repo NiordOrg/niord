@@ -93,7 +93,6 @@ public class ChainAndCurationInvariantsTest {
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         // A report, because a query-backed series that names none has no document

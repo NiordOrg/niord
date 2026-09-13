@@ -175,7 +175,7 @@ public class LegacyCriteriaTranslationTest {
      *
      * ACCEPT_ALL for the operand resolver: C-4 checks that operands resolve
      * against live data, which is a property of the estate rather than of the
-     * translation, and the shadow diff is what tests it against reality.
+     * translation, and is asserted where the estate is.
      */
     @Test
     public void everyTranslatedDocumentPassesTheActivationValidator() {

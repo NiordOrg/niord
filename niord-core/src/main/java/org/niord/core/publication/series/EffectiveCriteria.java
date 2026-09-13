@@ -39,10 +39,10 @@ import java.util.Objects;
  * meaningful sense. The override says "select something different for this
  * edition", not "be a different kind of publication".
  *
- * NOT EVERY READER SHOULD USE THIS. ReplayHarness deliberately does not: it
- * reproduces what the legacy engine produced, and an override is a decision
- * somebody made afterwards, in this system. Applying it retroactively would make
- * the replay diff against a document legacy never had.
+ * NOT EVERY READER SHOULD USE THIS. A reader asking what the LEGACY engine
+ * selected must not: an override is a decision somebody made afterwards, in this
+ * system, and applying it retroactively answers with a document the legacy
+ * engine never had.
  */
 public final class EffectiveCriteria {
 
@@ -108,8 +108,8 @@ public final class EffectiveCriteria {
      *
      * So a reader asking "should I treat this issue as a human decision" must ask
      * THIS, which is answered by a column only the edit path ever writes. Asking
-     * isOverridden instead made the shadow diff skip the entire imported estate,
-     * and it was the replay test that noticed: nothing was compared at all.
+     * isOverridden instead labelled every imported release a tailored one, and
+     * the whole imported estate read as edited by hand.
      */
     public static boolean hasOwnCriteria(PublicationIssue issue) {
         return issue != null && issue.getCriteriaOverride() != null;

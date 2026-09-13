@@ -75,10 +75,10 @@ public class PublicationSearchAdapterTest {
     /**
      * Takes the fixtures away again.
      *
-     * The same discipline ShadowDiffTest and LocalEstateReplayTest carry, and for
-     * the reason CutoverPreflightTest demonstrated: a check that reads the whole
-     * schema -- and on a real deployment the whole schema IS the estate -- reports
-     * a test's leftovers as findings about production data.
+     * The discipline every estate-wide test carries, for the reason ImportCheckTest
+     * demonstrated: a check that reads the whole schema -- and on a real deployment
+     * the whole schema IS the estate -- reports a test's leftovers as findings
+     * about production data.
      *
      * Deletion order matters. The desc tables are FK children and Hibernate does
      * not cascade a bulk DELETE, and PublicationSeries_languages is an
@@ -176,7 +176,6 @@ public class PublicationSearchAdapterTest {
         }
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);

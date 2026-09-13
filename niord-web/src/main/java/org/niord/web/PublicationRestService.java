@@ -199,9 +199,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
      * Offering the legacy row and resolving to the issue would show one title and
      * cite another.
      *
-     * Without this an issue with no legacy twin -- every issue created after
-     * cutover -- is resolvable by id and findable by nobody, which makes the
-     * current week the one publication an editor cannot cite.
+     * Without this an issue with no legacy twin -- every issue created natively
+     * in this system -- is resolvable by id and findable by nobody, which makes
+     * the current week the one publication an editor cannot cite.
      *
      * MERGED BEFORE PAGING, so the two halves cannot each page independently and
      * leave the merge working on two wrong lists.
@@ -366,7 +366,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @NoCache
     public List<PublicationVo> getPublications(@PathParam("publicationIds") String publicationIds) throws Exception {
         // Through the shared resolver, one id at a time, so a citation into a
-        // cut-over series renders here as well as on the public site. This
+        // publication series renders here as well as on the public site. This
         // endpoint is what the editor calls to draw a stored citation, and a
         // citation that resolves in one place and not the other is worse than
         // one that resolves nowhere.

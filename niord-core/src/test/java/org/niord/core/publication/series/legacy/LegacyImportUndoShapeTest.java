@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * What the import undo deletes, asserted over the source.
  *
- * The undo is the cutover window's only escape hatch: if the estate imports
+ * The undo is the go-live window's only escape hatch: if the estate imports
  * wrongly there is one way back, and it runs once, under time pressure, on a
  * production database. Its failure mode is not a wrong answer -- it is a foreign
  * key violation part way through, naming a table nobody was thinking about, at
@@ -77,7 +77,7 @@ public class LegacyImportUndoShapeTest {
                         + "shared with live in a join table with a foreign key back to the series; "
                         + "JPQL cannot address it, and a bulk delete of the owner does not cascade "
                         + "the way remove() would -- so the rows survive and the series delete fails "
-                        + "on the constraint, in the one operation a cutover window cannot do "
+                        + "on the constraint, in the one operation a go-live window cannot do "
                         + "without.");
     }
 

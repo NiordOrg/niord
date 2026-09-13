@@ -37,7 +37,6 @@ import org.niord.core.publication.series.IssueLifecycleService.TransitionRefused
 import org.niord.core.publication.series.MemberSource;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
-import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.ReleaseMode;
@@ -639,12 +638,12 @@ public class PublicationResolutionTest {
                 "the blank was counted as an unresolvable id and refused the whole request");
     }
 
-    // ============================================ the cutover window
+    // ============================================ the go-live window
 
     /**
      * An imported issue that is not yet published falls back to its legacy row.
      *
-     * During cutover an issue adopts the legacy publicationId as its own publicId
+     * An imported issue adopts the legacy publicationId as its own publicId
      * and sits at OPEN until it is first published. Resolving new-model-first and
      * refusing there -- rather than falling through -- takes that id dark for
      * every anonymous caller for the whole of that window, while the legacy row is
@@ -727,7 +726,6 @@ public class PublicationResolutionTest {
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.NEW);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);

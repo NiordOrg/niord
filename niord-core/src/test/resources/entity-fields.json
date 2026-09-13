@@ -1,6 +1,6 @@
 {
   "note": "Generated from DATA-MODEL.md sections 3.1-3.10 by gen-field-manifest.js. Do not hand-edit.",
-  "sourceSha256": "0e3aff12080621dfb7d52c2706ad3e09f4671df3d2e07ae8bf3a220c62ea3f9b",
+  "sourceSha256": "7642e0452c2417e37ae5d3a66df3cc3828ac571622462ab7db195fd626022d55",
   "entities": [
     {
       "entity": "PublicationSeries",
@@ -261,13 +261,6 @@
         {
           "name": "nextIssueCreation",
           "ddl": "nextIssueCreation enum('AUTO_ON_PUBLISH','MANUAL') NOT NULL",
-          "nullable": false,
-          "notNull": true,
-          "unique": false
-        },
-        {
-          "name": "publicAuthority",
-          "ddl": "publicAuthority enum('LEGACY','NEW') NOT NULL",
           "nullable": false,
           "notNull": true,
           "unique": false

@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * O-4, O-6, D-3 and D-8 were each left @Pending on a task. Those tasks are
  * marked complete, and none of the four had a line of code behind it -- the
  * pending was the only record that the rule existed. That is precisely the
- * failure the gate is for: without it these four would have reached cutover as
+ * failure the gate is for: without it these four would have reached go-live as
  * prose, and D-8 in particular would have shipped a public API emitting links
  * that do not resolve.
  *

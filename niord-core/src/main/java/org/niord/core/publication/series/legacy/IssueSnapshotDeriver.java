@@ -42,14 +42,13 @@ import java.util.stream.Collectors;
  * live series flag and 122 tag-carrying blank-era issues get the alive conjunct
  * they never had -- 116 of them the weekly EfS.
  *
- * WHY THAT MATTERS LATER. The historical replay re-resolves every imported issue with a
- * build gate of actualDiffs subset-of manifest. With the conjunct wrongly on,
- * the replay records spurious drops that those issues reproduce exactly with it
- * off. That divergence cannot honestly be added to the expected-diff manifest,
- * so the pressure at that point is to widen the manifest -- which converts a
- * known-correct result into a suppressed one. The defect is planted here, where
- * The publicId assignment is one-way, and surfaces where it cannot be
- * cheaply undone.
+ * WHY THAT MATTERS LATER. The snapshot header is what an imported issue is
+ * re-resolved against for the rest of its life -- when an editor reopens it,
+ * when the member list is rebuilt, when anybody asks what this edition selected.
+ * With the conjunct wrongly on, every one of those answers drops messages the
+ * release actually carried, and the drop reads as a real change rather than as
+ * the header being wrong. The defect is planted here, where the publicId
+ * assignment is one-way, and surfaces where it cannot be cheaply undone.
  *
  * As originally specified the importer left all nine of these columns NULL on
  * ~1,077 issues, a state the data model reserves for NO_MEMBERSHIP, and no

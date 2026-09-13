@@ -83,7 +83,6 @@ public class PublishGateTest {
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
@@ -163,7 +162,7 @@ public class PublishGateTest {
     /**
      * A query-backed series that names no report has nothing to render.
      *
-     * The whole pre-flight guarantee for a generated series' languages: publish
+     * The whole up-front guarantee for a generated series' languages: publish
      * writes their file, so the only thing that CAN be checked beforehand is that
      * there is something to write it with.
      */

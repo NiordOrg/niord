@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * Nothing downstream knows what an issue is. The public list, the citation
  * resolver and the two legacy citation endpoints all consume PublicationVo and
- * SystemPublicationVo, so this mapping is the whole of what makes a cut-over
+ * SystemPublicationVo, so this mapping is the whole of what makes a publication
  * series work in places nobody is going to rewrite.
  *
  * No database and no server: these are plain entities and a pure mapper.

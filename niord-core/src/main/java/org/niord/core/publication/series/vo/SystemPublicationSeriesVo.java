@@ -27,9 +27,9 @@ import org.niord.model.IJsonSerializable;
  * The EDITOR face of a series.
  * 
  * Everything the public VO carries, plus the operational fields: the criteria
- * document, the schedule, the report settings, the cutover switch. None of it
- * is safe for an anonymous caller, and none of it is reachable from the public
- * type because it is not declared there.
+ * document, the schedule, the report settings. None of it is safe for an
+ * anonymous caller, and none of it is reachable from the public type because it
+ * is not declared there.
  */
 public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
@@ -127,9 +127,6 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
     private String cutoffDefault;
 
     private String nextIssueCreation;
-
-    /** The per-series cutover switch. */
-    private String publicAuthority;
 
     private String legacyTemplateId;
 
@@ -376,14 +373,6 @@ public class SystemPublicationSeriesVo extends PublicationSeriesVo {
 
     public void setNextIssueCreation(String nextIssueCreation) {
         this.nextIssueCreation = nextIssueCreation;
-    }
-
-    public String getPublicAuthority() {
-        return publicAuthority;
-    }
-
-    public void setPublicAuthority(String publicAuthority) {
-        this.publicAuthority = publicAuthority;
     }
 
     public String getLegacyTemplateId() {

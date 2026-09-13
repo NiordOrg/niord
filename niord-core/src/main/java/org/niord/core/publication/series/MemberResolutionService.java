@@ -127,7 +127,8 @@ import java.util.function.Function;
  *
  * RI-13. Pure JPA, no Lucene. Lucene is reached only for a non-blank free-text
  * query, and the criteria vocabulary has no free-text node. That is what makes
- * a mass historical replay deterministic; adding free text later reopens it.
+ * a resolution reproducible -- the same criteria at the same cut-off select the
+ * same messages every time; adding free text later reopens it.
  */
 @ApplicationScoped
 public class MemberResolutionService extends BaseService {

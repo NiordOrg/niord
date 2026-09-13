@@ -39,7 +39,6 @@ import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
 import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.SeriesStatus;
-import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.report.FmReportService;
@@ -91,7 +90,7 @@ import java.util.Set;
  * which the generated subclass cannot declare, so it surfaces as
  * ArcUndeclaredThrowableException and the caller reads 500 over a database that
  * has the whole archive in it. That is the worst answer available: an operator
- * seeing it re-runs a cutover that worked. Measured on the deployed test backend
+ * seeing it re-runs an import that worked. Measured on the deployed test backend
  * at 784s against a 240s default.
  *
  * NOT_SUPPORTED suppresses the inherited binding (a method-level binding of an
@@ -210,7 +209,7 @@ public class LegacyImportService extends BaseService {
      * correct and nothing marks them as partial.
      *
      * So the operation is simply long, and the budget says so. 30 minutes is far
-     * more than the ~5 it needs, because the cost of a timeout is another cutover
+     * more than the ~5 it needs, because the cost of a timeout is another import
      * window and the cost of a generous ceiling is nothing at all.
      */
     static final int IMPORT_TIMEOUT_SECONDS = 1800;
@@ -281,18 +280,17 @@ public class LegacyImportService extends BaseService {
      * merging -- which means a re-run is impossible until the previous attempt is
      * gone. Until this existed the only way to get there was hand-written DELETE
      * statements against the database, and the first time anybody would need them
-     * is in a production cutover window with the clock running. That is the worst
+     * is in a production import window with the clock running. That is the worst
      * possible moment to be composing SQL against a live archive.
      *
      * Scoped by importSource, so it can only ever touch rows this importer
      * created. A series an admin authored by hand has no importSource and is
      * invisible to this.
      *
-     * REFUSED once the archive is public. Before the cutover flip an imported series is DRAFT
-     * with publicAuthority = LEGACY and nobody can see it, so deleting it costs
-     * nothing. After the flip, those same rows ARE the public list, and undoing
-     * the import would withdraw published editions from under their readers. The
-     * check is on the data rather than on a flag somebody remembers to set.
+     * REFUSED once somebody has taken the import out of review. What the importer
+     * leaves behind is a DRAFT series nobody has looked at, and deleting that
+     * costs nothing. A series that has moved on is no longer just what the
+     * importer wrote, and undoing it would take somebody else's work with it.
      */
     // Its own transaction and no other; see the class comment on transactions.
     @Transactional(Transactional.TxType.NOT_SUPPORTED)
@@ -324,11 +322,6 @@ public class LegacyImportService extends BaseService {
         // re-run needs to know everything standing in it.
         List<String> refusals = new ArrayList<>();
         for (PublicationSeries series : imported) {
-            if (series.getPublicAuthority() != PublicAuthority.LEGACY) {
-                refusals.add(series.getSeriesId() + " has publicAuthority "
-                        + series.getPublicAuthority() + ": its issues are being served to the "
-                        + "public, and undoing the import would withdraw published editions");
-            }
             if (series.getStatus() != SeriesStatus.DRAFT) {
                 refusals.add(series.getSeriesId() + " is " + series.getStatus()
                         + ", not DRAFT: somebody has taken it out of review, so it is no longer "
@@ -382,7 +375,7 @@ public class LegacyImportService extends BaseService {
         // An override owns a foreign key to the issue, so leaving one behind
         // fails the issue delete below with a constraint violation naming a table
         // nobody was thinking about -- and this undo is the only escape hatch the
-        // cutover window has, so it must not be the thing that breaks in it.
+        // go-live window has, so it must not be the thing that breaks in it.
         int overrides = em.createQuery(
                         "DELETE FROM IssueOverride o WHERE o.issue IN "
                                 + "(SELECT i FROM PublicationIssue i WHERE i.series.id IN :ids)")
@@ -420,7 +413,7 @@ public class LegacyImportService extends BaseService {
         // a join table rather than an element collection, but JPQL cannot address
         // one either, and a bulk delete of the owner does not cascade the way
         // remove() would -- so the rows survive and the series delete below fails
-        // on the constraint, in the one operation a cutover window cannot do
+        // on the constraint, in the one operation a go-live window cannot do
         // without.
         em.createNativeQuery(
                         "DELETE FROM PublicationSeries_AvailableDomain WHERE series_id IN (:ids)")
@@ -1095,10 +1088,9 @@ public class LegacyImportService extends BaseService {
     /**
      * Give every query-backed series a criteria document.
      *
-     * Without one the series cannot be activated (S-1), so the shadow diff skips
-     * all of its releases and no green week can ever be recorded. The document is
-     * a PROPOSAL: the series lands DRAFT so an admin reviews it, and the shadow
-     * diff is what checks it against the frozen members release by release.
+     * Without one the series cannot be activated (S-1). The document is a
+     * PROPOSAL: the series lands DRAFT so an admin reviews it against the frozen
+     * members the import wrote, and activation is what the review ends in.
      *
      * A series with no evidence gets NO document rather than an unscoped one. An
      * unscoped document resolves over every message in the system, and an issue

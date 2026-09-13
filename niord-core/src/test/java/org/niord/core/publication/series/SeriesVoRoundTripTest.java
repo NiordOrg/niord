@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * them, so an update left them alone -- but they could not be SET or READ through
  * the API at all, and S-6 requires both for a MONTHLY or YEARLY cadence. Four real
  * series in the archive are YEARLY. None of them could ever have been activated,
- * and the failure would have surfaced at cutover as a validation error naming a
+ * and the failure would have surfaced at go-live as a validation error naming a
  * field with no input to fix it.
  *
  * REFLECTIVE ON PURPOSE. A test that listed the fields would have been written from
@@ -75,12 +75,7 @@ public class SeriesVoRoundTripTest {
      * disagree with the one that counts. cutoffZone() reads the domain and nothing
      * else; the column stays only because dropping it is a migration.
      */
-    private static final Set<String> NOT_ON_THE_WIRE = Set.of("nominalCutoffTimeZone",
-            // Read on the wire, never written through it. Which model serves a
-            // series to the public is the cutover flip -- its own action, with a
-            // reason and an audit entry -- and a save that could carry it would be
-            // a way round all three.
-            "publicAuthority");
+    private static final Set<String> NOT_ON_THE_WIRE = Set.of("nominalCutoffTimeZone");
 
     /**
      * Fields updateFromVo DERIVES rather than copies.

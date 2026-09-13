@@ -122,8 +122,8 @@ public class EffectiveCriteriaTest {
      * A snapshot equal to the series' criteria is not an override.
      *
      * Every published issue has a snapshot, so flagging on its presence would
-     * label the entire archive as tailored -- and the shadow diff, which skips
-     * overridden issues, would then skip every week there is.
+     * label the entire archive as tailored -- and every reader that treats a
+     * tailored issue as a human decision would then act on every week there is.
      */
     @Test
     public void apublishedIssueMatchingItsSeriesIsNotOverridden() {
@@ -192,9 +192,9 @@ public class EffectiveCriteriaTest {
      * series spanning two legacy filter eras carries one setting while 122 of its
      * issues need the other. Nobody tailored those.
      *
-     * Conflating the two made the shadow diff skip the entire imported estate --
-     * every release "overridden", nothing compared, and the cutover evidence
-     * silently stopped accumulating. The replay test caught it; this pins it.
+     * Conflating the two labelled the entire imported estate tailored -- every
+     * release "overridden", every week reading as a decision somebody took. This
+     * pins the distinction.
      */
     @Test
     public void animportedSnapshotIsNotAHumanDecision() {
@@ -205,8 +205,7 @@ public class EffectiveCriteriaTest {
         assertTrue(EffectiveCriteria.isOverridden(imported),
                 "it did select something other than the series says, and the label should say so");
         assertFalse(EffectiveCriteria.hasOwnCriteria(imported),
-                "but nobody tailored it, so anything treating it as a human decision -- the "
-                        + "shadow diff's skip in particular -- must not fire");
+                "but nobody tailored it, so anything treating it as a human decision must not fire");
     }
 
     /** A tailored issue answers yes to both. */

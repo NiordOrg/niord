@@ -257,9 +257,8 @@ public final class PublicationErrorCatalogue {
         put("NO_MESSAGES", 400);
         put("TOO_MANY_MESSAGES", 400);
         put("OVERRIDE_NOT_FOUND", 404);
-        // The cutover flip, refused. 409: the request is well formed and the
-        // same one succeeds once the evidence is there.
-        put("NOT_READY_FOR_CUTOVER", 409);
+        // 409: the request is well formed and the same one succeeds once the
+        // series is active.
         put("SERIES_NOT_ACTIVE", 409);
         put("CATEGORY_INVALID", 400);
         put("CATEGORY_ID_TAKEN", 409);
@@ -269,9 +268,6 @@ public final class PublicationErrorCatalogue {
         // rather than quietly ignored -- a caller that believes it renamed a
         // category and did not is worse off than one that got an error.
         put("CATEGORY_ID_IMMUTABLE", 400);
-        // An authority token that is not NEW or LEGACY: a client error, not a
-        // server failure.
-        put("INVALID_AUTHORITY", 400);
         // An imported issue is a historical record; re-deciding it is not an
         // action that exists.
         put("ISSUE_IMPORTED", 409);

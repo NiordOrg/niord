@@ -77,9 +77,9 @@ public class PublicationApiContractTest {
      * The tier split is enforced by TYPE, and every endpoint returning a system
      * shape must require a role.
      *
-     * A public endpoint that returns a system VO leaks the criteria document,
-     * the cutover switch and the whole schedule to an anonymous caller -- and the
-     * response looks entirely ordinary, so nothing would surface it.
+     * A public endpoint that returns a system VO leaks the criteria document and
+     * the whole schedule to an anonymous caller -- and the response looks
+     * entirely ordinary, so nothing would surface it.
      */
     @Test
     public void noPublicEndpointReturnsASystemShape() {
@@ -117,7 +117,7 @@ public class PublicationApiContractTest {
     @Test
     public void thePublicShapesCannotCarryOperationalFields() {
         Set<String> publicSeriesFields = declaredFields(PublicationSeriesVo.class);
-        for (String leaky : List.of("criteria", "publicAuthority", "releaseMode", "timeRelation",
+        for (String leaky : List.of("criteria", "releaseMode", "timeRelation",
                 "reportId", "legacyTemplateId")) {
             assertFalse(publicSeriesFields.contains(leaky),
                     "PublicationSeriesVo declares " + leaky + "; a field that is not there cannot leak, "

@@ -2,11 +2,11 @@
 /**
  * Captures the whole legacy publication estate from the test environment.
  *
- * WHAT THIS IS FOR. Phase B5 imports 1,077 legacy publications into the series/
+ * WHAT THIS IS FOR. The importer reads 1,077 legacy publications into the series/
  * issue model. Its source of truth is what the legacy recorder actually wrote:
  * each publication's system-level fields, and the locked MessageTag it resolved
- * to. B6 then shadow-diffs against the same corpus. Both need a FROZEN copy --
- * an importer verified against a moving target is verified against nothing.
+ * to. The corpus has to be a FROZEN copy -- an importer verified against a
+ * moving target is verified against nothing.
  *
  * WHY THE TEST ENVIRONMENT AND NOT PRODUCTION. niord.t-dma.dk is a static full
  * production snapshot taken 17.08.2026. Production moves; a re-capture from it

@@ -29,7 +29,7 @@ import org.niord.core.domain.Domain;
  * and most fixtures left it out because they were about something else entirely.
  *
  * ONE SHARED ROW, found or created. A domain per fixture would leave hundreds of
- * them behind in a database several suites share, and the pre-flight -- which
+ * them behind in a database several suites share, and the import check -- which
  * reads the whole schema -- would then report them as findings about the estate.
  *
  * A REAL TIMEZONE, because the owner is the only source of one and S-20 refuses a

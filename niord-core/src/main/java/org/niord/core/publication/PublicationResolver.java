@@ -109,7 +109,7 @@ public class PublicationResolver extends BaseService implements PublicationMembe
 
             // 1. The new model, first. An imported issue reuses the legacy id as
             //    its publicId, so checking legacy first would keep serving the old
-            //    row forever after cutover.
+            //    row forever after the import.
             PublicationIssue issue = findIssue(publicationId);
             if (issue != null && designatable(issue, audience)) {
                 memberUids.addAll(memberUids(publicationId));
@@ -117,7 +117,8 @@ public class PublicationResolver extends BaseService implements PublicationMembe
             }
 
             // 2. The legacy row -- reached ALSO when an issue exists but is not
-            //    servable, and this is the cutover case rather than an edge case.
+            //    servable, and this is the ordinary case after an import rather
+            //    than an edge case.
             //
             //    An imported issue adopts the legacy id as its publicId and sits
             //    at OPEN until it is first published. Refusing at step 1 rather
@@ -181,7 +182,7 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      *
      * Order matters and it is the same order the search uses: an imported issue
      * carries the legacy id as its own publicId, so checking legacy first would
-     * keep serving the old row forever after cutover.
+     * keep serving the old row forever after the import.
      *
      * Null rather than an exception. This backs endpoints that answer 404 for an
      * unknown id, and turning that into a 400 would change a shape clients have
@@ -260,7 +261,7 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      *
      * "The first" is only meaningful because the id set preserves the caller's
      * order -- it is a LinkedHashSet for exactly this. Both halves of the
-     * transition answer here, so a cut-over series sorts the way its legacy rows
+     * transition answer here, so an imported series sorts the way its legacy rows
      * did.
      */
     public Domain sortDomain(Collection<String> publicationIds) {
@@ -332,7 +333,7 @@ public class PublicationResolver extends BaseService implements PublicationMembe
      *
      * One id covers both halves of the estate: an imported issue adopts the
      * previous system's publication id AS its publicId, so a single lookup finds
-     * citations written before and after the cut-over.
+     * citations written before and after the import.
      *
      * The pattern is escaped. A publication id may legitimately contain an
      * underscore -- 'dk-firing-areas_2016' would be an ordinary one -- and an

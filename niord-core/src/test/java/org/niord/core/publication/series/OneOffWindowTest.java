@@ -381,9 +381,6 @@ public class OneOffWindowTest {
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setMessagePublication(MessagePublication.NONE);
-        // NEW, because what is being asserted is what the public site shows, and
-        // the adapter's new half serves only series that have cut over.
-        s.setPublicAuthority(PublicAuthority.NEW);
         s.setCategory(c);
         s.setDomain(TestOwnerDomain.of(em));
         s.getLanguages().add("da");

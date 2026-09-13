@@ -64,15 +64,15 @@ import org.niord.model.search.PagedSearchParamsVo;
  * table alone. EntityContractTest.noEntityBringsItsOwnIdGenerator() enforces it.
  */
 @Entity
-// Named because two unrelated callers ask for it: the admin list and the cutover
-// pre-flight, which has to walk the estate in the same order the sheet a human
+// Named because two unrelated callers ask for it: the admin list and the import
+// check, which has to walk the estate in the same order the sheet a human
 // checks it against is printed in.
 //
 // NO INDEXES ARE DECLARED, and that is a decision rather than an omission. The
-// reads here filter on status and publicAuthority and would look like index
-// candidates from the annotations alone, but the table holds one row per
-// publication the authority produces and is not on a growth curve. V12 records
-// the sizing and what to index if that ever stops being true.
+// reads here filter on status and would look like an index candidate from the
+// annotations alone, but the table holds one row per publication the authority
+// produces and is not on a growth curve. V12 records the sizing and what to
+// index if that ever stops being true.
 @NamedQuery(name = "PublicationSeries.findAllOrdered",
         query = "SELECT s FROM PublicationSeries s ORDER BY s.seriesId")
 public class PublicationSeries extends VersionedEntity<Integer> implements ILocalizable<PublicationSeriesDesc> {
@@ -241,11 +241,6 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
     @NotNull
     @Column(nullable = false)
     private NextIssueCreation nextIssueCreation = NextIssueCreation.AUTO_ON_PUBLISH;
-
-    @Enumerated(EnumType.STRING)
-    @NotNull
-    @Column(nullable = false)
-    private PublicAuthority publicAuthority = PublicAuthority.LEGACY;
 
     @Column(nullable = false)
     private boolean languageSpecific = true;
@@ -519,14 +514,6 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         this.nextIssueCreation = nextIssueCreation;
     }
 
-    public PublicAuthority getPublicAuthority() {
-        return publicAuthority;
-    }
-
-    public void setPublicAuthority(PublicAuthority publicAuthority) {
-        this.publicAuthority = publicAuthority;
-    }
-
     public boolean isLanguageSpecific() {
         return languageSpecific;
     }
@@ -679,10 +666,6 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
         if (sentAvailability != null) {
             availability = sentAvailability;
         }
-        // publicAuthority is deliberately NOT read here. Which model serves a
-        // series to the public is a cutover decision with its own endpoint, a
-        // reason and an audit entry; a value arriving in a save -- from the form,
-        // the one-off editor or a series import -- must not be able to flip it.
         // Absent means "unchanged": an older client that does not send it must not
         // silently flip a series to one file for every language.
         if (vo.getLanguageSpecific() != null) {
@@ -870,7 +853,6 @@ public class PublicationSeries extends VersionedEntity<Integer> implements ILoca
             sys.setMessagePublication(messagePublication == null ? null : messagePublication.name());
             sys.setReleaseMode(releaseMode == null ? null : releaseMode.name());
             sys.setNextIssueCreation(nextIssueCreation == null ? null : nextIssueCreation.name());
-            sys.setPublicAuthority(publicAuthority == null ? null : publicAuthority.name());
             sys.setLanguageSpecific(languageSpecific);
             sys.setLegacyTemplateId(legacyTemplateId);
             sys.setImportSource(importSource);

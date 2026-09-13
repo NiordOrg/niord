@@ -26,8 +26,6 @@ import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
-import org.niord.core.publication.series.replay.ShadowDiffRun;
-import org.niord.core.publication.series.replay.ShadowDiffService;
 import org.niord.core.publication.series.vo.IssueListResultVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
@@ -40,26 +38,23 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * The assertions that must hold before the cutover flip, and the audit
- * that must be READ before it.
+ * The assertions that must hold over the imported archive, and the audit that
+ * must be READ alongside them.
  *
  * Run against the imported estate, not against a fixture. Everything here is
  * about the shape of ~1,077 real rows, and a fixture of three cannot be wrong in
  * the ways this is looking for.
  *
- * The pass EXITS NON-ZERO on violation rather than warning, because the thing it
- * guards is one-way: once the flip has moved publicAuthority, a wrong window or a
- * colliding id is serving the public, and the fix is a migration rather than an
- * edit.
+ * These checks are the go/no-go of the go-live window. Every one of them names a
+ * defect that reaches the public site the moment an imported issue is published,
+ * and by then the only way back is a database restore -- so a violation is a
+ * refusal to proceed, not a warning to note down.
  */
 @ApplicationScoped
-public class CutoverPreflightService extends BaseService {
+public class ImportCheckService extends BaseService {
 
     @Inject
     Logger log;
-
-    @Inject
-    ShadowDiffService shadowDiff;
 
     /**
      * A tag named the way the weekly convention names them.
@@ -85,25 +80,22 @@ public class CutoverPreflightService extends BaseService {
     /**
      * What the rehearsal checklist reads about ONE series, in one row.
      *
-     * Three separate steps of the checklist ask about the same series -- the
-     * shadow diff's verdict, how many periods the archive is missing, and what
-     * kind of publication it is -- and reading them from three endpoints is how a
-     * sheet gets ticked from three different moments. One row, one request.
+     * Separate rows of the checklist ask about the same series -- how many
+     * periods the archive is missing, and what kind of publication it is -- and
+     * answering them from two places is how a sheet gets ticked from two
+     * different moments. One row, one request.
      *
      * NONE OF IT IS A VIOLATION. A gap is a fact about the archive that predates
-     * this system, and readiness is the flip's own precondition, refused at the
-     * flip. Folding either into `clear` would stop the pre-flight passing on an
+     * this system, and folding it into `clear` would stop the check passing on an
      * estate that is in exactly the state everybody expects.
      */
     public record SeriesRow(String seriesId, String status, String kind,
-                            int consecutiveGreen, long runs, long skipped, boolean exempt,
-                            boolean meetsCutoverPrecondition,
                             Integer gapCount, boolean gapDetectionEnabled, String gapReasonCode) {
     }
 
-    /** What the pre-flight found. Empty problems means cleared to flip. */
-    public record Preflight(List<Violation> violations, List<TriggerHit> triggerAudit,
-                            Map<String, Integer> counts, Map<String, SeriesRow> series) {
+    /** What the check found. No violations means the import may proceed. */
+    public record ImportCheck(List<Violation> violations, List<TriggerHit> triggerAudit,
+                              Map<String, Integer> counts, Map<String, SeriesRow> series) {
 
         public boolean isClear() {
             return violations.isEmpty();
@@ -116,7 +108,7 @@ public class CutoverPreflightService extends BaseService {
     }
 
     /** Runs every assertion and the audit. Reads only. */
-    public Preflight run() {
+    public ImportCheck run() {
         List<Violation> violations = new ArrayList<>();
         Map<String, Integer> counts = new LinkedHashMap<>();
 
@@ -138,16 +130,16 @@ public class CutoverPreflightService extends BaseService {
 
         Map<String, SeriesRow> series = describeSeries(counts, new Date());
 
-        log.info("cutover pre-flight: {} violation(s), {} trigger(s) naming a weekly tag, "
+        log.info("import check: {} violation(s), {} trigger(s) naming a weekly tag, "
                         + "{} series described", violations.size(), audit.size(), series.size());
-        return new Preflight(violations, audit, counts, series);
+        return new ImportCheck(violations, audit, counts, series);
     }
 
     /**
-     * The per-series sheet: the diff's verdict, the missing periods, and the kind.
+     * The per-series sheet: the missing periods, and the kind.
      *
-     * Steps 4 and 5 of the rehearsal read these, and both were previously only
-     * answerable by calling two other endpoints and counting rows in a third. A
+     * Several rows of the rehearsal checklist read these, and they were
+     * previously answerable only by calling other endpoints and counting rows. A
      * checklist ticked from three moments is a checklist that can be ticked
      * against three different states of the estate.
      *
@@ -168,8 +160,8 @@ public class CutoverPreflightService extends BaseService {
                 .getResultList();
 
         // One query for every issue, grouped in memory, rather than one per
-        // series: the estate is ~1,100 issues over ~50 series, and the pre-flight
-        // is run inside a cutover window where a minute of round trips is a minute
+        // series: the estate is ~1,100 issues over ~50 series, and the check is
+        // run inside the go-live window where a minute of round trips is a minute
         // nobody has.
         Map<String, List<PublicationIssue>> issuesBySeries = new LinkedHashMap<>();
         for (PublicationIssue i : em.createQuery(
@@ -181,29 +173,18 @@ public class CutoverPreflightService extends BaseService {
             }
         }
 
-        // The same grouping the shadow-diff endpoint does, from one query, so
-        // readiness here and readiness there are the same computation over the
-        // same runs.
-        Map<String, List<ShadowDiffRun>> runsBySeries = new LinkedHashMap<>();
-        for (ShadowDiffRun run : shadowDiff.all()) {
-            String key = run.getSeriesId() == null ? "(unmapped)" : run.getSeriesId();
-            runsBySeries.computeIfAbsent(key, k -> new ArrayList<>()).add(run);
-        }
-
         Map<String, SeriesRow> out = new LinkedHashMap<>();
         Map<String, Integer> kinds = new LinkedHashMap<>();
         for (SeriesKind kind : SeriesKind.values()) {
             // Every kind is named whether or not the estate has one. A kind absent
             // from the report and a kind with no series read alike on a sheet, and
-            // step 5 is ticked by comparing the three numbers against expected ones.
+            // the estate-shape row is ticked by comparing the three numbers
+            // against expected ones.
             kinds.put(kind.name(), 0);
         }
         int totalGaps = 0;
 
         for (PublicationSeries s : all) {
-            ShadowDiffService.Readiness readiness = ShadowDiffService.readinessOf(
-                    runsBySeries.getOrDefault(s.getSeriesId(), List.of()), s);
-
             IssueListResultVo list = IssueListService.build(s,
                     issuesBySeries.getOrDefault(s.getSeriesId(), List.of()), now);
 
@@ -217,8 +198,6 @@ public class CutoverPreflightService extends BaseService {
                     s.getSeriesId(),
                     s.getStatus() == null ? null : s.getStatus().name(),
                     kind.name(),
-                    readiness.consecutiveGreen(), readiness.runs(), readiness.skipped(),
-                    readiness.exempt(), readiness.ready(),
                     list.getGapCount(),
                     list.getGapDetection() != null && list.getGapDetection().isEnabled(),
                     list.getGapDetection() == null ? null : list.getGapDetection().getReasonCode()));
@@ -237,7 +216,7 @@ public class CutoverPreflightService extends BaseService {
      * the schema. Adding a unique constraint to a populated table is a claim about
      * the DATA, not the schema: one duplicate and the ALTER fails and takes the
      * deploy with it. So the claim is measured here first, over the whole estate,
-     * on the checklist an admin already runs before cutover.
+     * on the checklist an admin already runs before the import.
      *
      * Counted rather than only flagged, because zero is the finding. "No
      * duplicates" is what licenses the constraint; a count of zero says the
@@ -251,12 +230,12 @@ public class CutoverPreflightService extends BaseService {
     /**
      * Every publication names the desk that owns it.
      *
-     * A VIOLATION, not a note, and the count must read zero before the flip. The
-     * owner decides three things at once -- which admin list the publication
+     * A VIOLATION, not a note, and the count must read zero before the import.
+     * The owner decides three things at once -- which admin list the publication
      * appears on, who may change it, and the timezone its cut-offs are reckoned in
      * -- so a row without one is a publication nobody is responsible for whose
-     * schedule is read in whatever zone the server happens to be set to. After the
-     * flip it is also what the public reads.
+     * schedule is read in whatever zone the server happens to be set to, and
+     * whose published issues reach the public site on that unowned schedule.
      *
      * Counted even when it is zero. An absent number and a number that is zero
      * read alike on a checklist, and this is a line somebody ticks.
@@ -286,7 +265,7 @@ public class CutoverPreflightService extends BaseService {
      * reads it what to do. Those are asserted here with the count supplied.
      *
      * Package-visible rather than public: this is a seam for the test, not a
-     * second way to raise a pre-flight violation.
+     * second way to raise a violation.
      */
     static void reportOwnerless(List<String> ownerlessSeriesIds,
                                 List<Violation> violations, Map<String, Integer> counts) {
@@ -295,7 +274,7 @@ public class CutoverPreflightService extends BaseService {
             violations.add(new Violation(SERIES_WITHOUT_OWNER, seriesId,
                     "the publication names no domain. Every publication belongs to exactly one -- "
                             + "the desk that lists and administers it, and the only source of the "
-                            + "timezone its cut-offs are read in. Assign one before the flip."));
+                            + "timezone its cut-offs are read in. Assign one before the import."));
         }
     }
 
@@ -478,8 +457,8 @@ public class CutoverPreflightService extends BaseService {
      * nobody is told: the failure is a mailing that does not go out, which
      * nobody notices until somebody asks why they stopped receiving it.
      *
-     * What to do with each hit is the user's call, made before the flip. This only
-     * makes sure the question is asked.
+     * What to do with each hit is the user's call, made before the import. This
+     * only makes sure the question is asked.
      */
     public List<TriggerHit> auditTriggers() {
         List<TriggerHit> hits = new ArrayList<>();

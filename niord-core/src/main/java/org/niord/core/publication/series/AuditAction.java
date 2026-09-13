@@ -145,12 +145,6 @@ public enum AuditAction {
     SERIES_RETIRED,
 
     /**
-     * Which model answers the public for this series. Visible to every anonymous
-     * reader the moment it changes, so it is its own action.
-     */
-    SERIES_AUTHORITY_CHANGED,
-
-    /**
      * The series moved to another domain: a different desk now lists it,
      * administers it, and supplies the timezone its future cut-offs are read in.
      *

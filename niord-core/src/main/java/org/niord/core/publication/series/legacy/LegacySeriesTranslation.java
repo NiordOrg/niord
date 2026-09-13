@@ -23,7 +23,6 @@ import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PageOrientation;
 import org.niord.core.publication.series.PageSize;
-import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesIdSlug;
 import org.niord.core.publication.series.PublicationSeriesDesc;
@@ -331,11 +330,6 @@ public final class LegacySeriesTranslation {
         series.setNumberingScheme(numbering(template));
         series.setMessagePublication(template.getMessagePublication());
         series.setLanguageSpecific(template.isLanguageSpecific());
-
-        // Imported series stay on the legacy public path until the cutover flips them
-        // deliberately. Importing as NEW would move the whole archive onto the
-        // new adapter in the same change that created it.
-        series.setPublicAuthority(PublicAuthority.LEGACY);
 
         // A translated series is reviewed before it RELEASES anything: no document
         // reaches the public without somebody pressing publish.

@@ -211,29 +211,13 @@ public class IssueAuditService extends BaseService {
     }
 
     /**
-     * Which model serves this series to the public, changed.
-     *
-     * A series-level event: the audit is generalised, so this row belongs to a
-     * series and carries no issue. Its own action rather than a SERIES_ACTIVATED
-     * with a note, because this is the one change an anonymous reader can see
-     * happen: before it, the public list comes from one place and after it from
-     * another. The detail carries both ends and whether the readiness
-     * precondition was overridden, so the question "who flipped this, and did
-     * they know it was not ready" has an answer that does not depend on anyone
-     * remembering.
-     */
-    public IssueAuditEntry seriesAuthority(PublicationSeries series, User actor,
-                                           Map<String, Object> detail, String reason) {
-        return writeSeries(series, AuditAction.SERIES_AUTHORITY_CHANGED, actor, reason, detail);
-    }
-
-    /**
      * The series changed hands.
      *
-     * A series-level event like the authority flip, and recorded the same way: the
-     * detail carries both ends so the entry answers "where did this come from"
-     * without anybody having to remember, and the reason is the sentence the
-     * receiving desk reads months later when they wonder why they own it.
+     * A series-level event: the audit is generalised, so this row belongs to a
+     * series and carries no issue. The detail carries both ends so the entry
+     * answers "where did this come from" without anybody having to remember, and
+     * the reason is the sentence the receiving desk reads months later when they
+     * wonder why they own it.
      */
     public IssueAuditEntry ownerTransferred(PublicationSeries series, User actor,
                                             SeriesOwnerTransfer.Moved moved, String reason) {

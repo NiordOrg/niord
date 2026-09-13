@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * ambient one is reaped at the default timeout, and the interceptor's commit on
  * the way out throws a CHECKED RollbackException the generated subclass cannot
  * declare. The caller reads 500 (ArcUndeclaredThrowableException) over a database
- * holding the complete archive, and an operator seeing that re-runs a cutover
+ * holding the complete archive, and an operator seeing that re-runs an import
  * that had worked.
  *
  * Reflection rather than a run, because the annotation IS the contract: there is
@@ -55,7 +55,7 @@ public class LegacyImportTransactionTest {
     /**
      * The premise. If the base class ever stops being transactional the
      * annotations below become belt-and-braces rather than load-bearing -- and
-     * whoever notices should be told that here, not by a 500 in a cutover window.
+     * whoever notices should be told that here, not by a 500 in a go-live window.
      */
     @Test
     public void theBaseClassIsWhereTheAmbientTransactionComesFrom() {

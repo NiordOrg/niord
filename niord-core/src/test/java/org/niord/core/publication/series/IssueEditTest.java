@@ -85,7 +85,6 @@ public class IssueEditTest {
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
@@ -806,8 +805,7 @@ public class IssueEditTest {
      * An override equal to the series' criteria is stored as no override.
      *
      * It is not a deviation. Recording it as one would label the issue "tilpasset
-     * for denne udgave" while it selects exactly what the series does -- and would
-     * make the shadow diff skip a week that had nothing wrong with it.
+     * for denne udgave" while it selects exactly what the series does.
      */
     @Test
     @Transactional

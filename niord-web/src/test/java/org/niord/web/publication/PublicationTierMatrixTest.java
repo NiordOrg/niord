@@ -162,8 +162,6 @@ public class PublicationTierMatrixTest {
         // cannot express, because @RolesAllowed is evaluated against the domain
         // named in the request header and this endpoint is about a second one.
         t.put("PUT /publication-series/series/{seriesId}/owner", Tier.ADMIN);
-        t.put("PUT /publication-series/series/{seriesId}/public-authority", Tier.ADMIN);
-        t.put("PUT /publication-series/public-authority", Tier.ADMIN);
         t.put("DELETE /publication-series/series/{seriesId}", Tier.ADMIN);
         // The series-level trail. ADMIN and not CURATOR, unlike the issue trail:
         // the entries here name the desk a publication moved between and carry the
@@ -174,11 +172,7 @@ public class PublicationTierMatrixTest {
         t.put("POST /publication-series/import-legacy/validate", Tier.ADMIN);
         t.put("POST /publication-series/import-legacy", Tier.ADMIN);
         t.put("DELETE /publication-series/import-legacy", Tier.ADMIN);
-        t.put("GET /publication-series/diagnostic-report", Tier.ADMIN);
-        t.put("POST /publication-series/shadow-diff/run", Tier.ADMIN);
-        t.put("POST /publication-series/shadow-diff/reset", Tier.ADMIN);
-        t.put("GET /publication-series/shadow-diff", Tier.ADMIN);
-        t.put("GET /publication-series/cutover-preflight", Tier.ADMIN);
+        t.put("GET /publication-series/import-check", Tier.ADMIN);
         t.put("GET /publication-series/export", Tier.ADMIN);
         // The import matches the export beside it: an admin who can produce the
         // file, and can author every series in it by hand, gains nothing from
@@ -461,9 +455,6 @@ public class PublicationTierMatrixTest {
         t.put("POST /publication-series/upload-series",
                 "the interchange import; it upserts whatever the file names, and an admin who can "
                         + "author every series in it by hand gains nothing from a narrower gate");
-        t.put("POST /publication-series/shadow-diff/run",
-                "a cutover diagnostic over the estate; it writes comparison runs, not publications");
-        t.put("POST /publication-series/shadow-diff/reset", "discards those comparison runs");
 
         // Categories carry no domain AT ALL -- there is no column to compare
         // against. A category is a section heading on the public page, shared by
@@ -837,7 +828,7 @@ public class PublicationTierMatrixTest {
      * Each is out for its own reason, and the reasons are different in kind: the
      * criteria documents are the authoring surface, the paths describe the layout
      * of a repository that is served anonymously, the render settings are
-     * operational configuration, the automation columns are the cutover controls,
+     * operational configuration, the automation columns are the release controls,
      * and the curation author and reason are somebody's name attached to an
      * editorial decision. What they share is that no editor-tier screen consumes
      * any of them, so carrying them is cost with no reader.
@@ -850,8 +841,8 @@ public class PublicationTierMatrixTest {
             // render configuration
             "reportId", "pageSize", "pageOrientation", "mapThumbnails", "reportParams",
             "messageSortBy", "messageSortOrder",
-            // automation and cutover
-            "releaseMode", "nextIssueCreation", "publicAuthority", "firstIssueStartsAt",
+            // automation
+            "releaseMode", "nextIssueCreation", "firstIssueStartsAt",
             // operator identity and provenance
             "statusChangedBy", "statusChangeReason", "publishedBy", "retiredBy", "retiredReason",
             "importSource", "legacyTemplateId", "legacyPublicationId", "membershipProvenanceNote"));

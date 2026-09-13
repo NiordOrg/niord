@@ -35,20 +35,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The two series actions that are not saves: the status transition, and which
- * model serves the series to the public.
+ * The series action that is not a save: the status transition.
  *
- * Both are audited, both refuse in words, and neither is reachable through the
- * series editor's save -- that is the point of them being actions. What is
- * pinned here is the reason rule (leaving ACTIVE says why; entering it does
- * not), the one transition that does not exist (back to DRAFT), and the flip's
- * precondition together with the way round it that leaves a trace.
+ * It is audited, it refuses in words, and it is not reachable through the series
+ * editor's save -- that is the point of it being an action. What is pinned here
+ * is the reason rule (leaving ACTIVE says why; entering it does not) and the one
+ * transition that does not exist (back to DRAFT).
  */
 @QuarkusTest
 @EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
@@ -99,7 +96,6 @@ public class SeriesTransitionTest {
         // MANUAL would be refused ACTIVE for a reason having nothing to do with
         // the transition it exists to exercise.
         s.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         // A query-backed series generates its document from a report and must name
@@ -232,7 +228,7 @@ public class SeriesTransitionTest {
      * hand" fails it -- and a status change sends no fields at all, so a refusal
      * here would have no remedy on the screen that caused it. Every cadenced
      * series created before the rule existed is in exactly this state, so this is
-     * the activation the cutover itself performs.
+     * the activation the go-live window itself performs.
      */
     @Test
     @Transactional
@@ -274,127 +270,4 @@ public class SeriesTransitionTest {
         assertTrue(entries(s, AuditAction.SERIES_ACTIVATED).isEmpty(), "nothing happened, so nothing is recorded");
     }
 
-    // ==================================================================== flip
-
-    /** A series serves the public only once it is active. */
-    @Test
-    @Transactional
-    public void aDraftCannotBecomeThePublicAuthority() {
-        PublicationSeries s = series(SeriesStatus.DRAFT);
-
-        IssueLifecycleService.TransitionRefusedException e =
-                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
-                        () -> seriesService.setPublicAuthority(s, PublicAuthority.NEW, false,
-                                "cutover rehearsal", user()));
-        assertEquals("SERIES_NOT_ACTIVE", e.code());
-        assertEquals(PublicAuthority.LEGACY, s.getPublicAuthority());
-    }
-
-    /**
-     * Without the shadow diff's green light the flip is refused -- with the count in words.
-     *
-     * The fixture is query-backed and carries criteria, so it is a series the
-     * diff CAN compare, and no comparisons is missing evidence rather than an
-     * impossible demand. That is the whole difference from the series exempted
-     * below.
-     */
-    @Test
-    @Transactional
-    public void anUnprovenSeriesIsRefusedUnlessForced() {
-        PublicationSeries s = series(SeriesStatus.ACTIVE);
-
-        IssueLifecycleService.TransitionRefusedException e =
-                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
-                        () -> seriesService.setPublicAuthority(s, PublicAuthority.NEW, false,
-                                "cutover rehearsal", user()));
-        assertEquals("NOT_READY_FOR_CUTOVER", e.code());
-        assertTrue(e.getMessage().contains("0 consecutive green"), e.getMessage());
-        assertEquals(PublicAuthority.LEGACY, s.getPublicAuthority());
-    }
-
-    /**
-     * A series with nothing to compare flips WITHOUT force and with no runs.
-     *
-     * The refusal that stopped the cutover rehearsal: the bulk flip is one
-     * transaction and one refusal refuses the lot, so a one-off with an uploaded
-     * document -- which the shadow diff can never compare, and which therefore
-     * has zero runs forever -- held back every other series in the estate. The
-     * precondition is evidence where evidence is possible, not evidence nobody
-     * can produce.
-     *
-     * force is deliberately FALSE here. Getting the batch through by forcing it
-     * would record the cutover of an estate nothing is wrong with as overridden,
-     * and the audit trail is what anybody afterwards reads to find out which
-     * flips were judged and which were pushed past a refusal.
-     */
-    @Test
-    @Transactional
-    public void aSeriesWithNoMembershipToCompareFlipsWithoutForce() {
-        for (ContentMode mode : List.of(ContentMode.UPLOADED_FILE, ContentMode.EXTERNAL_LINK,
-                ContentMode.NONE)) {
-            PublicationSeries s = series(SeriesStatus.ACTIVE);
-            s.setContentMode(mode);
-            s.setCriteria(null);
-
-            PublicationSeries saved = seriesService.setPublicAuthority(s, PublicAuthority.NEW, false,
-                    "cutover window", user());
-
-            assertEquals(PublicAuthority.NEW, saved.getPublicAuthority(),
-                    mode + " has no member list to reproduce, so there is no comparison to wait for");
-            String detail = String.valueOf(
-                    entries(saved, AuditAction.SERIES_AUTHORITY_CHANGED).get(0).getDetail());
-            assertTrue(detail.contains("false"), "and it is not recorded as forced: " + detail);
-        }
-    }
-
-    /** The way round the precondition exists, demands a reason, and says it was used. */
-    @Test
-    @Transactional
-    public void aForcedFlipIsAuditedAsForced() {
-        PublicationSeries s = series(SeriesStatus.ACTIVE);
-
-        PublicationSeries saved = seriesService.setPublicAuthority(s, PublicAuthority.NEW, true,
-                "go-live window, diff exempt by ruling", user());
-        em.flush();
-
-        assertEquals(PublicAuthority.NEW, saved.getPublicAuthority());
-        List<IssueAuditEntry> flipped = entries(saved, AuditAction.SERIES_AUTHORITY_CHANGED);
-        assertEquals(1, flipped.size());
-        assertEquals("go-live window, diff exempt by ruling", flipped.get(0).getReason());
-        String detail = String.valueOf(flipped.get(0).getDetail());
-        assertTrue(detail.contains("LEGACY") && detail.contains("NEW") && detail.contains("true"),
-                "the entry says from, to and that it was forced: " + detail);
-    }
-
-    /** A forced flip with no reason is not a flip; the reason is the whole point of force. */
-    @Test
-    @Transactional
-    public void aFlipWithoutAReasonIsRefusedEvenWhenForced() {
-        PublicationSeries s = series(SeriesStatus.ACTIVE);
-
-        IssueLifecycleService.TransitionRefusedException e =
-                assertThrows(IssueLifecycleService.TransitionRefusedException.class,
-                        () -> seriesService.setPublicAuthority(s, PublicAuthority.NEW, true, " ", user()));
-        assertEquals("REASON_REQUIRED", e.code());
-    }
-
-    /** Flipping BACK has no precondition: a rollback that could be refused is not a rollback. */
-    @Test
-    @Transactional
-    public void flippingBackToLegacyNeedsNoEvidence() {
-        PublicationSeries s = series(SeriesStatus.ACTIVE);
-        s.setPublicAuthority(PublicAuthority.NEW);
-        em.flush();
-
-        PublicationSeries saved = seriesService.setPublicAuthority(s, PublicAuthority.LEGACY, false,
-                "rolling back after the public page showed a wrong week", user());
-        em.flush();
-
-        assertEquals(PublicAuthority.LEGACY, saved.getPublicAuthority());
-        List<IssueAuditEntry> flipped = entries(saved, AuditAction.SERIES_AUTHORITY_CHANGED);
-        assertEquals(1, flipped.size());
-        assertNotNull(flipped.get(0).getDetail());
-        assertTrue(String.valueOf(flipped.get(0).getDetail()).contains("false"),
-                "and it was not forced: " + flipped.get(0).getDetail());
-    }
 }

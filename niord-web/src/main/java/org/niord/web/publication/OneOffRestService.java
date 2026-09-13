@@ -47,7 +47,6 @@ import org.niord.core.publication.series.IssuePublishService;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
-import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.PublicationIssueDesc;
@@ -306,7 +305,7 @@ public class OneOffRestService {
      * area, which has none and should not: a one-off is administered in its owner
      * domain and listed nowhere else. It is for the readers that really do span
      * the installation -- the export and the scripts built on it, and the
-     * estate-wide cut-over panels, which must not be cut down to one desk.
+     * estate-wide migration panels, which must not be cut down to one desk.
      */
     @GET
     @Path("/")
@@ -395,11 +394,6 @@ public class OneOffRestService {
         series.updateFromVo(vo);
         series.setSeriesId(uniqueSeriesId(vo));
         series.setStatus(SeriesStatus.DRAFT);
-        if (series.getPublicAuthority() == null) {
-            // LEGACY until cutover flips it, matching every other series. Claiming
-            // NEW would assert that the public site already serves this.
-            series.setPublicAuthority(PublicAuthority.LEGACY);
-        }
         if (series.getMessagePublication() == null) {
             series.setMessagePublication(MessagePublication.NONE);
         }

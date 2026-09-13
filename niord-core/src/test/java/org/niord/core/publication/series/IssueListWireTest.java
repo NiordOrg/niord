@@ -106,7 +106,7 @@ public class IssueListWireTest {
      *
      * This is the branch that runs for the entire imported estate -- every one of
      * the twenty series lands as DRAFT -- so it is not an edge case, it is the
-     * default view of the archive on the day of cutover. A gapCount of 0 here
+     * default view of the archive on the day of the import. A gapCount of 0 here
      * would render as a clean bill of health for an archive nothing examined,
      * which is exactly the reassurance nobody is entitled to.
      */

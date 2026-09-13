@@ -89,7 +89,6 @@ public class IssueLifecycleTest {
         s.setAliveAtCutoff(relation == TimeRelation.IN_FORCE_AT_CUTOFF);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         // No report: these tests are about the lifecycle, and a series with a report now renders a document at publish.

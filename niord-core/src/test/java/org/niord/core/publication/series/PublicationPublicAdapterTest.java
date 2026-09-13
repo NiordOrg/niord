@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The public adapter: the window mapping, the eligibility predicate, and the
- * transition union.
+ * union of the two halves.
  *
  * The window test is the important one. The ledger flags that failure twice,
  * and it is invisible in code review because the wrong mapping is the one the
@@ -104,7 +104,7 @@ public class PublicationPublicAdapterTest {
                 "?to= alone acquired a lower bound of now, so an already-expired publication vanished");
     }
 
-    // ============================================ the cutover window
+    // ========================================== the legacy takeover
 
     /**
      * An imported issue sitting at OPEN does not remove its legacy row from the list.
@@ -124,8 +124,8 @@ public class PublicationPublicAdapterTest {
         String sharedId = legacy.getPublicationId();
         em.persist(legacy);
 
-        PublicationSeries cutOver = series(PublicAuthority.NEW);
-        PublicationIssue imported = lifecycle.create(cutOver,
+        PublicationSeries taker = series();
+        PublicationIssue imported = lifecycle.create(taker,
                 new Date(stamp.getTime() - 86_400_000L), IntervalBoundSource.RECOVERED, null);
         imported.setLegacyPublicationId(sharedId);
         em.flush();
@@ -148,7 +148,7 @@ public class PublicationPublicAdapterTest {
         Date stamp = new Date(1_700_000_000_000L);
         Date now = new Date(stamp.getTime() + 3600_000L);
 
-        PublicationSeries s = series(PublicAuthority.NEW);
+        PublicationSeries s = series();
         PublicationIssue issue = publishAt(s, new Date(stamp.getTime() - 86_400_000L), stamp);
         em.flush();
         em.clear();
@@ -186,8 +186,8 @@ public class PublicationPublicAdapterTest {
         String sharedId = legacy.getPublicationId();
         em.persist(legacy);
 
-        PublicationSeries cutOver = series(PublicAuthority.NEW);
-        PublicationIssue imported = lifecycle.create(cutOver,
+        PublicationSeries taker = series();
+        PublicationIssue imported = lifecycle.create(taker,
                 new Date(stamp.getTime() - 86_400_000L), IntervalBoundSource.RECOVERED, null);
         imported.setLegacyPublicationId(sharedId);
         em.flush();
@@ -210,19 +210,19 @@ public class PublicationPublicAdapterTest {
     }
 
     /**
-     * A cut-over series in a non-publishing category stays off the public list.
+     * A series in a non-publishing category stays off the public list.
      *
      * legacyHalf has always applied the category publish flag. Omitting it from
-     * newHalf means flipping publicAuthority publishes issues whose legacy rows
-     * were correctly hidden -- the flip itself becomes a disclosure.
+     * newHalf would put issues on the public site whose legacy rows were
+     * correctly hidden -- publishing one would become a disclosure.
      */
     @Test
     @Transactional
-    public void aCutOverSeriesInANonPublishingCategoryIsNotServed() {
+    public void aSeriesInANonPublishingCategoryIsNotServed() {
         Date stamp = new Date(1_700_000_000_000L);
         Date now = new Date(stamp.getTime() + 3600_000L);
 
-        PublicationSeries internal = series(PublicAuthority.NEW);
+        PublicationSeries internal = series();
         internal.getCategory().setPublish(false);
         em.flush();
 
@@ -237,13 +237,13 @@ public class PublicationPublicAdapterTest {
 
     // ------------------------------------------------------------------ fixtures
 
-    private PublicationSeries series(PublicAuthority authority) {
+    private PublicationSeries series() {
         PublicationCategory c = new PublicationCategory();
         c.setCategoryId(TestIds.category());
         // publish defaults to FALSE. Until newHalf read the flag this fixture was
         // silently modelling an INTERNAL category, and every window and ordering
         // test above was asserting against a series that should never have been
-        // public at all. aCutOverSeriesInANonPublishingCategoryIsNotServed covers
+        // public at all. aSeriesInANonPublishingCategoryIsNotServed covers
         // the false case deliberately.
         c.setPublish(true);
         c.setPriority(100);
@@ -259,7 +259,6 @@ public class PublicationPublicAdapterTest {
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(authority);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
@@ -310,12 +309,12 @@ public class PublicationPublicAdapterTest {
      * public when week 33 closes. Mapping intervalFrom/intervalTo onto the
      * publish dates -- the mapping the field names invite -- gives every issue
      * the previous period's window, so the newest issue is never current and the
-     * site shows last week's EfS from the moment of cutover.
+     * site shows last week's EfS from the first publish on.
      */
     @Test
     @Transactional
     public void theNewestPublishedIssueIsTheCurrentOne() {
-        PublicationSeries s = series(PublicAuthority.NEW);
+        PublicationSeries s = series();
 
         long week = 7L * 24 * 3600_000L;
         Date firstInterval = new Date(1_700_000_000_000L);
@@ -341,7 +340,7 @@ public class PublicationPublicAdapterTest {
                         + "; two means the predecessor was not capped");
         assertEquals(second.getPublicId(), current.get(0).publicationId(),
                 "the public list returned the PREVIOUS issue; that is the one-period offset, and it means "
-                        + "the site shows last week's publication from the moment of cutover");
+                        + "the site shows last week's publication from the first publish on");
 
         // And the mapping really is the window, not the interval.
         assertEquals(second.getCutoffStampedAt(), current.get(0).publishDateFrom(),
@@ -355,7 +354,7 @@ public class PublicationPublicAdapterTest {
     @Test
     @Transactional
     public void noInstantHasTwoCurrentIssues() {
-        PublicationSeries s = series(PublicAuthority.NEW);
+        PublicationSeries s = series();
         long week = 7L * 24 * 3600_000L;
         Date firstStamp = new Date(1_700_000_000_000L);
 
@@ -385,7 +384,7 @@ public class PublicationPublicAdapterTest {
 
         // A retired SERIES. Its published issues must stay visible, or every
         // citation into that back catalogue goes dark.
-        PublicationSeries retiredSeries = series(PublicAuthority.NEW);
+        PublicationSeries retiredSeries = series();
         PublicationIssue stillVisible = publishAt(retiredSeries, new Date(stamp.getTime() - week), stamp);
         retiredSeries.setStatus(SeriesStatus.RETIRED);
         em.merge(retiredSeries);
@@ -398,7 +397,7 @@ public class PublicationPublicAdapterTest {
                         + "catalogue would go dark");
 
         // A retired ISSUE, on the other hand, is withdrawn from the listing.
-        PublicationSeries liveSeries = series(PublicAuthority.NEW);
+        PublicationSeries liveSeries = series();
         PublicationIssue withdrawn = publishAt(liveSeries, new Date(stamp.getTime() - week), stamp);
         lifecycle.retire(withdrawn, null, "withdrawn");
         em.flush();
@@ -408,22 +407,27 @@ public class PublicationPublicAdapterTest {
                 "a retired ISSUE is still being listed");
     }
 
-    // ==================================================== the transition union
+    // ============================================================== the union
 
-    /** A series still on LEGACY is served from the legacy table, not the new one. */
+    /**
+     * A published issue is served from the new model, with nothing switched on.
+     *
+     * There is no per-series gate: the new half is every published issue in a
+     * publishing category, so a series nobody has touched since it was created
+     * serves its issues like any other.
+     */
     @Test
     @Transactional
-    public void aSeriesBeforeCutoverIsNotServedFromTheNewModel() {
-        PublicationSeries notCutOver = series(PublicAuthority.LEGACY);
+    public void aPublishedIssueIsServedWithoutAnythingBeingSwitchedOn() {
+        PublicationSeries plain = series();
         Date stamp = new Date(1_700_000_000_000L);
-        PublicationIssue issue = publishAt(notCutOver, new Date(stamp.getTime() - 86_400_000L), stamp);
+        PublicationIssue issue = publishAt(plain, new Date(stamp.getTime() - 86_400_000L), stamp);
         em.flush();
 
         Date now = new Date(stamp.getTime() + 3600_000L);
-        assertFalse(adapter.list(now, now).stream()
+        assertTrue(adapter.list(now, now).stream()
                         .anyMatch(p -> p.publicationId().equals(issue.getPublicId())),
-                "an issue of a series that has not cut over was served from the new model; the flag flip "
-                        + "is what makes rollback a no-data-change operation");
+                "a published issue was not served from the new model");
     }
 
     /**
@@ -438,7 +442,7 @@ public class PublicationPublicAdapterTest {
         Date stamp = new Date(1_700_000_000_000L);
         Date now = new Date(stamp.getTime() + 3600_000L);
 
-        // A legacy row, and a cut-over issue that took it over.
+        // A legacy row, and the imported issue that took it over.
         //
         // ACTIVE, PUBLICATION and a publishing category on purpose: the legacy
         // half applies the filter the public list has always applied, so a DRAFT
@@ -447,8 +451,8 @@ public class PublicationPublicAdapterTest {
         String sharedId = UUID.randomUUID().toString();
         em.persist(publishingLegacy(sharedId, stamp));
 
-        PublicationSeries cutOver = series(PublicAuthority.NEW);
-        PublicationIssue imported = lifecycle.create(cutOver,
+        PublicationSeries taker = series();
+        PublicationIssue imported = lifecycle.create(taker,
                 new Date(stamp.getTime() - 86_400_000L), IntervalBoundSource.RECOVERED, null);
         imported.setLegacyPublicationId(sharedId);
         em.flush();
@@ -476,8 +480,8 @@ public class PublicationPublicAdapterTest {
         Date stamp = new Date(1_700_000_000_000L);
 
         // Twins: two series publishing at the very same instant, as EfS and P&T do.
-        PublicationSeries a = series(PublicAuthority.NEW);
-        PublicationSeries b = series(PublicAuthority.NEW);
+        PublicationSeries a = series();
+        PublicationSeries b = series();
         publishAt(a, new Date(stamp.getTime() - 86_400_000L), stamp);
         publishAt(b, new Date(stamp.getTime() - 86_400_000L), stamp);
         em.flush();
@@ -502,7 +506,7 @@ public class PublicationPublicAdapterTest {
     @Transactional
     public void aCitationResolvesTheNewIssueBeforeTheLegacyRow() {
         Date stamp = new Date(1_700_000_000_000L);
-        PublicationSeries s = series(PublicAuthority.NEW);
+        PublicationSeries s = series();
         PublicationIssue issue = publishAt(s, new Date(stamp.getTime() - 86_400_000L), stamp);
         em.flush();
 
@@ -533,9 +537,9 @@ public class PublicationPublicAdapterTest {
 
         // The OLDER issue is in the higher-priority category, so date ordering
         // alone would put it second.
-        PublicationSeries high = series(PublicAuthority.NEW);
+        PublicationSeries high = series();
         high.getCategory().setPriority(1);
-        PublicationSeries low = series(PublicAuthority.NEW);
+        PublicationSeries low = series();
         low.getCategory().setPriority(99);
         em.flush();
 
@@ -597,7 +601,7 @@ public class PublicationPublicAdapterTest {
         Date stamp = new Date(1_700_000_000_000L);
         Date now = new Date(stamp.getTime() + 3600_000L);
 
-        PublicationSeries s = series(PublicAuthority.NEW);
+        PublicationSeries s = series();
         publishAt(s, new Date(stamp.getTime() - 86_400_000L), stamp);
         em.flush();
         em.clear();

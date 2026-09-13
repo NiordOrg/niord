@@ -37,12 +37,12 @@ import java.util.Set;
  *
  * An issue is RESOLVABLE by id today -- PublicationResolver checks the new model
  * before the legacy one, so a citation into an imported id keeps working after
- * cutover. What it is not is FINDABLE: /publications/search reads the legacy
+ * the import. What it is not is FINDABLE: /publications/search reads the legacy
  * table alone, so an issue with no legacy twin never appears in the picker.
  *
  * That asymmetry is the whole reason this exists. An imported issue borrows its
  * legacy row's id, so the picker offers the legacy row and the citation resolves
- * to the issue -- it works by coincidence. An issue created AFTER cutover has no
+ * to the issue -- it works by coincidence. An issue created natively has no
  * legacy twin, so the picker cannot offer it at all, and the current week's EfS
  * becomes the one publication an editor cannot cite. Verified against the
  * deployed API: a new issue answers on /publications/publication/{id} and returns

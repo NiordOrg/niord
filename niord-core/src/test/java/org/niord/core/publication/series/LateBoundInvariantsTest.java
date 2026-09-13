@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * X-6 and I-15 were each left pending on a task. Both tasks completed; both
  * rules went unasserted, so the code was written and then never held to what it
  * was written for. Closing that is the whole of the invariant-binding pass, and it is why the plan
- * forbids deferring it to Phase Z: a pending binding that survives into cutover
+ * forbids deferring it to the end: a pending binding that survives into go-live
  * is a rule nothing checks.
  *
  * No database -- both are properties of pure functions.

@@ -96,8 +96,8 @@ public class AnnualCutoffTest {
      * changeover is a day's work rather than a moment's: on "EfS A - 2025" the
      * window was opened at 10:28:17, the 2024 notices were cancelled at 11:18 and
      * the 2025 notices published at 11:28 -- so resolving at 10:28:17 produced the
-     * 2024 list and the shadow diff reported 29 missing and 29 extra against the
-     * tag that holds the 2025 one.
+     * 2024 list, 29 notices short and 29 notices over against the tag that holds
+     * the 2025 one.
      *
      * AND NOT THE WINDOW-OPEN DAY EITHER, WHERE THE TWO DIFFER. A window is opened
      * during the sitting on some editions and named nominally at the turn of the

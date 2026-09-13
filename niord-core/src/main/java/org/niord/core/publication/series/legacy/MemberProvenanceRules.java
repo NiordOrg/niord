@@ -28,15 +28,15 @@ import java.util.Set;
  * How far a legacy tag can be trusted as an oracle for one issue.
  *
  * The importer copies a locked tag's contents into IssueMember rows. Whether
- * those rows can later be used to CHECK the resolver -- which is what the historical replay's
- * replay does -- depends on whether the tag is evidence of one instant or of
- * something else. This decides that, and records why in a note.
+ * those rows can later be used to CHECK the resolver depends on whether the tag
+ * is evidence of one instant or of something else. This decides that, and
+ * records why in a note.
  *
- * NEVER EXACT BY DEFAULT. EXACT is a claim that a replay of the criteria at the
+ * NEVER EXACT BY DEFAULT. EXACT is a claim that re-resolving the criteria at the
  * cut-off reproduces this set. Anything that weakens the claim has to be caught
- * HERE, because the replay reads the provenance to decide which issues it may hold to
- * that standard, and an over-confident label there turns a genuine divergence
- * into a manifest entry.
+ * HERE, because a reader holding an issue to that standard reads the provenance
+ * to decide it may -- and an over-confident label turns a genuine disagreement
+ * into one nobody looks at twice.
  */
 public final class MemberProvenanceRules {
 
@@ -140,14 +140,15 @@ public final class MemberProvenanceRules {
     }
 
     /**
-     * True when the provenance claims a replay reproduces the set.
+     * True when the provenance claims a re-resolution reproduces the set.
      *
-     * The replay uses this to decide which issues it may hold to the reproduce-exactly
-     * standard. Written as one predicate rather than as a comparison at each call
-     * site, so that adding a provenance later cannot quietly widen what counts as
-     * an oracle.
+     * Anything comparing an issue's recorded members against a fresh resolution
+     * asks this first, to decide whether it may hold that issue to the
+     * reproduce-exactly standard at all. Written as one predicate rather than as
+     * a comparison at each call site, so that adding a provenance later cannot
+     * quietly widen what counts as an oracle.
      */
-    public static boolean isReplayOracle(MembershipProvenance provenance) {
+    public static boolean reproducesExactly(MembershipProvenance provenance) {
         return provenance == MembershipProvenance.EXACT;
     }
 }

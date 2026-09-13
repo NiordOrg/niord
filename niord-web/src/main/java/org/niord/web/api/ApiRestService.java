@@ -453,8 +453,9 @@ public class ApiRestService extends AbstractApiService {
      *
      * Deliberately pure: it takes the base URI rather than reading it from the
      * application, and it takes a value object rather than an entity. Both are
-     * what let a publication that has no entity behind it -- an issue of a series
-     * that has cut over -- go through exactly this code rather than a copy of it.
+     * what let a publication that has no entity behind it -- a published issue of
+     * a publication series -- go through exactly this code rather than a copy of
+     * it.
      *
      * Already-absolute links are left alone, so running this twice is harmless.
      *

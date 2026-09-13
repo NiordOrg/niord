@@ -126,7 +126,6 @@ public class IssueTimelineQueryTest {
         s.setAliveAtCutoff(false);
         s.setReleaseMode(ReleaseMode.MANUAL_GATE);
         s.setNextIssueCreation(NextIssueCreation.MANUAL);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
@@ -394,24 +393,26 @@ public class IssueTimelineQueryTest {
     /**
      * The strip's series are the desk's cards, split by whether they have a calendar.
      *
-     * The dashboard groups its cards by exactly this rule and then asks the server
-     * for the strips. Two implementations of one rule leave cards with no strip and
-     * strips with no card -- a per-desk failure nothing reports, because both
-     * halves look internally consistent.
+     * Every series the desk owns that is not a one-off and stands at ACTIVE or
+     * DRAFT, however the draft got there. The dashboard groups its cards by exactly
+     * this rule and then asks the server for the strips. Two implementations of one
+     * rule leave cards with no strip and strips with no card -- a per-desk failure
+     * nothing reports, because both halves look internally consistent.
      */
     @Test
     @Transactional
-    public void theTimelineSeriesAreTheDesksCadencedPublications() {
+    public void theTimelineSeriesAreEveryActiveOrDraftPublicationTheDeskOwns() {
         Domain desk = TestOwnerDomain.of(em);
         PublicationSeries weekly = series(SeriesCadence.WEEKLY, SeriesStatus.ACTIVE, desk);
         PublicationSeries yearly = series(SeriesCadence.YEARLY, SeriesStatus.ACTIVE, desk);
         PublicationSeries unscheduled = series(SeriesCadence.NONE, SeriesStatus.ACTIVE, desk);
 
-        // A DRAFT nobody imported is being assembled and belongs on the dashboard.
+        // A DRAFT an admin started by hand is being assembled and belongs on the
+        // dashboard.
         PublicationSeries draft = series(SeriesCadence.WEEKLY, SeriesStatus.DRAFT, desk);
 
-        // An imported DRAFT is legacy history that was never activated here; the
-        // dashboard deliberately does not show it as a live publication.
+        // An imported DRAFT is a draft like any other. Where it came from is
+        // provenance, not a status, and the dashboard gives it a card either way.
         PublicationSeries imported = series(SeriesCadence.WEEKLY, SeriesStatus.DRAFT, desk);
         imported.setImportSource("legacy");
 
@@ -438,11 +439,12 @@ public class IssueTimelineQueryTest {
         assertTrue(cadenced.contains(weekly.getSeriesId()));
         assertTrue(cadenced.contains(yearly.getSeriesId()));
         assertTrue(cadenced.contains(draft.getSeriesId()),
-                "a draft nobody imported is being assembled and belongs on the dashboard");
+                "a hand-made draft is being assembled and belongs on the dashboard");
         assertFalse(cadenced.contains(unscheduled.getSeriesId()),
                 "a series with no calendar has no periods and belongs to the other read");
-        assertFalse(cadenced.contains(imported.getSeriesId()),
-                "an imported draft is legacy history, not a live publication");
+        assertTrue(cadenced.contains(imported.getSeriesId()),
+                "the dashboard gives an imported draft a card; a strip that skipped it would "
+                        + "leave that card empty");
         assertFalse(cadenced.contains(retired.getSeriesId()));
         assertFalse(cadenced.contains(oneOff.getSeriesId()));
         assertFalse(cadenced.contains(elsewhere.getSeriesId()),
@@ -487,8 +489,8 @@ public class IssueTimelineQueryTest {
                 "a series with no calendar sorted ahead of a scheduled one; the dashboard reads "
                         + "the scheduled cards first");
 
-        assertFalse(both.contains(imported.getSeriesId()),
-                "the unnarrowed read reaches rows neither narrowed read does");
+        assertTrue(both.contains(imported.getSeriesId()),
+                "the unnarrowed read dropped an imported draft the scheduled read returns");
         assertFalse(both.contains(retired.getSeriesId()));
         assertFalse(both.contains(oneOff.getSeriesId()));
         assertFalse(both.contains(elsewhere.getSeriesId()),

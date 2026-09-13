@@ -232,8 +232,8 @@ public abstract class AbstractApiService {
      * Returns the publication with the given ID if it is public.
      *
      * Returns a value object rather than the entity. The public face of a
-     * publication has two possible sources -- the legacy table and, after
-     * cutover, a published issue of a series -- and only one of them has a
+     * publication has two possible sources -- the legacy table and a published
+     * issue of a publication series -- and only one of them has a
      * {@code Publication} row behind it. Converting here lets the second source
      * be added without fabricating a transient entity to carry it.
      *
@@ -242,7 +242,7 @@ public abstract class AbstractApiService {
      * @return the publication with the given ID if it is public, or null
      */
     public PublicationVo getPublication(String publicationId, String language) {
-        // Through the shared resolver, so a citation into a cut-over series
+        // Through the shared resolver, so a citation into a publication series
         // resolves here exactly as it does in the message search. The public
         // tier: a PUBLISHED issue, or an ACTIVE publication in a publishing
         // category, and nothing else.
@@ -255,8 +255,8 @@ public abstract class AbstractApiService {
      * Searches for publications
      */
     public List<PublicationVo> searchPublications(String language, Long from, Long to) {
-        // The transition union: published issues of series that have cut over,
-        // plus the legacy rows none of them has taken over. Before the first flip
+        // The transition union: published issues of publication series, plus the
+        // legacy rows none of them has taken over. Before the archive is imported
         // the first half is empty and this is the legacy list, in the legacy
         // order -- category priority, then publish date descending.
         return publicationAdapter.listVo(

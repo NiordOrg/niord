@@ -36,14 +36,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * An issue is RESOLVABLE by id and was not FINDABLE. PublicationResolver checks
  * the new model before the legacy one, so a citation into an imported id keeps
- * working after cutover -- but /publications/search read the legacy table alone,
- * so an issue with no legacy twin never appeared in the picker. Verified against
- * the deployed API before this was written: a new issue answers on
+ * working after the import -- but /publications/search read the legacy table
+ * alone, so an issue with no legacy twin never appeared in the picker. Verified
+ * against the deployed API before this was written: a new issue answers on
  * /publications/publication/{id} and returns zero hits from /publications/search.
  *
- * That is not a cosmetic gap. Every issue created AFTER cutover has no legacy
- * twin, which would make the current week's EfS the one publication an editor
- * cannot cite.
+ * That is not a cosmetic gap. Every issue created natively has no legacy twin,
+ * which would make the current week's EfS the one publication an editor cannot
+ * cite.
  */
 public class PublicationSearchUnionTest {
 

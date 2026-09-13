@@ -121,7 +121,6 @@ public class IssuePublishTest {
         s.setAliveAtCutoff(relation == TimeRelation.IN_FORCE_AT_CUTOFF);
         s.setReleaseMode(release);
         s.setNextIssueCreation(next);
-        s.setPublicAuthority(PublicAuthority.LEGACY);
         s.setMessagePublication(MessagePublication.NONE);
         s.setNumberingScheme(NumberingScheme.ISO_WEEK_YEAR);
         s.setCategory(c);
@@ -928,7 +927,7 @@ public class IssuePublishTest {
      */
     @Test
     public void theAuditVocabularyIsClosedAndSpecific() {
-        assertEquals(34, AuditAction.values().length, "the audit vocabulary changed size");
+        assertEquals(33, AuditAction.values().length, "the audit vocabulary changed size");
         assertTrue(List.of(AuditAction.values()).containsAll(
                         List.of(AuditAction.LINK_SET, AuditAction.LINK_CLEARED,
                                 AuditAction.INTERVAL_CHANGED, AuditAction.NAME_CHANGED,

@@ -42,14 +42,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * generated subclass cannot declare -- so the caller reads 500
  * (ArcUndeclaredThrowableException) over a database that has every imported row
  * in it. The import ran 784 seconds against a 240-second default and answered
- * exactly that; the danger is that an operator believes it and re-runs a cutover
+ * exactly that; the danger is that an operator believes it and re-runs an import
  * that had worked.
  *
  * A DECLARED SET, not a rule. Which endpoints are estate-scale is a fact about
- * what they call, not something readable off a signature -- /shadow-diff/run and
- * /shadow-diff look identical from here and only one of them writes. So the list
- * is written down and its absentees are pinned too: an endpoint that leaves the
- * set silently is the regression this test exists to catch.
+ * what they call, not something readable off a signature -- an endpoint that
+ * walks every series and one that reads a single row look identical from here.
+ * So the list is written down and its absentees are pinned too: an endpoint that
+ * leaves the set silently is the regression this test exists to catch.
  */
 public class PublicationTransactionContractTest {
 
@@ -58,20 +58,14 @@ public class PublicationTransactionContractTest {
      *
      * import-legacy/validate, import-legacy (POST and DELETE): each opens one
      * transaction with a budget sized for the whole estate.
-     * shadow-diff/run: commits per release, so an ambient transaction would hold
-     * every batch open to the end and discard what the sweep reported as written.
-     * shadow-diff/reset and cutover-preflight and diagnostic-report: the services
-     * behind them manage their own, and the report re-resolves every imported
-     * issue when asked for the historical replay.
+     * import-check: it reads every series and every issue in the installation,
+     * and the service behind it manages its own transaction.
      */
     private static final Set<String> ESTATE_SCALE = new LinkedHashSet<>(Set.of(
             "importDryRun",
             "importLegacy",
             "undoImport",
-            "runShadowDiff",
-            "resetShadowDiff",
-            "diagnosticReport",
-            "cutoverPreflight"));
+            "importCheck"));
 
     @Test
     public void everyEstateScaleEndpointRunsOutsideTheRequestTransaction() {

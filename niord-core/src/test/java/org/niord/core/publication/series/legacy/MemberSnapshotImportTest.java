@@ -181,10 +181,10 @@ public class MemberSnapshotImportTest {
 
             checked++;
             PublicationIssue issue = imported.get(p.getPublicationId()).issue();
-            assertFalse(MemberProvenanceRules.isReplayOracle(issue.getMembershipProvenance()),
+            assertFalse(MemberProvenanceRules.reproducesExactly(issue.getMembershipProvenance()),
                     p.getPublicationId() + " (" + tag + ") is contaminated but claims to be an oracle; "
-                            + "the historical replay would hold it to a standard it cannot meet and the divergence would "
-                            + "be pushed into the expected-diff manifest");
+                            + "anything comparing it against a fresh resolution would hold it to a "
+                            + "standard it cannot meet and read the difference as a defect");
             assertNotNull(issue.getMembershipProvenanceNote(), p.getPublicationId());
             assertFalse(issue.getMembershipProvenanceNote().isBlank(),
                     "a non-EXACT provenance with no reason is unauditable");
@@ -252,7 +252,7 @@ public class MemberSnapshotImportTest {
                 // and that is precisely the confusion the caption exists to avoid.
                 assertNotNull(m.getFrozenShortId(), "the caption is what makes a retired issue readable");
                 assertEquals(MemberSource.IMPORTED, m.getSource(),
-                        "labelling these CRITERIA would tell the replay it may check them against a "
+                        "labelling these CRITERIA would claim they can be checked against a "
                                 + "query that was never run");
             }
         }

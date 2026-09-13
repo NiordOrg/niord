@@ -105,11 +105,6 @@ public class PublicationOptimisticLockContractTest {
         t.put("POST /publication-series/import-legacy", "estate-wide: the file IS every series");
         t.put("DELETE /publication-series/import-legacy", "undoes that import, same reach");
         t.put("POST /publication-series/upload-series", "the interchange import, upserting whatever the file names");
-        t.put("POST /publication-series/shadow-diff/run", "writes comparison runs, not publications");
-        t.put("POST /publication-series/shadow-diff/reset", "discards those comparison runs");
-        t.put("PUT /publication-series/public-authority",
-                "the bulk flip: one request over every series in the estate, so one revision "
-                        + "token could only be right about one of them");
 
         // Derives rather than changes. A preview is rendered FROM the issue's
         // current state; running it against a state the caller has not seen

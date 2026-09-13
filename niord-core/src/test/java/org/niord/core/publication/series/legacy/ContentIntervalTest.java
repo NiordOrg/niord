@@ -198,9 +198,8 @@ public class ContentIntervalTest {
      * everything published to that moment. Opening the next period at the nominal
      * time therefore double-counts that window: those messages are in the previous
      * issue AND inside this interval. Measured on the archive as roughly three
-     * spurious members per weekly release -- the shadow diff reported them as
-     * "extra", and the count rose the moment the upper bound was corrected without
-     * the lower one.
+     * spurious members per weekly release, a count that rose the moment the upper
+     * bound was corrected without the lower one.
      */
     @Test
     public void theLagBetweenNominalAndActualCloseIsNotCountedTwice() {

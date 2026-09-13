@@ -45,11 +45,8 @@ import org.niord.core.publication.series.vo.IssueAuditEntryVo;
 import org.niord.core.publication.series.vo.IssueDraftVo;
 import org.niord.core.publication.series.vo.IssueOmissionsVo;
 import org.niord.core.user.UserService;
-import org.niord.core.publication.series.replay.ShadowDiffService;
-import org.niord.core.publication.series.replay.DiagnosticReportService;
-import org.niord.core.publication.series.replay.ShadowDiffRun;
 import org.niord.core.publication.series.legacy.LegacyImportReportVo;
-import org.niord.core.publication.series.legacy.CutoverPreflightService;
+import org.niord.core.publication.series.legacy.ImportCheckService;
 import org.niord.core.publication.series.legacy.LegacyImportService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
@@ -65,7 +62,6 @@ import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.MemberResolutionService;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
-import org.niord.core.publication.series.PublicAuthority;
 import org.niord.core.publication.series.ReleaseMode;
 import org.niord.core.publication.series.SeriesAvailability;
 import org.niord.core.publication.series.SeriesAvailabilityResolver;
@@ -100,7 +96,7 @@ import java.util.Set;
  * The tier split is enforced by which VO class each endpoint returns, not by a
  * parameter. An endpoint that returned "the public or the system shape depending
  * on a flag" is one wrong flag away from serving the criteria document and the
- * cutover switch to an anonymous caller -- and nothing about the response would
+ * report parameters to an anonymous caller -- and nothing about the response would
  * look wrong.
  *
  * So: /search returns the lean shape at the editor tier; /search-details returns
@@ -122,7 +118,7 @@ import java.util.Set;
  * was found failing in the worst possible way: the reaper aborted the ambient
  * transaction long before the work finished, so a COMPLETED import returned 500
  * while its rows sat committed in the database -- and an operator reading that
- * would re-run a cutover that had worked. The rationale is stated here once; the
+ * would re-run an import that had worked. The rationale is stated here once; the
  * endpoints carry the annotation and a one-line pointer back.
  *
  * The annotation belongs on the SERVICE as well, and for the same reason: the
@@ -143,7 +139,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      *
      * The audit table records the same events, but it is reachable only through
      * the application and only while the row it hangs off still exists. The
-     * cutover flip and a series deletion are exactly the two things somebody has
+     * estate-wide import and a series deletion are exactly the two things somebody has
      * to reconstruct afterwards, from an incident rather than from the admin UI.
      */
     @Inject
@@ -165,10 +161,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     LegacyImportService importService;
 
     @Inject
-    CutoverPreflightService preflight;
-
-    @Inject
-    ShadowDiffService shadowDiff;
+    ImportCheckService importCheckService;
 
     // The preview resolves exactly as a publish would, domain nodes included; a
     // probe that could not expand a domain would answer "nothing" for a series
@@ -182,9 +175,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     // happens inside the publish transaction with the cut-off already stamped.
     @Inject
     org.niord.core.publication.series.criteria.PublicationOperandResolver operands;
-
-    @Inject
-    DiagnosticReportService diagnostics;
 
     @Inject
     PublicationCategoryService categoryService;
@@ -267,11 +257,10 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      *
      * The unscoped read has other callers, and each of them genuinely spans the
      * estate: the JSON export and the scripts that consume it, which describe the
-     * installation rather than one desk; and the cut-over panels -- the import
-     * report, the pre-flight, the readiness and shadow diff, the bulk authority
-     * flip -- which are estate-wide by rule, because a cutover that covered one
-     * domain's publications and silently skipped another's would be worse than
-     * one that did not run.
+     * installation rather than one desk; and the migration panels -- the import
+     * report and the import check -- which are estate-wide by rule, because an
+     * import that covered one domain's publications and silently skipped
+     * another's would be worse than one that did not run.
      */
     private static List<PublicationSeries> ownedBy(List<PublicationSeries> series, String domainId) {
         if (domainId == null || domainId.isBlank()) {
@@ -594,10 +583,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         vo.setAvailability(
                 SeriesAvailability.defaultFor(ContentMode.GENERATED_FROM_QUERY).name());
 
-        // LEGACY until cutover flips it, matching every imported series. A new
-        // series claiming NEW would assert that the public site already serves it.
-        vo.setPublicAuthority(PublicAuthority.LEGACY.name());
-
         // Zero, and stated. The form disables the citation channel once a series
         // has released an issue (S-18), and a missing count on a series that has
         // never had one would disable it on the create screen.
@@ -626,7 +611,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * The reason this is a server endpoint and not a client-side object copy is
      * WHAT IT CLEARS. A copy carries the settings that took an admin an afternoon
      * -- the criteria document, the per-language patterns, the report and its
-     * parameters -- and must not carry the four fields that are claims about the
+     * parameters -- and must not carry the three fields that are claims about the
      * ORIGINAL row. Each of them causes a distinct, quiet failure if it travels:
      *
      *  - `seriesId` is unique and is the citation handle. Carried, the save is
@@ -638,9 +623,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      *    already-imported check ambiguous.
      *  - `importSource` says where the row came from. A hand-made series carrying
      *    it would be undone by an import undo.
-     *  - `publicAuthority` decides who serves the public. A copy of a flipped
-     *    series would arrive already answering for a publication that has never
-     *    published anything.
      *
      * `firstIssueStartsAt` is cleared for the same reason, and it is the one that
      * is easy to argue about: it is not a setting but a fact about when the
@@ -672,7 +654,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         source.setStatus(SeriesStatus.DRAFT.name());
         source.setLegacyTemplateId(null);
         source.setImportSource(null);
-        source.setPublicAuthority(PublicAuthority.LEGACY.name());
         source.setFirstIssueStartsAt(null);
 
         // THE SHARING SETTINGS TRAVEL; THE OWNER DOES NOT.
@@ -681,7 +662,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         // kind an admin copies a publication to keep: "another quarterly annex,
         // shared with the same three desks" is why the copy button exists.
         //
-        // The owner is a claim about the ORIGINAL row, like the four fields above
+        // The owner is a claim about the ORIGINAL row, like the three fields above
         // it, and it is also the one field the copy must not carry across a desk:
         // copying somebody else's publication would otherwise author a new one
         // straight into their domain, which the write guard then refuses on save
@@ -904,17 +885,14 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
         MessagePublication publicationBefore = series.getMessagePublication();
         boolean anyPublished = seriesService.hasPublishedIssue(series);
 
-        // Neither the status nor the public authority is taken from the body.
-        // Each has its own endpoint that validates the transition and audits it,
-        // and a save carrying either would route around both -- an admin renaming
-        // a series would be able to flip what the public reads, and nothing in
-        // the trail would say a cutover had happened.
+        // The status is not taken from the body. It has its own endpoint, which
+        // validates the transition and audits it, and a save carrying a status
+        // would route around both -- an admin renaming a series would be able to
+        // activate or retire it, and nothing in the trail would say who did.
         SeriesStatus status = series.getStatus();
-        PublicAuthority authority = series.getPublicAuthority();
         series.updateFromVo(vo);
         series.setSeriesId(seriesId);
         series.setStatus(status);
-        series.setPublicAuthority(authority);
         resolveReferences(series, vo);
 
         if (anyPublished && publicationBefore != series.getMessagePublication()) {
@@ -1009,8 +987,8 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     /**
      * S21. Move a publication to another domain.
      *
-     * ITS OWN ENDPOINT, and not a field on the save, for the reason the authority
-     * flip is its own endpoint: it changes who is responsible for a publication.
+     * ITS OWN ENDPOINT, and not a field on the save, for the reason activation is
+     * its own endpoint: it changes who is responsible for a publication.
      * The ordinary save refuses a body naming any domain but the caller's, and
      * that refusal is what stops an admin handing their series to a desk that is
      * not expecting it -- so the way to move one has to be a deliberate act with
@@ -1140,148 +1118,6 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     /**
-     * Which model serves this series to the public.
-     *
-     * The single irreversible-feeling step of the cutover, and the reason it is
-     * its own endpoint rather than a field on a save: flipping authority changes
-     * what every anonymous reader sees, and it must not be reachable by an admin
-     * editing a name. Both directions are audited, and flipping BACK is a
-     * first-class action -- a rollback nobody has rehearsed is not a rollback.
-     *
-     * The precondition is the shadow diff's own answer: two consecutive green
-     * comparisons by release order, or a series that cannot be compared at all
-     * and is exempt by rule. `force` exists because a precondition that cannot be
-     * overridden gets worked around in the database instead, where nothing is
-     * recorded -- so it is allowed, it demands a reason, and the audit entry says
-     * it was forced.
-     */
-    @PUT
-    @Path("/series/{seriesId}/public-authority")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed(Roles.ADMIN)
-    @DomainScoped
-    @VersionChecked
-    public SystemPublicationSeriesVo setPublicAuthority(@PathParam("seriesId") String seriesId,
-                                                        Map<String, Object> body) {
-        PublicationSeries series = required(seriesId);
-        domainGuard.assertWritable(series);
-        StaleVersionGuard.check(series, StaleVersionGuard.versionOf(body));
-        return flip(series, authorityOf(body), body).toVo(SystemPublicationSeriesVo.class);
-    }
-
-    /**
-     * The whole estate at once, all or nothing.
-     *
-     * The window flips every series together, so the request that does it is one
-     * transaction: a partial flip leaves editors working in two systems for the
-     * series that did not make it, and discovering which those are means reading
-     * the database. One refusal refuses the lot.
-     *
-     * THE TWO DIRECTIONS DO NOT HAVE THE SAME UNNAMED TARGET SET, and that
-     * asymmetry is the point. Going to NEW is an editorial step taken on series
-     * the estate is actually running, so it takes the ACTIVE ones. Coming back to
-     * LEGACY is a rollback, and a rollback has to reach everything the flip
-     * reached: the public adapter chooses its half by this column alone and never
-     * looks at the series status, so a series retired after a cutover is still
-     * being served from the new model. Leaving those behind would strand exactly
-     * the rows nobody is watching.
-     *
-     * THE SWEEP IS NARROWED TO THE CALLER'S DOMAIN, and the two ways of naming a
-     * target are answered differently on purpose. An UNNAMED sweep means "the
-     * ones I am responsible for", so a series belonging to another domain is
-     * skipped and counted -- refusing the whole request because somebody else's
-     * series exists would make the endpoint unusable on any estate with more than
-     * one authority. A series named EXPLICITLY is refused instead: the caller
-     * asked for that row by id, and a silent skip would leave them believing a
-     * cutover happened that did not.
-     */
-    @PUT
-    @Path("/public-authority")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed(Roles.ADMIN)
-    @DomainScoped
-    public BulkFlipResult setPublicAuthorityForAll(Map<String, Object> body) {
-        PublicAuthority target = authorityOf(body);
-        List<PublicationSeries> targets = new ArrayList<>();
-        List<String> skipped = new ArrayList<>();
-        Object named = body == null ? null : body.get("seriesIds");
-        if (named instanceof List<?> ids && !ids.isEmpty()) {
-            for (Object id : ids) {
-                PublicationSeries series = required(String.valueOf(id));
-                domainGuard.assertWritable(series);
-                targets.add(series);
-            }
-        } else {
-            List<PublicationSeries> sweep = target == PublicAuthority.LEGACY
-                    ? seriesService.findByPublicAuthority(PublicAuthority.NEW)
-                    : seriesService.findByStatus(SeriesStatus.ACTIVE);
-            for (PublicationSeries series : sweep) {
-                if (domainGuard.isWritable(series)) {
-                    targets.add(series);
-                } else {
-                    skipped.add(series.getSeriesId());
-                }
-            }
-        }
-
-        List<SystemPublicationSeriesVo> out = new ArrayList<>();
-        for (PublicationSeries series : targets) {
-            out.add(flip(series, target, body).toVo(SystemPublicationSeriesVo.class));
-        }
-        return new BulkFlipResult(out, skipped.size(), skipped);
-    }
-
-    /**
-     * What a bulk flip did, and what it left alone.
-     *
-     * The skipped ids are IN the response rather than only in the log because the
-     * screen that runs a cutover has to be able to say "these eleven are not
-     * yours" -- a bare list of what was flipped looks identical whether the sweep
-     * found nothing else or quietly walked past another domain's estate, and the
-     * runbook step that follows a flip is a count check.
-     */
-    public record BulkFlipResult(List<SystemPublicationSeriesVo> flipped,
-                                 int skipped,
-                                 List<String> skippedSeriesIds) {
-    }
-
-    /**
-     * The requested authority, or a coded refusal.
-     *
-     * valueOf on client input is the pattern the error catalogue exists to stop:
-     * an unknown token is a client error, and letting it out as an
-     * IllegalArgumentException made it a 500 that says nothing.
-     */
-    private static PublicAuthority authorityOf(Map<String, Object> body) {
-        String token = String.valueOf(body == null ? "" : body.getOrDefault("authority", ""))
-                .trim().toUpperCase();
-        try {
-            return PublicAuthority.valueOf(token);
-        } catch (IllegalArgumentException e) {
-            throw new IssueLifecycleService.TransitionRefusedException("INVALID_AUTHORITY",
-                    "'" + token + "' is not a public authority; it is NEW or LEGACY");
-        }
-    }
-
-    private PublicationSeries flip(PublicationSeries series, PublicAuthority target,
-                                   Map<String, Object> body) {
-        boolean force = body != null && Boolean.TRUE.equals(body.get("force"));
-        String reason = body == null ? null : String.valueOf(body.getOrDefault("reason", ""));
-        PublicAuthority from = series.getPublicAuthority();
-        PublicationSeries flipped =
-                seriesService.setPublicAuthority(series, target, force, reason, userService.currentUser());
-        // WARN, not INFO: this is the one change an anonymous reader sees happen,
-        // and a forced one crossed a readiness precondition somebody chose to
-        // override. Whoever reads the log after a cutover is looking for exactly
-        // these lines.
-        log.warn("Public authority for series {} flipped {} -> {}{}, reason '{}'",
-                series.getSeriesId(), from, target, force ? " (FORCED)" : "", reason);
-        return flipped;
-    }
-
-    /**
      * S12. The issue that does not exist yet.
      *
      * ONE endpoint for three screens -- "＋ Ny udgave", the retro-create prefill,
@@ -1353,10 +1189,10 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * The series' own history: the events that belong to the publication rather
      * than to any one issue.
      *
-     * There was no way to read these at all. Activation, retirement, the change of
-     * authority, the move to another desk and -- now -- the deletion of an issue
-     * are all recorded on the SERIES, and every one of them was written to a table
-     * whose only endpoint keyed off an issue. The deletion is what makes that
+     * There was no way to read these at all. Activation, retirement, the move to
+     * another desk and -- now -- the deletion of an issue are all recorded on the
+     * SERIES, and every one of them was written to a table whose only endpoint
+     * keyed off an issue. The deletion is what makes that
      * unacceptable rather than merely untidy: the entry it writes is the ONLY
      * remaining record of a publication that stopped existing, and an
      * unreadable-only record is not a record.
@@ -1554,15 +1390,15 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * The importer refuses rather than merging, so a second attempt is blocked
      * until the first one is cleared. Exposing this is not a convenience: the
      * alternative is hand-written DELETE statements against a live archive during
-     * a cutover window, which is the worst possible time to be composing SQL.
+     * an import window, which is the worst possible time to be composing SQL.
      *
      * DELETE rather than POST because that is what it is, and the method itself
      * should warn the reader.
      *
      * Returns 409 with every reason when it refuses -- an imported series that is
-     * no longer DRAFT, or one whose publicAuthority has been flipped. After the cutover
-     * those rows ARE the public list and undoing would withdraw published
-     * editions from under their readers.
+     * no longer DRAFT. Once an imported issue has been published its row IS the
+     * public list, and undoing would withdraw a published edition from under its
+     * readers.
      */
     // Opens its own transaction; see the class comment on transactions.
     @Transactional(Transactional.TxType.NOT_SUPPORTED)
@@ -1578,180 +1414,32 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
     }
 
     /**
-     * The diagnostic report, as markdown.
-     *
-     * Markdown rather than JSON because the decision it supports is made by
-     * people reading it and arguing about it. The same numbers are available
-     * structurally from /shadow-diff; this is the version somebody pastes into
-     * a meeting, and it says in words what a table of counts does not: that a
-     * skipped week is not a green one, and what was never examined.
-     *
-     * historical=true also runs the full historical replay. Off by default because it
-     * re-resolves every imported issue, which is minutes of work and not
-     * something to trigger on a page refresh.
-     */
-    // Minutes of work with historical=true; see the class comment on transactions.
-    @Transactional(Transactional.TxType.NOT_SUPPORTED)
-    @GET
-    @Path("/diagnostic-report")
-    @Produces(MediaType.TEXT_PLAIN)
-    @GZIP
-    @NoCache
-    @RolesAllowed(Roles.ADMIN)
-    public String diagnosticReport(@QueryParam("historical") boolean historical) {
-        return diagnostics.render(historical);
-    }
-
-    /**
-     * Runs the shadow diff now, rather than waiting for the hourly tick.
-     *
-     * The scheduler is the normal path. This exists because the evidence is read
-     * during a cutover window, where waiting up to an hour to find out whether the
-     * last import produced comparable rows is the wrong shape of feedback -- and
-     * because a re-import invalidates every skip, so somebody will want the answer
-     * immediately after one.
-     *
-     * Idempotent: it compares only what has no comparison at its current stamp.
-     * Running it twice writes nothing the second time.
-     *
-     * BOUNDED per call, and it reports what is left. A full sweep of the estate
-     * is ~1,000 real member resolutions and does not fit in one request, so the
-     * honest interface is a batch plus a remaining count the caller loops on --
-     * rather than one request that appears to work and times out at 240 seconds
-     * with everything rolled back.
-     */
-    // Commits per release, in its own transactions; see the class comment on
-    // transactions. An ambient one would hold every batch open to the end and be
-    // reaped mid-sweep, discarding comparisons the sweep reported as written.
-    @Transactional(Transactional.TxType.NOT_SUPPORTED)
-    @POST
-    @Path("/shadow-diff/run")
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed(Roles.ADMIN)
-    public Map<String, Object> runShadowDiff(@QueryParam("max") Integer max) {
-        int written = shadowDiff.runOnce(
-                max == null ? ShadowDiffService.DEFAULT_BATCH : max);
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("written", written);
-        out.put("remaining", shadowDiff.remaining());
-        return out;
-    }
-
-    /**
-     * Discards every stored comparison so the sweep recomputes them.
-     *
-     * For when the diff LOGIC changed: a run is keyed on the legacy inputs, so a
-     * stale verdict is never reselected on its own. Separate from the sweep
-     * because it is a different act -- this one throws away the green-week
-     * evidence the cutover decision rests on, and that should never be a side
-     * effect of asking for a sweep.
-     */
-    // Opens its own transaction; see the class comment on transactions.
-    @Transactional(Transactional.TxType.NOT_SUPPORTED)
-    @POST
-    @Path("/shadow-diff/reset")
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed(Roles.ADMIN)
-    public Map<String, Object> resetShadowDiff() {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("discarded", shadowDiff.reset());
-        return out;
-    }
-
-    /**
-     * The shadow-diff results, per series and per release.
-     *
-     * The artefact the cutover decision is made from: the flip waits on two
-     * consecutive green comparisons per series, and this is what evidences them.
-     *
-     * Deltas are keyed on uid rather than short id: a short id is display text
-     * and is reused across years, so a delta keyed on it would collide between
-     * an NM from 2018 and one from 2024 and read as agreement.
-     *
-     * Read-only. A shadow diff that could change what it measures would not be a
-     * measurement, and neither would an endpoint that could.
-     */
-    @GET
-    @Path("/shadow-diff")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @NoCache
-    @RolesAllowed(Roles.ADMIN)
-    public Map<String, Object> shadowDiff(@QueryParam("seriesId") String seriesId) {
-        List<ShadowDiffRun> runs = seriesId == null || seriesId.isBlank()
-                ? shadowDiff.all()
-                : shadowDiff.forSeries(seriesId);
-
-        Map<String, List<Map<String, Object>>> bySeries = new LinkedHashMap<>();
-        Map<String, List<ShadowDiffRun>> runsBySeries = new LinkedHashMap<>();
-        for (ShadowDiffRun run : runs) {   // newest release first, by the named query
-            String key = run.getSeriesId() == null ? "(unmapped)" : run.getSeriesId();
-            bySeries.computeIfAbsent(key, k -> new ArrayList<>()).add(describe(run));
-            runsBySeries.computeIfAbsent(key, k -> new ArrayList<>()).add(run);
-        }
-
-        // ONE readiness rule, shared with the diagnostic report -- and a row for
-        // EVERY known series, so "never compared" is a row that says so rather
-        // than an absence a client cannot tell from "not asked".
-        Map<String, Object> readiness = new LinkedHashMap<>();
-        shadowDiff.readinessBySeries(runs).forEach((series, r) -> {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("consecutiveGreen", r.consecutiveGreen());
-            row.put("runs", r.runs());
-            row.put("skipped", r.skipped());
-            row.put("exempt", r.exempt());
-            row.put("meetsCutoverPrecondition", r.ready());
-            readiness.put(series, row);
-        });
-
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("runs", runs.size());
-        out.put("series", bySeries);
-        out.put("readiness", readiness);
-        return out;
-    }
-
-    private static Map<String, Object> describe(ShadowDiffRun run) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("legacyPublicationId", run.getLegacyPublicationId());
-        out.put("comparedAt", run.getComparedAt());
-        out.put("intervalFrom", run.getIntervalFrom());
-        out.put("cutoffAt", run.getCutoffAt());
-        out.put("green", run.isGreen());
-        out.put("skipReason", run.getSkipReason());
-        out.put("missing", run.missing());
-        out.put("extra", run.extra());
-        return out;
-    }
-
-    /**
-     * The cutover pre-flight, and the mailing-list trigger audit.
+     * The import check, and the mailing-list trigger audit.
      *
      * Read-only, and safe to run as often as you like. Exposed because the pass
      * was previously reachable only from a test -- which meant the one person who
-     * has to act on the trigger audit before the flip had no way to see it.
+     * has to act on the trigger audit had no way to see it.
      *
-     * Returns 200 with the report either way: an admin running a pre-flight is
+     * Returns 200 with the report either way: an admin running the check is
      * asking what the state IS, and a non-2xx would bury the answer in an error
-     * handler. Read "clear": false means do not flip publicAuthority yet.
+     * handler. Read "clear": false means the estate is not ready to import.
      *
-     * `series` is the per-series sheet -- the shadow diff's verdict, how many
-     * periods the archive leaves uncovered, and what kind of publication it is.
-     * NONE of it moves `clear`: a gap is a fact about an archive that predates
-     * this system, and readiness is the flip's own precondition, refused at the
-     * flip. Folding either in would stop the pre-flight ever passing on an estate
-     * that is in exactly the state everybody expects.
+     * `series` is the per-series sheet -- how many periods the archive leaves
+     * uncovered, and what kind of publication it is. NEITHER moves `clear`: a gap
+     * is a fact about an archive that predates this system, and folding it in
+     * would stop the check ever passing on an estate that is in exactly the state
+     * everybody expects.
      */
     // Reads the whole estate; see the class comment on transactions.
     @Transactional(Transactional.TxType.NOT_SUPPORTED)
     @GET
-    @Path("/cutover-preflight")
+    @Path("/import-check")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @NoCache
     @RolesAllowed(Roles.ADMIN)
-    public Map<String, Object> cutoverPreflight() {
-        CutoverPreflightService.Preflight result = preflight.run();
+    public Map<String, Object> importCheck() {
+        ImportCheckService.ImportCheck result = importCheckService.run();
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("clear", result.isClear());
@@ -1776,7 +1464,7 @@ public class PublicationSeriesRestService extends AbstractBatchableRestService {
      * consulted.
      *
      * This export does not need it. It carries the criteria documents and the
-     * cutover switch, so the client fetches it with its own credentials and saves
+     * report parameters, so the client fetches it with its own credentials and saves
      * the response, and no ticket is involved. Going the other way would put a
      * @PermitAll endpoint returning a SYSTEM shape into the API -- exactly what
      * PublicationApiContractTest exists to prevent, and the in-code guard is
