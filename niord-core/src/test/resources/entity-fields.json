@@ -1,6 +1,6 @@
 {
   "note": "Generated from DATA-MODEL.md sections 3.1-3.10 by gen-field-manifest.js. Do not hand-edit.",
-  "sourceSha256": "144e11f162469b8e981a92e112e0701977c2a875c742bfb648ec52a23469ce6d",
+  "sourceSha256": "8b0881dcae041183e3d8464f2bdd03bb3afee296997f58505888de535ede911e",
   "entities": [
     {
       "entity": "PublicationSeries",
