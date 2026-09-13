@@ -22,13 +22,20 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.niord.core.domain.Domain;
 import org.niord.core.publication.series.BindsRule;
+import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssueStatus;
+import org.niord.core.publication.series.MemberSource;
 import org.niord.core.publication.series.PublicationIssue;
+import org.niord.core.publication.series.PublicationSeries;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @EnabledIf(value = "org.niord.core.DatabaseAvailable#isAvailable",
         disabledReason = "no MySQL on this machine -- see DatabaseAvailable for how to start one")
 public class ImportCheckTest {
+
+    /** The zone the late-member rule reads calendar days in; the series' domain names it. */
+    private static final ZoneId CUTOFF_ZONE = ZoneId.of("Europe/Copenhagen");
 
     /** Committed whether or not it is empty; see theTriggerAuditIsCommittedEmptyOrNot. */
     private static final Path REPORT =
@@ -351,6 +361,112 @@ public class ImportCheckTest {
                         + "an absent number and zero read alike on a sheet somebody ticks");
     }
 
+    /**
+     * A member row published after its issue closed is a violation.
+     *
+     * The import copies the legacy publication's message tag verbatim, and a tag
+     * is a hand-maintained list -- so it can hold a notice published long after
+     * the publication was printed. That row was not in the document, and a
+     * compilation built on it announces the message in the wrong period.
+     *
+     * Driven on rows built in memory: the estate's own offenders are two rows in
+     * one tag, which pins neither the code the runbook greps for nor the message
+     * that tells whoever reads it which notice to move.
+     */
+    @Test
+    public void aMemberPublishedAfterTheIssueClosedIsAViolation() {
+        List<ImportCheckService.Violation> violations = new ArrayList<>();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        PublicationIssue january = closedIssue("nm-w02-2025", "2025-01-08T12:00");
+
+        ImportCheckService.reportMembersPublishedAfterTheirIssue(
+                List.of(member(january, "NM-0042-25", MemberSource.IMPORTED, "2025-01-10T09:00")),
+                violations, counts);
+
+        assertEquals(1, counts.get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT));
+        assertEquals(1, violations.size());
+
+        ImportCheckService.Violation first = violations.get(0);
+        assertEquals("MEMBER_PUBLISHED_AFTER_ISSUE", first.code(),
+                "the code is the external handle the runbook greps for");
+        assertEquals(ImportCheckService.MEMBER_PUBLISHED_AFTER_ISSUE, first.code());
+        assertEquals("nm-w02-2025", first.subject(),
+                "the finding must name the issue whose tag holds the row");
+        assertTrue(first.detail().contains("NM-0042-25"),
+                "the finding must name the message, or nobody can tell which row to move: "
+                        + first.detail());
+        assertTrue(first.detail().contains("tag"),
+                "the finding must say what to do with the legacy tag: " + first.detail());
+    }
+
+    /**
+     * The grace is the rest of the calendar day, not a window of hours.
+     *
+     * A publication goes out and the notices it announces are stamped in the same
+     * sitting, minutes either side of the publication's own timestamp; calling
+     * those findings would report every issue on the estate. The boundary is the
+     * END of the cut-off's day read in the series' cut-off zone -- so midnight is
+     * already the next sitting, and 24 hours is not the measure.
+     */
+    @Test
+    public void aMemberPublishedLaterTheSameDayIsNotAFinding() {
+        List<ImportCheckService.Violation> violations = new ArrayList<>();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        PublicationIssue january = closedIssue("nm-w02-2025", "2025-01-08T12:00");
+
+        ImportCheckService.reportMembersPublishedAfterTheirIssue(
+                List.of(member(january, "NM-0043-25", MemberSource.IMPORTED, "2025-01-08T12:04"),
+                        member(january, "NM-0044-25", MemberSource.IMPORTED, "2025-01-08T23:30")),
+                violations, counts);
+
+        assertEquals(0, counts.get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT),
+                "a notice published in the same sitting is not a finding: " + violations);
+        assertTrue(violations.isEmpty());
+
+        ImportCheckService.reportMembersPublishedAfterTheirIssue(
+                List.of(member(january, "NM-0045-25", MemberSource.IMPORTED, "2025-01-09T00:00")),
+                violations, counts);
+
+        assertEquals(1, counts.get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT),
+                "the day the cut-off falls in has ended, so this is a finding although it is "
+                        + "twelve hours after the cut-off rather than twenty-four");
+    }
+
+    /**
+     * Only an IMPORTED row is judged this way.
+     *
+     * A CRITERIA row was selected by the resolver against the issue's own window
+     * and a COMPILED row was carried over from the issue that printed it; neither
+     * came from a tag somebody could edit afterwards, so a late date there is a
+     * question for the resolver, not an estate to clean.
+     */
+    @Test
+    public void aRowThatDidNotComeFromATagIsNeverReported() {
+        List<ImportCheckService.Violation> violations = new ArrayList<>();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        PublicationIssue january = closedIssue("nm-w02-2025", "2025-01-08T12:00");
+
+        ImportCheckService.reportMembersPublishedAfterTheirIssue(
+                List.of(member(january, "NM-0046-25", MemberSource.CRITERIA, "2025-01-10T09:00"),
+                        member(january, "NM-0047-25", MemberSource.COMPILED, "2025-12-29T09:00")),
+                violations, counts);
+
+        assertEquals(0, counts.get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT),
+                "these rows were not copied from a tag: " + violations);
+        assertTrue(violations.isEmpty());
+    }
+
+    /** The late-member count is on the sheet whatever the estate turns out to hold. */
+    @Test
+    @Transactional
+    public void theMembersPublishedAfterIssueCountIsAlwaysOnTheSheet() {
+        ImportCheckService.ImportCheck result = importCheck.run();
+
+        assertNotNull(result.counts().get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT),
+                "the check does not say how many imported member rows were published after their "
+                        + "own issue; an absent number and zero read alike on a sheet somebody ticks");
+    }
+
     /** An issue with just the three facts this finding reads. */
     private static PublicationIssue issue(String publicId, IssueStatus status, java.util.Date publishedAt) {
         PublicationIssue i = new PublicationIssue();
@@ -358,6 +474,41 @@ public class ImportCheckTest {
         i.setStatus(status);
         i.setPublishedAt(publishedAt);
         return i;
+    }
+
+    /** A published issue whose cut-off is stamped at a local time in the series' zone. */
+    private static PublicationIssue closedIssue(String publicId, String localCutoff) {
+        Domain domain = new Domain();
+        domain.setDomainId("import-check-test");
+        domain.setTimeZone(CUTOFF_ZONE.getId());
+
+        PublicationSeries series = new PublicationSeries();
+        series.setSeriesId("import-check-test");
+        series.setDomain(domain);
+
+        PublicationIssue i = new PublicationIssue();
+        i.setPublicId(publicId);
+        i.setStatus(IssueStatus.PUBLISHED);
+        i.setSeries(series);
+        i.setCutoffStampedAt(at(localCutoff));
+        return i;
+    }
+
+    /** A frozen member row with just the three facts this finding reads. */
+    private static IssueMember member(PublicationIssue issue, String shortId,
+                                      MemberSource source, String localPublished) {
+        IssueMember m = new IssueMember();
+        m.setIssue(issue);
+        m.setMessageUid("uid-" + shortId);
+        m.setFrozenShortId(shortId);
+        m.setSource(source);
+        m.setFrozenPublishDateFrom(at(localPublished));
+        return m;
+    }
+
+    /** A wall-clock time in the series' cut-off zone, which is where the rule reads days. */
+    private static Date at(String localDateTime) {
+        return Date.from(LocalDateTime.parse(localDateTime).atZone(CUTOFF_ZONE).toInstant());
     }
 
     /** The audit's own pattern, applied the way the audit applies it. */

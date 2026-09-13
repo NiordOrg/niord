@@ -20,7 +20,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.niord.core.mailinglist.MailingListTrigger;
 import org.niord.core.publication.series.IssueListService;
+import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssueStatus;
+import org.niord.core.publication.series.MemberSource;
 import org.niord.core.publication.series.PublicWindowSource;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
@@ -30,6 +32,8 @@ import org.niord.core.publication.series.vo.IssueListResultVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -123,6 +127,7 @@ public class ImportCheckService extends BaseService {
         assertCadencedIssuesDeriveTheirWindow(imported, violations);
         assertUnpublishedIssuesCarryNoStamp(imported, violations, counts);
         reportUnstampedReleasedIssues(imported, violations, counts);
+        reportMembersPublishedAfterTheirIssue(loadImportedMembers(), violations, counts);
         assertIdSpaceDoesNotCollide(violations, counts);
         assertMembershipIsUnique(violations, counts);
 
@@ -441,6 +446,120 @@ public class ImportCheckService extends BaseService {
                             + "public before the import is accepted."));
         }
         counts.put(UNSTAMPED_RELEASED_COUNT, unstamped);
+    }
+
+    /** The wire code for an imported member row published after its own issue went out. */
+    public static final String MEMBER_PUBLISHED_AFTER_ISSUE = "MEMBER_PUBLISHED_AFTER_ISSUE";
+
+    /** The counts key the checklist reads, whatever the number turns out to be. */
+    public static final String MEMBER_AFTER_ISSUE_COUNT = "membersPublishedAfterIssue";
+
+    /**
+     * Every member row of an imported issue was published by the time that issue went out.
+     *
+     * THE IMPORT COPIES A TAG, NOT A DOCUMENT. A legacy publication's members are
+     * whatever its message tag held at import time, and a tag is a mutable list
+     * somebody maintains by hand -- so it can hold a message published long after
+     * the publication was printed. The estate carries exactly that: the tag of a
+     * January weekly holding two notices published the following December, filed
+     * under the wrong tag by somebody who picked the nearest name.
+     *
+     * Such a row was not in the printed document, and it cannot be made true
+     * later: the frozen snapshot is the archive's record of what the issue
+     * contained, and a compilation drawing on it attributes the message to a week
+     * it was not announced in. The public archive then answers a question about
+     * January with a notice nobody could have read before December.
+     *
+     * IT IS A REPORT, NOT A DROP. The import keeps the row, because deciding on
+     * the importer's side which member a document "really" had would silently
+     * rewrite an archive nobody can check afterwards. Naming it here puts the
+     * decision where it belongs -- on the desk that owns the legacy tag, before
+     * the import is accepted.
+     *
+     * IMPORTED provenance only. A natively published issue's members come from
+     * the resolver, which selects on the issue's own window, so a row there that
+     * post-dates the cut-off is a resolver question and not a tag that was edited.
+     *
+     * The grace is a whole calendar day in the series' cut-off zone. A publication
+     * goes out and the notices it announces are stamped in the same sitting,
+     * minutes either side of the publication's own timestamp, and calling those a
+     * finding would report every issue on the estate. A day later is no longer the
+     * same sitting.
+     *
+     * Counted even when it is zero. A clean estate reads zero here, and that is
+     * the finding somebody ticks -- an absent number and a zero read alike on a
+     * sheet, and a check that says nothing cannot be told from one that did not run.
+     */
+    // Package-visible so the rule can be driven on rows built in memory: the
+    // estate's own offenders are two rows in one tag, which pins neither the
+    // grace boundary nor the provenance filter.
+    static void reportMembersPublishedAfterTheirIssue(List<IssueMember> importedMembers,
+                                                      List<Violation> violations,
+                                                      Map<String, Integer> counts) {
+        int late = 0;
+        for (IssueMember m : importedMembers) {
+            if (m.getSource() != MemberSource.IMPORTED || m.getFrozenPublishDateFrom() == null) {
+                continue;
+            }
+            PublicationIssue issue = m.getIssue();
+            if (issue == null) {
+                continue;
+            }
+
+            // The cut-off is when the document closed; publishedAt stands in for an
+            // issue the recovery never gave one, and an issue with neither states no
+            // instant to measure against at all.
+            Date reference = issue.getCutoffStampedAt() != null
+                    ? issue.getCutoffStampedAt() : issue.getPublishedAt();
+            if (reference == null) {
+                continue;
+            }
+
+            PublicationSeries series = issue.getSeries();
+            ZoneId zone = series == null ? ZoneId.of("UTC") : series.cutoffZone();
+            Instant published = m.getFrozenPublishDateFrom().toInstant();
+            Instant dayAfterReference = reference.toInstant().atZone(zone).toLocalDate()
+                    .plusDays(1).atStartOfDay(zone).toInstant();
+            if (published.isBefore(dayAfterReference)) {
+                continue;
+            }
+
+            late++;
+            String message = m.getFrozenShortId() != null ? m.getFrozenShortId() : m.getMessageUid();
+            violations.add(new Violation(MEMBER_PUBLISHED_AFTER_ISSUE, issue.getPublicId(),
+                    "member " + message + " was published " + published + ", after the end of the "
+                            + "day this issue closed on (" + reference.toInstant() + ", read in "
+                            + zone.getId() + "). It cannot have been in the printed document -- the "
+                            + "import copied the legacy publication's message tag verbatim, and the "
+                            + "tag was edited after the issue went out. A compilation built on this "
+                            + "row announces the message in the wrong period. Remove the message "
+                            + "from the legacy publication's tag, or move it to the publication that "
+                            + "printed it, before the import is accepted."));
+        }
+        counts.put(MEMBER_AFTER_ISSUE_COUNT, late);
+    }
+
+    /**
+     * The member rows of every imported issue, in one query.
+     *
+     * One query rather than one per issue: the estate holds roughly a thousand
+     * imported issues, and walking their member collections would be a thousand
+     * selects for an audit that reads one date per row. The issue and its series
+     * come along, because the rule reads the cut-off zone off the series and a
+     * lazy hop there would put the per-issue round trip straight back.
+     *
+     * LEFT JOIN on the series on purpose: a series-less issue is itself a
+     * violation another assertion raises, and dropping its rows here would hide a
+     * second finding behind the first.
+     */
+    private List<IssueMember> loadImportedMembers() {
+        return em.createQuery(
+                        "SELECT m FROM IssueMember m JOIN FETCH m.issue i "
+                                + "LEFT JOIN FETCH i.series "
+                                + "WHERE i.legacyPublicationId IS NOT NULL "
+                                + "AND m.frozenPublishDateFrom IS NOT NULL",
+                        IssueMember.class)
+                .getResultList();
     }
 
     /**
