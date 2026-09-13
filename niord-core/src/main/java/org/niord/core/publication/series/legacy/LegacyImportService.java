@@ -1291,9 +1291,11 @@ public class LegacyImportService extends BaseService {
                     issue.setCutoffStampedAt(cutoff.cutoff());
                     issue.setCutoffSource(cutoff.source());
                     issue.setCutoffReconstructed(cutoff.reconstructed());
-                    // The release action's own moment, kept apart from the cut-off and
-                    // only where a stage actually witnessed it. A nominal close or a
-                    // window boundary is not a moment anybody pressed publish.
+                    // The release action's own moment where a stage witnessed it, kept
+                    // apart from the cut-off -- a nominal close is not a moment anybody
+                    // pressed publish. A released issue is stamped either way: the
+                    // public list excludes a taken-over legacy row on publishedAt being
+                    // set, so an unstamped released issue serves both rows at once.
                     issue.setPublishedAt(publishedAtOf(cutoff, legacy, issue, series, chain, i));
 
                     List<MemberSnapshotImport.MemberFacts> facts =
@@ -1717,11 +1719,51 @@ public class LegacyImportService extends BaseService {
     }
 
     /**
+     * The issue's publish stamp: what witnessed the release, or failing that the
+     * moment the data says it became public.
+     *
+     * A RELEASED IMPORTED ISSUE ALWAYS CARRIES A STAMP, AND THAT IS NOT
+     * COSMETIC. The public list is the new-model issues union the legacy rows no
+     * published issue has taken over, and the legacy half's exclusion is keyed on
+     * publishedAt IS NOT NULL -- not on the issue's current status, which would
+     * lapse on retire and resurrect the legacy row the issue replaced. Leaving a
+     * released issue unstamped therefore serves BOTH rows: the issue from the new
+     * half and the legacy row it was imported from, under one publication id, on
+     * every public list call.
+     *
+     * WHERE NOTHING WITNESSED THE RELEASE, THE FALLBACK IS THE ISSUE'S OWN
+     * publicFrom. That is the earliest instant the data claims this edition was
+     * public, which is exactly the instant its legacy row must stop being served:
+     * a stamp taken from anywhere else would either hold the legacy row past the
+     * takeover or retire it before it. It is not an invented release moment --
+     * cutoffSource still records that no stage witnessed one -- it is the answer
+     * to a different question than "when did somebody press publish".
+     *
+     * OPEN issues stay unstamped. An imported issue between import and first
+     * publish has NOT taken over, and stamping it would remove its legacy row
+     * from the public list with nothing put in its place.
+     */
+    // Package-visible so the fallback can be asserted on one issue, the way the
+    // branches it wraps are. Reaching it through plan() means reading the whole
+    // estate to ask a question about one row's stamps.
+    static Date publishedAtOf(CutoffRecovery.Recovered cutoff, Publication legacy,
+                              PublicationIssue issue, PublicationSeries series,
+                              List<Publication> chain, int i) {
+        if (issue.getStatus() == IssueStatus.OPEN) {
+            return null;
+        }
+        Date witnessed = witnessedReleaseOf(cutoff, legacy, issue, series, chain, i);
+        return witnessed != null ? witnessed : issue.getPublicFrom();
+    }
+
+    /**
      * When the release action ran, where the row says so credibly.
      *
      * A stage that witnessed the release is the answer. Where the cut-off came
      * from the calendar instead, the row's last-write stamp is accepted only if
-     * it falls inside the issue's own public window.
+     * it falls inside the issue's own public window. Null where neither speaks,
+     * which is an answer rather than a gap -- {@link #publishedAtOf} is where it
+     * is decided what a released issue carries instead.
      *
      * AN ANNUAL IN-FORCE EDITION IS THE EXCEPTION AND IT IS NOT A SPECIAL CASE
      * OF CREDIBILITY. Its cut-off is the END of a day rather than a stamp, so
@@ -1730,12 +1772,9 @@ public class LegacyImportService extends BaseService {
      * actual stamp is sitting right there. The stamp is the answer, and it is the
      * same stamp that decided which day the cut-off falls on.
      */
-    private static Date publishedAtOf(CutoffRecovery.Recovered cutoff, Publication legacy,
-                                      PublicationIssue issue, PublicationSeries series,
-                                      List<Publication> chain, int i) {
-        if (issue.getStatus() == IssueStatus.OPEN) {
-            return null;
-        }
+    private static Date witnessedReleaseOf(CutoffRecovery.Recovered cutoff, Publication legacy,
+                                           PublicationIssue issue, PublicationSeries series,
+                                           List<Publication> chain, int i) {
         if (series != null
                 && CutoffDefault.isAnnualInForce(series.getCadence(), series.getTimeRelation())) {
             return annualInForceRelease(legacy, issue, CutoffRecovery.replacedAt(

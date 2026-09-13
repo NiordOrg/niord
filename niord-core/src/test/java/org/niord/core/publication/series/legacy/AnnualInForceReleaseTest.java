@@ -19,6 +19,7 @@ package org.niord.core.publication.series.legacy;
 import org.junit.jupiter.api.Test;
 import org.niord.core.message.MessageTag;
 import org.niord.core.publication.Publication;
+import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 
 import java.time.ZoneId;
@@ -43,6 +44,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * The stamp that survives decides two facts at once: the publication moment, and
  * which day the cut-off falls on. Getting it wrong dates an edition to the day
  * its own replacement went out.
+ *
+ * And where no stamp survives, what a released issue carries instead -- because
+ * an unstamped released issue is served twice by the public list, once from each
+ * half of the union.
  */
 public class AnnualInForceReleaseTest {
 
@@ -283,6 +288,59 @@ public class AnnualInForceReleaseTest {
         List<Publication> c = chain(entry(at(2025, 2, 26, 12, 11), at(2025, 1, 1, 12, 10)));
         assertNull(CutoffRecovery.replacedAt(c, 0, at(2025, 1, 1, 12, 10), at(2025, 12, 31, 12, 10)));
         assertNull(CutoffRecovery.replacedAt(c, 0, null, null), "and no window is no question");
+    }
+
+    // ------------------------------------------- what a released issue is stamped
+
+    /**
+     * A RELEASED imported issue always carries a publish stamp, and an OPEN one
+     * never does.
+     *
+     * The public list is the new-model issues union the legacy rows no published
+     * issue has taken over, and the legacy half's exclusion is keyed on
+     * publishedAt being set. An unstamped released issue is therefore served
+     * twice -- once from each half, under one publication id. Where nothing
+     * witnessed the release, the stamp is the issue's own publicFrom: the
+     * earliest instant the data says it was public, which is the instant its
+     * legacy row must stop being served.
+     */
+    @Test
+    public void aReleasedIssueIsStampedEvenWhenNothingWitnessedTheRelease() {
+        Date opens = at(2022, 1, 5, 7, 22);
+        Date closes = at(2022, 12, 31, 7, 22);
+        // A row whose only stamp lands in a later year: not credible as this
+        // edition's release, so no stage speaks for it.
+        Publication p = row(at(2024, 3, 1, 9, 0), null);
+        CutoffRecovery.Recovered nominal =
+                new CutoffRecovery.Recovered(closes, CutoffRecovery.PUBLIC_WINDOW, true);
+
+        for (IssueStatus released : new IssueStatus[] { IssueStatus.PUBLISHED, IssueStatus.RETIRED }) {
+            PublicationIssue issue = window(opens, closes);
+            issue.setStatus(released);
+            assertEquals(opens,
+                    LegacyImportService.publishedAtOf(nominal, p, issue, null, chain(), 0),
+                    released + " imported unstamped, and serves its legacy row alongside itself");
+        }
+
+        PublicationIssue open = window(opens, closes);
+        open.setStatus(IssueStatus.OPEN);
+        assertNull(LegacyImportService.publishedAtOf(nominal, p, open, null, chain(), 0),
+                "an OPEN issue has not taken over and must not remove its legacy row");
+    }
+
+    /** A witnessed release still wins: the fallback fills a gap, it does not override. */
+    @Test
+    public void aWitnessedReleaseIsNotReplacedByTheFallback() {
+        Date opens = at(2022, 1, 5, 7, 22);
+        Date stamped = at(2022, 1, 5, 11, 12);
+        PublicationIssue issue = window(opens, at(2022, 12, 31, 7, 22));
+        issue.setStatus(IssueStatus.PUBLISHED);
+
+        CutoffRecovery.Recovered witnessed =
+                new CutoffRecovery.Recovered(stamped, CutoffRecovery.FROM_UPDATED, false);
+        assertEquals(stamped,
+                LegacyImportService.publishedAtOf(witnessed, row(stamped, null), issue, null, chain(), 0),
+                "a stage that read a stamp is still the answer");
     }
 
     /** The EARLIEST qualifying tag bounds it, not merely the next one in order. */

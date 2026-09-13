@@ -122,6 +122,7 @@ public class ImportCheckService extends BaseService {
         assertOneCurrentIssuePerSeries(imported, violations, counts);
         assertCadencedIssuesDeriveTheirWindow(imported, violations);
         assertUnpublishedIssuesCarryNoStamp(imported, violations, counts);
+        reportUnstampedReleasedIssues(imported, violations, counts);
         assertIdSpaceDoesNotCollide(violations, counts);
         assertMembershipIsUnique(violations, counts);
 
@@ -390,6 +391,56 @@ public class ImportCheckService extends BaseService {
             }
         }
         counts.put("openIssues", open);
+    }
+
+    /** The wire code for a released imported issue carrying no publish stamp. */
+    public static final String PUBLISHED_ISSUE_WITHOUT_STAMP = "PUBLISHED_ISSUE_WITHOUT_STAMP";
+
+    /** The counts key the checklist reads, whatever the number turns out to be. */
+    public static final String UNSTAMPED_RELEASED_COUNT = "publishedIssuesWithoutStamp";
+
+    /**
+     * A PUBLISHED or RETIRED imported issue carries a publish stamp.
+     *
+     * WHAT THIS PROTECTS IS THE PUBLIC UNION. The public list is the new-model
+     * issues union the legacy rows no published issue has taken over, and the
+     * legacy half's exclusion is keyed on publishedAt IS NOT NULL -- deliberately,
+     * because gating it on the current status would lapse on retire and put the
+     * superseded legacy row back on the public site carrying its original uncapped
+     * window. An unstamped released issue is therefore served TWICE, once from
+     * each half, under one publication id: the same document appearing as two
+     * entries with two windows, and whichever the deduplication drops is a
+     * coin toss nobody chose.
+     *
+     * OPEN is not a violation and must not be. An imported issue between import
+     * and first publish has not taken over anything, and its legacy row is
+     * correctly still the one being served.
+     *
+     * Counted even when it is zero. The importer stamps every released issue, so
+     * this reads zero on a healthy estate -- which is the finding. An absent
+     * number and a zero read alike on a sheet somebody ticks, and a check that
+     * says nothing is indistinguishable from one that did not run.
+     */
+    // Package-visible so the finding's shape can be asserted on issues built in
+    // memory: on a correctly imported estate the real pass can only ever report
+    // zero, which would test nothing.
+    static void reportUnstampedReleasedIssues(List<PublicationIssue> imported,
+                                              List<Violation> violations,
+                                              Map<String, Integer> counts) {
+        int unstamped = 0;
+        for (PublicationIssue i : imported) {
+            if (i.getStatus() == IssueStatus.OPEN || i.getPublishedAt() != null) {
+                continue;
+            }
+            unstamped++;
+            violations.add(new Violation(PUBLISHED_ISSUE_WITHOUT_STAMP, i.getPublicId(),
+                    "this issue is " + i.getStatus() + " and carries no publishedAt. The public "
+                            + "list drops a legacy row only once the issue imported from it has a "
+                            + "publish stamp, so this document is served twice -- as the issue and "
+                            + "as the legacy row it replaced. Stamp it with the instant it became "
+                            + "public before the import is accepted."));
+        }
+        counts.put(UNSTAMPED_RELEASED_COUNT, unstamped);
     }
 
     /**

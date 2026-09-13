@@ -23,6 +23,8 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.niord.core.publication.series.BindsRule;
+import org.niord.core.publication.series.IssueStatus;
+import org.niord.core.publication.series.PublicationIssue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -293,6 +295,69 @@ public class ImportCheckTest {
                 "the finding must name the publication, or the operator has to find it themselves");
         assertTrue(first.detail().contains("Assign one before the import"),
                 "the finding must say what to do about it: " + first.detail());
+    }
+
+    /**
+     * A released issue with no publish stamp is a violation, and OPEN is not.
+     *
+     * The public list is the new-model issues union the legacy rows no published
+     * issue has taken over, and the legacy half's exclusion is keyed on
+     * publishedAt being set. An unstamped PUBLISHED or RETIRED issue is therefore
+     * served twice -- once from each half, under one publication id.
+     *
+     * Driven through the builder on issues built in memory, because on a
+     * correctly imported estate the real pass can only ever report zero and an
+     * assertion that zero looks right is an assertion about nothing. What is
+     * pinned is what the finding looks like when there IS one: the CODE a runbook
+     * greps for, the COUNT KEY the sheet reads, and a message saying what to do.
+     */
+    @Test
+    public void aReleasedIssueWithoutAPublishStampIsAViolation() {
+        List<ImportCheckService.Violation> violations = new ArrayList<>();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+
+        ImportCheckService.reportUnstampedReleasedIssues(
+                List.of(issue("nm-2019-12", IssueStatus.PUBLISHED, null),
+                        issue("nm-2018-04", IssueStatus.RETIRED, null),
+                        issue("nm-2020-01", IssueStatus.PUBLISHED, new java.util.Date()),
+                        issue("nm-2026-33", IssueStatus.OPEN, null)),
+                violations, counts);
+
+        assertEquals(2, counts.get(ImportCheckService.UNSTAMPED_RELEASED_COUNT),
+                "a stamped issue and an OPEN one are not findings; the other two are");
+        assertEquals(2, violations.size());
+
+        ImportCheckService.Violation first = violations.get(0);
+        assertEquals("PUBLISHED_ISSUE_WITHOUT_STAMP", first.code(),
+                "the code is the external handle the runbook greps for");
+        assertEquals(ImportCheckService.PUBLISHED_ISSUE_WITHOUT_STAMP, first.code());
+        assertEquals("nm-2019-12", first.subject(),
+                "the finding must name the issue, or the operator has to find it themselves");
+        assertTrue(first.detail().contains("served twice"),
+                "the finding must say what goes wrong on the public site: " + first.detail());
+        assertEquals("nm-2018-04", violations.get(1).subject(),
+                "RETIRED is a violation too: an issue published and then retired has taken over "
+                        + "its legacy row permanently, and an unstamped one resurrects it");
+    }
+
+    /** The unstamped count is on the sheet whatever the estate turns out to hold. */
+    @Test
+    @Transactional
+    public void theUnstampedReleasedCountIsAlwaysOnTheSheet() {
+        ImportCheckService.ImportCheck result = importCheck.run();
+
+        assertNotNull(result.counts().get(ImportCheckService.UNSTAMPED_RELEASED_COUNT),
+                "the check does not say how many released imported issues carry no publish stamp; "
+                        + "an absent number and zero read alike on a sheet somebody ticks");
+    }
+
+    /** An issue with just the three facts this finding reads. */
+    private static PublicationIssue issue(String publicId, IssueStatus status, java.util.Date publishedAt) {
+        PublicationIssue i = new PublicationIssue();
+        i.setPublicId(publicId);
+        i.setStatus(status);
+        i.setPublishedAt(publishedAt);
+        return i;
     }
 
     /** The audit's own pattern, applied the way the audit applies it. */
