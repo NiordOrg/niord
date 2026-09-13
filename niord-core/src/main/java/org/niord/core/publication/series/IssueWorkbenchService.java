@@ -234,13 +234,21 @@ public class IssueWorkbenchService {
             vo.setOmissions(resolver.omissions(resolved.resolution().misses(), lang));
         }
 
-        // The sources panel, off the survey the one resolve already took. Absent
-        // on a frozen compilation for the same reason the omissions panel is:
-        // what it printed is settled, and the issue's own snapshot header names
-        // the source issues it holds.
+        // The sources panel, and it is ONE field in both states. While the issue
+        // is open the list is the live survey the one resolve already took; once
+        // it is released the same list is rebuilt from the frozen record, whose
+        // snapshot header names the source issues the release compiled -- so a
+        // client draws the compilation's sections from the same field before and
+        // after, instead of grouping the member rows by their provenance and
+        // thereby losing every section that printed nothing.
         if (resolved.resolution() != null && resolved.resolution().compiled()) {
             vo.setSources(memberList.sources(resolved.resolution().survey(),
                     issue.getSeries().getSourceSeries(), lang));
+        } else if (resolved.frozen()) {
+            // Null on every frozen issue of every other regime: the rebuild is off
+            // the snapshot's own provenance, so an issue that compiled nothing has
+            // no sources panel rather than an empty one.
+            vo.setSources(memberList.frozenSources(issue, members, lang));
         }
         return vo;
     }

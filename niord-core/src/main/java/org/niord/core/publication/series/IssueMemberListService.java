@@ -489,6 +489,87 @@ public class IssueMemberListService {
     }
 
     /**
+     * The same panel for a RELEASED compilation, rebuilt from what it froze.
+     *
+     * The survey above is a live answer and a released issue has no live answer
+     * to give -- so the record of what this release compiled is the snapshot
+     * header, which names the source issues in cut-off order and names them ALL,
+     * including one that contributed no rows. That is the whole reason this
+     * exists rather than letting a client group the member rows by their
+     * provenance: a week nothing was published in has no member row to be grouped
+     * under, so grouping would quietly drop it, and a section of the year that
+     * printed nothing is still a section of the year the reader has to see.
+     *
+     * PUBLISHED on every row, without asking the issue how it stands today. What
+     * is being described is what was compiled, and a source that was retired or
+     * deleted afterwards is still what this release printed; reading the live
+     * status would let the panel of a two-year-old annual change underneath it.
+     *
+     * Everything else -- the name, the week numbers, the cut-off -- is read live
+     * off the source issues, in the one chunked query the member rows already
+     * use, and a source issue that is GONE keeps its row with the id and the
+     * series alone. Both are the same rules {@link #sourceRefsOf} answers by, for
+     * the same reason: a weekly's name is editable, and deleting a retired week
+     * must not take the record of what an annual printed with it.
+     *
+     * @param members the rows the same screen is showing, the only place the
+     *                per-source count can come from: the header froze which weeks
+     *                were compiled, not how many rows each of them contributed
+     */
+    public List<SourceIssueVo> frozenSources(PublicationIssue issue, List<IssueMemberVo> members,
+                                             String lang) {
+        if (issue.getMembershipProvenance() != MembershipProvenance.COMPILED) {
+            return null;
+        }
+        List<String> ids = PublicationIssue.splitIds(issue.getSnapshotSourceIssueIds());
+        if (ids == null) {
+            return null;
+        }
+
+        // Zero for every named week before a single row is looked at, because zero
+        // is the answer this list exists to be able to give.
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (String id : ids) {
+            counts.put(id, 0);
+        }
+        for (IssueMemberVo m : members) {
+            SourceIssueRefVo ref = m.getSourceIssue();
+            String id = ref == null ? null : ref.getPublicId();
+            if (id != null && counts.containsKey(id)) {
+                counts.put(id, counts.get(id) + 1);
+            }
+        }
+
+        Map<String, PublicationIssue> sources = issuesByPublicId(new LinkedHashSet<>(ids));
+
+        List<SourceIssueVo> out = new ArrayList<>();
+        for (String id : ids) {
+            SourceIssueVo vo = new SourceIssueVo();
+            vo.setPublicId(id);
+            vo.setStatus(IssueStatus.PUBLISHED.name());
+            vo.setMemberCount(counts.get(id));
+
+            PublicationIssue source = sources.get(id);
+            if (source == null) {
+                // The week is gone. The series it belonged to is still on this
+                // issue's own header, so the row can still say what it was one of.
+                vo.setSeriesId(issue.getSnapshotSourceSeriesId());
+            } else {
+                vo.setSeriesId(source.getSeries() == null
+                        ? null : source.getSeries().getSeriesId());
+                vo.setWeek(source.getWeek());
+                vo.setWeekTo(source.getWeekTo());
+                vo.setYear(source.getYear());
+                vo.setCutoff(source.effectiveCutoff());
+                vo.setName(IssueListService.nameOf(source, lang));
+                vo.setIntervalFrom(source.getIntervalFrom());
+            }
+            out.add(vo);
+        }
+        return out;
+    }
+
+    /**
      * The source issues a compiled list points at, named and numbered, in ONE
      * query.
      *
@@ -513,8 +594,45 @@ public class IssueMemberListService {
         if (publicIds.isEmpty()) {
             return Map.of();
         }
-        List<String> all = new ArrayList<>(publicIds);
         Map<String, SourceIssueRefVo> out = new LinkedHashMap<>();
+        for (PublicationIssue i : issuesByPublicId(publicIds).values()) {
+            SourceIssueRefVo vo = new SourceIssueRefVo();
+            vo.setPublicId(i.getPublicId());
+            vo.setSeriesId(i.getSeries() == null ? null : i.getSeries().getSeriesId());
+            vo.setWeek(i.getWeek());
+            vo.setWeekTo(i.getWeekTo());
+            vo.setYear(i.getYear());
+            vo.setCutoff(i.effectiveCutoff());
+            vo.setName(IssueListService.nameOf(i, lang));
+            out.put(i.getPublicId(), vo);
+        }
+        for (String id : publicIds) {
+            if (!out.containsKey(id)) {
+                SourceIssueRefVo vo = new SourceIssueRefVo();
+                vo.setPublicId(id);
+                out.put(id, vo);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * The issues behind a set of public ids, in ONE chunked query, descs fetched.
+     *
+     * Shared by the member rows' section headings and by the sources panel of a
+     * released compilation, because both are answering the same question -- what
+     * is the week behind this id called, and which week of which year is it --
+     * and two lookups would be two answers to it. An id no issue carries any more
+     * is simply absent from the map; what a caller does with that is the caller's
+     * rule, and both callers keep the id.
+     *
+     * The descs come with the row rather than being fetched per name: the lists
+     * that read this run to fifty sections on a compiled annual, and a lazy
+     * collection there is a select per heading.
+     */
+    private Map<String, PublicationIssue> issuesByPublicId(Collection<String> publicIds) {
+        List<String> all = new ArrayList<>(publicIds);
+        Map<String, PublicationIssue> out = new LinkedHashMap<>();
         for (int from = 0; from < all.size(); from += LOOKUP_CHUNK) {
             List<String> chunk = all.subList(from, Math.min(from + LOOKUP_CHUNK, all.size()));
             for (PublicationIssue i : em.createQuery(
@@ -522,22 +640,7 @@ public class IssueMemberListService {
                                     + "WHERE i.publicId IN (:ids)", PublicationIssue.class)
                     .setParameter("ids", chunk)
                     .getResultList()) {
-                SourceIssueRefVo vo = new SourceIssueRefVo();
-                vo.setPublicId(i.getPublicId());
-                vo.setSeriesId(i.getSeries() == null ? null : i.getSeries().getSeriesId());
-                vo.setWeek(i.getWeek());
-                vo.setWeekTo(i.getWeekTo());
-                vo.setYear(i.getYear());
-                vo.setCutoff(i.effectiveCutoff());
-                vo.setName(IssueListService.nameOf(i, lang));
-                out.put(i.getPublicId(), vo);
-            }
-        }
-        for (String id : publicIds) {
-            if (!out.containsKey(id)) {
-                SourceIssueRefVo vo = new SourceIssueRefVo();
-                vo.setPublicId(id);
-                out.put(id, vo);
+                out.put(i.getPublicId(), i);
             }
         }
         return out;

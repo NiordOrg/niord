@@ -37,6 +37,13 @@ import java.util.Date;
  * nothing covers. A retired issue is not listed: withdrawing it said its
  * contents should not stand, and the compilation is not short of anything while
  * its replacement is published.
+ *
+ * ONCE THE COMPILATION IS RELEASED the same shape carries a different list: the
+ * source issues its snapshot names, which is the record of what it actually
+ * compiled. Every row there is PUBLISHED -- that is what a release compiles --
+ * and {@link #memberCount} is how many of this issue's rows came from that
+ * source, zero included, because a week that printed nothing is still a week the
+ * period covers and has to be drawable.
  */
 public class SourceIssueVo implements IJsonSerializable {
 
@@ -58,13 +65,22 @@ public class SourceIssueVo implements IJsonSerializable {
      * On a MISSING row it is where the uncovered stretch ends -- the next
      * published issue's period start -- so the panel reads in one order whatever
      * kind of row it is showing.
+     *
+     * On a released compilation there is no uncovered stretch to point at, so
+     * the value is the source issue's own effective cut-off and nothing else.
      */
     private Date cutoff;
 
     /** PUBLISHED, OPEN, or MISSING for a synthesised stretch. */
     private String status;
 
-    /** What the source issue printed; null on an OPEN or MISSING row. */
+    /**
+     * What the source issue printed; null on an OPEN or MISSING row.
+     *
+     * On a released compilation it counts this issue's OWN rows instead -- how
+     * many of them came from that source -- which is the number the section
+     * heading is describing, and it is zero where the source printed nothing.
+     */
     private Integer memberCount;
 
     /** The issue's name in the language the screen was asked for. */

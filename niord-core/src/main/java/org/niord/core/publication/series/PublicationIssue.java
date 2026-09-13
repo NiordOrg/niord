@@ -892,8 +892,12 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
      * compiled nothing" and "this issue compiled nothing because it is not a
      * compilation" are different facts, and only the first is worth a row on a
      * sources panel.
+     *
+     * Visible to the package because the sources panel of a released compilation
+     * reads the same column: one splitter, so the list a client is handed and the
+     * list the wire VO carries cannot come to disagree about what the column says.
      */
-    private static List<String> splitIds(String joined) {
+    static List<String> splitIds(String joined) {
         if (joined == null || joined.isBlank()) {
             return joined == null ? null : List.of();
         }

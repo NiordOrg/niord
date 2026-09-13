@@ -170,8 +170,14 @@ public class IssueWorkbenchVo implements IJsonSerializable {
      *
      * ABSENT rather than empty on every other regime, so a client can tell "this
      * issue compiles nothing" from "it compiles a period no issue covers yet".
-     * Absent on a FROZEN compilation too, which takes no resolve at all: what it
-     * printed is settled, and its snapshot header names the issues it holds.
+     *
+     * PRESENT IN BOTH STATES on a compilation. While the issue is open the list
+     * is the live survey; once it is released the same list is rebuilt from the
+     * frozen record, whose snapshot header names the source issues the release
+     * compiled. So the sections of a compiled document are drawn from one field
+     * before and after -- and a section that printed nothing is still listed,
+     * which grouping the member rows by their provenance could never manage,
+     * there being no row to group.
      */
     private List<SourceIssueVo> sources;
 

@@ -1690,4 +1690,182 @@ public class IssueWorkbenchTest {
         assertNull(orphaned.get(0).getSourceIssue().getName());
         assertNull(orphaned.get(0).getSourceIssue().getWeek());
     }
+
+    /**
+     * A compilation released by hand, naming the weeks it compiled.
+     *
+     * Frozen here rather than run through the publish so a case can name a week
+     * the release covered and no row came from. That is not a contrived shape: it
+     * is exactly what a source issue that printed nothing leaves behind, and it
+     * is the shape the panel exists to keep visible.
+     */
+    private PublicationIssue releasedCompilation(PublicationSeries annual, PublicationSeries source,
+                                                 List<String> sourceIds) {
+        PublicationIssue i = lifecycle.create(annual, new Date(OPENS.getTime() - DAY),
+                IntervalBoundSource.STAMPED, user());
+        i.setStatus(IssueStatus.PUBLISHED);
+        i.setCutoffStampedAt(new Date(OPENS.getTime() + 30 * DAY));
+        i.setSnapshotTimeRelation(TimeRelation.COMPILED_FROM_SOURCE);
+        i.setMembershipProvenance(MembershipProvenance.COMPILED);
+        i.setSnapshotSourceSeriesId(source.getSeriesId());
+        i.setSnapshotSourceIssueIds(String.join(",", sourceIds));
+        em.merge(i);
+        return i;
+    }
+
+    /** One row the release printed, pointing back at the week it came from. */
+    private void compiledRow(PublicationIssue issue, Message m, String sourceId, int sortIndex) {
+        IssueMember row = new IssueMember();
+        row.setIssue(issue);
+        row.setMessageUid(m.getUid());
+        row.setMessage(m);
+        row.setSortIndex(sortIndex);
+        row.setFrozenShortId(m.getShortId());
+        row.setFrozenMainType(m.getMainType().name());
+        row.setFrozenType(m.getType().name());
+        row.setFrozenStatus(m.getStatus().name());
+        row.setSource(MemberSource.COMPILED);
+        row.setSourceIssuePublicId(sourceId);
+        em.persist(row);
+    }
+
+    /**
+     * A RELEASED compilation still lists its sources, including the empty week.
+     *
+     * The panel is one field before and after the release: the survey while the
+     * issue is open, the frozen header once it is out. The alternative -- letting
+     * the client group the member rows by their provenance -- loses precisely the
+     * row this asserts, because a week nothing was published in contributed no
+     * member row to group under, and a section of the year that printed nothing
+     * is still a section of the year.
+     */
+    @Test
+    @Transactional
+    public void thesourcesPanelOfAReleasedCompilationKeepsTheWeekThatPrintedNothing() {
+        PublicationSeries source = series();
+        PublicationSeries annual = compilationOf(source);
+
+        Message a = message("NM-A", Status.PUBLISHED);
+        Message b = message("NM-B", Status.PUBLISHED);
+        Message c = message("NM-C", Status.PUBLISHED);
+        PublicationIssue week44 = sourceWeek(source, OPENS, new Date(OPENS.getTime() + 7 * DAY),
+                IssueStatus.PUBLISHED, 44, "EfS uge 44", List.of(a, b));
+        PublicationIssue week45 = sourceWeek(source, new Date(OPENS.getTime() + 7 * DAY),
+                new Date(OPENS.getTime() + 14 * DAY), IssueStatus.PUBLISHED, 45, "EfS uge 45",
+                List.of());
+        PublicationIssue week46 = sourceWeek(source, new Date(OPENS.getTime() + 14 * DAY),
+                new Date(OPENS.getTime() + 21 * DAY), IssueStatus.PUBLISHED, 46, "EfS uge 46",
+                List.of(c));
+
+        PublicationIssue i = releasedCompilation(annual, source,
+                List.of(week44.getPublicId(), week45.getPublicId(), week46.getPublicId()));
+        compiledRow(i, a, week44.getPublicId(), 0);
+        compiledRow(i, b, week44.getPublicId(), 1);
+        compiledRow(i, c, week46.getPublicId(), 2);
+        em.flush();
+
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true);
+
+        assertNotNull(vo.getSources(),
+                "a released compilation carries no sources panel, so the only record of which "
+                        + "weeks it compiled is a header the screen cannot draw a table from");
+        assertEquals(List.of(week44.getPublicId(), week45.getPublicId(), week46.getPublicId()),
+                vo.getSources().stream().map(SourceIssueVo::getPublicId).toList(),
+                "the rebuilt panel does not name the weeks the snapshot names, in the cut-off "
+                        + "order it wrote them in");
+        assertEquals(List.of("PUBLISHED", "PUBLISHED", "PUBLISHED"),
+                vo.getSources().stream().map(SourceIssueVo::getStatus).toList(),
+                "a rebuilt row reported anything but PUBLISHED; what is being described is what "
+                        + "was compiled, and every one of these was published when it was");
+        assertEquals(List.of(2, 0, 1),
+                vo.getSources().stream().map(SourceIssueVo::getMemberCount).toList(),
+                "the week that printed nothing did not come back with a count of zero -- which is "
+                        + "the whole point of rebuilding the list from the header");
+        assertEquals(List.of("EfS uge 44", "EfS uge 45", "EfS uge 46"),
+                vo.getSources().stream().map(SourceIssueVo::getName).toList(),
+                "the rebuilt rows are unnamed, so every section heading reads as a uuid");
+        assertEquals(List.of(44, 45, 46),
+                vo.getSources().stream().map(SourceIssueVo::getWeek).toList());
+        assertEquals(Integer.valueOf(2023), vo.getSources().get(0).getYear());
+        assertEquals(source.getSeriesId(), vo.getSources().get(1).getSeriesId(),
+                "the empty week cannot be linked to the issue behind it");
+        assertNotNull(vo.getSources().get(0).getIntervalFrom());
+        assertEquals(OPENS.getTime(), vo.getSources().get(0).getIntervalFrom().getTime(),
+                "a rebuilt row does not say where its own period opens");
+        assertNotNull(vo.getSources().get(0).getCutoff());
+        assertEquals(OPENS.getTime() + 7 * DAY, vo.getSources().get(0).getCutoff().getTime(),
+                "a rebuilt row does not carry the cut-off that decides its place in the period");
+
+        assertNull(vo.getOmissions(),
+                "a compilation reported omissions; it runs no criteria, so an empty panel there "
+                        + "would state that a query dropped nothing");
+    }
+
+    /**
+     * A source week that is GONE keeps its row, with the series it belonged to.
+     *
+     * Same rule the member rows follow: a retired issue is deletable, and
+     * deleting one must not take the record of what a published annual printed
+     * with it. The series comes off this issue's own header rather than off the
+     * week that is no longer there, so the row can still say what it was one of.
+     */
+    @Test
+    @Transactional
+    public void areleasedCompilationKeepsASourceWeekThatIsNoLongerHere() {
+        PublicationSeries source = series();
+        PublicationSeries annual = compilationOf(source);
+
+        Message a = message("NM-A", Status.PUBLISHED);
+        PublicationIssue week44 = sourceWeek(source, OPENS, new Date(OPENS.getTime() + 7 * DAY),
+                IssueStatus.PUBLISHED, 44, "EfS uge 44", List.of(a));
+
+        PublicationIssue i = releasedCompilation(annual, source,
+                List.of(week44.getPublicId(), "a-week-that-is-no-longer-here"));
+        compiledRow(i, a, week44.getPublicId(), 0);
+        em.flush();
+
+        IssueWorkbenchVo vo = workbench.forIssue(i, "da", true);
+
+        assertEquals(2, vo.getSources().size(),
+                "the week that was deleted afterwards dropped out of the panel, so the annual now "
+                        + "claims to have compiled fewer weeks than it did");
+        SourceIssueVo gone = vo.getSources().get(1);
+        assertEquals("a-week-that-is-no-longer-here", gone.getPublicId());
+        assertEquals(source.getSeriesId(), gone.getSeriesId(),
+                "a row whose issue is gone lost the series it belonged to as well, and the header "
+                        + "still names it");
+        assertEquals("PUBLISHED", gone.getStatus());
+        assertEquals(Integer.valueOf(0), gone.getMemberCount());
+        assertNull(gone.getName(),
+                "a row whose issue is gone invented a name for it");
+        assertNull(gone.getWeek());
+        assertNull(gone.getCutoff());
+        assertNull(gone.getIntervalFrom());
+    }
+
+    /**
+     * A released issue of any other regime still has NO sources panel.
+     *
+     * The rebuild is off the snapshot's own provenance, not off the fact that the
+     * issue is frozen. An empty panel on a query-backed weekly would read as "this
+     * issue compiled nothing", which is a claim about a compilation nobody ran.
+     */
+    @Test
+    @Transactional
+    public void areleasedIssueOfAnotherRegimeCarriesNoSourcesPanel() {
+        PublicationSeries s = series();
+        PublicationIssue i = lifecycle.create(s, OPENS, IntervalBoundSource.STAMPED, user());
+        message("NM-001", Status.PUBLISHED);
+        em.flush();
+
+        i.setStatus(IssueStatus.PUBLISHED);
+        i.setCutoffStampedAt(new Date());
+        i.setMembershipProvenance(MembershipProvenance.EXACT);
+        em.merge(i);
+        em.flush();
+
+        assertNull(workbench.forIssue(i, "da", true).getSources(),
+                "a published weekly carries a sources panel; it compiled nothing, and an empty "
+                        + "list there states that it did and found none");
+    }
 }
