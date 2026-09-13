@@ -1,24 +1,33 @@
-# Publications redesign — where the specification lives
+# Publications — where the specification lives
 
-The specification for this work is **not** in this repository. It lives in the `niord-app` repo, at
-`migration_docs/publications-redesign/` and `migration_docs/backend_handoff/`, entered through
-`backend_handoff/01-INDEX.md`.
+The specification for the publications domain is **not** in this repository. It lives in the
+`niord-app` repository under `docs/publications/`: `DATA-MODEL.md` (entities, invariants, migrations),
+`API-CONTRACT.md` (every endpoint and wire shape), `domain-rules.md` (the rules the screens enforce)
+and `go-live/` (the process, the runbook and the scripts for the go-live window).
 
-This is a pointer rather than a copy on purpose. An earlier plan mirrored the whole nine-document folder
-here and hash-verified it; that copied 812 KB to deliver 408 bytes of build input, and its sync guard went
-red on edits to documents no build step reads — which trains people to re-sync without looking, and that is
-how the one drift that matters gets waved through.
+This is a pointer rather than a copy on purpose. A mirrored copy with a sync guard trains people to
+re-sync without reading, and that is how the one drift that matters gets waved through.
 
 ## What *is* exported here, and why
 
-`niord-core/src/test/resources/rule-ids.txt` — the 92 invariant ids from `DATA-MODEL.md` section 8. The
-manifest test binds every one of them to a test and fails the build on any id with no binding, so the list
-has to be readable from this repo.
+Two files under `niord-core/src/test/resources/` are generated from `DATA-MODEL.md` in `niord-app`
+and read by tests in this repository:
 
-Freshness is checked on the other side, where the edit happens: `spec-check.js` in `niord-app` recomputes
-the SHA-256 of section 8 and raises a **BLOCKER** if it no longer matches the header in `rule-ids.txt`. A
-rule added without regenerating therefore fails immediately, in the repo that added it, rather than at some
-later build over here.
+- `rule-ids.txt` — the invariant ids of section 8. The manifest test binds every one of them to a test
+  and fails the build on any id with no binding.
+- `entity-fields.json` — the declared columns of every entity. `EntityContractTest` fails the build on
+  a declared column with no field on its entity, and on a field with no declared column.
 
-Regenerate with `node migration_docs/publications-redesign/gen-rule-ids.js --write` in `niord-app`, then
-commit both repos together.
+Freshness is checked on the other side, where the edit happens: `node scripts/publications/spec-check.js`
+in `niord-app` recomputes the hash of the generating sections and raises a **BLOCKER** when either file
+no longer matches. A rule or a column changed without regenerating therefore fails immediately, in the
+repository that changed it.
+
+Regenerate in `niord-app` with
+
+```
+node scripts/publications/gen-rule-ids.js --write
+node scripts/publications/gen-field-manifest.js --write
+```
+
+then commit both repositories together.
