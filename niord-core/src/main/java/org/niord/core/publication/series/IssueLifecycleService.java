@@ -343,8 +343,14 @@ public class IssueLifecycleService extends BaseService {
      * series id. Every step is a real answer rather than a placeholder, because
      * a name reading "untitled" is what ends up on a published document when
      * nobody noticed it was never set.
+     *
+     * Public because the legacy import opens periods of its own -- the annuals of
+     * a compiled series that the archive never held -- and those rows have to
+     * arrive under the name the create dialog would have given them. A second
+     * naming routine for issues nobody typed a name for is a second answer to the
+     * one question the pattern exists to answer.
      */
-    static String suggestName(PublicationSeries series, String lang, IssueNaming.Numbers numbers) {
+    public static String suggestName(PublicationSeries series, String lang, IssueNaming.Numbers numbers) {
         return suggestName(series, lang, numbers, IssueNaming.Labels.NONE);
     }
 

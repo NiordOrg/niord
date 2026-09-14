@@ -163,6 +163,22 @@ public class LegacyImportServiceTest {
         // still managed here would be flushed back afterwards as a stale update.
         em.flush();
         em.clear();
+        // The annuals the import OPENED rather than copied first, because they
+        // carry no legacyPublicationId and every delete below is scoped by one. An
+        // issue left behind in a series this method goes on to delete fails the
+        // series delete on its foreign key, which reads as a defect in the import
+        // and is a defect in the cleanup.
+        em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.issue IN "
+                        + "(SELECT i FROM PublicationIssue i WHERE i.legacyPublicationId IS NULL "
+                        + "AND i.series.importSource IS NOT NULL)")
+                .executeUpdate();
+        em.createQuery("DELETE FROM PublicationIssueDesc d WHERE d.entity IN "
+                        + "(SELECT i FROM PublicationIssue i WHERE i.legacyPublicationId IS NULL "
+                        + "AND i.series.importSource IS NOT NULL)")
+                .executeUpdate();
+        em.createQuery("DELETE FROM PublicationIssue i WHERE i.legacyPublicationId IS NULL "
+                        + "AND i.series.importSource IS NOT NULL")
+                .executeUpdate();
         em.createQuery("DELETE FROM IssueMember m WHERE m.issue.legacyPublicationId IS NOT NULL")
                 .executeUpdate();
         em.createQuery("DELETE FROM IssueAuditEntry a WHERE a.issue.legacyPublicationId IS NOT NULL")

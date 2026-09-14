@@ -128,6 +128,7 @@ public class LegacyImportService extends BaseService {
         private final Map<String, List<IssueMember>> members = new LinkedHashMap<>();
         private final Map<String, PublicationCategory> categoriesToCreate = new LinkedHashMap<>();
         private final Map<String, String> categoryOfSeries = new LinkedHashMap<>();
+        private final Map<String, List<Integer>> compilationAnnuals = new LinkedHashMap<>();
 
         public LegacyImportReportVo report() {
             return report;
@@ -153,6 +154,19 @@ public class LegacyImportService extends BaseService {
         /** seriesId -> categoryId, resolved to an entity only at apply time. */
         public Map<String, String> categoryOfSeries() {
             return categoryOfSeries;
+        }
+
+        /**
+         * seriesId -> the calendar years the import would open an annual for.
+         *
+         * The YEARS rather than the issues, because an issue for one of them can
+         * only be shaped once the compilation ruling has been applied -- and that
+         * happens at apply time, after the series is written, because the ruling
+         * names another series as a foreign key. Deciding the years here is what
+         * lets the dry run report exactly what the real run will create.
+         */
+        public Map<String, List<Integer>> compilationAnnuals() {
+            return compilationAnnuals;
         }
 
         public boolean isClean() {
@@ -252,7 +266,11 @@ public class LegacyImportService extends BaseService {
         long finished = System.nanoTime();
 
         int rows = plan.series().size() + plan.issues().size()
-                + plan.members().values().stream().mapToInt(List::size).sum();
+                + plan.members().values().stream().mapToInt(List::size).sum()
+                // The annuals the import opens itself are written in the same
+                // transaction and cost the same id allocation, so a row count that
+                // left them out would describe a shorter write than the one timed.
+                + plan.compilationAnnuals().values().stream().mapToInt(List::size).sum();
 
         // Logged as rows and seconds because the two failures before this one
         // were diagnosed by arithmetic on a stopwatch: 240.25s against a 240s
@@ -519,6 +537,11 @@ public class LegacyImportService extends BaseService {
         // scoped by what the archive actually drew from, which is a fact about
         // the tagged messages rather than about any one series row.
         planSeriesCriteria(plan, templates, publications, seriesByTemplate);
+        // After the issues, because what is missing is decided against what the
+        // archive turned out to hold. Frozen at the same instant the issues were
+        // translated at, so a run that straddles midnight on New Year's Eve does
+        // not open a year the rest of the plan knows nothing about.
+        planCompilationAnnuals(plan, frozenAt);
         long t6 = System.nanoTime();
         assertSeriesIdsAreUnique(plan);
         log.info("plan over {} templates and {} publications: categories {} ms, series {} ms, "
@@ -2219,6 +2242,10 @@ public class LegacyImportService extends BaseService {
         // names one series as an operand of another, and a foreign key cannot
         // point at a row that has not been written yet.
         convertCompilations(plan);
+        // And straight after it, because the annuals are shaped against the
+        // CONVERTED series: the calendar-year numbering an annual is named by
+        // arrives with the conversion.
+        createCompilationAnnuals(plan);
         int written = 0;
         for (PublicationIssue issue : plan.issues().values()) {
             em.persist(issue);
@@ -2323,6 +2350,115 @@ public class LegacyImportService extends BaseService {
                             + "its imported issues keep their files untouched. The chain opens at "
                             + shape.firstIssueStartsAt() + ", so every year from then to the last "
                             + "imported issue shows as an uncovered period on the strip.");
+        }
+    }
+
+    /** The wire code for an annual the import opened on a compiled series. */
+    static final String COMPILATION_ISSUE_CREATED = "COMPILATION_ISSUE_CREATED";
+
+    /**
+     * Decides which years a compiled series is missing an annual for. Writes nothing.
+     *
+     * THE ARCHIVE STOPS AND THE PUBLICATION DOES NOT. The accumulated annual NtM
+     * is in legacy up to its last hand-assembled edition, and the years since carry
+     * no issue at all -- which is worse than an obvious hole, because a series whose
+     * newest period ended several cadence periods ago reads as DORMANT and gap
+     * detection switches itself off on one. The missing years are then not reported
+     * as missing by anything. Opening them here is the alternative to opening them
+     * by hand in the go-live window, once per year, after every rehearsal.
+     *
+     * ONLY WHERE THE CONTENT IS DERIVABLE, which is why this is keyed on the
+     * compilation ruling and never on the cadence. A compilation's members for a
+     * year nobody assembled are still recoverable -- they are the union of the
+     * source series' published issues for that period, and those rows are in the
+     * archive regardless -- so the issue this opens is a period waiting to be
+     * compiled rather than an empty row. A yearly whose content is NOT derivable
+     * has nothing to backfill from, so every other yearly and every cadence-less
+     * series comes out of the import exactly as legacy has it.
+     *
+     * The years and not the issues, and see {@link Plan#compilationAnnuals} for
+     * why: an issue can only be shaped once the compilation ruling has converted
+     * the series, and that happens after the write. Deciding here is what lets the
+     * dry run report exactly what the real run will create.
+     */
+    private void planCompilationAnnuals(Plan plan, Date now) {
+        int created = 0;
+        for (PublicationSeries series : plan.series()) {
+            if (LegacyTemplateRulings.compilationFor(series.getSeriesId()) == null) {
+                continue;
+            }
+            List<PublicationIssue> imported = plan.issues().values().stream()
+                    .filter(i -> i.getSeries() == series)
+                    .toList();
+
+            List<Integer> years = CompilationBackfill.missingYears(series, imported, now);
+            if (years.isEmpty()) {
+                continue;
+            }
+            plan.compilationAnnuals().put(series.getSeriesId(), years);
+            created += years.size();
+
+            // One note per year rather than one per series. The run happens once,
+            // and an operator reading the report afterwards has to be able to tick
+            // off each period against the strip -- a single line saying "eight
+            // created" names none of them.
+            for (Integer year : years) {
+                note(plan, COMPILATION_ISSUE_CREATED, series.getSeriesId(), null,
+                        "'" + series.getSeriesId() + "' has no issue for " + year + ", and the "
+                                + "archive's newest annual is older than that. An OPEN issue is "
+                                + "created covering the whole of " + year + " in the owner's zone, "
+                                + "with no members and no cut-off stamp: the year's content is the "
+                                + "union of its source series' published issues, resolved when "
+                                + "somebody publishes it.");
+            }
+        }
+        // Written whatever it turns out to be. Zero says the archive was already up
+        // to date, which is not the same thing as the rule never having run.
+        plan.report().setCompilationIssuesCreated(created);
+    }
+
+    /**
+     * Opens the planned annuals, AFTER the compilation ruling has converted the series.
+     *
+     * The order is not free. A compiled series takes its year from the calendar and
+     * not from the ISO week -- that is what the PERIOD_END cut-off default means --
+     * and the default arrives with the conversion, so an issue shaped before it
+     * would be numbered for the January after the December it closes in. The name,
+     * the file name and the public link an edition is cited by all follow that
+     * number.
+     *
+     * NOT MARKED AS IMPORTED, because it was not: there is no legacy row it came
+     * from, and a fabricated legacyPublicationId would claim one. The undo does not
+     * need one either -- it deletes every issue of every series carrying the
+     * importer's importSource, and these belong to such a series -- so what the
+     * issue carries instead is a trail entry saying, in words, that the import
+     * opened a period legacy never held.
+     */
+    private void createCompilationAnnuals(Plan plan) {
+        Map<String, PublicationSeries> bySeriesId = new LinkedHashMap<>();
+        for (PublicationSeries s : plan.series()) {
+            bySeriesId.put(s.getSeriesId(), s);
+        }
+
+        int created = 0;
+        for (Map.Entry<String, List<Integer>> e : plan.compilationAnnuals().entrySet()) {
+            PublicationSeries series = bySeriesId.get(e.getKey());
+            if (series == null) {
+                continue;
+            }
+            for (Integer year : e.getValue()) {
+                PublicationIssue issue = CompilationBackfill.annualFor(series, year);
+                em.persist(issue);
+                audit.imported(issue, "created by the legacy import: '" + series.getSeriesId()
+                        + "' held no annual for " + year + ", and a compiled series' content for a "
+                        + "year is the union of its source series' published issues");
+                created++;
+            }
+        }
+        if (created > 0) {
+            em.flush();
+            log.info("legacy import opened {} annual(s) on {} compiled series",
+                    created, plan.compilationAnnuals().size());
         }
     }
 

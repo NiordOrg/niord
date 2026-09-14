@@ -127,6 +127,21 @@ public class LegacyImportReportVo implements IJsonSerializable {
      */
     private int membersLeftOutPublishedAfterIssue;
 
+    /**
+     * Annuals the import OPENED on a compiled series, rather than read anywhere.
+     *
+     * The archive stops at the last hand-assembled edition, and the years since
+     * carry no issue at all -- which reads as a dormant series, so gap detection
+     * switches off and the missing years are not even reported as missing. These
+     * are the periods the import opens so somebody does not have to open them by
+     * hand in the go-live window.
+     *
+     * Written whatever it turns out to be. Zero is the finding an operator ticks:
+     * it says the archive was already up to date, which is not the same thing as
+     * the rule never having run.
+     */
+    private int compilationIssuesCreated;
+
     private Map<String, Integer> issuesByStatus = new LinkedHashMap<>();
     private Map<String, Integer> issuesByCutoffSource = new LinkedHashMap<>();
     private List<ProblemVo> problems = new ArrayList<>();
@@ -196,6 +211,14 @@ public class LegacyImportReportVo implements IJsonSerializable {
 
     public void setMembersLeftOutPublishedAfterIssue(int membersLeftOutPublishedAfterIssue) {
         this.membersLeftOutPublishedAfterIssue = membersLeftOutPublishedAfterIssue;
+    }
+
+    public int getCompilationIssuesCreated() {
+        return compilationIssuesCreated;
+    }
+
+    public void setCompilationIssuesCreated(int compilationIssuesCreated) {
+        this.compilationIssuesCreated = compilationIssuesCreated;
     }
 
     public Map<String, Integer> getIssuesByStatus() {

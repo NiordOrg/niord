@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -90,6 +91,28 @@ public class LegacyImportUndoShapeTest {
                         + "both ends of that pairing -- so the single bulk delete over them fails "
                         + "or succeeds depending on which row the database reaches first, because "
                         + "foreign keys are checked per row and not per statement.");
+    }
+
+    /**
+     * The issue delete is scoped by SERIES, not by a legacy publication id.
+     *
+     * The import does not only copy issues; it opens the annuals a compiled series
+     * was missing, and those came from no legacy row and carry no legacy id. An
+     * undo that deleted "the issues that were imported" by looking for that id
+     * would leave them behind -- in a series it had just deleted, so the delete
+     * would fail on the constraint, in the one operation a go-live window cannot
+     * do without.
+     */
+    @Test
+    public void theUndoDeletesEveryIssueOfAnImportedSeriesAndNotOnlyTheImportedOnes()
+            throws IOException {
+        String src = read();
+        assertTrue(src.contains("DELETE FROM PublicationIssue i WHERE i.series.id IN :ids"),
+                "the undo no longer deletes issues by their series. Anything narrower strands the "
+                        + "annuals the import opened itself, which carry no legacyPublicationId.");
+        assertFalse(src.contains("DELETE FROM PublicationIssue i WHERE i.legacyPublicationId"),
+                "the undo deletes issues by their legacy id, which is not what the import wrote: "
+                        + "the backfilled annuals of a compiled series have none.");
     }
 
     /** The order is children first, and the parents last. */

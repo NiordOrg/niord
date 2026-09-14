@@ -19,6 +19,7 @@ package org.niord.core.publication.series.legacy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.niord.core.mailinglist.MailingListTrigger;
+import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.series.IssueListService;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.IssueStatus;
@@ -28,6 +29,7 @@ import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
+import org.niord.core.publication.series.resolve.TimeRelation;
 import org.niord.core.publication.series.vo.IssueListResultVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
@@ -37,8 +39,10 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -126,7 +130,8 @@ public class ImportCheckService extends BaseService {
         assertOneCurrentIssuePerSeries(imported, violations, counts);
         assertCadencedIssuesDeriveTheirWindow(imported, violations);
         assertUnpublishedIssuesCarryNoStamp(imported, violations, counts);
-        reportUnstampedReleasedIssues(imported, violations, counts);
+        reportUnstampedReleasedIssues(imported, withdrawnLegacyIds(imported), violations, counts);
+        countCompilationIssuesCreated(counts);
         reportMembersPublishedAfterTheirIssue(loadImportedMembers(), violations, counts);
         assertIdSpaceDoesNotCollide(violations, counts);
         assertMembershipIsUnique(violations, counts);
@@ -398,6 +403,65 @@ public class ImportCheckService extends BaseService {
         counts.put("openIssues", open);
     }
 
+    /** The counts key for the annuals the import opened on a compiled series. */
+    public static final String COMPILATION_ISSUES_CREATED = "compilationIssuesCreated";
+
+    /**
+     * How many periods the import OPENED rather than read out of the archive.
+     *
+     * A COUNT AND NOT A VIOLATION. The legacy archive stops at the last annual
+     * somebody assembled by hand, and the years since carry no issue at all -- so
+     * the import opens one per missing year on a compiled series, because a series
+     * whose newest period ended years ago reads as dormant and gap detection then
+     * reports nothing missing at all. They are perfectly ordinary OPEN issues; what
+     * the sheet needs is the number, so an operator can check it against the years
+     * the strip shows waiting.
+     *
+     * Recognised by what they lack: an issue of an IMPORTED, COMPILED_FROM_SOURCE
+     * series that carries no legacy publication id came from nowhere but here.
+     * Nothing else in the system creates one -- the publish transaction's successor
+     * is minted when an issue is released, and there is nothing to release on a
+     * series the importer has just left in DRAFT.
+     */
+    private void countCompilationIssuesCreated(Map<String, Integer> counts) {
+        Long created = em.createQuery(
+                        "SELECT COUNT(i) FROM PublicationIssue i WHERE i.legacyPublicationId IS NULL "
+                                + "AND i.series.importSource IS NOT NULL "
+                                + "AND i.series.timeRelation = :compiled", Long.class)
+                .setParameter("compiled", TimeRelation.COMPILED_FROM_SOURCE)
+                .getSingleResult();
+        counts.put(COMPILATION_ISSUES_CREATED, created.intValue());
+    }
+
+    /**
+     * The legacy rows behind these issues that the public site would NOT serve.
+     *
+     * ONE QUERY FOR THE WHOLE BATCH rather than a lookup per issue: the estate is
+     * over a thousand imported issues, the check runs inside the go-live window,
+     * and a round trip each is a minute nobody has.
+     *
+     * Not-ACTIVE rather than INACTIVE, because what the exemption below turns on is
+     * whether {@link org.niord.core.publication.PublicationResolver} would serve
+     * the row to an anonymous caller, and it serves ACTIVE and nothing else.
+     */
+    private Set<String> withdrawnLegacyIds(List<PublicationIssue> imported) {
+        Set<String> ids = new LinkedHashSet<>();
+        for (PublicationIssue i : imported) {
+            if (i.getLegacyPublicationId() != null) {
+                ids.add(i.getLegacyPublicationId());
+            }
+        }
+        if (ids.isEmpty()) {
+            return Set.of();
+        }
+        return new LinkedHashSet<>(em.createQuery(
+                        "SELECT p.publicationId FROM Publication p WHERE p.publicationId IN :ids "
+                                + "AND p.status <> :active", String.class)
+                .setParameter("ids", ids)
+                .setParameter("active", PublicationStatus.ACTIVE)
+                .getResultList());
+    }
+
     /** The wire code for a released imported issue carrying no publish stamp. */
     public static final String PUBLISHED_ISSUE_WITHOUT_STAMP = "PUBLISHED_ISSUE_WITHOUT_STAMP";
 
@@ -421,20 +485,47 @@ public class ImportCheckService extends BaseService {
      * and first publish has not taken over anything, and its legacy row is
      * correctly still the one being served.
      *
+     * NEITHER IS A RETIRED ISSUE WHOSE LEGACY ROW WAS WITHDRAWN, and that follows
+     * from the union rather than softening it. Being served twice needs BOTH halves
+     * to serve the document, and each half has its own gate: the resolver serves a
+     * legacy row to an anonymous caller only while its status is ACTIVE, and serves
+     * an issue only while it is PUBLISHED. A legacy row somebody withdrew -- left
+     * INACTIVE, with no publish-from date -- is already off the public site for a
+     * reason that has nothing to do with the import, and the RETIRED issue imported
+     * from it is off it too. Neither half serves it, so there is no double entry
+     * for a stamp to prevent, and demanding one would mean inventing the instant a
+     * document that was withdrawn became public.
+     *
+     * A PUBLISHED issue is judged unchanged whatever its legacy row says: it IS on
+     * the public list, and if the row it came from is ACTIVE as well then the
+     * document is there twice.
+     *
      * Counted even when it is zero. The importer stamps every released issue, so
      * this reads zero on a healthy estate -- which is the finding. An absent
      * number and a zero read alike on a sheet somebody ticks, and a check that
      * says nothing is indistinguishable from one that did not run.
+     *
+     * @param withdrawnLegacyIds the legacy publications behind these issues whose
+     *                           status is not ACTIVE. An id the set does not name
+     *                           is treated as servable, which is the safe way round:
+     *                           a legacy row nobody can find is not evidence that
+     *                           the public site would leave it out
      */
     // Package-visible so the finding's shape can be asserted on issues built in
     // memory: on a correctly imported estate the real pass can only ever report
     // zero, which would test nothing.
     static void reportUnstampedReleasedIssues(List<PublicationIssue> imported,
+                                              Set<String> withdrawnLegacyIds,
                                               List<Violation> violations,
                                               Map<String, Integer> counts) {
         int unstamped = 0;
         for (PublicationIssue i : imported) {
             if (i.getStatus() == IssueStatus.OPEN || i.getPublishedAt() != null) {
+                continue;
+            }
+            if (i.getStatus() == IssueStatus.RETIRED
+                    && withdrawnLegacyIds != null
+                    && withdrawnLegacyIds.contains(i.getLegacyPublicationId())) {
                 continue;
             }
             unstamped++;

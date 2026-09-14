@@ -39,6 +39,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -83,7 +84,10 @@ public class ImportCheckTest {
         assertNotNull(result.counts());
 
         for (String key : List.of("importedIssues", "seriesWithACurrentIssue", "idCollisions",
-                "triggersNamingAWeeklyTag", "duplicateMemberships", "duplicateOverrides")) {
+                "triggersNamingAWeeklyTag", "duplicateMemberships", "duplicateOverrides",
+                // The annuals the import opened itself, which carry no legacy id
+                // and so are counted nowhere else on the sheet.
+                ImportCheckService.COMPILATION_ISSUES_CREATED)) {
             assertTrue(result.counts().containsKey(key),
                     "the check must report " + key + "; an assertion that runs and says nothing is "
                             + "indistinguishable from one that did not run");
@@ -331,7 +335,9 @@ public class ImportCheckTest {
                         issue("nm-2018-04", IssueStatus.RETIRED, null),
                         issue("nm-2020-01", IssueStatus.PUBLISHED, new java.util.Date()),
                         issue("nm-2026-33", IssueStatus.OPEN, null)),
-                violations, counts);
+                // Every legacy row still ACTIVE, which is the ordinary case: the
+                // exemption below is the one estate row that is not.
+                Set.of(), violations, counts);
 
         assertEquals(2, counts.get(ImportCheckService.UNSTAMPED_RELEASED_COUNT),
                 "a stamped issue and an OPEN one are not findings; the other two are");
@@ -348,6 +354,42 @@ public class ImportCheckTest {
         assertEquals("nm-2018-04", violations.get(1).subject(),
                 "RETIRED is a violation too: an issue published and then retired has taken over "
                         + "its legacy row permanently, and an unstamped one resurrects it");
+    }
+
+    /**
+     * A RETIRED issue whose legacy row was WITHDRAWN is not a finding.
+     *
+     * The rule exists to stop one document being served twice, and being served
+     * twice needs both halves to serve it. The resolver hands a legacy row to an
+     * anonymous caller only while its status is ACTIVE and hands over an issue only
+     * while it is PUBLISHED -- so a row somebody withdrew, left INACTIVE with no
+     * publish-from date, is off the public site already, and the RETIRED issue
+     * imported from it is off it too. The estate carries exactly one: "Aktive P&T
+     * uge 17 - 2019", withdrawn in April 2019 and never given a publish-from date.
+     *
+     * Demanding a stamp on it would mean inventing the instant a document that was
+     * never released became public, which is the one thing the import refuses to do
+     * anywhere else.
+     */
+    @Test
+    public void aRetiredIssueWhoseLegacyRowWasWithdrawnIsNotAFinding() {
+        List<ImportCheckService.Violation> violations = new ArrayList<>();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+
+        ImportCheckService.reportUnstampedReleasedIssues(
+                List.of(issue("pt-2019-17", IssueStatus.RETIRED, null),
+                        issue("pt-2019-18", IssueStatus.RETIRED, null),
+                        issue("pt-2019-19", IssueStatus.PUBLISHED, null)),
+                // Only the first one's legacy row is withdrawn.
+                Set.of("legacy-pt-2019-17"), violations, counts);
+
+        assertEquals(2, counts.get(ImportCheckService.UNSTAMPED_RELEASED_COUNT),
+                "the withdrawn row's issue is exempt; the other two are not: " + violations);
+        assertEquals(List.of("pt-2019-18", "pt-2019-19"),
+                violations.stream().map(ImportCheckService.Violation::subject).toList(),
+                "a RETIRED issue whose legacy row is still ACTIVE is a finding, and so is an "
+                        + "unstamped PUBLISHED one whatever its legacy row says -- it IS on the "
+                        + "public list, and the row it came from may be too");
     }
 
     /** The unstamped count is on the sheet whatever the estate turns out to hold. */
@@ -481,12 +523,15 @@ public class ImportCheckTest {
                         + "own issue; an absent number and zero read alike on a sheet somebody ticks");
     }
 
-    /** An issue with just the three facts this finding reads. */
+    /** An issue with just the four facts this finding reads. */
     private static PublicationIssue issue(String publicId, IssueStatus status, java.util.Date publishedAt) {
         PublicationIssue i = new PublicationIssue();
         i.setPublicId(publicId);
         i.setStatus(status);
         i.setPublishedAt(publishedAt);
+        // The row it came from, which is what the withdrawn-legacy exemption is
+        // looked up by.
+        i.setLegacyPublicationId("legacy-" + publicId);
         return i;
     }
 
