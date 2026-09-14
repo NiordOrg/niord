@@ -38,7 +38,9 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,6 +73,16 @@ public class IssuePreviewAndFileTest {
     EntityManager em;
 
     /**
+     * The stubbed renderer is one bean for the whole module and what it produces
+     * is a static, so a test that changes it and does not put it back leaves
+     * every later test in the JVM rendering somebody else's document.
+     */
+    @org.junit.jupiter.api.AfterEach
+    public void restoreTheRenderer() {
+        StubIssueRenderService.reset();
+    }
+
+    /**
      * An OPEN issue whose series is configured for two languages.
      *
      * D-3 is a rule ACROSS languages, so it cannot be shown on the single-language
@@ -86,6 +98,19 @@ public class IssuePreviewAndFileTest {
         issue.createDesc("en").setName("Test issue");
         em.flush();
         return issue;
+    }
+
+    /**
+     * A distinct file name per language, which a two-language release needs.
+     *
+     * Without a pattern every language falls back to the issue's public id, so
+     * both would be written to one path -- a collision that says nothing about
+     * the render and would hide everything these two tests are about.
+     */
+    private void namePerLanguage(PublicationSeries s) {
+        for (PublicationSeriesDesc d : s.getDescs()) {
+            d.setFileNamePattern("doc-" + d.getLang() + ".pdf");
+        }
     }
 
     private PublicationIssue anIssue() {
@@ -552,6 +577,147 @@ public class IssuePreviewAndFileTest {
                 "the entry carries no archive path, so nothing can reach the superseded bytes");
         assertEquals("FILE_REPLACED_MANUALLY", replacement.toVo().getAction(),
                 "the trail has to name the replacement as one on the wire too, not just in memory");
+    }
+
+    // ============================================== the languages of one release
+
+    /**
+     * Two languages, drawn side by side, and each one's bytes reach its own file.
+     *
+     * The languages of a document are not drawn one after the other: the requests
+     * are built on the publishing thread, the documents are drawn at the same
+     * time, and the bytes come back in a list the release then writes from.
+     * Everything about that is invisible from the outside EXCEPT the one thing
+     * that could go wrong -- a list that slipped out of step with the languages
+     * would serve the Danish document to an English reader with nothing anywhere
+     * recording that it happened.
+     *
+     * So the stub is asked for bytes that name their own language, and each
+     * language's official file has to hold its own.
+     */
+    @Test
+    @Transactional
+    public void bothLanguagesOfOneReleaseGetTheirOwnDocument() throws Exception {
+        PublicationIssue issue = anIssueInTwoLanguages();
+        namePerLanguage(issue.getSeries());
+        em.flush();
+
+        StubIssueRenderService.rendersPerLanguage();
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(
+                        IssuePublishService.PublishRequest.ALL_WARNINGS, null,
+                        new Date(1_700_000_000_000L)));
+        em.flush();
+
+        PublicationIssue published = em.find(PublicationIssue.class, issue.getId());
+        assertEquals(IssueStatus.PUBLISHED, published.getStatus());
+        for (String lang : List.of("da", "en")) {
+            PublicationIssueDesc desc = published.getDescs().stream()
+                    .filter(d -> lang.equals(d.getLang())).findFirst().orElseThrow();
+            assertEquals(FileSource.GENERATED, desc.getFileSource(),
+                    "language " + lang + " was not generated");
+            assertEquals("doc-" + lang + ".pdf", desc.getFileName(),
+                    "language " + lang + " was written under another language's name");
+            assertEquals(StubIssueRenderService.DEFAULT_BODY + ":" + lang,
+                    Files.readString(paths.repoRoot().resolve(desc.getFilePath())),
+                    "the file " + desc.getFileName() + " holds another language's document; the "
+                            + "bytes the languages were drawn into came back out of step with them");
+        }
+    }
+
+    /**
+     * What each language's render is given: another thread, no transaction, and a
+     * persistence context of its own.
+     *
+     * This is the whole safety argument of drawing the languages side by side,
+     * and none of it can be read off the document. A worker that kept the
+     * publish's TRANSACTION would be a second thread inside the session every
+     * frozen member was read into. A worker that kept the caller's CDI REQUEST
+     * CONTEXT would land on the request-scoped session instead -- the same
+     * hazard by the other route, because without a transaction that is the
+     * session the persistence layer falls back to -- and two workers sharing it
+     * would be two threads in one session again. And a worker with NO request
+     * context at all cannot read a row at all: the report and the templates come
+     * out of the database, and the first thing the render does is ask for them.
+     *
+     * So all three are asserted, from inside the render, where they are true.
+     */
+    @Test
+    @Transactional
+    public void eachLanguageIsDrawnOnItsOwnThreadWithItsOwnPersistenceContext() {
+        PublicationIssue issue = anIssueInTwoLanguages();
+        namePerLanguage(issue.getSeries());
+        em.flush();
+
+        String caller = Thread.currentThread().getName();
+        Object callersContext = io.quarkus.arc.Arc.container().requestContext().getStateIfActive();
+
+        StubIssueRenderService.readsTheDatabase();
+        publishService.publish(issue.getId(),
+                new IssuePublishService.PublishRequest(
+                        IssuePublishService.PublishRequest.ALL_WARNINGS, null,
+                        new Date(1_700_000_000_000L)));
+        em.flush();
+
+        List<StubIssueRenderService.RenderThread> threads = StubIssueRenderService.threads();
+        assertEquals(2, threads.size(), "both languages should have been rendered");
+        for (StubIssueRenderService.RenderThread t : threads) {
+            assertFalse(caller.equals(t.thread()),
+                    "language " + t.lang() + " was drawn on the publishing thread, so the languages "
+                            + "are still rendered one after the other");
+            assertFalse(t.inTransaction(),
+                    "language " + t.lang() + " was drawn inside the publish transaction; its reads "
+                            + "would share the session the frozen members were read into");
+            assertNotNull(t.requestContext(),
+                    "language " + t.lang() + " was drawn with no CDI request context, so the render "
+                            + "cannot read the report row or the template rows at all");
+            assertNotSame(callersContext, t.requestContext(),
+                    "language " + t.lang() + " kept the publishing request's context, and with no "
+                            + "transaction that is the caller's request-scoped session");
+            assertNull(t.databaseFailure(),
+                    "language " + t.lang() + " could not read a row on the thread it was given: "
+                            + t.databaseFailure());
+        }
+        assertNotEquals(threads.get(0).thread(), threads.get(1).thread(),
+                "both languages were drawn on one thread, so nothing overlapped");
+        assertNotSame(threads.get(0).requestContext(), threads.get(1).requestContext(),
+                "the two languages shared one request context, so they shared one session");
+    }
+
+    /**
+     * One language that cannot be drawn fails the whole release, and writes nothing.
+     *
+     * A release is one transaction, but a written file is not part of it: the
+     * rollback takes the rows back and leaves the bytes. So the point at which a
+     * failing language must stop the release is BEFORE any language's document
+     * reaches the repository -- otherwise a release that ended in an exception
+     * still leaves a Danish PDF sitting under the issue's public path, and the
+     * next attempt writes its second generation over a first nobody knows about.
+     */
+    @Test
+    @Transactional
+    public void arenderFailureInOneLanguageFailsTheReleaseAndLeavesNoFileBehind() throws Exception {
+        PublicationIssue issue = anIssueInTwoLanguages();
+        namePerLanguage(issue.getSeries());
+        em.flush();
+
+        StubIssueRenderService.fails("en");
+        assertThrows(IssueRenderService.RenderFailedException.class,
+                () -> publishService.publish(issue.getId(),
+                        new IssuePublishService.PublishRequest(
+                                IssuePublishService.PublishRequest.ALL_WARNINGS, null,
+                                new Date(1_700_000_000_000L))));
+
+        assertEquals(IssueStatus.OPEN, issue.getStatus(),
+                "a release that could not draw one of its languages flipped the status anyway");
+        Path dir = paths.repoRoot().resolve(issue.getRepoPath());
+        if (Files.isDirectory(dir)) {
+            try (var list = Files.list(dir)) {
+                assertEquals(List.of(), list.map(p -> p.getFileName().toString()).sorted().toList(),
+                        "the language that rendered left its document behind before the other one "
+                                + "failed; nothing rolls a file back");
+            }
+        }
     }
 
 }

@@ -841,16 +841,35 @@ public class IssuePublishService extends BaseService {
         Map<String, String> sourceByUid = liveSourceIssueIds(resolution);
         List<String> sourceIssueIds = liveSourceIssueOrder(resolution);
 
-        List<IssuePreviewService.Preview> out = new ArrayList<>();
+        // Once for the document, not once per language: which members start on a
+        // new page is a query, and the answer does not depend on the language.
+        long pageBreakMillis = System.currentTimeMillis();
+        Set<String> separatePageIds = renderService.separatePageIds(IssueMessageLoader.uidsOf(ordered));
+        pageBreakMillis = System.currentTimeMillis() - pageBreakMillis;
+
+        // The requests, built HERE -- the value objects read entities, so they are
+        // made on the thread that holds the persistence context. The renders that
+        // follow touch nothing but what the requests carry.
+        long voMillis = System.currentTimeMillis();
+        List<IssueRenderService.RenderRequest> requests = new ArrayList<>();
+        List<PublicationIssueDesc> rendered = new ArrayList<>();
         for (PublicationIssueDesc desc : issue.getDescs()) {
+            rendered.add(desc);
+            requests.add(renderRequest(issue, series, ordered, members, desc.getLang(),
+                    renderGroups(ordered, sourceByUid, sourceIssueIds, desc.getLang()), separatePageIds));
+        }
+        voMillis = System.currentTimeMillis() - voMillis;
+
+        long renderMillis = System.currentTimeMillis();
+        List<IssueRenderService.Rendered> documents = renderService.renderAll(requests);
+        renderMillis = System.currentTimeMillis() - renderMillis;
+
+        List<IssuePreviewService.Preview> out = new ArrayList<>();
+        for (int i = 0; i < documents.size(); i++) {
+            PublicationIssueDesc desc = rendered.get(i);
             String lang = desc.getLang();
-            long voMillis = System.currentTimeMillis();
-            IssueRenderService.RenderRequest request = renderRequest(issue, series, ordered, members, lang,
-                    renderGroups(ordered, sourceByUid, sourceIssueIds, lang));
-            voMillis = System.currentTimeMillis() - voMillis;
-            IssueRenderService.Phases phases = new IssueRenderService.Phases();
-            byte[] bytes = renderService.render(request, phases);
-            logRender("preview", issue, lang, ordered.size(), loadMillis, voMillis, phases);
+            logRender("preview", issue, lang, ordered.size(), loadMillis, voMillis, pageBreakMillis,
+                    documents.get(i).phases());
             // Named from the cut-off the publish would use, not from the clock: a
             // preview of last year's accumulated list generated in January carries
             // last year's tokens, exactly as the published file will.
@@ -864,8 +883,10 @@ public class IssuePublishService extends BaseService {
             // planned end is in the past, which is every case the window rule
             // exists for.
             out.add(previews.record(issue, lang,
-                    fileNameFor(issue, series, desc, defaultCutoff(issue, series, now)), bytes));
+                    fileNameFor(issue, series, desc, defaultCutoff(issue, series, now)),
+                    documents.get(i).bytes()));
         }
+        logRenderStep("preview", issue, documents.size(), renderMillis);
         return out;
     }
 
@@ -941,27 +962,64 @@ public class IssuePublishService extends BaseService {
         Map<String, String> sourceByUid = frozenSourceIssueIds(issue);
         List<String> sourceIssueIds = frozenSourceIssueOrder(issue);
 
+        // As on the preview path: the page breaks are a query whose answer is the
+        // same for every language, so it is asked once, here, where the
+        // transaction is.
+        long pageBreakMillis = System.currentTimeMillis();
+        Set<String> separatePageIds = renderService.separatePageIds(IssueMessageLoader.uidsOf(ordered));
+        pageBreakMillis = System.currentTimeMillis() - pageBreakMillis;
+
+        // 10a, in two halves. The requests are built on THIS thread because
+        // converting a member to a value object reads the entity, and the entities
+        // belong to this transaction's persistence context. What comes back from
+        // the render is bytes, and the files are written below -- also on this
+        // thread, in language order, exactly as they were when each language was
+        // rendered straight to its own file.
+        long voMillis = System.currentTimeMillis();
+        List<IssueRenderService.RenderRequest> requests = new ArrayList<>();
+        List<PublicationIssueDesc> rendered = new ArrayList<>();
+        List<String> fileNames = new ArrayList<>();
         for (PublicationIssueDesc desc : issue.getDescs()) {
             if (desc.isFileSourceSticky()) {
                 continue; // an uploaded replacement is not regenerated over
             }
-            String lang = desc.getLang();
-            String fileName = fileNameFor(issue, series, desc, stamp);
-            Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
+            rendered.add(desc);
+            fileNames.add(fileNameFor(issue, series, desc, stamp));
+            requests.add(renderRequest(issue, series, ordered, members, desc.getLang(),
+                    renderGroups(ordered, sourceByUid, sourceIssueIds, desc.getLang()), separatePageIds));
+        }
+        voMillis = System.currentTimeMillis() - voMillis;
 
-            // 10a
-            long voMillis = System.currentTimeMillis();
-            IssueRenderService.RenderRequest request = renderRequest(issue, series, ordered, members, lang,
-                    renderGroups(ordered, sourceByUid, sourceIssueIds, lang));
-            voMillis = System.currentTimeMillis() - voMillis;
-            IssueRenderService.Phases phases = new IssueRenderService.Phases();
-            renderService.renderToFile(request, target, phases);
-            logRender("release", issue, lang, ordered.size(), loadMillis, voMillis, phases);
+        // A failure in any language throws here, before a single file has been
+        // written -- so a release that could not draw its English document has not
+        // left a Danish one behind on the public repository for the rollback to
+        // fail to remove.
+        long renderMillis = System.currentTimeMillis();
+        List<IssueRenderService.Rendered> documents = renderService.renderAll(requests);
+        renderMillis = System.currentTimeMillis() - renderMillis;
+
+        for (int i = 0; i < documents.size(); i++) {
+            PublicationIssueDesc desc = rendered.get(i);
+            String fileName = fileNames.get(i);
+            Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
+            IssueRenderService.Phases phases = documents.get(i).phases();
+            try {
+                Files.createDirectories(target.getParent());
+                long t0 = System.currentTimeMillis();
+                Files.write(target, documents.get(i).bytes());
+                phases.writeMillis = System.currentTimeMillis() - t0;
+            } catch (IOException e) {
+                throw new IssueRenderService.RenderFailedException(
+                        "could not write the rendered report to " + target, e);
+            }
+            logRender("release", issue, desc.getLang(), ordered.size(), loadMillis, voMillis,
+                    pageBreakMillis, phases);
 
             desc.setFileName(fileName);
             desc.setFilePath(issue.getRepoPath() + "/" + fileName);
             desc.setFileSource(FileSource.GENERATED);
         }
+        logRenderStep("release", issue, documents.size(), renderMillis);
 
         // 10c. Nothing above may have left a language without a document.
         for (PublicationIssueDesc desc : issue.getDescs()) {
@@ -989,16 +1047,34 @@ public class IssuePublishService extends BaseService {
      *
      * The load is the SAME load for every language, so it is printed on each
      * language's line rather than divided between them: it is what the render
-     * waited for, not what this language cost.
+     * waited for, not what this language cost. The value objects and the page
+     * breaks are printed the same way and for the same reason -- they are built
+     * for all the languages at once, before any of them is drawn.
      */
     private void logRender(String what, PublicationIssue issue, String lang, int memberCount,
-                           long loadMillis, long voMillis, IssueRenderService.Phases phases) {
+                           long loadMillis, long voMillis, long pageBreakMillis,
+                           IssueRenderService.Phases phases) {
         log.info("Issue {} {} [{}]: {} members in {} ms (load {}, value objects {}, page breaks {}, "
                         + "template {}, layout {} of which {} fetching {} resources, write {})",
                 issue.getPublicId(), what, lang, memberCount,
-                loadMillis + voMillis + phases.total(),
-                loadMillis, voMillis, phases.separatePageMillis, phases.templateMillis,
+                loadMillis + voMillis + pageBreakMillis + phases.total(),
+                loadMillis, voMillis, pageBreakMillis, phases.templateMillis,
                 phases.pdfMillis, phases.fetchMillis, phases.fetchCount, phases.writeMillis);
+    }
+
+    /**
+     * What the render step itself took, once, for every language together.
+     *
+     * The per-language lines above still add up to more than this, and that is
+     * the point of printing it: the languages are drawn side by side, so the
+     * seconds they report are spent at the same time rather than one after the
+     * other, and only a wall-clock line says how long the publish actually stood
+     * still. Without it the log reads exactly as it did when the renders were
+     * sequential, and a change that halved the wait would be invisible.
+     */
+    private void logRenderStep(String what, PublicationIssue issue, int languages, long millis) {
+        log.info("Issue {} {}: {} language(s) rendered in {} ms wall time",
+                issue.getPublicId(), what, languages, millis);
     }
 
     /**
@@ -1015,7 +1091,8 @@ public class IssuePublishService extends BaseService {
     private IssueRenderService.RenderRequest renderRequest(PublicationIssue issue, PublicationSeries series,
                                                            List<IssueOrdering.Orderable> ordered,
                                                            Map<String, Message> members, String lang,
-                                                           List<IssueRenderService.RenderGroup> groups) {
+                                                           List<IssueRenderService.RenderGroup> groups,
+                                                           Set<String> separatePageIds) {
         DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(lang);
         List<MessageVo> messages = new ArrayList<>(ordered.size());
         for (IssueOrdering.Orderable o : ordered) {
@@ -1085,7 +1162,8 @@ public class IssuePublishService extends BaseService {
                 areaHeadings,
                 null,
                 params,
-                groups);
+                groups,
+                separatePageIds);
     }
 
     /**

@@ -154,8 +154,19 @@ public class IssueRenderMemberLoadTest {
         }
     }
 
-    /** The statements this run costs, and how long it took. */
-    private record Cost(long statements, long collectionFetches, long millis) {
+    /**
+     * The statements this run costs, what they brought back, and how long it took.
+     *
+     * The rows matter alongside the statements because the two failures look
+     * nothing alike. Reading per member is many statements over few rows each, and
+     * it is round trips; fetching several collections in one query is few
+     * statements over a CARTESIAN PRODUCT of rows, and it is the network and the
+     * materialising. A bound on statements alone would call the second one a
+     * success, so the entities and the collections that came back are printed
+     * beside it.
+     */
+    private record Cost(long statements, long collectionFetches, long entityRows,
+                        long collectionRows, long millis) {
     }
 
     /*
@@ -185,14 +196,20 @@ public class IssueRenderMemberLoadTest {
         Statistics stats = statistics();
         long statements = stats.getPrepareStatementCount();
         long collections = stats.getCollectionFetchCount();
+        long entityRows = stats.getEntityLoadCount();
+        long collectionRows = stats.getCollectionLoadCount();
         long t0 = System.currentTimeMillis();
         T out = QuarkusTransaction.requiringNew().call(body::get);
         long millis = System.currentTimeMillis() - t0;
         Cost cost = new Cost(stats.getPrepareStatementCount() - statements,
-                stats.getCollectionFetchCount() - collections, millis);
+                stats.getCollectionFetchCount() - collections,
+                stats.getEntityLoadCount() - entityRows,
+                stats.getCollectionLoadCount() - collectionRows,
+                millis);
         costs.add(cost);
         System.out.println("[member-load] " + stage + ": " + cost.millis() + " ms, "
-                + cost.statements() + " statements, " + cost.collectionFetches() + " collection fetches");
+                + cost.statements() + " statements, " + cost.collectionFetches() + " collection fetches, "
+                + cost.entityRows() + " entities loaded, " + cost.collectionRows() + " collections loaded");
         return out;
     }
 
