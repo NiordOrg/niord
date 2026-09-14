@@ -21,6 +21,7 @@ import org.niord.core.publication.series.CutoffDefault;
 import org.niord.core.publication.series.PageOrientation;
 import org.niord.core.publication.series.PageSize;
 import org.niord.core.publication.series.SeriesAvailability;
+import org.niord.core.publication.series.resolve.IssueNaming;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -296,15 +297,82 @@ public final class LegacyTemplateRulings {
      * template to read the source series, the report or the year the practice
      * starts from off.
      *
+     * AND TWO THE TEMPLATE ANSWERS ABOUT THE WRONG ARTEFACT. Whether the
+     * publication is language specific, and what each language's document is
+     * called, are recorded in legacy -- about a PDF somebody assembled by hand and
+     * uploaded once. A compiled series renders one document per language, and the
+     * file name it renders to is the last segment of the public link the edition
+     * is cited by, so both answers are re-ruled here rather than copied.
+     *
      * @param firstIssueStartsAt where the compilation's chain opens. Not the first
      *                           imported issue's date: the uploaded years before
      *                           it were made by hand and are kept as they are, and
      *                           the compiled chain starts where the source series'
      *                           frozen rows are trustworthy
+     * @param languageSpecific   whether the compilation produces one document per
+     *                           language. A compilation always does: the report is
+     *                           rendered per language, and the legacy row said
+     *                           otherwise only because the hand-assembled PDF was
+     *                           one file somebody uploaded once and both languages
+     *                           were served it
+     * @param fileNamePatterns   the file-name pattern per language. A compilation
+     *                           renders one document per language, and the file
+     *                           name is the last segment of the public link the
+     *                           edition is cited by -- so without a pattern per
+     *                           language both languages are written to the same
+     *                           path, named by the issue's public id, and the
+     *                           second render overwrites the first
      */
     public record CompilationShape(String sourceSeriesId, String reportId, PageSize pageSize,
                                    PageOrientation pageOrientation, boolean mapThumbnails,
-                                   CutoffDefault cutoffDefault, Date firstIssueStartsAt) {
+                                   CutoffDefault cutoffDefault, Date firstIssueStartsAt,
+                                   boolean languageSpecific, Map<String, String> fileNamePatterns) {
+
+        /**
+         * The file-name patterns are held to the rules the series editor is held to.
+         *
+         * VALIDATED HERE AND NOT ONLY AT THE SERIES, because a ruling is authored
+         * in source and applied by an import that runs once under a clock. A
+         * pattern with a token nobody declared passes every plan, reaches a
+         * published file name and then a public URL -- production already serves a
+         * real PDF at .../Skydeomraader-%24%7Byear%7D.pdf because one did. Refusing
+         * at class load turns that into a failing test on the machine of whoever
+         * writes the ruling.
+         *
+         * The two rules that apply to a file pattern, both from SeriesValidator:
+         * S-14, no token outside the naming vocabulary, and S-15, one path per
+         * language -- a compilation is query-backed and multi-language, so two
+         * languages sharing a pattern write one file twice and the last language
+         * wins.
+         */
+        public CompilationShape {
+            fileNamePatterns = fileNamePatterns == null
+                    ? Map.of()
+                    : Map.copyOf(fileNamePatterns);
+
+            Map<String, String> langByPattern = new LinkedHashMap<>();
+            for (Map.Entry<String, String> e : fileNamePatterns.entrySet()) {
+                String lang = e.getKey();
+                String pattern = e.getValue();
+                if (lang == null || lang.isBlank() || pattern == null || pattern.isBlank()) {
+                    throw new IllegalArgumentException("compilation ruling for source '"
+                            + sourceSeriesId + "' carries a blank language or file-name pattern");
+                }
+                if (!IssueNaming.isExpandable(pattern)) {
+                    throw new IllegalArgumentException("compilation ruling for source '"
+                            + sourceSeriesId + "' names file-name pattern '" + pattern + "' for "
+                            + lang + ", which carries a token outside the vocabulary "
+                            + IssueNaming.TOKENS + " (S-14)");
+                }
+                String other = langByPattern.put(pattern, lang);
+                if (other != null) {
+                    throw new IllegalArgumentException("compilation ruling for source '"
+                            + sourceSeriesId + "' names the same file-name pattern '" + pattern
+                            + "' for " + other + " and " + lang + "; every language must generate "
+                            + "to its own path or the last one written wins (S-15)");
+                }
+            }
+        }
     }
 
     /**
@@ -342,7 +410,22 @@ public final class LegacyTemplateRulings {
                 // the annual closes when the year does.
                 CutoffDefault.PERIOD_END,
                 Date.from(ZonedDateTime.of(2017, 1, 1, 0, 0, 0, 0,
-                        ZoneId.of("Europe/Copenhagen")).toInstant())));
+                        ZoneId.of("Europe/Copenhagen")).toInstant()),
+                // One document per language, which the legacy row denied. What it
+                // recorded was true of the uploaded PDF -- somebody assembled one
+                // file and both languages were served it -- and it stops being
+                // true the moment the series is compiled: the report is rendered
+                // per language, so a Danish reader given the English document is
+                // the only other outcome.
+                true,
+                // And a name per language, because the file name is the last
+                // segment of the link the edition is cited by. Without one, both
+                // languages fall back to the issue's public id, write to the same
+                // path, and the second render overwrites the first -- which is not
+                // even visible as a failure, only as an English annual under a
+                // Danish link.
+                Map.of("da", "Akkumuleret-EfS-${year}.pdf",
+                        "en", "Accumulated-NtM-${year}.pdf")));
     }
 
     /**

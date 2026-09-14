@@ -32,6 +32,7 @@ import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.series.ContentMode;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.SeriesStatus;
@@ -475,6 +476,26 @@ public class LegacyImportServiceTest {
             assertEquals(shape.firstIssueStartsAt(), annual.getFirstIssueStartsAt(),
                     "the compiled chain opens where the source series' frozen rows begin to be a "
                             + "complete record of what went out");
+
+            assertTrue(annual.isLanguageSpecific(),
+                    "the annual still says one document serves every language, which was a fact "
+                            + "about the PDF somebody assembled by hand; a compiled series renders "
+                            + "one document per language and a reader would be handed whichever "
+                            + "one rendered");
+            for (String lang : annual.getLanguages()) {
+                String ruled = shape.fileNamePatterns().get(lang);
+                if (ruled == null) {
+                    continue;
+                }
+                String pattern = annual.getDescs().stream()
+                        .filter(d -> lang.equals(d.getLang()))
+                        .map(PublicationSeriesDesc::getFileNamePattern)
+                        .findFirst().orElse(null);
+                assertEquals(ruled, pattern,
+                        "the " + lang + " document has no file-name pattern, so it is filed under "
+                                + "the issue's public id -- the same path every language writes to, "
+                                + "and the last render wins the public link");
+            }
 
             // The weekly it compiles is untouched: a compilation of a compilation
             // is refused by S-25, and the source is an ordinary series.

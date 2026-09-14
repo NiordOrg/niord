@@ -27,6 +27,7 @@ import org.niord.core.publication.series.CutoffDefault;
 import org.niord.core.publication.series.PageOrientation;
 import org.niord.core.publication.series.PageSize;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.SeriesAvailability;
 import org.niord.core.publication.series.ContentMode;
 
@@ -41,8 +42,10 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -238,6 +241,18 @@ public class LegacyTemplateRulingsTest {
                 shape.firstIssueStartsAt(),
                 "the compiled chain does not open at the start of 2017 in the owner's own zone");
 
+        assertTrue(shape.languageSpecific(),
+                "the legacy row says one document serves both languages, which was true of the PDF "
+                        + "somebody assembled by hand and stops being true the moment the series "
+                        + "renders its own; a Danish reader would be handed whichever language "
+                        + "happened to render");
+        assertEquals("Akkumuleret-EfS-${year}.pdf", shape.fileNamePatterns().get("da"));
+        assertEquals("Accumulated-NtM-${year}.pdf", shape.fileNamePatterns().get("en"));
+        assertEquals(Set.of("da", "en"), shape.fileNamePatterns().keySet(),
+                "a language with no ruled pattern falls back to the issue's public id, which is "
+                        + "the same in both languages: the two renders write one path and the "
+                        + "second overwrites the first");
+
         assertNull(LegacyTemplateRulings.compilationFor("weekly-ntm"),
                 "the source series was itself ruled into a compilation; a compilation of a "
                         + "compilation is refused by S-25 and would be a chain nobody can read");
@@ -279,6 +294,54 @@ public class LegacyTemplateRulingsTest {
         assertNull(accumulated.getSourceSeries(),
                 "the plan already points the accumulated annual at a series that has not been "
                         + "persisted yet; the write would fail on the foreign key");
+
+        // The naming half of the ruling travels with the rest of it, so the dry run
+        // shows the uploaded-document series legacy actually holds rather than a
+        // half-converted one.
+        LegacyTemplateRulings.CompilationShape shape =
+                LegacyTemplateRulings.compilationFor("accumulated-yearly-ntm");
+        for (PublicationSeriesDesc desc : accumulated.getDescs()) {
+            assertNotEquals(shape.fileNamePatterns().get(desc.getLang()),
+                    desc.getFileNamePattern(),
+                    "the plan already carries the ruled file-name pattern for " + desc.getLang()
+                            + "; the conversion is one step and applies at apply time");
+        }
+    }
+
+    /**
+     * A ruling whose file-name pattern could not survive expansion is refused where
+     * it is WRITTEN.
+     *
+     * The import runs once, under a clock, against a restored database. A pattern
+     * carrying a token nobody declared plans cleanly, applies cleanly, and then
+     * reaches a published file name and a public URL -- production already serves
+     * a real PDF at .../Skydeomraader-%24%7Byear%7D.pdf because one did. The same
+     * two rules the series editor is held to therefore hold here: S-14, no token
+     * outside the vocabulary, and S-15, one path per language.
+     */
+    @Test
+    public void arulingWhoseFileNamePatternCannotExpandIsRefusedAtTheRuling() {
+        assertThrows(IllegalArgumentException.class,
+                () -> shapeWithPatterns(Map.of("da", "EfS-${quarter}.pdf")),
+                "a token outside the naming vocabulary was accepted into a ruling; it survives "
+                        + "into the file name and then into the link the edition is cited by");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> shapeWithPatterns(Map.of("da", "Annual-${year}.pdf",
+                        "en", "Annual-${year}.pdf")),
+                "two languages were ruled to the same path, so one file is written twice and the "
+                        + "language that renders last is the one the public link serves");
+    }
+
+    /** The ruled shape with its patterns swapped, so only the naming is under test. */
+    private static LegacyTemplateRulings.CompilationShape shapeWithPatterns(
+            Map<String, String> fileNamePatterns) {
+        LegacyTemplateRulings.CompilationShape ruled =
+                LegacyTemplateRulings.compilationFor("accumulated-yearly-ntm");
+        return new LegacyTemplateRulings.CompilationShape(
+                ruled.sourceSeriesId(), ruled.reportId(), ruled.pageSize(),
+                ruled.pageOrientation(), ruled.mapThumbnails(), ruled.cutoffDefault(),
+                ruled.firstIssueStartsAt(), ruled.languageSpecific(), fileNamePatterns);
     }
 
     // ------------------------------------------------------------------ domains

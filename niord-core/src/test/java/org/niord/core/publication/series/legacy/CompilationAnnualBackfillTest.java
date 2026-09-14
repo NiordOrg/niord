@@ -39,6 +39,7 @@ import org.niord.core.publication.series.NumberingScheme;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.ReleaseMode;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesStatus;
@@ -354,6 +355,19 @@ public class CompilationAnnualBackfillTest {
         // AUTO_ON_PUBLISH, or "no successor was created" would be true of a series
         // that never creates one.
         annual.setNextIssueCreation(NextIssueCreation.AUTO_ON_PUBLISH);
+        // The compilation ruling's own naming, applied here as the import applies
+        // it: two languages, each rendering its own document under its own name.
+        // Anything less and both languages are written to one path named by the
+        // issue's public id, and the second render overwrites the first.
+        LegacyTemplateRulings.CompilationShape shape =
+                LegacyTemplateRulings.compilationFor("accumulated-yearly-ntm");
+        annual.setLanguageSpecific(shape.languageSpecific());
+        annual.getLanguages().add("en");
+        annual.createDesc("en").setName("Test " + annual.getSeriesId());
+        for (PublicationSeriesDesc desc : annual.getDescs()) {
+            desc.setNameSuggestionPattern(NAME_PATTERN);
+            desc.setFileNamePattern(shape.fileNamePatterns().get(desc.getLang()));
+        }
         em.merge(annual);
 
         // The archive's last hand-assembled edition, standing in for the seventeen.
@@ -394,6 +408,23 @@ public class CompilationAnnualBackfillTest {
                         + "series now holds two open issues for two different periods");
         assertEquals(before, issueCount(annual),
                 "the series gained an issue it was not asked for");
+
+        // And each language went out under its own name, expanded from the ruling's
+        // pattern. The file name is the last segment of the link the edition is
+        // cited by, so a shared name is not only a lost document -- it is a Danish
+        // citation resolving to the English annual.
+        assertEquals(2, opened.get(0).getDescs().size(),
+                "a language the series declares and the published issue has no row for has no "
+                        + "document at all");
+        for (PublicationIssueDesc desc : opened.get(0).getDescs()) {
+            String expected = "da".equals(desc.getLang())
+                    ? "Akkumuleret-EfS-2019.pdf"
+                    : "Accumulated-NtM-2019.pdf";
+            assertEquals(expected, desc.getFileName(),
+                    "the " + desc.getLang() + " annual was filed under the wrong name; with no "
+                            + "pattern it falls back to the issue's public id, which both "
+                            + "languages share");
+        }
 
         PublicationIssue next = em.find(PublicationIssue.class, opened.get(1).getId());
         em.refresh(next);
@@ -461,7 +492,7 @@ public class CompilationAnnualBackfillTest {
         s.setCategory(category);
         s.setDomain(TestOwnerDomain.of(em));
         s.getLanguages().add("da");
-        org.niord.core.publication.series.PublicationSeriesDesc desc = s.createDesc("da");
+        PublicationSeriesDesc desc = s.createDesc("da");
         // The column is NOT NULL: a series has to be called something before its
         // issues can be called anything.
         desc.setName("Test " + s.getSeriesId());

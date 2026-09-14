@@ -35,6 +35,7 @@ import org.niord.core.publication.series.criteria.LegacyFilterTranslator;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.PublicationSeriesDesc;
 import org.niord.core.publication.series.SeriesCadence;
 import org.niord.core.publication.series.SeriesKind;
 import org.niord.core.publication.series.resolve.TimeRelation;
@@ -2341,6 +2342,7 @@ public class LegacyImportService extends BaseService {
             series.setMapThumbnails(shape.mapThumbnails());
             series.setCutoffDefault(shape.cutoffDefault());
             series.setFirstIssueStartsAt(shape.firstIssueStartsAt());
+            applyCompilationNaming(series, shape);
             em.merge(series);
 
             note(plan, "SERIES_COMPILED_FROM_SOURCE", series.getSeriesId(), null,
@@ -2350,6 +2352,48 @@ public class LegacyImportService extends BaseService {
                             + "its imported issues keep their files untouched. The chain opens at "
                             + shape.firstIssueStartsAt() + ", so every year from then to the last "
                             + "imported issue shows as an uncovered period on the strip.");
+        }
+    }
+
+    /**
+     * What each of a compilation's languages produces, and what it is called.
+     *
+     * THE LEGACY ROW ANSWERS THIS ABOUT THE WRONG THING. The accumulated annual
+     * was an uploaded PDF: one file somebody assembled and both languages were
+     * served it, so the template records "not language specific" and carries no
+     * file-name pattern at all -- there was no pattern to carry, because nobody
+     * ever generated the document. Copying those two answers onto a series that
+     * from here on COMPILES its content carries a fact about a hand-made file into
+     * a series that renders one document per language.
+     *
+     * Both halves matter and they fail differently. Without the flag the editor
+     * offers one document for the pair, and a Danish reader is handed whichever
+     * language happened to render. Without a pattern per language the file name
+     * falls back to the issue's public id -- the same id in both languages -- so
+     * the two renders write to one path and the second overwrites the first. And
+     * the file name is not an internal detail: it is the last segment of the
+     * public link the edition is cited by, and a citation outlives the issue.
+     *
+     * ONLY THE LANGUAGES THE SERIES DECLARES, because the language list is the
+     * series' own answer to what it publishes in, and a desc row outside it is
+     * refused (S-12). A declared language with no desc row yet gets one here
+     * rather than being skipped: it is exactly the row whose file name would
+     * otherwise be missing.
+     */
+    private static void applyCompilationNaming(PublicationSeries series,
+                                               LegacyTemplateRulings.CompilationShape shape) {
+        series.setLanguageSpecific(shape.languageSpecific());
+
+        for (Map.Entry<String, String> ruled : shape.fileNamePatterns().entrySet()) {
+            String lang = ruled.getKey();
+            if (!series.getLanguages().contains(lang)) {
+                continue;
+            }
+            PublicationSeriesDesc desc = series.getDescs().stream()
+                    .filter(d -> lang.equals(d.getLang()))
+                    .findFirst()
+                    .orElseGet(() -> series.createDesc(lang));
+            desc.setFileNamePattern(ruled.getValue());
         }
     }
 
