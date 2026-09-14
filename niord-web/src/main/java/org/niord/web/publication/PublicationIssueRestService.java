@@ -21,7 +21,9 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Synchronization;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -139,6 +141,18 @@ public class PublicationIssueRestService {
 
     @Inject
     IssueWorkMarker marker;
+
+    /**
+     * How the commit gets timed.
+     *
+     * This class is transactional, so the transaction a release runs in is
+     * committed AFTER the method below returns -- which is exactly where the
+     * seconds nobody could account for were suspected of being. A synchronisation
+     * registered before the work starts is the only hook that runs on the far
+     * side of that commit and can still say how long it took.
+     */
+    @Inject
+    TransactionSynchronizationRegistry synchronizations;
 
     @Inject
     IssueLifecycleService lifecycle;
@@ -1054,6 +1068,68 @@ public class PublicationIssueRestService {
 
     // ------------------------------------------------------------------ actions
 
+    /**
+     * The two halves of a release request, printed once the transaction is over.
+     *
+     * The service prints where its own seconds went. This is the part it cannot
+     * see: the commit, which happens after the method returns because the
+     * transaction belongs to this class rather than to the service. The two
+     * numbers together are what a wait measured at the browser has to add up to,
+     * and a gap between them is the signal that something outside both is slow.
+     *
+     * Interposed, so it runs on the far side of the commit; and registered BEFORE
+     * the work starts, so it runs ahead of the work marker's own clear -- which
+     * opens a transaction of its own after completion and would otherwise be
+     * counted as commit time.
+     */
+    private static final class RequestTiming implements Synchronization {
+
+        private final Logger log;
+
+        private final String what;
+
+        private final String publicId;
+
+        private long serviceNanos;
+
+        private long commitStartNanos;
+
+        RequestTiming(Logger log, String what, String publicId) {
+            this.log = log;
+            this.what = what;
+            this.publicId = publicId;
+        }
+
+        void serviceTook(long nanos) {
+            serviceNanos = nanos;
+        }
+
+        @Override
+        public void beforeCompletion() {
+            // Interposed synchronisations run last here, after the persistence
+            // context has been flushed, so what follows this instant is the
+            // database committing and nothing else.
+            commitStartNanos = System.nanoTime();
+        }
+
+        @Override
+        public void afterCompletion(int status) {
+            log.info("Issue {} {} request: service {} ms, commit {} ms",
+                    publicId, what, serviceNanos / 1_000_000L,
+                    (System.nanoTime() - commitStartNanos) / 1_000_000L);
+        }
+    }
+
+    /** Registers the line above, or returns null where there is no transaction to hang it on. */
+    private RequestTiming timeRequest(String what, String publicId) {
+        if (synchronizations.getTransactionKey() == null) {
+            return null;
+        }
+        RequestTiming timing = new RequestTiming(log, what, publicId);
+        synchronizations.registerInterposedSynchronization(timing);
+        return timing;
+    }
+
     /** I16. Publish. */
     @PUT
     @Path("/issue/{publicId}/publish")
@@ -1100,13 +1176,18 @@ public class PublicationIssueRestService {
         // issue and the same button. The marker is what they read instead, and
         // what refuses their press.
         Integer issueId = issue.getId();
+        RequestTiming timing = timeRequest("publish", publicId);
         marker.start(issueId, IssueWorkMarker.PUBLISH);
         IssuePublishService.PublishResult result;
+        long serviceNanos = System.nanoTime();
         try {
             result = publishService.publish(issueId,
                     new IssuePublishService.PublishRequest(Set.copyOf(acknowledged),
                             userService.currentUser(), cutoff));
         } finally {
+            if (timing != null) {
+                timing.serviceTook(System.nanoTime() - serviceNanos);
+            }
             marker.finish(issueId);
         }
 
@@ -1156,13 +1237,18 @@ public class PublicationIssueRestService {
         // second one started while the first is rendering archives a half-written
         // file as though it were the published edition.
         Integer issueId = issue.getId();
+        RequestTiming timing = timeRequest("amend", publicId);
         marker.start(issueId, IssueWorkMarker.AMEND);
         IssuePublishService.AmendResult result;
+        long serviceNanos = System.nanoTime();
         try {
             result = publishService.amend(issueId,
                     new IssuePublishService.AmendRequest(Set.copyOf(acknowledged),
                             userService.currentUser(), reason));
         } finally {
+            if (timing != null) {
+                timing.serviceTook(System.nanoTime() - serviceNanos);
+            }
             marker.finish(issueId);
         }
 

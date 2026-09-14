@@ -215,6 +215,71 @@ public class IssuePublishService extends BaseService {
             List<String> archivePaths) {
     }
 
+    /**
+     * Where a release's seconds went, step by step, outside the render.
+     *
+     * The render has reported its own phases per language for a while, and on a
+     * compiled annual those phases accounted for barely half of the wait
+     * measured at the client. The other half was in steps nobody was timing, and
+     * a total cannot say which: the lock, the resolution, the freeze and the
+     * flush have entirely different cures, and three of them are round trips
+     * rather than work. So every step is timed here, in the order it runs, and
+     * printed as one line -- one line, because the first thing anybody does with
+     * a slow release is paste it into a message.
+     *
+     * NANOSECONDS HELD, MILLISECONDS PRINTED. Taking a millisecond clock per step
+     * would round the lock and the audit entry to zero or to one and quietly push
+     * the remainder into the residue, which is the one number here that has to be
+     * trustworthy -- it is what says whether anything is still unaccounted for.
+     */
+    private static final class Phases {
+
+        /** Taking the pessimistic write locks on the series and the issue. */
+        long lockNanos;
+
+        /** The release checklist, which takes a resolution of its own. Publish only. */
+        long railNanos;
+
+        /** Deciding the member set and its print order. */
+        long resolveNanos;
+
+        /** Replacing the frozen member rows. */
+        long freezeNanos;
+
+        /**
+         * What the freeze did to the member rows.
+         *
+         * Three numbers rather than one, because they are the phase's own
+         * explanation: an amend that keeps a thousand rows and inserts none is
+         * doing the work the shared sequence makes expensive exactly nowhere,
+         * and if the freeze is still slow with those numbers the cause is
+         * somewhere else entirely.
+         */
+        int deleted;
+
+        int inserted;
+
+        int kept;
+
+        /** The snapshot header and the appliedAtPublish flags. */
+        long snapshotNanos;
+
+        /** Copying the previous generation of documents aside. */
+        long archiveNanos;
+
+        /** Every language drawn, as wall time -- they are drawn side by side. */
+        long renderNanos;
+
+        /** The rest of step 10: loading the members, the value objects, the bytes. */
+        long fileNanos;
+
+        /** The audit entry, and for a publish the window caps and the successor. */
+        long auditNanos;
+
+        /** The inserts and updates themselves, pulled out of the invisible commit. */
+        long flushNanos;
+    }
+
     /** The issue was already published. Carries the winner's stamp. */
     public static class AlreadyPublishedException extends PublicationException {
         private final Date stampedAt;
@@ -264,6 +329,10 @@ public class IssuePublishService extends BaseService {
     @Transactional
     public PublishResult publish(Integer issueId, PublishRequest request) {
 
+        Phases phases = new Phases();
+        long start = System.nanoTime();
+        long mark = start;
+
         // --- 1. LOCK ------------------------------------------------------
         // THE SERIES ROW FIRST, and for the whole transaction. Everything this
         // action decides is a fact about the series rather than about one issue:
@@ -293,6 +362,8 @@ public class IssuePublishService extends BaseService {
         }
 
         PublicationSeries series = issue.getSeries();
+        phases.lockNanos = System.nanoTime() - mark;
+        mark = System.nanoTime();
 
         // --- 1b. THE RAIL, ENFORCED ---------------------------------------
         // Every BLOCK row the release rail shows an admin is refused HERE, before
@@ -303,6 +374,7 @@ public class IssuePublishService extends BaseService {
         Date stamp = request.explicitStamp() != null ? request.explicitStamp() : new Date();
         PublishChecklistService.Checklist rail = checklist.compute(issue, stamp, false);
         refuseBlockingRows(issue, series, rail, stamp);
+        phases.railNanos = System.nanoTime() - mark;
 
         // --- 2. STAMP, before resolving -----------------------------------
         issue.setCutoffStampedAt(stamp);
@@ -323,8 +395,10 @@ public class IssuePublishService extends BaseService {
         // format all have to say which week actually went out.
         shape.restamp(issue, series);
 
-        Frozen frozen = resolveFreezeAndWrite(issue, series, request, stamp, stamp, rail.resolution());
+        Frozen frozen = resolveFreezeAndWrite(issue, series, request, stamp, stamp, rail.resolution(),
+                phases);
         List<String> unacknowledged = frozen.unacknowledgedWarnings();
+        mark = System.nanoTime();
 
         // --- 11. STATUS FLIP ----------------------------------------------
         issue.setStatus(IssueStatus.PUBLISHED);
@@ -360,6 +434,9 @@ public class IssuePublishService extends BaseService {
         }
 
         em.merge(issue);
+        phases.auditNanos = System.nanoTime() - mark;
+        flushAndLog("publish", issue, frozen.memberCount(), phases, start);
+
         return new PublishResult(issue.getId(), stamp, frozen.memberCount(), unacknowledged,
                 successor == null ? null : successor.getPublicId());
     }
@@ -382,7 +459,12 @@ public class IssuePublishService extends BaseService {
      */
     @Transactional
     public AmendResult amend(Integer issueId, AmendRequest request) {
+        Phases phases = new Phases();
+        long start = System.nanoTime();
+        long mark = start;
+
         PublicationIssue issue = em.find(PublicationIssue.class, issueId, LockModeType.PESSIMISTIC_WRITE);
+        phases.lockNanos = System.nanoTime() - mark;
         if (issue == null) {
             throw new IllegalArgumentException("no such issue: " + issueId);
         }
@@ -413,10 +495,14 @@ public class IssuePublishService extends BaseService {
 
         Frozen frozen = resolveFreezeAndWrite(issue, series,
                 new PublishRequest(request.acknowledgedWarnings(), request.actor(), null),
-                cutoff, now, null);
+                cutoff, now, null, phases);
 
+        mark = System.nanoTime();
         audit.amended(issue, request.actor(), request.reason(), frozen.archivePaths());
         em.merge(issue);
+        phases.auditNanos = System.nanoTime() - mark;
+        flushAndLog("amend", issue, frozen.memberCount(), phases, start);
+
         return new AmendResult(issue.getId(), cutoff, frozen.memberCount(),
                 frozen.unacknowledgedWarnings(), frozen.archivePaths());
     }
@@ -439,10 +525,15 @@ public class IssuePublishService extends BaseService {
      *                       the rail's so that what the rail counted and what gets
      *                       frozen cannot be two different member sets; amend has
      *                       no rail and passes null.
+     * @param phases         filled in as each step passes, for the one line the
+     *                       caller prints when the transaction is done
      */
     private Frozen resolveFreezeAndWrite(PublicationIssue issue, PublicationSeries series,
                                          PublishRequest request, Date cutoff, Date frozenAt,
-                                         MemberResolutionService.Resolution railResolution) {
+                                         MemberResolutionService.Resolution railResolution,
+                                         Phases phases) {
+
+        long mark = System.nanoTime();
 
         // --- 3. RESOLVE, in process ---------------------------------------
         // Never through the search REST layer: it day-snaps the interval and
@@ -537,9 +628,13 @@ public class IssuePublishService extends BaseService {
         // index is the printed position, and a compilation's manual section is
         // part of the same document.
         Map<String, Integer> sortIndex = IssueOrdering.assignSortIndex(ordered);
+        phases.resolveNanos = System.nanoTime() - mark;
+        mark = System.nanoTime();
 
         // --- 6. FREEZE the member rows ------------------------------------
-        freezeMembers(issue, ordered, sortIndex, resolution);
+        freezeMembers(issue, ordered, sortIndex, resolution, phases);
+        phases.freezeNanos = System.nanoTime() - mark;
+        mark = System.nanoTime();
 
         // --- 7. FREEZE the snapshot header --------------------------------
         // A COMPILATION'S HEADER RECORDS A DIFFERENT OPERAND, and the columns it
@@ -601,12 +696,20 @@ public class IssuePublishService extends BaseService {
             override.setAppliedAtPublish(candidateUids.contains(override.getMessageUid())
                     || members.contains(override.getMessageUid()));
         }
+        phases.snapshotNanos = System.nanoTime() - mark;
+        mark = System.nanoTime();
 
         // --- 9. ARCHIVE, before anything is overwritten -------------------
         List<String> archived = archiveExistingFiles(issue, frozenAt);
+        phases.archiveNanos = System.nanoTime() - mark;
+        mark = System.nanoTime();
 
         // --- 10. FILES ----------------------------------------------------
-        writeFiles(issue, series, ordered, cutoff);
+        writeFiles(issue, series, ordered, cutoff, phases);
+        // What step 10 cost APART from drawing the documents: the render reports
+        // its own wall time, and leaving it inside this number would hide the
+        // member load and the value objects behind it.
+        phases.fileNanos = System.nanoTime() - mark - phases.renderNanos;
 
         return new Frozen(members.size(), unacknowledged, archived);
     }
@@ -674,12 +777,41 @@ public class IssuePublishService extends BaseService {
         return resolver.orderablesFor(uids);
     }
 
-    /** Steps 6: one frozen row per member, carrying the mutable facts as at freeze. */
+    /**
+     * Step 6: one frozen row per member, carrying the mutable facts as at freeze.
+     *
+     * THE ROWS THAT SURVIVE ARE REWRITTEN IN PLACE rather than thrown away and
+     * made again, and that is a cost rather than a meaning. Every id in this
+     * system is drawn from one shared sequence row, and drawing one is a round
+     * trip of its own -- so an amend of an annual spent four seconds fetching a
+     * thousand new ids for a thousand rows that were about to say exactly what
+     * the deleted ones said. Keyed on the message uid, which is what the table is
+     * unique on, so a member that is still a member keeps its row and its id.
+     *
+     * WHAT A ROW SAYS IS UNCHANGED BY THIS. Every column is written on every
+     * freeze, including the two that only sometimes have a value: a row that was
+     * compiled last time and is a manual include this time has to stop naming a
+     * source issue, and a row reached this way would otherwise keep whatever the
+     * previous freeze left on it. Only the frozen facts are conditional, exactly
+     * as they were, because a member whose message has gone has nothing to freeze
+     * from and a row that kept its last known facts is a better record than one
+     * that nulled them.
+     *
+     * What is no longer a member is deleted, in one statement.
+     */
     private void freezeMembers(PublicationIssue issue, List<IssueOrdering.Orderable> ordered,
                                Map<String, Integer> sortIndex,
-                               MemberResolutionService.Resolution resolution) {
-        em.createNamedQuery("IssueMember.deleteByIssue")
-                .setParameter("issue", issue).executeUpdate();
+                               MemberResolutionService.Resolution resolution,
+                               Phases phases) {
+
+        // The rows as they stand, by the uid they are unique on. One query, and
+        // on a first freeze it returns nothing.
+        Map<String, IssueMember> previous = new LinkedHashMap<>();
+        for (IssueMember row : em.createQuery(
+                        "SELECT m FROM IssueMember m WHERE m.issue = :issue", IssueMember.class)
+                .setParameter("issue", issue).getResultList()) {
+            previous.put(row.getMessageUid(), row);
+        }
 
         Map<String, org.niord.core.message.Message> byUid = new LinkedHashMap<>();
         if (!sortIndex.isEmpty()) {
@@ -692,9 +824,13 @@ public class IssuePublishService extends BaseService {
 
         for (IssueOrdering.Orderable o : ordered) {
             org.niord.core.message.Message m = byUid.get(o.uid());
-            IssueMember member = new IssueMember();
-            member.setIssue(issue);
-            member.setMessageUid(o.uid());
+            IssueMember member = previous.remove(o.uid());
+            boolean fresh = member == null;
+            if (fresh) {
+                member = new IssueMember();
+                member.setIssue(issue);
+                member.setMessageUid(o.uid());
+            }
             member.setMessage(m);
             member.setSortIndex(sortIndex.get(o.uid()));
             if (m != null) {
@@ -727,11 +863,34 @@ public class IssuePublishService extends BaseService {
             // deletion or cascade into the compilation's own history. The publicId
             // stays readable after one, and the week and name are read live beside
             // it while the source is still there.
-            if (reason == MembershipReason.FROM_SOURCE_ISSUE && resolution.compiled()) {
-                CompilationResolver.SourceRef ref = resolution.sourceOf().get(o.uid());
-                member.setSourceIssuePublicId(ref == null ? null : ref.publicId());
+            CompilationResolver.SourceRef ref =
+                    reason == MembershipReason.FROM_SOURCE_ISSUE && resolution.compiled()
+                            ? resolution.sourceOf().get(o.uid()) : null;
+            member.setSourceIssuePublicId(ref == null ? null : ref.publicId());
+            // Nothing on this path writes either of these, so a row being reused
+            // has to be told so rather than left carrying an older freeze's.
+            member.setReasonNote(null);
+            member.setOverride(null);
+
+            if (fresh) {
+                em.persist(member);
+                phases.inserted++;
+            } else {
+                phases.kept++;
             }
-            em.persist(member);
+        }
+
+        // Whatever is still here was a member and is not one now. One statement,
+        // and the rows are detached after it: they were read into the persistence
+        // context a moment ago, and a bulk delete does not tell it they have gone.
+        if (!previous.isEmpty()) {
+            List<Integer> gone = new ArrayList<>(previous.size());
+            for (IssueMember row : previous.values()) {
+                gone.add(row.getId());
+            }
+            phases.deleted = em.createQuery("DELETE FROM IssueMember m WHERE m.id IN :ids")
+                    .setParameter("ids", gone).executeUpdate();
+            previous.values().forEach(em::detach);
         }
     }
 
@@ -933,7 +1092,7 @@ public class IssuePublishService extends BaseService {
      * A sticky language (an uploaded replacement) is left alone.
      */
     private void writeFiles(PublicationIssue issue, PublicationSeries series,
-                            List<IssueOrdering.Orderable> ordered, Date stamp) {
+                            List<IssueOrdering.Orderable> ordered, Date stamp, Phases phases) {
         if (EffectiveReport.idOf(issue, series) == null) {
             // A query-backed series with no report has nothing to render and no
             // bytes to fall back on, so returning quietly here left it PUBLISHED
@@ -994,26 +1153,28 @@ public class IssuePublishService extends BaseService {
         // written -- so a release that could not draw its English document has not
         // left a Danish one behind on the public repository for the rollback to
         // fail to remove.
-        long renderMillis = System.currentTimeMillis();
+        long renderNanos = System.nanoTime();
         List<IssueRenderService.Rendered> documents = renderService.renderAll(requests);
-        renderMillis = System.currentTimeMillis() - renderMillis;
+        renderNanos = System.nanoTime() - renderNanos;
+        phases.renderNanos = renderNanos;
+        long renderMillis = renderNanos / 1_000_000L;
 
         for (int i = 0; i < documents.size(); i++) {
             PublicationIssueDesc desc = rendered.get(i);
             String fileName = fileNames.get(i);
             Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
-            IssueRenderService.Phases phases = documents.get(i).phases();
+            IssueRenderService.Phases renderPhases = documents.get(i).phases();
             try {
                 Files.createDirectories(target.getParent());
                 long t0 = System.currentTimeMillis();
                 Files.write(target, documents.get(i).bytes());
-                phases.writeMillis = System.currentTimeMillis() - t0;
+                renderPhases.writeMillis = System.currentTimeMillis() - t0;
             } catch (IOException e) {
                 throw new IssueRenderService.RenderFailedException(
                         "could not write the rendered report to " + target, e);
             }
             logRender("release", issue, desc.getLang(), ordered.size(), loadMillis, voMillis,
-                    pageBreakMillis, phases);
+                    pageBreakMillis, renderPhases);
 
             desc.setFileName(fileName);
             desc.setFilePath(issue.getRepoPath() + "/" + fileName);
@@ -1075,6 +1236,47 @@ public class IssuePublishService extends BaseService {
     private void logRenderStep(String what, PublicationIssue issue, int languages, long millis) {
         log.info("Issue {} {}: {} language(s) rendered in {} ms wall time",
                 issue.getPublicId(), what, languages, millis);
+    }
+
+    /**
+     * Push the writes out, time them, and print where the whole transaction went.
+     *
+     * THE FLUSH IS HERE SO THAT IT CAN BE MEASURED. Everything above persists and
+     * merges entities, which queues statements rather than sending them; without
+     * this the inserts would leave for the database inside the commit, after this
+     * method and after the REST method, where nothing on either side can say how
+     * long they took -- and on a compiled annual they are over a thousand rows. A
+     * flush at the end of the transaction sends exactly the statements the commit
+     * would have sent, in the same order, in the same transaction, and a failure
+     * still rolls the whole thing back; the only thing that moves is where the
+     * clock can be put around them.
+     *
+     * The residue is the last field and the most important one: it is the
+     * transaction's own time minus every phase above, so a step that is slow and
+     * not yet timed shows up as a number that does not belong rather than as
+     * nothing at all.
+     */
+    private void flushAndLog(String what, PublicationIssue issue, int memberCount, Phases phases,
+                             long startNanos) {
+        long mark = System.nanoTime();
+        em.flush();
+        phases.flushNanos = System.nanoTime() - mark;
+
+        long totalNanos = System.nanoTime() - startNanos;
+        long otherNanos = totalNanos - phases.lockNanos - phases.railNanos - phases.resolveNanos
+                - phases.freezeNanos - phases.snapshotNanos - phases.archiveNanos
+                - phases.renderNanos - phases.fileNanos - phases.auditNanos - phases.flushNanos;
+
+        log.info("Issue {} {} timing: {} members in {} ms (locks {}, rail {}, resolve {}, "
+                        + "freeze {} [{} deleted, {} inserted, {} kept], snapshot {}, archive {}, "
+                        + "render {} wall, files {}, audit {}, flush {}, other {})",
+                issue.getPublicId(), what, memberCount, totalNanos / 1_000_000L,
+                phases.lockNanos / 1_000_000L, phases.railNanos / 1_000_000L,
+                phases.resolveNanos / 1_000_000L, phases.freezeNanos / 1_000_000L,
+                phases.deleted, phases.inserted, phases.kept, phases.snapshotNanos / 1_000_000L,
+                phases.archiveNanos / 1_000_000L, phases.renderNanos / 1_000_000L,
+                phases.fileNanos / 1_000_000L, phases.auditNanos / 1_000_000L,
+                phases.flushNanos / 1_000_000L, otherNanos / 1_000_000L);
     }
 
     /**

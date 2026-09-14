@@ -43,10 +43,10 @@ import org.niord.core.model.BaseEntity;
  * table alone. EntityContractTest.noEntityBringsItsOwnIdGenerator() enforces it.
  */
 @Entity
-// Named because the same statement is issued from two places: the delete of an
-// unpublished issue, and step 6 of publish clearing the previous freeze before
-// writing the new one. Two copies of a bulk DELETE are two chances for one of
-// them to widen.
+// EVERY row of one issue, which is what deleting the issue itself means. Named
+// and kept here beside the table it empties, because a bulk DELETE written at
+// its call site is a statement whose reach nobody reviews again: the freeze
+// removes members too, and it must never reach for this one.
 @NamedQuery(name = "IssueMember.deleteByIssue",
         query = "DELETE FROM IssueMember m WHERE m.issue = :issue")
 @Table(
