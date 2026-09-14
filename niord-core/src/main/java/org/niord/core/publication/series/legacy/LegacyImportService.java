@@ -1480,11 +1480,16 @@ public class LegacyImportService extends BaseService {
      *
      * THROUGH THE SHAPE THE NATIVE PATH USES, not a copy of it. The week comes
      * from the ISO week the cut-off falls in, the year from whichever year the
-     * series is numbered by, and a window that swallowed more than one period
-     * carries the pair -- and those three rules had exactly one implementation
-     * before this and must keep having one. Imported issues previously carried a
-     * year and no week at all, which reads on the wire as an issue that belongs to
-     * a year but to none of its weeks.
+     * series is numbered by, and a WEEKLY window that swallowed more than one
+     * period carries the pair -- and those three rules had exactly one
+     * implementation before this and must keep having one. Imported issues
+     * previously carried a year and no week at all, which reads on the wire as an
+     * issue that belongs to a year but to none of its weeks.
+     *
+     * That the span is a weekly publication's alone is IssueShape's rule, not a
+     * condition applied here: an annual compilation whose period opens in January
+     * and closes in December is not two weeks apart, it is one edition, and the
+     * shape is where every caller learns that.
      *
      * NAMES ARE NOT TOUCHED. An imported name is what the archive called the
      * edition, and it is cited by that name in message HTML that is already

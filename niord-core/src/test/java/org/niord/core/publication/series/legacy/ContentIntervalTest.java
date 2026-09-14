@@ -297,4 +297,92 @@ public class ContentIntervalTest {
                     "week " + week + ": the interval has been overwritten by the public window again");
         }
     }
+
+    // --------------------------------------- the numbering path the import takes
+
+    /**
+     * Only a weekly publication is numbered as a SPAN, on the import's path too.
+     *
+     * The rule was drawn for the native path -- the shaping and the draft ask the
+     * cadence before reading a span -- but the import reaches the numbers through
+     * the STATIC overload, which took the issue's own lower bound whatever the
+     * publication was. An annual edition's lower bound is the January its period
+     * opened in, so "Accumulated NtM - 2016" imported as weeks 1 to 52: a range
+     * that is not a fact about an annual edition, and one that reaches its title,
+     * its file name and the link it is cited by.
+     *
+     * Asserted against the static overload rather than through a plan, because
+     * that overload is the seam the defect lived in: a test of the instance path
+     * passes while this one fails.
+     */
+    @Test
+    public void anAnnualIssueIsNumberedForTheWeekItClosesInAndCarriesNoRange() {
+        PublicationSeries yearly = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.YEARLY);
+        yearly.setSeriesId("accumulated-yearly-ntm");
+        yearly.setDomain(domainIn("Europe/Copenhagen"));
+
+        PublicationIssue issue = closing(yearly, at(2016, 1, 1), at(2016, 12, 31));
+        IssueShape.applyNumbers(issue, yearly);
+
+        assertNull(issue.getWeekTo(),
+                "an edition covering a whole year is one edition, not fifty-two weekly ones");
+        assertEquals(52, issue.getWeek(),
+                "the week is the one the cut-off falls in, the same as for every other cadence");
+    }
+
+    /**
+     * And a monthly one likewise: one week, no range.
+     *
+     * A month-long window read as a span is the same defect at a smaller scale --
+     * four or five weeks instead of fifty-two -- and it would be just as wrong on
+     * the cover of the edition.
+     */
+    @Test
+    public void aMonthlyIssueIsNumberedForTheWeekItClosesInAndCarriesNoRange() {
+        PublicationSeries monthly = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.MONTHLY);
+        monthly.setSeriesId("monthly-ntm");
+        monthly.setDomain(domainIn("Europe/Copenhagen"));
+
+        PublicationIssue issue = closing(monthly, at(2016, 3, 1), at(2016, 3, 31));
+        IssueShape.applyNumbers(issue, monthly);
+
+        assertNull(issue.getWeekTo(), "a month is not a span of weeks the publication skipped");
+        assertEquals(13, issue.getWeek());
+    }
+
+    /**
+     * A weekly double week is untouched by the rule, which is the whole point.
+     *
+     * "EfS uge 15-16" is a real fact about a real edition: the Easter week went
+     * out late and one document closed a fortnight. The narrowing must not reach
+     * it, so the weekly case is pinned beside the others rather than left to the
+     * estate test alone.
+     */
+    @Test
+    public void aWeeklyDoubleWeekStillCarriesBothWeeks() {
+        PublicationSeries weekly = series(TimeRelation.PUBLISHED_IN_INTERVAL, SeriesCadence.WEEKLY);
+        weekly.setDomain(domainIn("Europe/Copenhagen"));
+
+        PublicationIssue issue = closing(weekly, at(2017, 4, 7), at(2017, 4, 21));
+        IssueShape.applyNumbers(issue, weekly);
+
+        assertEquals(15, issue.getWeek());
+        assertEquals(16, issue.getWeekTo(),
+                "the fortnight the Easter edition closed is a fact about the document");
+    }
+
+    /**
+     * An issue with the two bounds the numbering reads, and nothing else.
+     *
+     * The cut-off is STAMPED rather than left to the translation, because that is
+     * the order the import runs in: the recovery cascade settles the cut-off and
+     * the numbering happens afterwards, over the instant it produced.
+     */
+    private static PublicationIssue closing(PublicationSeries series, Date from, Date cutoff) {
+        PublicationIssue issue = new PublicationIssue();
+        issue.setSeries(series);
+        issue.setIntervalFrom(from);
+        issue.setCutoffStampedAt(cutoff);
+        return issue;
+    }
 }

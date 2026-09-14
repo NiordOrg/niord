@@ -219,10 +219,42 @@ public class IssueShape extends BaseService {
      * an issue whose stored week disagrees with the week its own cut-off falls in
      * is unfindable by either.
      *
+     * The span comes from the issue's own lower bound, AND ONLY WHERE THE
+     * PUBLICATION IS NUMBERED BY WEEK -- the same scope {@link #spanStart} draws,
+     * for the same reason. A year-long window handed over as a span reads as
+     * fifty-two seven-day periods, and the annual compilation then stored a week
+     * RANGE running from the January its period opened in to the December it
+     * closed in: "Accumulated NtM - 2016" as weeks 1 to 52. That range is not a
+     * fact about an annual edition, and it reached the title, the file name and
+     * the link the edition is cited by.
+     *
      * @return the numbers, or null where the issue has no cut-off to number by
      */
     public static IssueNaming.Numbers applyNumbers(PublicationIssue issue, PublicationSeries series) {
-        return applyNumbers(issue, series, issue.getIntervalFrom());
+        return applyNumbers(issue, series, defaultSpanStart(issue, series));
+    }
+
+    /**
+     * The span a caller with no view of the series' other issues can supply.
+     *
+     * The first two answers {@link #spanStart} gives, and deliberately not the
+     * third: finding the period a non-tiling weekly hangs off means asking the
+     * series for its predecessor, which needs a persistence context this path does
+     * not have. A caller reaching the numbers statically -- the legacy import,
+     * numbering a chain it has just built in memory -- already carries that
+     * predecessor's close as the issue's own lower bound, so the two answers
+     * coincide where it matters.
+     *
+     * WEEKLY OR NOTHING. Only a weekly publication expresses a skipped period as a
+     * pair of week numbers; every other cadence is numbered for the single week
+     * its cut-off falls in, and a span offered to one of those is a range nobody
+     * meant.
+     */
+    private static Date defaultSpanStart(PublicationIssue issue, PublicationSeries series) {
+        if (series == null || series.getCadence() != SeriesCadence.WEEKLY) {
+            return null;
+        }
+        return issue.getIntervalFrom();
     }
 
     /**

@@ -26,6 +26,8 @@ import org.niord.core.publication.Publication;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.core.publication.series.PublicationIssueDesc;
+import org.niord.core.publication.series.PublicationSeries;
+import org.niord.core.publication.series.SeriesCadence;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -445,6 +447,74 @@ public class SeamRegressionTest {
             }
         }
         assertTrue(failures.isEmpty(), "the seam numbering moved:\n  " + String.join("\n  ", failures));
+    }
+
+    /**
+     * A week RANGE belongs to a weekly publication and to nothing else.
+     *
+     * The span is how a weekly edition says it closed a period nobody else closed
+     * -- "uge 15-16", the Easter week that went out late. Handed to a publication
+     * numbered by year it says something different and false: the annual
+     * compilation's own lower bound is the January its period opened in, so
+     * "Accumulated NtM - 2016" imported as weeks 1 to 52 and "… 2018" as 2 to 1.
+     * An annual edition is one edition. The range reached its title, its file name
+     * and the link it is cited by, and the import is the only place those were
+     * ever written.
+     *
+     * Estate-wide rather than by example, because the rule is about the CADENCE
+     * and any counter-example is a defect wherever it turns up. The two yearly
+     * rows are pinned by hand beside it so the assertion cannot pass by the
+     * annual series quietly leaving the plan.
+     */
+    @Test
+    public void onlyAWeeklyPublicationIsNumberedAsASpan() {
+        LegacyImportService.Plan plan = importService.planFrom(
+                LegacyEstateFixture.templates(), LegacyEstateFixture.publications());
+
+        List<String> ranged = new ArrayList<>();
+        int nonWeekly = 0;
+        for (PublicationIssue issue : plan.issues().values()) {
+            PublicationSeries series = issue.getSeries();
+            if (series == null || series.getCadence() == SeriesCadence.WEEKLY) {
+                continue;
+            }
+            nonWeekly++;
+            if (issue.getWeekTo() != null) {
+                ranged.add(series.getSeriesId() + " / " + issue.getPublicId() + ": "
+                        + issue.getWeek() + "-" + issue.getWeekTo());
+            }
+        }
+
+        assertTrue(nonWeekly > 50, "only " + nonWeekly + " non-weekly issues were examined; the "
+                + "estate holds the annual compilation and the one-off series, so the assertion "
+                + "has stopped reaching what it is about");
+        assertTrue(ranged.isEmpty(), "a publication that is not numbered by week stored a week "
+                + "range:\n  " + String.join("\n  ", ranged));
+
+        // The annual compilation, by hand: the week its period CLOSES in, no
+        // range, and the year the SERIES is numbered by. 31 December 2018 falls in
+        // ISO week 1 of week-year 2019, and the edition is still the 2018 one --
+        // which is the whole reason the year basis is the series' own.
+        record Numbered(String publicationId, String name, int week, int year) {
+        }
+        List<String> wrong = new ArrayList<>();
+        for (Numbered n : List.of(
+                new Numbered("f51d37c5-84f2-4614-b0c0-172bb03977e3", "Accumulated NtM - 2016", 52, 2016),
+                new Numbered("2b27a139-f1dc-4a90-b416-c86364ba6456", "Accumulated NtM - 2018", 1, 2018))) {
+            PublicationIssue issue = plan.issues().get(n.publicationId());
+            if (issue == null) {
+                wrong.add(n.name() + ": not in the plan");
+                continue;
+            }
+            String actual = issue.getWeek() + (issue.getWeekTo() == null ? "" : "-" + issue.getWeekTo())
+                    + " / " + issue.getYear();
+            String wanted = n.week() + " / " + n.year();
+            if (!wanted.equals(actual)) {
+                wrong.add(n.name() + ": numbered " + actual + ", expected " + wanted);
+            }
+        }
+        assertTrue(wrong.isEmpty(), "the annual compilation is misnumbered:\n  "
+                + String.join("\n  ", wrong));
     }
 
     /**
