@@ -114,6 +114,19 @@ public class LegacyImportReportVo implements IJsonSerializable {
      */
     private int seriesWithoutDomain;
     private int issuesImported;
+
+    /**
+     * Tag rows the import left out because they post-date the issue by too much.
+     *
+     * The tag goes on being edited after the document has gone out, so it holds
+     * notices the printed page never carried. They are dropped rather than frozen
+     * -- see LateMemberRule -- and the number is the only place that drop is
+     * visible from outside, which is why it is reported even when it is zero: an
+     * absent number and a zero read alike, and a run that discarded nothing has to
+     * be tellable from one whose report was never written.
+     */
+    private int membersLeftOutPublishedAfterIssue;
+
     private Map<String, Integer> issuesByStatus = new LinkedHashMap<>();
     private Map<String, Integer> issuesByCutoffSource = new LinkedHashMap<>();
     private List<ProblemVo> problems = new ArrayList<>();
@@ -175,6 +188,14 @@ public class LegacyImportReportVo implements IJsonSerializable {
 
     public void setIssuesImported(int issuesImported) {
         this.issuesImported = issuesImported;
+    }
+
+    public int getMembersLeftOutPublishedAfterIssue() {
+        return membersLeftOutPublishedAfterIssue;
+    }
+
+    public void setMembersLeftOutPublishedAfterIssue(int membersLeftOutPublishedAfterIssue) {
+        this.membersLeftOutPublishedAfterIssue = membersLeftOutPublishedAfterIssue;
     }
 
     public Map<String, Integer> getIssuesByStatus() {

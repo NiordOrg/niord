@@ -470,21 +470,23 @@ public class ImportCheckService extends BaseService {
      * it was not announced in. The public archive then answers a question about
      * January with a notice nobody could have read before December.
      *
-     * IT IS A REPORT, NOT A DROP. The import keeps the row, because deciding on
-     * the importer's side which member a document "really" had would silently
-     * rewrite an archive nobody can check afterwards. Naming it here puts the
-     * decision where it belongs -- on the desk that owns the legacy tag, before
-     * the import is accepted.
+     * WHAT IS LEFT FOR THIS CHECK TO FIND. The importer now applies the same rule
+     * and leaves such a row out, so a freshly imported estate reads zero here.
+     * This catches what the importer let through -- a row added to a frozen issue
+     * afterwards, or an estate imported before the rule existed -- and the check
+     * only means that while both sides judge alike, which is why the boundary
+     * lives in LateMemberRule rather than here.
      *
      * IMPORTED provenance only. A natively published issue's members come from
      * the resolver, which selects on the issue's own window, so a row there that
      * post-dates the cut-off is a resolver question and not a tag that was edited.
      *
-     * The grace is a whole calendar day in the series' cut-off zone. A publication
-     * goes out and the notices it announces are stamped in the same sitting,
-     * minutes either side of the publication's own timestamp, and calling those a
-     * finding would report every issue on the estate. A day later is no longer the
-     * same sitting.
+     * The grace is LateMemberRule.GRACE_DAYS whole days in the series' cut-off
+     * zone, measured to the end of the day it lands on. A publication goes out and
+     * the notices it announces are stamped in the same sitting, minutes either
+     * side of the publication's own timestamp; and most imported cut-offs are
+     * reconstructed, so the sitting itself can be days after the instant recorded
+     * for it. A fortnight later no reconstruction explains the gap.
      *
      * Counted even when it is zero. A clean estate reads zero here, and that is
      * the finding somebody ticks -- an absent number and a zero read alike on a
@@ -518,17 +520,16 @@ public class ImportCheckService extends BaseService {
             PublicationSeries series = issue.getSeries();
             ZoneId zone = series == null ? ZoneId.of("UTC") : series.cutoffZone();
             Instant published = m.getFrozenPublishDateFrom().toInstant();
-            Instant dayAfterReference = reference.toInstant().atZone(zone).toLocalDate()
-                    .plusDays(1).atStartOfDay(zone).toInstant();
-            if (published.isBefore(dayAfterReference)) {
+            if (!LateMemberRule.publishedAfter(reference.toInstant(), zone, published)) {
                 continue;
             }
 
             late++;
             String message = m.getFrozenShortId() != null ? m.getFrozenShortId() : m.getMessageUid();
             violations.add(new Violation(MEMBER_PUBLISHED_AFTER_ISSUE, issue.getPublicId(),
-                    "member " + message + " was published " + published + ", after the end of the "
-                            + "day this issue closed on (" + reference.toInstant() + ", read in "
+                    "member " + message + " was published " + published + ", more than "
+                            + LateMemberRule.GRACE_DAYS + " days after the day this issue closed on ("
+                            + reference.toInstant() + ", read in "
                             + zone.getId() + "). It cannot have been in the printed document -- the "
                             + "import copied the legacy publication's message tag verbatim, and the "
                             + "tag was edited after the issue went out. A compilation built on this "

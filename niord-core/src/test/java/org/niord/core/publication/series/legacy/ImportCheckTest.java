@@ -362,12 +362,17 @@ public class ImportCheckTest {
     }
 
     /**
-     * A member row published after its issue closed is a violation.
+     * A member row published long after its issue closed is a violation.
      *
      * The import copies the legacy publication's message tag verbatim, and a tag
      * is a hand-maintained list -- so it can hold a notice published long after
      * the publication was printed. That row was not in the document, and a
      * compilation built on it announces the message in the wrong period.
+     *
+     * The importer now leaves such a row out on the same rule, so a freshly
+     * imported estate reads zero here and this catches what got through
+     * afterwards. Both halves read LateMemberRule, which is what makes the two
+     * numbers mean anything together.
      *
      * Driven on rows built in memory: the estate's own offenders are two rows in
      * one tag, which pins neither the code the runbook greps for nor the message
@@ -380,7 +385,7 @@ public class ImportCheckTest {
         PublicationIssue january = closedIssue("nm-w02-2025", "2025-01-08T12:00");
 
         ImportCheckService.reportMembersPublishedAfterTheirIssue(
-                List.of(member(january, "NM-0042-25", MemberSource.IMPORTED, "2025-01-10T09:00")),
+                List.of(member(january, "NM-0042-25", MemberSource.IMPORTED, "2025-01-28T09:00")),
                 violations, counts);
 
         assertEquals(1, counts.get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT));
@@ -400,36 +405,45 @@ public class ImportCheckTest {
     }
 
     /**
-     * The grace is the rest of the calendar day, not a window of hours.
+     * The grace runs to the end of a calendar day a fortnight on, not a window of hours.
      *
      * A publication goes out and the notices it announces are stamped in the same
-     * sitting, minutes either side of the publication's own timestamp; calling
-     * those findings would report every issue on the estate. The boundary is the
-     * END of the cut-off's day read in the series' cut-off zone -- so midnight is
-     * already the next sitting, and 24 hours is not the measure.
+     * sitting, minutes either side of the publication's own timestamp; and most
+     * imported cut-offs are RECONSTRUCTED -- from an update stamp, a nominal close
+     * or the public window -- so the sitting itself can fall days after the instant
+     * recorded for it. An annual list cut on 1 January carries notices stamped on
+     * the 2nd, and a double week cut on its update stamp carries rows a fortnight
+     * later. Calling those findings would report a clean estate as dirty.
+     *
+     * The boundary is the END of the day the grace lands on, read in the series'
+     * cut-off zone -- midnight after it is already too late, and a fixed multiple
+     * of 24 hours is not the measure.
      */
     @Test
-    public void aMemberPublishedLaterTheSameDayIsNotAFinding() {
+    public void aMemberPublishedInsideTheGraceIsNotAFinding() {
         List<ImportCheckService.Violation> violations = new ArrayList<>();
         Map<String, Integer> counts = new LinkedHashMap<>();
         PublicationIssue january = closedIssue("nm-w02-2025", "2025-01-08T12:00");
 
         ImportCheckService.reportMembersPublishedAfterTheirIssue(
                 List.of(member(january, "NM-0043-25", MemberSource.IMPORTED, "2025-01-08T12:04"),
-                        member(january, "NM-0044-25", MemberSource.IMPORTED, "2025-01-08T23:30")),
+                        member(january, "NM-0044-25", MemberSource.IMPORTED, "2025-01-08T23:30"),
+                        member(january, "NM-0045-25", MemberSource.IMPORTED, "2025-01-10T09:00"),
+                        member(january, "NM-0046-25", MemberSource.IMPORTED, "2025-01-22T23:59")),
                 violations, counts);
 
         assertEquals(0, counts.get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT),
-                "a notice published in the same sitting is not a finding: " + violations);
+                "the same sitting, two days on, and the last hour of the fourteenth day are all "
+                        + "reachable from a reconstructed cut-off: " + violations);
         assertTrue(violations.isEmpty());
 
         ImportCheckService.reportMembersPublishedAfterTheirIssue(
-                List.of(member(january, "NM-0045-25", MemberSource.IMPORTED, "2025-01-09T00:00")),
+                List.of(member(january, "NM-0047-25", MemberSource.IMPORTED, "2025-01-23T00:00")),
                 violations, counts);
 
         assertEquals(1, counts.get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT),
-                "the day the cut-off falls in has ended, so this is a finding although it is "
-                        + "twelve hours after the cut-off rather than twenty-four");
+                "the fourteenth day has ended, so this is a finding although it is a minute past "
+                        + "midnight rather than a fifteenth full day later");
     }
 
     /**
@@ -447,8 +461,8 @@ public class ImportCheckTest {
         PublicationIssue january = closedIssue("nm-w02-2025", "2025-01-08T12:00");
 
         ImportCheckService.reportMembersPublishedAfterTheirIssue(
-                List.of(member(january, "NM-0046-25", MemberSource.CRITERIA, "2025-01-10T09:00"),
-                        member(january, "NM-0047-25", MemberSource.COMPILED, "2025-12-29T09:00")),
+                List.of(member(january, "NM-0048-25", MemberSource.CRITERIA, "2025-11-04T09:00"),
+                        member(january, "NM-0049-25", MemberSource.COMPILED, "2025-12-29T09:00")),
                 violations, counts);
 
         assertEquals(0, counts.get(ImportCheckService.MEMBER_AFTER_ISSUE_COUNT),

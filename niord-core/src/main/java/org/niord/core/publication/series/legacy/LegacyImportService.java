@@ -1213,6 +1213,7 @@ public class LegacyImportService extends BaseService {
         Map<String, List<Publication>> chains = chainsBySeries(publications, seriesByTemplate);
         Map<String, Integer> byStatus = new LinkedHashMap<>();
         Map<String, Integer> byCutoffSource = new LinkedHashMap<>();
+        int membersLeftOut = 0;
 
         for (List<Publication> chain : chains.values()) {
             // Carried forward rather than looked up: at iteration i the previous
@@ -1303,8 +1304,18 @@ public class LegacyImportService extends BaseService {
                                     ? List.of()
                                     : factsByTag.getOrDefault(legacy.getMessageTag().getId(), List.of());
                     assertMembersCanBeFrozen(plan, legacy, facts);
-                    List<IssueMember> members = MemberSnapshotImport.apply(
+                    MemberSnapshotImport.Snapshot snapshot = MemberSnapshotImport.apply(
                             issue, legacy, facts, byTag);
+                    List<IssueMember> members = snapshot.rows();
+                    // Named per issue rather than per row: an estate whose tags
+                    // drifted loses hundreds of rows, and a note each would bury
+                    // every other note in the report. The issue is the unit
+                    // somebody acts on anyway -- the tag belongs to it.
+                    if (!snapshot.leftOut().isEmpty()) {
+                        membersLeftOut += snapshot.leftOut().size();
+                        plan.report().getNotes().add(membersLeftOut(
+                                legacy.getPublicationId(), titleOf(legacy), snapshot.leftOut()));
+                    }
 
                     plan.issues().put(legacy.getPublicationId(), issue);
                     plan.members().put(legacy.getPublicationId(), members);
@@ -1335,6 +1346,68 @@ public class LegacyImportService extends BaseService {
 
         plan.report().setIssuesByStatus(byStatus);
         plan.report().setIssuesByCutoffSource(byCutoffSource);
+        // Written whatever it turns out to be. Zero is the finding an operator
+        // ticks: it says the tags were clean, which is not the same thing as the
+        // rule never having run.
+        plan.report().setMembersLeftOutPublishedAfterIssue(membersLeftOut);
+    }
+
+    /** The wire code for an issue whose tag held rows published long after it went out. */
+    static final String MEMBER_LEFT_OUT_PUBLISHED_AFTER_ISSUE =
+            "MEMBER_LEFT_OUT_PUBLISHED_AFTER_ISSUE";
+
+    /** How many of an issue's lost rows the note names before it starts counting. */
+    private static final int LEFT_OUT_NAMED = 5;
+
+    /**
+     * The note recording the rows one issue's tag lost, and which they were.
+     *
+     * Built here rather than inline SO IT CAN BE ASSERTED. Reaching it through a
+     * real dry run needs an estate whose tags have drifted, which is a property of
+     * production data rather than of any fixture -- and what matters is the shape:
+     * the code an operator greps the report for, and a message naming enough of
+     * the rows to be checked against the legacy tag it is about.
+     *
+     * A NOTE, not a problem. A problem refuses the whole estate, and an edited tag
+     * is not a reason to refuse an archive -- the import lands correct and says
+     * what it did not carry. The alternative is not naming the rows at all: the
+     * run happens once, in one window, and a discard nobody was told about is a
+     * discard nobody can check.
+     *
+     * The first few by name, then a count of the rest. The estate's worst tag
+     * holds over a hundred late rows, and a note listing all of them is a note
+     * nobody reads -- while a note with no names cannot be checked at all. Each
+     * name carries its publish date, because the date is the evidence: it is what
+     * says the notice belongs to another publication entirely.
+     */
+    static LegacyImportReportVo.ProblemVo membersLeftOut(
+            String publicationId, String title,
+            List<MemberSnapshotImport.LeftOutMember> leftOut) {
+
+        int named = Math.min(leftOut.size(), LEFT_OUT_NAMED);
+        StringBuilder detail = new StringBuilder()
+                .append(leftOut.size())
+                .append(leftOut.size() == 1
+                        ? " message in this publication's tag was"
+                        : " messages in this publication's tag were")
+                .append(" published more than ").append(LateMemberRule.GRACE_DAYS)
+                .append(" days after this issue closed, so they cannot have been in the printed "
+                        + "document and were left out of its frozen members: ");
+        for (int i = 0; i < named; i++) {
+            MemberSnapshotImport.LeftOutMember m = leftOut.get(i);
+            detail.append(i == 0 ? "" : ", ")
+                    .append(m.shortId() != null ? m.shortId() : m.uid())
+                    .append(" (published ").append(m.publishedAt().toInstant()).append(")");
+        }
+        if (leftOut.size() > named) {
+            detail.append(" and ").append(leftOut.size() - named).append(" more");
+        }
+        detail.append(". The tag was edited after the publication went out. Nothing in the legacy "
+                + "tables is changed by the import -- move the messages to the publication that "
+                + "printed them if the archive needs them.");
+
+        return new LegacyImportReportVo.ProblemVo(
+                MEMBER_LEFT_OUT_PUBLISHED_AFTER_ISSUE, publicationId, title, detail.toString());
     }
 
     /**

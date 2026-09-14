@@ -23,6 +23,8 @@ import org.niord.core.publication.series.MembershipProvenance;
 import org.niord.core.publication.series.PublicationIssue;
 import org.niord.model.message.Status;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -92,6 +94,27 @@ public final class MemberSnapshotImport {
         }
     }
 
+    /**
+     * A tag row the late rule left out, kept only so the report can name it.
+     *
+     * The uid is the identity and the short id is the caption an operator
+     * recognises; the publish date is the whole reason the row was left out, so
+     * the note can say by how much rather than merely that it happened.
+     */
+    public record LeftOutMember(String uid, String shortId, Date publishedAt) {
+    }
+
+    /**
+     * What one issue's tag produced: the rows it imports, and the rows it did not.
+     *
+     * The two travel together because the caller needs both and neither is
+     * derivable from the other -- the left-out rows are gone from the snapshot by
+     * construction, and an import that reported only a count would leave nobody
+     * able to say which notices went missing.
+     */
+    public record Snapshot(List<IssueMember> rows, List<LeftOutMember> leftOut) {
+    }
+
     private MemberSnapshotImport() {
     }
 
@@ -125,17 +148,36 @@ public final class MemberSnapshotImport {
      * names are not unique -- seven of them are shared, one by three
      * publications -- so a name lookup returns the wrong tag for at least ten
      * rows and cannot tell that it did.
+     *
+     * A ROW PUBLISHED LONG AFTER THE ISSUE IS LEFT OUT, not imported and then
+     * reported. The tag goes on being edited after the document has gone out, so
+     * it holds notices the printed page never carried; writing them into the
+     * frozen snapshot would make the archive claim the issue announced them, and
+     * every compilation drawn from it would repeat the claim. LateMemberRule
+     * draws the line and says why it is drawn where it is. What was left out is
+     * RETURNED rather than logged, so the import report can name the issues that
+     * lost rows -- a discard nobody is told about is a discard nobody can check.
+     *
+     * The rule is read off the ISSUE, which is already shaped when this runs: its
+     * cut-off stamp, or its publish stamp where the recovery gave it no cut-off,
+     * and the zone of the series it belongs to.
      */
-    public static List<IssueMember> apply(PublicationIssue issue, Publication legacy,
-                                          List<MemberFacts> members,
-                                          Map<String, List<Publication>> publicationsPerTag) {
+    public static Snapshot apply(PublicationIssue issue, Publication legacy,
+                                 List<MemberFacts> members,
+                                 Map<String, List<Publication>> publicationsPerTag) {
         MemberProvenanceRules.Decision decision =
                 MemberProvenanceRules.decide(legacy, publicationsPerTag);
 
         issue.setMembershipProvenance(decision.provenance());
         issue.setMembershipProvenanceNote(decision.note());
 
+        Date referenceDate = issue.getCutoffStampedAt() != null
+                ? issue.getCutoffStampedAt() : issue.getPublishedAt();
+        Instant reference = referenceDate == null ? null : referenceDate.toInstant();
+        ZoneId zone = issue.getSeries() == null ? null : issue.getSeries().cutoffZone();
+
         List<IssueMember> rows = new ArrayList<>();
+        List<LeftOutMember> leftOut = new ArrayList<>();
         if (members != null) {
             // Duplicates collapse rather than becoming two rows for one message:
             // a tag holding the same uid twice is a legacy artefact, not two
@@ -147,6 +189,17 @@ public final class MemberSnapshotImport {
                         || !seen.add(facts.uid())) {
                     continue;
                 }
+
+                // After the duplicate collapse, so a uid the tag holds twice is
+                // named once in the report rather than twice. sortIndex is not
+                // advanced here, so the rows that are kept stay contiguous from
+                // zero -- a gap in it would read as a row that failed to write.
+                if (facts.publishFrom() != null
+                        && LateMemberRule.publishedAfter(reference, zone, facts.publishFrom().toInstant())) {
+                    leftOut.add(new LeftOutMember(facts.uid(), facts.shortId(), facts.publishFrom()));
+                    continue;
+                }
+
                 IssueMember m = new IssueMember();
                 m.setIssue(issue);
                 m.setMessageUid(facts.uid());
@@ -189,8 +242,12 @@ public final class MemberSnapshotImport {
         // count is written here. Returning them rather than stashing them keeps
         // this a pure function, which is what lets the tests run it over all
         // 1,077 rows without a database.
+        //
+        // The count is what the issue KEEPS. A left-out row is not a member, and
+        // counting it would put a number on the screen that no list of rows can
+        // account for.
         issue.setMemberCount(rows.size());
-        return rows;
+        return new Snapshot(rows, leftOut);
     }
 
     /**

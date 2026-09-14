@@ -19,12 +19,14 @@ package org.niord.core.publication.series.legacy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.niord.core.domain.Domain;
 import org.niord.core.publication.series.BindsRule;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.series.IssueMember;
 import org.niord.core.publication.series.MemberSource;
 import org.niord.core.publication.series.MembershipProvenance;
 import org.niord.core.publication.series.PublicationIssue;
+import org.niord.core.publication.series.PublicationSeries;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -94,7 +96,7 @@ public class MemberSnapshotImportTest {
             int n = MemberSnapshotImport.importsMemberRows(p)
                     ? counts.getOrDefault(p.getPublicationId(), 0) : 0;
             List<IssueMember> members = MemberSnapshotImport.apply(
-                    issue, p, members(p.getPublicationId(), n), byTag);
+                    issue, p, members(p.getPublicationId(), n), byTag).rows();
             out.put(p.getPublicationId(), new Imported(issue, members));
         }
         return out;
@@ -335,7 +337,7 @@ public class MemberSnapshotImportTest {
         PublicationIssue issue = new PublicationIssue();
 
         List<IssueMember> members = MemberSnapshotImport.apply(
-                issue, p, List.of(facts("uid-a"), facts("uid-b"), facts("uid-a")), Map.of());
+                issue, p, List.of(facts("uid-a"), facts("uid-b"), facts("uid-a")), Map.of()).rows();
 
         assertEquals(2, members.size(), "a tag holding one uid twice is an artefact, not two memberships");
         assertEquals(2, issue.getMemberCount());
@@ -384,7 +386,7 @@ public class MemberSnapshotImportTest {
                 "uid-c", "NM-002-26", "NM", "TEMPORARY_NOTICE", "CANCELLED", null, null);
 
         List<IssueMember> members = MemberSnapshotImport.apply(
-                issue, p, List.of(facts("uid-a"), cancelledSince), Map.of());
+                issue, p, List.of(facts("uid-a"), cancelledSince), Map.of()).rows();
 
         for (IssueMember m : members) {
             assertEquals("PUBLISHED", m.getFrozenStatus(),
@@ -419,7 +421,7 @@ public class MemberSnapshotImportTest {
         p.setPublicationId("x");
         PublicationIssue issue = new PublicationIssue();
 
-        List<IssueMember> members = MemberSnapshotImport.apply(issue, p, null, Map.of());
+        List<IssueMember> members = MemberSnapshotImport.apply(issue, p, null, Map.of()).rows();
 
         assertEquals(0, members.size());
         assertEquals(MembershipProvenance.NO_MEMBERSHIP, issue.getMembershipProvenance());
@@ -438,4 +440,196 @@ public class MemberSnapshotImportTest {
 
         assertTrue(exact > 900, "most of the estate should be a usable oracle; only " + exact + " were");
     }
+
+    // ------------------------------------------- the rows the tag kept adding later
+
+    /**
+     * A notice published nearly a year after the sitting never reaches the snapshot.
+     *
+     * The tag is a hand-maintained list and goes on being edited after the
+     * document has gone out; production has weekly tags holding notices published
+     * up to a year later. Freezing one of those would make the archive say the
+     * issue announced a message nobody could read at the time, and every
+     * compilation drawn from the snapshot would repeat it.
+     *
+     * The count and the ordering are asserted with it because both are how the
+     * drop becomes visible elsewhere: a memberCount that outran its rows is a
+     * number the screen cannot account for, and a sortIndex with a hole in it
+     * reads as a row that failed to write.
+     */
+    @Test
+    public void arowPublishedLongAfterTheIssueIsLeftOutOfTheSnapshot() {
+        PublicationIssue issue = closedIssue("2025-01-08T12:00");
+
+        MemberSnapshotImport.Snapshot snapshot = MemberSnapshotImport.apply(
+                issue, taggedPublication(),
+                List.of(dated("uid-onTime", "NM-0042-25", "2025-01-08T09:00"),
+                        dated("uid-late", "NM-0311-25", "2025-11-04T09:00")),
+                Map.of());
+
+        assertEquals(1, snapshot.rows().size(), "the late row must not be frozen");
+        assertEquals("uid-onTime", snapshot.rows().get(0).getMessageUid());
+        assertEquals(0, snapshot.rows().get(0).getSortIndex(),
+                "the kept rows are contiguous from zero; a gap reads as a row that failed to write");
+        assertEquals(1, issue.getMemberCount(),
+                "a left-out row is not a member, and counting it puts a number on the screen that "
+                        + "no list of rows can account for");
+
+        assertEquals(1, snapshot.leftOut().size());
+        assertEquals("uid-late", snapshot.leftOut().get(0).uid());
+        assertEquals("NM-0311-25", snapshot.leftOut().get(0).shortId(),
+                "the report names the row by the caption an operator recognises");
+    }
+
+    /**
+     * A row inside the grace is still imported.
+     *
+     * Most imported cut-offs are reconstructed and land days before the sitting
+     * they stand for, so a row a few days after one is a genuine member of the
+     * document. The grace is what keeps the importer from deleting that archive.
+     */
+    @Test
+    public void arowInsideTheGraceIsStillImported() {
+        PublicationIssue issue = closedIssue("2025-01-01T12:00");
+
+        MemberSnapshotImport.Snapshot snapshot = MemberSnapshotImport.apply(
+                issue, taggedPublication(),
+                List.of(dated("uid-a", "NM-0001-25", "2025-01-02T09:00")), Map.of());
+
+        assertEquals(1, snapshot.rows().size(),
+                "an annual list cut on 1 January lists the notices stamped the next day");
+        assertTrue(snapshot.leftOut().isEmpty());
+    }
+
+    /**
+     * An issue with no instant to measure against keeps every row.
+     *
+     * The rule has to be able to say a row is late; it cannot say so against an
+     * issue the recovery gave neither a cut-off nor a publish stamp. Dropping
+     * members there would enforce a rule nobody evaluated, and the archive is the
+     * thing that would be lost.
+     */
+    @Test
+    public void anIssueWithNoReferenceInstantKeepsEveryRow() {
+        PublicationIssue issue = new PublicationIssue();
+
+        MemberSnapshotImport.Snapshot snapshot = MemberSnapshotImport.apply(
+                issue, taggedPublication(),
+                List.of(dated("uid-a", "NM-0001-25", "2025-01-02T09:00"),
+                        dated("uid-b", "NM-0311-25", "2026-11-04T09:00")), Map.of());
+
+        assertEquals(2, snapshot.rows().size(),
+                "no cut-off and no publish stamp means no instant the rows can be late against");
+        assertTrue(snapshot.leftOut().isEmpty());
+    }
+
+    /**
+     * The publish stamp stands in where the recovery produced no cut-off.
+     *
+     * A released issue is always stamped, and the stamp is the closest thing to
+     * the sitting there is when the cut-off could not be reconstructed. Reading
+     * only the cut-off would leave those issues judging nothing at all.
+     */
+    @Test
+    public void thePublishStampStandsInForAMissingCutoff() {
+        PublicationIssue issue = closedIssue("2025-01-08T12:00");
+        issue.setPublishedAt(issue.getCutoffStampedAt());
+        issue.setCutoffStampedAt(null);
+
+        MemberSnapshotImport.Snapshot snapshot = MemberSnapshotImport.apply(
+                issue, taggedPublication(),
+                List.of(dated("uid-late", "NM-0311-25", "2025-11-04T09:00")), Map.of());
+
+        assertTrue(snapshot.rows().isEmpty());
+        assertEquals(1, snapshot.leftOut().size());
+    }
+
+    /**
+     * The note says which issue lost rows, how many, and which they were.
+     *
+     * The code is the handle an operator greps the report for; the names and their
+     * publish dates are what makes the note checkable against the legacy tag it is
+     * about. Without them the report says an archive lost something and leaves
+     * nobody able to find out what.
+     */
+    @Test
+    public void theReportNoteNamesTheIssueAndTheRowsItLost() {
+        LegacyImportReportVo.ProblemVo note = LegacyImportService.membersLeftOut(
+                "pub-123", "Aktive P&T uge 1 - 2025",
+                List.of(new MemberSnapshotImport.LeftOutMember(
+                                "uid-late", "NM-0311-25", at("2025-11-04T09:00")),
+                        new MemberSnapshotImport.LeftOutMember(
+                                "uid-later", "NM-0400-25", at("2025-12-29T09:00"))));
+
+        assertEquals("MEMBER_LEFT_OUT_PUBLISHED_AFTER_ISSUE", note.getCode(),
+                "the code is the external handle the runbook greps for");
+        assertEquals(LegacyImportService.MEMBER_LEFT_OUT_PUBLISHED_AFTER_ISSUE, note.getCode());
+        assertEquals("pub-123", note.getPublicationId(),
+                "the note must name the legacy row, or nobody can find the tag to fix");
+        assertEquals("Aktive P&T uge 1 - 2025", note.getTitle());
+        assertTrue(note.getDetail().startsWith("2 messages"),
+                "the note must say how many rows were lost: " + note.getDetail());
+        assertTrue(note.getDetail().contains("NM-0311-25") && note.getDetail().contains("NM-0400-25"),
+                "the note must name the rows: " + note.getDetail());
+        assertTrue(note.getDetail().contains("14 days"),
+                "the note must say what the rule was, or the number cannot be judged: "
+                        + note.getDetail());
+        assertTrue(note.getDetail().contains("Nothing in the legacy tables is changed"),
+                "the note must say the legacy publication is untouched: " + note.getDetail());
+    }
+
+    /** Past a handful the note counts the rest rather than listing a hundred short ids. */
+    @Test
+    public void anIssueThatLostAHundredRowsGetsOneReadableNote() {
+        List<MemberSnapshotImport.LeftOutMember> lost = new ArrayList<>();
+        for (int i = 0; i < 105; i++) {
+            lost.add(new MemberSnapshotImport.LeftOutMember(
+                    "uid-" + i, "NM-" + i + "-25", at("2025-11-04T09:00")));
+        }
+
+        LegacyImportReportVo.ProblemVo note =
+                LegacyImportService.membersLeftOut("pub-123", "Aktive P&T uge 1 - 2025", lost);
+
+        assertTrue(note.getDetail().startsWith("105 messages"));
+        assertTrue(note.getDetail().contains("and 100 more"),
+                "a note listing all of them is a note nobody reads: " + note.getDetail());
+    }
+
+    /** A publication carrying a tag, which is what makes the member rules apply at all. */
+    private static Publication taggedPublication() {
+        return LegacyEstateFixture.publications().stream()
+                .filter(x -> x.getMessageTag() != null).findFirst().orElseThrow();
+    }
+
+    /** An issue closed at a wall-clock time in the series' cut-off zone. */
+    private static PublicationIssue closedIssue(String localCutoff) {
+        Domain domain = new Domain();
+        domain.setDomainId("member-snapshot-test");
+        domain.setTimeZone(CUTOFF_ZONE.getId());
+
+        PublicationSeries series = new PublicationSeries();
+        series.setSeriesId("member-snapshot-test");
+        series.setDomain(domain);
+
+        PublicationIssue issue = new PublicationIssue();
+        issue.setSeries(series);
+        issue.setCutoffStampedAt(at(localCutoff));
+        return issue;
+    }
+
+    /** Well-formed facts carrying the publish date the late rule reads. */
+    private static MemberSnapshotImport.MemberFacts dated(String uid, String shortId,
+                                                          String localPublished) {
+        return new MemberSnapshotImport.MemberFacts(uid, shortId, "NM", "TEMPORARY_NOTICE",
+                "PUBLISHED", at(localPublished), null);
+    }
+
+    /** A wall-clock time in the cut-off zone, which is where the rule reads days. */
+    private static java.util.Date at(String localDateTime) {
+        return java.util.Date.from(
+                java.time.LocalDateTime.parse(localDateTime).atZone(CUTOFF_ZONE).toInstant());
+    }
+
+    /** The zone the weekly desks sit in, and so the one their cut-offs are read in. */
+    private static final java.time.ZoneId CUTOFF_ZONE = java.time.ZoneId.of("Europe/Copenhagen");
 }
