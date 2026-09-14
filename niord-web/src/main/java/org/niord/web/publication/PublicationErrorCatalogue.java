@@ -19,6 +19,7 @@ package org.niord.web.publication;
 import org.niord.core.publication.series.IssueArchiveService;
 import org.niord.core.publication.series.IssueEditService;
 import org.niord.core.publication.series.IssuePublicWindowService;
+import org.niord.core.publication.series.IssueWorkMarker;
 import org.niord.core.publication.series.PrintedNumbering;
 import org.niord.core.publication.series.PublicationDomainGuard;
 import org.niord.core.publication.series.StaleVersionGuard;
@@ -193,6 +194,14 @@ public final class PublicationErrorCatalogue {
         // 409 -- the request is well formed, but the thing is in the wrong state.
         // Distinct from 400 because the SAME request may succeed later.
         put("ISSUE_ALREADY_PUBLISHED", 409);
+        // 409, and the most literally temporary conflict in the catalogue: a
+        // release or amend of this issue is running right now, and the identical
+        // request succeeds once it finishes. Not 400 -- the request is faultless
+        // and the caller changes nothing. Not 503 either: nothing is wrong with
+        // the server, and the one issue being worked on is a state conflict like
+        // the rest of this group. The client waits and re-reads the workbench,
+        // whose inFlight object says what is running and since when.
+        put(IssueWorkMarker.ISSUE_BUSY, 409);
         put("ISSUE_NOT_PUBLISHED", 409);
         put("ISSUE_NOT_RETIRED", 409);
         put("ISSUE_NOT_OPEN", 409);

@@ -44,6 +44,7 @@ import org.niord.core.publication.series.IssueLifecycleService;
 import org.niord.core.publication.series.IssuePublicWindowService;
 import org.niord.core.publication.series.IssuePublicationMapping;
 import org.niord.core.publication.series.IssuePublishService;
+import org.niord.core.publication.series.IssueWorkMarker;
 import org.niord.core.publication.series.IssueStatus;
 import org.niord.core.publication.series.NextIssueCreation;
 import org.niord.core.publication.series.NumberingScheme;
@@ -140,6 +141,9 @@ public class OneOffRestService {
 
     @Inject
     IssuePublishService publishService;
+
+    @Inject
+    IssueWorkMarker marker;
 
     @Inject
     EntityManager em;
@@ -929,9 +933,19 @@ public class OneOffRestService {
         if (issue == null || !isPublishable(series, issue)) {
             return;
         }
-        publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(
-                        IssuePublishService.PublishRequest.ALL_WARNINGS, userService.currentUser(), null));
+        // Marked exactly as the release endpoint marks its own, because it is the
+        // same action reached by a different door. A one-off saved twice in quick
+        // succession -- a double submit, or a retry after a slow save -- would
+        // otherwise render and archive the same document twice over.
+        Integer issueId = issue.getId();
+        marker.start(issueId, IssueWorkMarker.PUBLISH);
+        try {
+            publishService.publish(issueId,
+                    new IssuePublishService.PublishRequest(
+                            IssuePublishService.PublishRequest.ALL_WARNINGS, userService.currentUser(), null));
+        } finally {
+            marker.finish(issueId);
+        }
     }
 
     private boolean isPublishable(PublicationSeries series, PublicationIssue issue) {

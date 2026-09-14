@@ -153,6 +153,31 @@ public class IssueWorkbenchVo implements IJsonSerializable {
      */
     private List<IssuePreviewVo> previews = List.of();
 
+    /**
+     * The release or amend RUNNING on this issue as this response was answered,
+     * absent when none is.
+     *
+     * Whose fact it is: not the issue's, and not this reader's. It belongs to
+     * ANOTHER request that is still open -- the tab that pressed publish, or
+     * another admin's -- and it is true only for as long as that request lives.
+     * The reader this is for is the one who cannot see that request: a refreshed
+     * page, a second tab, a colleague on the same issue. Each of them reads an
+     * idle issue otherwise, offers the button again, and the second press
+     * archives and overwrites the documents the first is halfway through writing.
+     *
+     * ON THE WORKBENCH AND NOT ON THE ISSUE, deliberately. The issue's own shape
+     * is its record -- what it is, what it printed, when -- and every consumer of
+     * it, the export and the archive included, is entitled to read it as a
+     * description of the publication. This says nothing about the publication. It
+     * describes the state of the server for the few seconds somebody is looking
+     * at this screen, which is exactly what the workbench is: one screen, answered
+     * once, as of {@link #viewedAt}.
+     *
+     * ABSENT rather than a flag, so that a client has nothing to render when
+     * there is nothing to say, and both fields when there is.
+     */
+    private IssueInFlightVo inFlight;
+
     /** Absent on a frozen issue, and for a curator who is not an admin. */
     private PublishChecklistVo checklist;
 
@@ -251,6 +276,14 @@ public class IssueWorkbenchVo implements IJsonSerializable {
 
     public void setPreviews(List<IssuePreviewVo> previews) {
         this.previews = previews;
+    }
+
+    public IssueInFlightVo getInFlight() {
+        return inFlight;
+    }
+
+    public void setInFlight(IssueInFlightVo inFlight) {
+        this.inFlight = inFlight;
     }
 
     public PublishChecklistVo getChecklist() {

@@ -355,8 +355,12 @@ public class PublicationApiContractTest {
     /** The state-conflict codes are 409, not 400: the same request may succeed later. */
     @Test
     public void stateConflictsAreNotClientErrors() {
+        // ISSUE_BUSY belongs here for the most literal reading of the rule there
+        // is: the work it conflicts with is running as the refusal is written, and
+        // the identical request succeeds a few seconds later.
         for (String code : List.of("ISSUE_ALREADY_PUBLISHED", "ISSUE_NOT_PUBLISHED", "ISSUE_NOT_OPEN",
-                "ISSUE_PUBLISHED_NOT_DELETABLE", "ISSUE_CITED", "SERIES_HAS_ISSUES", "CATEGORY_IN_USE")) {
+                "ISSUE_PUBLISHED_NOT_DELETABLE", "ISSUE_CITED", "SERIES_HAS_ISSUES", "CATEGORY_IN_USE",
+                "ISSUE_BUSY")) {
             assertEquals(409, PublicationErrorCatalogue.statusOf(code),
                     code + " is a state conflict; as a 400 a client would stop retrying something that "
                             + "will succeed once the state changes");

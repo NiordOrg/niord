@@ -1,6 +1,6 @@
 {
   "note": "Generated from DATA-MODEL.md sections 3.1-3.10 by gen-field-manifest.js. Do not hand-edit.",
-  "sourceSha256": "8b0881dcae041183e3d8464f2bdd03bb3afee296997f58505888de535ede911e",
+  "sourceSha256": "84c392bb63e3ac997ed54d47508e766fbd2c5038921e06d2a5d52ffa23550fee",
   "entities": [
     {
       "entity": "PublicationSeries",
@@ -565,6 +565,20 @@
         {
           "name": "retiredReason",
           "ddl": "retiredReason VARCHAR(512)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "workingAction",
+          "ddl": "workingAction VARCHAR(16)",
+          "nullable": true,
+          "notNull": false,
+          "unique": false
+        },
+        {
+          "name": "workingSince",
+          "ddl": "workingSince DATETIME(6)",
           "nullable": true,
           "notNull": false,
           "unique": false

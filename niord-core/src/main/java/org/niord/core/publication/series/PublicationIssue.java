@@ -178,6 +178,42 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
     @Column(length = 512)
     private String retiredReason;
 
+    /**
+     * A release or an amend that is RUNNING on this issue, and when it started.
+     *
+     * Written before the render begins, cleared when the request that started it
+     * ends, and committed on its own both times -- so that while the work runs
+     * ANY reader sees it. That is the whole point: the client that pressed the
+     * button waits on its own request, and a refreshed page, a second tab and
+     * another admin see an idle issue and press it again. The second press
+     * archives the documents the first one is halfway through writing.
+     *
+     * NOT PART OF THE ISSUE'S RECORD. It says nothing about the publication: it
+     * is a fact about a request in progress, true while that request lives and
+     * false across the whole of the issue's history either side of it. So it is
+     * not on the issue's own wire shape, not exported, and not compared by the
+     * import check -- it reaches a client only as the workbench's inFlight
+     * object, which is a fact about the SCREEN being looked at now.
+     *
+     * INSERTABLE AND UPDATABLE FALSE, which is what makes the pair safe rather
+     * than merely present. The publish saves the issue from a copy loaded before
+     * the marker was written, and an ordinary dirty-check update would carry that
+     * copy's NULL straight over a live marker -- silently, mid-render, which is
+     * exactly the window the marker exists to cover. So nothing writes these
+     * through the entity at all: {@link IssueWorkMarker} owns both columns and
+     * writes each with one conditional statement.
+     *
+     * A plain string rather than an enum, on the same terms as the column: the
+     * vocabulary is the set of actions long enough to be worth guarding, not the
+     * issue's lifecycle, and a third one must not cost an ALTER TABLE.
+     */
+    @Column(length = 16, insertable = false, updatable = false)
+    private String workingAction;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(insertable = false, updatable = false)
+    private Date workingSince;
+
     @Enumerated(EnumType.STRING)
     private MembershipProvenance membershipProvenance;
 
@@ -481,6 +517,21 @@ public class PublicationIssue extends VersionedEntity<Integer> implements ILocal
 
     public void setRetiredReason(String retiredReason) {
         this.retiredReason = retiredReason;
+    }
+
+    /**
+     * Read only, and there is deliberately no setter for either column.
+     *
+     * The marker is written and cleared by {@link IssueWorkMarker} alone, in
+     * transactions of its own; a setter would offer a second way in whose write
+     * would be discarded by the mapping without saying so.
+     */
+    public String getWorkingAction() {
+        return workingAction;
+    }
+
+    public Date getWorkingSince() {
+        return workingSince;
     }
 
     public MembershipProvenance getMembershipProvenance() {

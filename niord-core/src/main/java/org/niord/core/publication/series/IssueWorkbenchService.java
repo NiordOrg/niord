@@ -85,6 +85,9 @@ public class IssueWorkbenchService {
     @Inject
     MemberResolutionService resolver;
 
+    @Inject
+    IssueWorkMarker marker;
+
     /**
      * Everything one issue screen renders.
      *
@@ -186,6 +189,13 @@ public class IssueWorkbenchService {
         // after a cut-off, and a number without the instant it was taken against
         // cannot be checked against the date on the form beside it.
         vo.setLateAfter(lateAfter == null ? null : lateAfter.getTime());
+        // The one part of this response that is about the SERVER rather than
+        // about the issue: a release or amend that another request is running on
+        // it this second. It rides along here because the reader who needs it is
+        // the reader of this screen -- the refreshed page, the second tab, the
+        // colleague -- and a probe of their own would be a seventh request on the
+        // endpoint that exists to replace six.
+        vo.setInFlight(marker.inFlightOf(issue));
         List<IssueMemberVo> members = memberList.members(issue, lang, resolved);
         vo.setMembers(members);
         vo.setAfterPlannedCutoff(publishedAfterPlannedCutoff(issue, lang, resolved, members, now,

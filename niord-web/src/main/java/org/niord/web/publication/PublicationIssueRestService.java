@@ -49,6 +49,7 @@ import org.niord.core.publication.series.IssueListService;
 import org.niord.core.publication.series.IssueMemberListService;
 import org.niord.core.publication.series.IssuePickerService;
 import org.niord.core.publication.series.IssueStatusTokens;
+import org.niord.core.publication.series.IssueWorkMarker;
 import org.niord.core.publication.series.IssueWorkbenchService;
 import org.niord.core.publication.series.vo.IssueOverrideVo;
 import org.niord.core.publication.series.vo.IssueTimelineVo;
@@ -135,6 +136,9 @@ public class PublicationIssueRestService {
 
     @Inject
     IssuePublishService publishService;
+
+    @Inject
+    IssueWorkMarker marker;
 
     @Inject
     IssueLifecycleService lifecycle;
@@ -1089,9 +1093,22 @@ public class PublicationIssueRestService {
                     "a cut-off cannot lie in the future: the content period has not closed yet");
         }
 
-        IssuePublishService.PublishResult result = publishService.publish(issue.getId(),
-                new IssuePublishService.PublishRequest(Set.copyOf(acknowledged),
-                        userService.currentUser(), cutoff));
+        // Marked before anything is frozen, archived or rendered, and cleared
+        // however this ends. The render runs inside this request for seconds or
+        // tens of seconds, and for all of that time every other reader of the
+        // issue -- a refreshed page, a second tab, another admin -- sees an idle
+        // issue and the same button. The marker is what they read instead, and
+        // what refuses their press.
+        Integer issueId = issue.getId();
+        marker.start(issueId, IssueWorkMarker.PUBLISH);
+        IssuePublishService.PublishResult result;
+        try {
+            result = publishService.publish(issueId,
+                    new IssuePublishService.PublishRequest(Set.copyOf(acknowledged),
+                            userService.currentUser(), cutoff));
+        } finally {
+            marker.finish(issueId);
+        }
 
         log.info("Published issue {} of series {}: cut-off {}, {} members, {} unacknowledged warning(s)",
                 publicId, issue.getSeries() == null ? null : issue.getSeries().getSeriesId(),
@@ -1134,9 +1151,20 @@ public class PublicationIssueRestService {
                 : (List<String>) params.getOrDefault("acknowledgedWarnings", List.of());
         String reason = params == null ? null : String.valueOf(params.getOrDefault("reason", ""));
 
-        IssuePublishService.AmendResult result = publishService.amend(issue.getId(),
-                new IssuePublishService.AmendRequest(Set.copyOf(acknowledged),
-                        userService.currentUser(), reason));
+        // The same guard as the release, and an amend needs it at least as much:
+        // it ARCHIVES the current documents before it re-renders them, so a
+        // second one started while the first is rendering archives a half-written
+        // file as though it were the published edition.
+        Integer issueId = issue.getId();
+        marker.start(issueId, IssueWorkMarker.AMEND);
+        IssuePublishService.AmendResult result;
+        try {
+            result = publishService.amend(issueId,
+                    new IssuePublishService.AmendRequest(Set.copyOf(acknowledged),
+                            userService.currentUser(), reason));
+        } finally {
+            marker.finish(issueId);
+        }
 
         log.info("Amended issue {}: {} members, {} document(s) archived, reason '{}'",
                 publicId, result.memberCount(),
