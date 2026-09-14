@@ -91,8 +91,14 @@ public class StubIssueRenderService extends IssueRenderService {
         return REQUESTS.isEmpty() ? null : REQUESTS.get(REQUESTS.size() - 1);
     }
 
+    /**
+     * The phase-reporting overloads are the ones overridden, because they are the
+     * ones that do the work: the plain two delegate to these, so a stub that
+     * stood in for the plain two would be walked straight past by a caller that
+     * asks where the time went.
+     */
     @Override
-    public byte[] render(RenderRequest request) {
+    public byte[] render(RenderRequest request, Phases phases) {
         if (request == null || request.orderedMessages() == null) {
             throw new IllegalArgumentException("render() takes an ordered message list, never a query");
         }
@@ -104,8 +110,8 @@ public class StubIssueRenderService extends IssueRenderService {
     }
 
     @Override
-    public void renderToFile(RenderRequest request, Path target) {
-        byte[] bytes = render(request);
+    public void renderToFile(RenderRequest request, Path target, Phases phases) {
+        byte[] bytes = render(request, phases);
         try {
             Files.createDirectories(target.getParent());
             Files.write(target, bytes);

@@ -1,16 +1,16 @@
 <#include "message-support.ftl"/>
 
-<#assign nmMessages = [] />
-<#assign miscMessages = [] />
+<#--
+    Split by ?filter rather than by appending to a list one message at a time.
+    Appending builds a sequence out of a chain of concatenations, one link per
+    message, and reading the n'th element walks the chain -- so printing the list
+    afterwards costs the square of its length.
+-->
+<#assign nmMessages = messages?filter(msg -> msg.type != 'MISCELLANEOUS_NOTICE') />
+<#assign miscMessages = messages?filter(msg -> msg.type == 'MISCELLANEOUS_NOTICE') />
 <#assign minMessageNo = 9999999 />
 <#assign maxMessageNo = -9999999 />
 <#list messages as msg>
-    <#if msg.type != 'MISCELLANEOUS_NOTICE'>
-        <#assign nmMessages = nmMessages + [msg] />
-    <#elseif msg.type == 'MISCELLANEOUS_NOTICE'>
-        <#assign miscMessages = miscMessages + [msg] />
-    </#if>
-
     <#if msg.number?? && msg.number lt minMessageNo >
         <#assign minMessageNo = msg.number />
     </#if>

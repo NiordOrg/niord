@@ -28,15 +28,19 @@
     <#setting time_zone=timeZone>
 </#if>
 
-<#-- The messages of one section, picked out of the ordered list by id. -->
+<#--
+    The messages of one section.
+
+    A section that was handed its own members uses them. A section that was only
+    named its ids picks them out of the ordered list, which is what a model built
+    by hand -- the report editor, a fixture -- hands over, and costs one scan of
+    the whole list per section.
+-->
 <#function messagesOfGroup group>
-    <#local picked = [] />
-    <#list messages as msg>
-        <#if group.messageIds?seq_contains(msg.id)>
-            <#local picked = picked + [msg] />
-        </#if>
-    </#list>
-    <#return picked />
+    <#if group.messages??>
+        <#return group.messages />
+    </#if>
+    <#return messages?filter(msg -> group.messageIds?seq_contains(msg.id)) />
 </#function>
 
 <#-- The first and last printed number of a set of messages, where they have any. -->
@@ -70,17 +74,18 @@
 <#--
     One section's messages, split the way the weekly splits its own: the notices
     proper with area headings, then the announcements under their own heading.
+
+    Split by ?filter rather than by appending to a list one message at a time.
+    Appending builds a sequence out of a chain of concatenations, one link per
+    message, and reading the n'th element walks the chain -- so printing the list
+    afterwards costs the square of its length. On a section of twenty that is
+    nothing; on the flat list a one-off or an unsourced preview produces, where
+    the whole document is one "section" of three thousand, it was the largest
+    single term in the time to render.
 -->
 <#macro renderGroupBody msgs prefix>
-    <#local nmMsgs = [] />
-    <#local miscMsgs = [] />
-    <#list msgs as msg>
-        <#if msg.type == 'MISCELLANEOUS_NOTICE'>
-            <#local miscMsgs = miscMsgs + [msg] />
-        <#else>
-            <#local nmMsgs = nmMsgs + [msg] />
-        </#if>
-    </#list>
+    <#local nmMsgs = msgs?filter(msg -> msg.type != 'MISCELLANEOUS_NOTICE') />
+    <#local miscMsgs = msgs?filter(msg -> msg.type == 'MISCELLANEOUS_NOTICE') />
 
     <#if nmMsgs?has_content>
         <@renderMessageList messages=nmMsgs areaHeadings=areaHeadings prefix=prefix/>

@@ -32,6 +32,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -120,6 +122,44 @@ public class IssueRenderService {
     }
 
     /**
+     * Where one render's time went, in milliseconds.
+     *
+     * An annual is a thousand members drawn as five hundred pages, twice, and the
+     * whole of it lands on the thread that pressed Publish -- so the question a
+     * support call starts from is which of the phases the seconds were in, and
+     * the answers point in opposite directions: a template that takes longer than
+     * the layout is a defect somewhere in the template, and a layout that takes
+     * longer than the template is the price of the document. Filled in as the
+     * phases pass, and printed by the caller, which is the only place that knows
+     * which issue and which language this was.
+     */
+    public static final class Phases {
+
+        /** Resolving which members must start on a new page. */
+        public long separatePageMillis;
+
+        /** FreeMarker writing the HTML. */
+        public long templateMillis;
+
+        /** The layout engine turning that HTML into PDF pages. */
+        public long pdfMillis;
+
+        /** How many stylesheets and images the document sent it off to fetch. */
+        public int fetchCount;
+
+        /** How much of the layout was spent waiting for them. */
+        public long fetchMillis;
+
+        /** Writing the bytes where they belong. */
+        public long writeMillis;
+
+        /** The whole render, as one number. */
+        public long total() {
+            return separatePageMillis + templateMillis + pdfMillis + writeMillis;
+        }
+    }
+
+    /**
      * Renders to bytes.
      *
      * Bytes rather than a stream, because the publish transaction has to hash
@@ -127,11 +167,16 @@ public class IssueRenderService {
      * once cannot be both.
      */
     public byte[] render(RenderRequest request) {
+        return render(request, new Phases());
+    }
+
+    /** Renders to bytes, reporting where the time went. */
+    public byte[] render(RenderRequest request, Phases phases) {
         if (request == null || request.orderedMessages() == null) {
             throw new IllegalArgumentException("render() takes an ordered message list, never a query");
         }
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            renderTo(request, out);
+            renderTo(request, out, phases);
             return out.toByteArray();
         } catch (RenderFailedException e) {
             throw e;
@@ -142,10 +187,17 @@ public class IssueRenderService {
 
     /** Renders straight to a file, for the publish and preview paths. */
     public void renderToFile(RenderRequest request, Path target) {
+        renderToFile(request, target, new Phases());
+    }
+
+    /** Renders straight to a file, reporting where the time went. */
+    public void renderToFile(RenderRequest request, Path target, Phases phases) {
         try {
             Files.createDirectories(target.getParent());
-            byte[] bytes = render(request);
+            byte[] bytes = render(request, phases);
+            long t0 = System.currentTimeMillis();
             Files.write(target, bytes);
+            phases.writeMillis = System.currentTimeMillis() - t0;
         } catch (RenderFailedException e) {
             throw e;
         } catch (Exception e) {
@@ -153,7 +205,7 @@ public class IssueRenderService {
         }
     }
 
-    private void renderTo(RenderRequest request, OutputStream out) {
+    private void renderTo(RenderRequest request, OutputStream out, Phases phases) {
         FmReport report;
         try {
             report = fmReportService.getReport(request.reportId());
@@ -166,7 +218,9 @@ public class IssueRenderService {
 
         // Preserved from the endpoint this replaces: messages that must start on
         // a new page are looked up by uid rather than inferred.
+        long t0 = System.currentTimeMillis();
         Set<String> separatePageIds = separatePageIds(request.orderedMessages());
+        phases.separatePageMillis = System.currentTimeMillis() - t0;
 
         try {
             FmTemplateService.FmTemplateBuilder builder = templateService.newFmTemplateBuilder()
@@ -184,16 +238,20 @@ public class IssueRenderService {
                     // empty for every other regime, so a template asks one question
                     // -- "are there groups" -- and the flat list stays the default
                     // for the templates that have always printed one.
-                    .data("groups", modelGroups(request.groups()))
+                    .data("groups", modelGroups(request.groups(), request.orderedMessages()))
                     .data(report.getProperties());
 
             if (request.reportParams() != null) {
                 builder = builder.data(request.reportParams());
             }
 
-            builder.dictionaryNames("web", "message", "pdf")
-                    .language(request.language())
-                    .process(ProcessFormat.PDF, out);
+            builder = builder.dictionaryNames("web", "message", "pdf")
+                    .language(request.language());
+            builder.process(ProcessFormat.PDF, out);
+            phases.templateMillis = builder.getTemplateMillis();
+            phases.pdfMillis = builder.getPdfMillis();
+            phases.fetchCount = builder.getFetchCount();
+            phases.fetchMillis = builder.getFetchMillis();
 
         } catch (Exception e) {
             throw new RenderFailedException(
@@ -209,21 +267,48 @@ public class IssueRenderService {
      * template would find nothing at all on one. A map is also the shape the
      * model already speaks -- every other value here is a string, a list or a
      * flag -- so the template reads the same way whatever produced it.
+     *
+     * EACH SECTION IS ALSO HANDED ITS OWN MEMBERS, and the ids stay beside them.
+     * A section that carries only ids leaves the template to find them, and the
+     * only way a template can is to scan the whole ordered list once per section
+     * -- fifty-two scans of twelve hundred members for one annual, and the same
+     * again for the second language. The partition below is the same one the
+     * template performed, done once, in the order the ordered list is in: the
+     * members are LOOKED UP IN THAT LIST rather than carried alongside it, so a
+     * section still cannot name anything the document does not print.
      */
-    private static List<Map<String, Object>> modelGroups(List<RenderGroup> groups) {
+    private static List<Map<String, Object>> modelGroups(List<RenderGroup> groups,
+                                                         List<MessageVo> orderedMessages) {
         if (groups == null) {
             return null;
         }
-        List<Map<String, Object>> out = new java.util.ArrayList<>(groups.size());
+        Map<String, MessageVo> byId = new LinkedHashMap<>();
+        for (MessageVo m : orderedMessages) {
+            if (m.getId() != null) {
+                byId.put(m.getId(), m);
+            }
+        }
+        List<Map<String, Object>> out = new ArrayList<>(groups.size());
         for (RenderGroup g : groups) {
-            Map<String, Object> model = new java.util.LinkedHashMap<>();
+            List<String> ids = g.messageIds() == null ? List.of() : g.messageIds();
+            List<MessageVo> members = new ArrayList<>(ids.size());
+            for (String id : ids) {
+                MessageVo m = byId.get(id);
+                // An id the ordered list does not carry is simply not printed,
+                // which is what the template's own scan did with it.
+                if (m != null) {
+                    members.add(m);
+                }
+            }
+            Map<String, Object> model = new LinkedHashMap<>();
             model.put("publicId", g.publicId());
             model.put("name", g.name());
             model.put("week", g.week());
             model.put("weekTo", g.weekTo());
             model.put("year", g.year());
             model.put("cutoff", g.cutoff());
-            model.put("messageIds", g.messageIds() == null ? List.of() : g.messageIds());
+            model.put("messageIds", ids);
+            model.put("messages", members);
             model.put("manual", g.manual());
             out.add(model);
         }

@@ -831,7 +831,9 @@ public class IssuePublishService extends BaseService {
         // Loaded once for the whole preview rather than once per language: the
         // rows are the same either way, and the second language would otherwise
         // ask for every one of them again.
+        long loadMillis = System.currentTimeMillis();
         Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
+        loadMillis = System.currentTimeMillis() - loadMillis;
 
         // The LIVE half of the one grouping rule: nothing is frozen yet, so which
         // source issue owns a row -- and which weeks this document covers at all
@@ -842,8 +844,13 @@ public class IssuePublishService extends BaseService {
         List<IssuePreviewService.Preview> out = new ArrayList<>();
         for (PublicationIssueDesc desc : issue.getDescs()) {
             String lang = desc.getLang();
-            byte[] bytes = renderService.render(renderRequest(issue, series, ordered, members, lang,
-                    renderGroups(ordered, sourceByUid, sourceIssueIds, lang)));
+            long voMillis = System.currentTimeMillis();
+            IssueRenderService.RenderRequest request = renderRequest(issue, series, ordered, members, lang,
+                    renderGroups(ordered, sourceByUid, sourceIssueIds, lang));
+            voMillis = System.currentTimeMillis() - voMillis;
+            IssueRenderService.Phases phases = new IssueRenderService.Phases();
+            byte[] bytes = renderService.render(request, phases);
+            logRender("preview", issue, lang, ordered.size(), loadMillis, voMillis, phases);
             // Named from the cut-off the publish would use, not from the clock: a
             // preview of last year's accumulated list generated in January carries
             // last year's tokens, exactly as the published file will.
@@ -922,7 +929,9 @@ public class IssuePublishService extends BaseService {
 
         // As on the preview path: the member rows are the same for every
         // language, so they are read once for the whole release.
+        long loadMillis = System.currentTimeMillis();
         Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
+        loadMillis = System.currentTimeMillis() - loadMillis;
 
         // The FROZEN half of the one grouping rule. Steps 6 and 7 have already
         // written which source issue printed each row and which weeks this
@@ -941,8 +950,13 @@ public class IssuePublishService extends BaseService {
             Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
 
             // 10a
-            renderService.renderToFile(renderRequest(issue, series, ordered, members, lang,
-                    renderGroups(ordered, sourceByUid, sourceIssueIds, lang)), target);
+            long voMillis = System.currentTimeMillis();
+            IssueRenderService.RenderRequest request = renderRequest(issue, series, ordered, members, lang,
+                    renderGroups(ordered, sourceByUid, sourceIssueIds, lang));
+            voMillis = System.currentTimeMillis() - voMillis;
+            IssueRenderService.Phases phases = new IssueRenderService.Phases();
+            renderService.renderToFile(request, target, phases);
+            logRender("release", issue, lang, ordered.size(), loadMillis, voMillis, phases);
 
             desc.setFileName(fileName);
             desc.setFilePath(issue.getRepoPath() + "/" + fileName);
@@ -959,6 +973,32 @@ public class IssuePublishService extends BaseService {
                         null);
             }
         }
+    }
+
+    /**
+     * Where one document's seconds went, as one line.
+     *
+     * A big document takes seconds and always will, but WHICH seconds is the
+     * question every report of a slow publish starts from, and it cannot be
+     * answered afterwards from the outside: the phases have different causes and
+     * different cures -- reading the members is round trips to the database, the
+     * value objects are the member count, the template is the document's
+     * structure, and the layout is its page count -- and a total hides all four.
+     * At INFO because it is one line per language per publish, and because a line
+     * that has to be switched on is a line nobody has when it is wanted.
+     *
+     * The load is the SAME load for every language, so it is printed on each
+     * language's line rather than divided between them: it is what the render
+     * waited for, not what this language cost.
+     */
+    private void logRender(String what, PublicationIssue issue, String lang, int memberCount,
+                           long loadMillis, long voMillis, IssueRenderService.Phases phases) {
+        log.info("Issue {} {} [{}]: {} members in {} ms (load {}, value objects {}, page breaks {}, "
+                        + "template {}, layout {} of which {} fetching {} resources, write {})",
+                issue.getPublicId(), what, lang, memberCount,
+                loadMillis + voMillis + phases.total(),
+                loadMillis, voMillis, phases.separatePageMillis, phases.templateMillis,
+                phases.pdfMillis, phases.fetchMillis, phases.fetchCount, phases.writeMillis);
     }
 
     /**

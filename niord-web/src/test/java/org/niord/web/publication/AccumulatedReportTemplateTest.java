@@ -413,6 +413,43 @@ public class AccumulatedReportTemplateTest {
     }
 
     /**
+     * A section handed its own members prints exactly what a section named only
+     * by ids prints.
+     *
+     * THE TWO ARE ONE STATEMENT, and only one of them is what the release
+     * produces. Finding a section's members by scanning the ordered list once per
+     * section is quadratic in the member count, and an annual is where that stops
+     * being free -- so the render request now partitions the list itself and
+     * hands each section its share, leaving the scan as the fallback for a model
+     * built by hand. That is a performance change and nothing else, which is only
+     * true as long as the two produce the same document character for character.
+     */
+    @Test
+    public void asectionHandedItsMembersPrintsWhatTheScanPrints() throws Exception {
+        Map<String, Object> scanned = yearOfTwoWeeks();
+
+        Map<String, Object> handed = yearOfTwoWeeks();
+        @SuppressWarnings("unchecked")
+        List<MessageVo> messages = (List<MessageVo>) handed.get("messages");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> groups = (List<Map<String, Object>>) handed.get("groups");
+        for (Map<String, Object> group : groups) {
+            @SuppressWarnings("unchecked")
+            List<String> ids = (List<String>) group.get("messageIds");
+            List<MessageVo> members = new ArrayList<>();
+            for (MessageVo m : messages) {
+                if (ids.contains(m.getId())) {
+                    members.add(m);
+                }
+            }
+            group.put("messages", members);
+        }
+
+        assertEquals(render(scanned), render(handed),
+                "handing a section its members drew a different document than finding them by id");
+    }
+
+    /**
      * A document with no sections still renders.
      *
      * The template is reachable from a preview of an issue that compiled nothing

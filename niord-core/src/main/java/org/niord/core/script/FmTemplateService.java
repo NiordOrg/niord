@@ -216,6 +216,17 @@ public class FmTemplateService extends BaseService {
         String[] dictionaryNames;
         FmTemplateService templateService;
 
+        // What the last process() spent in each half. A PDF report is two quite
+        // different jobs behind one call -- FreeMarker writing the HTML, then the
+        // layout engine paginating it -- and a caller that only knows the total
+        // cannot tell a template defect from the price of a long document. The
+        // fetches are a third thing again, charged to the layout but spent on a
+        // socket; see ResourceFetchLog.
+        long templateMillis;
+        long pdfMillis;
+        int fetchCount;
+        long fetchMillis;
+
 
         /**
          * Should only be initialized from the FmTemplateService.newFmTemplateBuilder() call
@@ -269,6 +280,8 @@ public class FmTemplateService extends BaseService {
             try {
                 // Process the template
                 String result = process();
+                templateMillis = System.currentTimeMillis() - t0;
+                pdfMillis = 0;
 
                 if (format == ProcessFormat.TEXT) {
                     IOUtils.write(result, out, "UTF-8");
@@ -278,16 +291,22 @@ public class FmTemplateService extends BaseService {
 
                 } else if (format == ProcessFormat.PDF) {
 
-                    HtmlToPdfRenderer.newBuilder()
+                    long t1 = System.currentTimeMillis();
+                    HtmlToPdfRenderer renderer = HtmlToPdfRenderer.newBuilder()
                             .baseUri(templateService.getBaseUri())
                             .html(result)
                             .encrypt(templateService.getPDFEncryptionPassword())
                             .pdf(out)
-                            .build()
-                            .render();
+                            .build();
+                    renderer.render();
+                    pdfMillis = System.currentTimeMillis() - t1;
+                    fetchCount = renderer.getFetches().getCount();
+                    fetchMillis = renderer.getFetches().getMillis();
 
                     log.info("Completed Freemarker PDF generation for " + getTemplatePath()
-                            + " in " + (System.currentTimeMillis() - t0) + " ms");
+                            + " in " + (System.currentTimeMillis() - t0) + " ms"
+                            + " (html " + templateMillis + " ms, layout " + pdfMillis + " ms, of which "
+                            + fetchMillis + " ms fetching " + fetchCount + " resources)");
                 }
 
             } catch (Exception e) {
@@ -300,6 +319,26 @@ public class FmTemplateService extends BaseService {
         /*****************************************/
         /** Method-chaining Getters and Setters **/
         /***/
+
+        /** Milliseconds the last process() spent writing the HTML. */
+        public long getTemplateMillis() {
+            return templateMillis;
+        }
+
+        /** Milliseconds the last process() spent turning that HTML into a PDF. */
+        public long getPdfMillis() {
+            return pdfMillis;
+        }
+
+        /** Resources the document sent the layout engine off to fetch. */
+        public int getFetchCount() {
+            return fetchCount;
+        }
+
+        /** Milliseconds of the PDF phase that went on fetching them. */
+        public long getFetchMillis() {
+            return fetchMillis;
+        }
 
         public String getTemplatePath() {
             return templatePath;

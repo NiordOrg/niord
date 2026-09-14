@@ -1,11 +1,14 @@
 <#include "message-support.ftl"/>
 
-<#assign tpMessages = [] />
-<#list messages as msg>
-    <#if msg.type == 'PRELIMINARY_NOTICE' || msg.type == 'TEMPORARY_NOTICE'>
-        <#assign tpMessages = tpMessages + [msg] />
-    </#if>
-</#list>
+<#--
+    Split by ?filter rather than by appending to a list one message at a time.
+    Appending builds a sequence out of a chain of concatenations, one link per
+    message, and reading the n'th element walks the chain -- so printing the list
+    afterwards costs the square of its length, which on a list of a whole year's
+    temporary and preliminary notices is most of the time to render it.
+-->
+<#assign tpMessages = messages?filter(msg ->
+        msg.type == 'PRELIMINARY_NOTICE' || msg.type == 'TEMPORARY_NOTICE') />
 
 
 <html>
