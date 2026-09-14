@@ -119,8 +119,8 @@ public class IssueRenderService {
             Set<String> separatePageIds) {
     }
 
-    /** One language of a document, drawn, with where its time went. */
-    public record Rendered(RenderRequest request, byte[] bytes, Phases phases) {
+    /** One language of a document, drawn. */
+    public record Rendered(RenderRequest request, byte[] bytes) {
     }
 
     /**
@@ -154,41 +154,6 @@ public class IssueRenderService {
     }
 
     /**
-     * Where one render's time went, in milliseconds.
-     *
-     * An annual is a thousand members drawn as five hundred pages, twice, and the
-     * whole of it lands on the thread that pressed Publish -- so the question a
-     * support call starts from is which of the phases the seconds were in, and
-     * the answers point in opposite directions: a template that takes longer than
-     * the layout is a defect somewhere in the template, and a layout that takes
-     * longer than the template is the price of the document. Filled in as the
-     * phases pass, and printed by the caller, which is the only place that knows
-     * which issue and which language this was.
-     */
-    public static final class Phases {
-
-        /** FreeMarker writing the HTML. */
-        public long templateMillis;
-
-        /** The layout engine turning that HTML into PDF pages. */
-        public long pdfMillis;
-
-        /** How many stylesheets and images the document sent it off to fetch. */
-        public int fetchCount;
-
-        /** How much of the layout was spent waiting for them. */
-        public long fetchMillis;
-
-        /** Writing the bytes where they belong. */
-        public long writeMillis;
-
-        /** The whole render, as one number. */
-        public long total() {
-            return templateMillis + pdfMillis + writeMillis;
-        }
-    }
-
-    /**
      * Renders to bytes.
      *
      * Bytes rather than a stream, because the publish transaction has to hash
@@ -196,16 +161,11 @@ public class IssueRenderService {
      * once cannot be both.
      */
     public byte[] render(RenderRequest request) {
-        return render(request, new Phases());
-    }
-
-    /** Renders to bytes, reporting where the time went. */
-    public byte[] render(RenderRequest request, Phases phases) {
         if (request == null || request.orderedMessages() == null) {
             throw new IllegalArgumentException("render() takes an ordered message list, never a query");
         }
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            renderTo(request, out, phases);
+            renderTo(request, out);
             return out.toByteArray();
         } catch (RenderFailedException e) {
             throw e;
@@ -248,16 +208,12 @@ public class IssueRenderService {
         }
         if (requests.size() == 1) {
             RenderRequest only = requests.get(0);
-            Phases phases = new Phases();
-            return List.of(new Rendered(only, render(only, phases), phases));
+            return List.of(new Rendered(only, render(only)));
         }
 
-        List<Phases> phases = new ArrayList<>(requests.size());
         List<Future<byte[]>> futures = new ArrayList<>(requests.size());
         for (RenderRequest request : requests) {
-            Phases p = new Phases();
-            phases.add(p);
-            futures.add(executor().submit(() -> render(request, p)));
+            futures.add(executor().submit(() -> render(request)));
         }
 
         List<byte[]> bytes = new ArrayList<>(requests.size());
@@ -289,7 +245,7 @@ public class IssueRenderService {
 
         List<Rendered> out = new ArrayList<>(requests.size());
         for (int i = 0; i < requests.size(); i++) {
-            out.add(new Rendered(requests.get(i), bytes.get(i), phases.get(i)));
+            out.add(new Rendered(requests.get(i), bytes.get(i)));
         }
         return out;
     }
@@ -368,7 +324,7 @@ public class IssueRenderService {
         }
     }
 
-    private void renderTo(RenderRequest request, OutputStream out, Phases phases) {
+    private void renderTo(RenderRequest request, OutputStream out) {
         FmReport report;
         try {
             report = fmReportService.getReport(request.reportId());
@@ -409,13 +365,9 @@ public class IssueRenderService {
                 builder = builder.data(request.reportParams());
             }
 
-            builder = builder.dictionaryNames("web", "message", "pdf")
-                    .language(request.language());
-            builder.process(ProcessFormat.PDF, out);
-            phases.templateMillis = builder.getTemplateMillis();
-            phases.pdfMillis = builder.getPdfMillis();
-            phases.fetchCount = builder.getFetchCount();
-            phases.fetchMillis = builder.getFetchMillis();
+            builder.dictionaryNames("web", "message", "pdf")
+                    .language(request.language())
+                    .process(ProcessFormat.PDF, out);
 
         } catch (Exception e) {
             throw new RenderFailedException(

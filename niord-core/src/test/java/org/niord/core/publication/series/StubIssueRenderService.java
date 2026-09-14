@@ -170,14 +170,12 @@ public class StubIssueRenderService extends IssueRenderService {
     }
 
     /**
-     * The phase-reporting overload is the one overridden, because it is the one
-     * that does the work: the plain call delegates to it, so a stub that stood in
-     * for the plain one would be walked straight past by a caller that asks where
-     * the time went. The concurrent entry point is left alone deliberately -- a
-     * test of the release path should exercise the real one, on the real threads.
+     * The single-document entry point is the one overridden, because it is the one
+     * that does the work. The concurrent entry point is left alone deliberately --
+     * a test of the release path should exercise the real one, on the real threads.
      */
     @Override
-    public byte[] render(RenderRequest request, Phases phases) {
+    public byte[] render(RenderRequest request) {
         if (request == null || request.orderedMessages() == null) {
             throw new IllegalArgumentException("render() takes an ordered message list, never a query");
         }

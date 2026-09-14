@@ -44,7 +44,6 @@ public class HtmlToPdfRenderer {
     private String pdfEncryptionPassword = null;
     private String baseUri = "";
     private OutputStream pdf = null;
-    private final ResourceFetchLog fetches = new ResourceFetchLog();
 
     /** No-access constructor **/
     private HtmlToPdfRenderer() {
@@ -77,14 +76,6 @@ public class HtmlToPdfRenderer {
         // Generate PDF from the HTML
         ITextRenderer renderer = new ITextRenderer();
 
-        // Every stylesheet and every image in the document is a URL the layout
-        // engine opens for itself, one at a time, on this thread -- and a message
-        // list asks for one map thumbnail per message, from this application's own
-        // REST endpoint, which answers with a redirect. So a document's images can
-        // cost more than laying it out does, and the two are indistinguishable
-        // from the outside unless they are counted apart.
-        ResourceFetchLog.install(renderer, fetches);
-
         // Add support for SVG in PDF generation
         ChainingReplacedElementFactory chainingReplacedElementFactory = new ChainingReplacedElementFactory();
         chainingReplacedElementFactory.addReplacedElementFactory(renderer.getSharedContext().getReplacedElementFactory());
@@ -99,12 +90,6 @@ public class HtmlToPdfRenderer {
         renderer.setDocument(xhtmlContent, baseUri);
         renderer.layout();
         renderer.createPDF(pdf);
-    }
-
-
-    /** What the last render spent fetching the resources the document names. */
-    public ResourceFetchLog getFetches() {
-        return fetches;
     }
 
 
