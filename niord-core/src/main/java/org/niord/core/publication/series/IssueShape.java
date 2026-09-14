@@ -367,15 +367,20 @@ public class IssueShape extends BaseService {
 
     /**
      * When the period this issue covers began -- the span a double week is read
-     * from.
+     * from -- and only where the publication is numbered by week.
      *
-     * TWO ANSWERS, one question. Where the periods TILE the issue carries its own
-     * lower bound and that bound IS the span. Where they do not, the issue has one
-     * instant and no window, and the period it covers is nevertheless real: it
-     * runs from wherever the previous issue closed. That is the same instant
-     * {@link #shapeInterval} anchors the nominal close on, and until now it was
-     * computed and thrown away -- which is why a publication that skipped a week
-     * had to be renamed by hand, in every language, every time.
+     * TWO ANSWERS, one question, and the WEEKLY cadence is the scope of both.
+     * Where the periods TILE the issue carries its own lower bound and that bound
+     * IS the span. Where they do not, the issue has one instant and no window, and
+     * the period it covers is nevertheless real: it runs from wherever the
+     * previous issue closed. That is the same instant {@link #shapeInterval}
+     * anchors the nominal close on, and until now it was computed and thrown away
+     * -- which is why a publication that skipped a week had to be renamed by hand,
+     * in every language, every time. A tiling series answered with its lower bound
+     * whatever it was numbered by, and a year-long window read as fifty-two
+     * seven-day periods is how an annual edition came to carry a week range at all
+     * -- numbered from a week in the January its period opened in rather than for
+     * the week it closes, in its title, its file name and the link it is cited by.
      *
      * ONLY FOR A WEEKLY CADENCE, and that is the scope of the rule rather than a
      * limitation of this method. A double week is expressed as a pair of WEEK
@@ -391,12 +396,11 @@ public class IssueShape extends BaseService {
      * question about every publication in the estate.
      */
     private Date spanStart(PublicationIssue issue, PublicationSeries series) {
-        if (series == null
-                || (series.getTimeRelation() != null && series.getTimeRelation().tiles())) {
-            return issue.getIntervalFrom();
-        }
-        if (series.getCadence() != SeriesCadence.WEEKLY) {
+        if (series == null || series.getCadence() != SeriesCadence.WEEKLY) {
             return null;
+        }
+        if (series.getTimeRelation() != null && series.getTimeRelation().tiles()) {
+            return issue.getIntervalFrom();
         }
         PublicationIssue predecessor = newestDatedBefore(series, issue, issue.effectiveCutoff());
         return predecessor == null ? null : predecessor.effectiveCutoff();

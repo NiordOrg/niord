@@ -553,6 +553,31 @@ public class IssueDraftTest {
     }
 
     /**
+     * AND IT PROPOSES ONE WEEK, not the fifty-two its window is long.
+     *
+     * The multi-period test counts SEVEN-DAY periods, so a tiling series handing
+     * over its own lower bound whatever its cadence was made the annual window
+     * fifty-two of them: the form offered a week range, numbered from a week in
+     * the January the period opened in, and the issue created from it was stored
+     * that way. The span is a weekly fact -- there is no column that could hold
+     * two years -- so every other cadence carries the single week it closes in.
+     */
+    @Test
+    @Transactional
+    public void anAnnualDraftProposesTheWeekItClosesInAndNoRange() {
+        PublicationSeries s = annualSeries("Accumulated NtM - ${year}");
+
+        IssueDraftVo draft = drafts.draft(s, null, at(2025, 1, 1, 0, 0),
+                at(2025, 12, 31, 23, 59), new Date(), "da");
+
+        assertEquals(Integer.valueOf(1), draft.getWeek(),
+                "31 December 2025 falls in ISO week 1; the annual is numbered for the week its "
+                        + "period closes in");
+        assertNull(draft.getWeekTo(),
+                "a year is one period, and the range came from counting a year-long window in weeks");
+    }
+
+    /**
      * And the weekly is untouched at exactly the same boundary.
      *
      * A week closing on Wednesday 31 December 2025 IS week 1 of 2026, which is the

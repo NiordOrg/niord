@@ -79,7 +79,13 @@
             <#if edition?? && edition != '1'> - Version ${edition}</#if>
         </td>
         <td width="25%" align="center">ISSN ${ISSN!""}</td>
-        <td width="25%" align="center">${text('pdf.volume', (.now?string('yyyy')?number - 1884))}</td>
+        <#-- The volume is counted from ${yearNumber}, the year the numbering
+             derived, and not from the clock: a December issue amended in January,
+             and any re-render years later, would otherwise print the volume of the
+             year it was printed in rather than of the year it is the issue for.
+             The legacy print dialog renders this same template with no issue
+             behind it, so where no year was derived the clock still answers. -->
+        <td width="25%" align="center"><#if yearNumber??>${text('pdf.volume', (yearNumber - 1884))}<#else>${text('pdf.volume', (.now?string('yyyy')?number - 1884))}</#if></td>
         <td width="25%" align="right">
             <#if minMessageNo != 9999999 && maxMessageNo != -9999999>
                 ${minMessageNo?c} - ${maxMessageNo?c}

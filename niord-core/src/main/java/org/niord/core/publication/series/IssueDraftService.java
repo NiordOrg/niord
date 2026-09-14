@@ -235,13 +235,15 @@ public class IssueDraftService extends BaseService {
         // the same anchor the shaping does, or the create form would offer "uge
         // 37" and the issue it creates would come back called "uge 36+37".
         //
-        // Weekly only, for the reason the shaping states: the multi-period test
-        // counts weeks, so a yearly predecessor would report every ordinary annual
-        // edition as spanning fifty-two of them.
-        Date spanStart = tiles ? from
-                : predecessor != null && series.getCadence() == SeriesCadence.WEEKLY
-                        ? predecessor.effectiveCutoff()
-                        : null;
+        // Weekly only, on BOTH answers and for the reason the shaping states: the
+        // multi-period test counts weeks, so a year-long window -- or a yearly
+        // predecessor -- would report every ordinary annual edition as spanning
+        // fifty-two of them. The form would then propose a week range, numbered
+        // from a week in the January the period opened in, and the issue it
+        // creates is not numbered that way.
+        Date spanStart = series.getCadence() != SeriesCadence.WEEKLY ? null
+                : tiles ? from
+                        : predecessor == null ? null : predecessor.effectiveCutoff();
         // The series decides which year ${year} means, exactly as it does for the
         // issue this form creates. Left to the naming code's week-based default,
         // the draft for an annual period closing 31 December 2025 suggested "2026"
