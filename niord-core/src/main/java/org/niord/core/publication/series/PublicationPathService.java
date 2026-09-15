@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
 /**
@@ -106,13 +108,20 @@ public class PublicationPathService {
 
     /** Resolves symlinks and relative segments so the comparison is on real locations. */
     private static Path normalise(Path p) {
-        Path absolute = p.toAbsolutePath().normalize();
+        Path absolute = p.toAbsolutePath();
         try {
             return absolute.toRealPath();
+        } catch (NoSuchFileException e) {
+            // First boot may name a directory that has not been created yet.
+            // Resolve its existing ancestors before appending the missing part:
+            // a symlink or junction in a parent can lead into the public tree.
+            Path parent = absolute.getParent();
+            if (parent == null || Files.exists(absolute, LinkOption.NOFOLLOW_LINKS)) {
+                throw new UnsafePublicationRootException("could not resolve " + absolute + ": " + e.getMessage());
+            }
+            return normalise(parent).resolve(absolute.getFileName()).normalize();
         } catch (IOException e) {
-            // Not yet created: the normalised absolute path is the best available,
-            // and it is still enough to catch a configured-inside-the-repo mistake.
-            return absolute;
+            throw new UnsafePublicationRootException("could not resolve " + absolute + ": " + e.getMessage());
         }
     }
 

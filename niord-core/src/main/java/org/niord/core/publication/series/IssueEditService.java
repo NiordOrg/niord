@@ -429,10 +429,19 @@ public class IssueEditService extends BaseService {
             resolved.put(lang, validatedFileName(entry.getValue()));
         }
 
+        // Judged on the names the RELEASE would write, not on the stored column. A
+        // language the pattern still names has nothing stored until it is
+        // published, so an override equal to what that pattern expands to passed
+        // here and the two languages then wrote one file. The publish repeats the
+        // check before its first write, because the pattern can change after this.
+        PublicationSeries series = issue.getSeries();
+        Date cutoff = IssuePublishService.defaultCutoff(issue, series, new Date());
         Map<String, String> byName = new LinkedHashMap<>();
         for (PublicationIssueDesc desc : issue.getDescs()) {
             String lang = desc.getLang();
-            String name = resolved.containsKey(lang) ? resolved.get(lang) : desc.getFileName();
+            String override = resolved.containsKey(lang) ? resolved.get(lang)
+                    : desc.isFileNameOverridden() ? desc.getFileName() : null;
+            String name = wouldBeNamed(issue, series, desc, cutoff, override);
             if (name == null) {
                 continue;
             }
@@ -472,6 +481,24 @@ public class IssueEditService extends BaseService {
                 desc.setFileNameOverridden(true);
             }
             audit.edited(issue, actor, AuditAction.FILE_NAME_CHANGED, detail);
+        }
+    }
+
+    /**
+     * What the release would call one language's document given the override in
+     * force for it, or null where that cannot be said yet. An uploaded replacement
+     * keeps the name it was uploaded under. A pattern that cannot expand is the
+     * series' problem and is refused at publish, not here.
+     */
+    private static String wouldBeNamed(PublicationIssue issue, PublicationSeries series,
+                                       PublicationIssueDesc desc, Date cutoff, String override) {
+        if (desc.isFileSourceSticky()) {
+            return desc.getFileName();
+        }
+        try {
+            return IssueFileNaming.resolve(issue, series, desc, cutoff, override);
+        } catch (RuntimeException e) {
+            return null;
         }
     }
 

@@ -88,6 +88,9 @@ public class IssuePublishTest {
     IssueEditService edits;
 
     @Inject
+    IssueCurationService curation;
+
+    @Inject
     IssueAuditService auditService;
 
     @Inject
@@ -286,6 +289,39 @@ public class IssuePublishTest {
 
         assertEquals(0, publishedAfterStamp,
                 "members were frozen that were published after the stamp; the resolve used the call time");
+    }
+
+    /** A criteria rejection can become a member only through a manual include. */
+    @Test
+    @Transactional
+    public void aManuallyIncludedRejectedCandidateKeepsItsProvenanceAfterPublish() {
+        PublicationSeries s = series(SeriesCadence.WEEKLY, TimeRelation.PUBLISHED_IN_INTERVAL,
+                ReleaseMode.MANUAL_GATE, NextIssueCreation.MANUAL, SeriesStatus.ACTIVE);
+        PublicationIssue i = issue(s, new Date(1_698_900_000_000L));
+        // A CANDIDATE the rule rejects, not a message the query never sees: stamped
+        // exactly on the previous cut-off, so the query keeps it (>=) and the strict
+        // lower bound refuses it as BEFORE_INTERVAL. A draft would prove nothing --
+        // it never reaches the candidate set, and it froze correctly all along.
+        Message manual = compiledMessage("MANUAL");
+        manual.setPublishDateFrom(new Date(1_698_900_000_000L));
+        Message selected = compiledMessage("CRITERIA");
+        org.niord.core.user.User author = new org.niord.core.user.User();
+        author.setUsername(TestIds.user());
+        em.persist(author);
+        curation.include(i, manual.getUid(), author, "include this draft in the document");
+        em.flush();
+
+        publishService.publish(i.getId(), new IssuePublishService.PublishRequest(
+                IssuePublishService.PublishRequest.ALL_WARNINGS, author, new Date(1_699_300_000_000L)));
+        em.flush();
+        em.clear();
+
+        PublicationIssue after = em.find(PublicationIssue.class, i.getId());
+        Map<String, IssueMember> rows = new java.util.HashMap<>();
+        frozenRowsOf(after).forEach(row -> rows.put(row.getMessageUid(), row));
+        assertEquals(MemberSource.OVERRIDE_INCLUDE, rows.get(manual.getUid()).getSource());
+        assertEquals("MANUAL_INCLUDE", IssueMemberListService.deriveReason(rows.get(manual.getUid()), after));
+        assertEquals(MemberSource.CRITERIA, rows.get(selected.getUid()).getSource());
     }
 
     /** Steps 5 to 7. Dense sortIndex, frozen facts, and the snapshot header. */

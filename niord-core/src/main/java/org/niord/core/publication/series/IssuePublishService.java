@@ -27,6 +27,7 @@ import org.niord.core.publication.series.resolve.Interval;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
 import org.niord.core.publication.series.resolve.IssueOrdering;
+import org.niord.core.publication.series.resolve.MembershipPredicate;
 import org.niord.core.publication.series.resolve.MembershipReason;
 import org.niord.core.publication.series.resolve.ResolutionWarningVo;
 import org.niord.core.publication.series.resolve.ResolvedCriteria;
@@ -43,6 +44,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -427,12 +429,12 @@ public class IssuePublishService extends BaseService {
      * Steps 3 to 10, which publish and amend share.
      *
      * Two instants, deliberately separate. The CUT-OFF decides the content: the
-     * resolution window closes at it, and the file name derives from it, which is
-     * what makes an amended document land on the path the original citation
-     * points at. The FREEZE moment is when this act happened: the snapshot header
-     * records it, and the archive entry is named by it, so two amends of one
-     * issue do not write over each other's archived generation. For a publish the
-     * two are the same instant, and nothing about publish changes.
+     * resolution window closes at it. An amendment keeps the stored file name
+     * and path even when the series' naming pattern has changed, so existing
+     * citations reach the corrected document. The FREEZE moment is when this act
+     * happened: the snapshot header records it, and the archive entry is named
+     * by it, so repeated amendments keep separate archived generations. On first
+     * publication both instants are the same.
      *
      * @param railResolution the resolution the release rail already took over this
      *                       same cut-off, or null to take one here. Publish passes
@@ -718,6 +720,10 @@ public class IssuePublishService extends BaseService {
             }
         }
 
+        // The standing decisions, read once for the whole freeze.
+        Set<String> includes = includes(issue);
+        Set<String> excludes = excludes(issue);
+
         for (IssueOrdering.Orderable o : ordered) {
             org.niord.core.message.Message m = byUid.get(o.uid());
             IssueMember member = previous.remove(o.uid());
@@ -740,9 +746,11 @@ public class IssuePublishService extends BaseService {
                 member.setFrozenPublishDateFrom(m.getPublishDateFrom());
                 member.setFrozenPublishDateTo(m.getPublishDateTo());
             }
-            MembershipReason reason = resolution.decisions().containsKey(o.uid())
-                    ? resolution.decisions().get(o.uid()).reason()
-                    : MembershipReason.MANUAL_INCLUDE;
+            // THE SAME RULE THE WORKBENCH EXPLAINS A ROW BY. An override can add a
+            // candidate the predicate rejected, and that row's decision is a
+            // rejection: reading its reason froze an editor's include as CRITERIA.
+            MembershipReason reason = MembershipPredicate.reasonAfterOverrides(
+                    o.uid(), resolution.decisions(), includes, excludes);
             // WHICH DERIVATION put the row here, recorded on the row itself. A
             // compilation's manual includes are OVERRIDE_INCLUDE exactly as any
             // other issue's are -- they belong to no source week and are printed in
@@ -989,6 +997,28 @@ public class IssuePublishService extends BaseService {
             return; // nothing to generate: an uploaded or link-only issue
         }
 
+        // Resolve every destination before rendering or writing. Stored names
+        // alone miss collisions between an override and another language's
+        // pattern, and uploaded replacements share this directory too.
+        Map<String, String> namesByLang = new LinkedHashMap<>();
+        Map<String, String> pathsByLang = new LinkedHashMap<>();
+        Set<String> destinations = new LinkedHashSet<>();
+        for (PublicationIssueDesc desc : issue.getDescs()) {
+            String name = desc.isFileSourceSticky()
+                    ? desc.getFileName() : fileNameFor(issue, series, desc, stamp);
+            String filePath = desc.isFileSourceSticky()
+                    || issue.getStatus() == IssueStatus.PUBLISHED && desc.getFilePath() != null
+                    ? desc.getFilePath() : issue.getRepoPath() + "/" + name;
+            namesByLang.put(desc.getLang(), name);
+            pathsByLang.put(desc.getLang(), filePath);
+            if (filePath != null && !destinations.add(paths.repoRoot().resolve(filePath)
+                    .toAbsolutePath().normalize().toString().toLowerCase(Locale.ROOT))) {
+                throw new IssueLifecycleService.TransitionRefusedException("FILE_NAME_NOT_DISTINCT",
+                        "every language must have its own document path; '" + filePath
+                                + "' would be overwritten by another language");
+            }
+        }
+
         // As on the preview path: the member rows are the same for every
         // language, so they are read once for the whole release.
         Map<String, Message> members = messageLoader.load(IssueMessageLoader.uidsOf(ordered));
@@ -1014,13 +1044,11 @@ public class IssuePublishService extends BaseService {
         // rendered straight to its own file.
         List<IssueRenderService.RenderRequest> requests = new ArrayList<>();
         List<PublicationIssueDesc> rendered = new ArrayList<>();
-        List<String> fileNames = new ArrayList<>();
         for (PublicationIssueDesc desc : issue.getDescs()) {
             if (desc.isFileSourceSticky()) {
                 continue; // an uploaded replacement is not regenerated over
             }
             rendered.add(desc);
-            fileNames.add(fileNameFor(issue, series, desc, stamp));
             requests.add(renderRequest(issue, series, ordered, members, desc.getLang(),
                     renderGroups(ordered, sourceByUid, sourceIssueIds, desc.getLang()), separatePageIds));
         }
@@ -1033,8 +1061,9 @@ public class IssuePublishService extends BaseService {
 
         for (int i = 0; i < documents.size(); i++) {
             PublicationIssueDesc desc = rendered.get(i);
-            String fileName = fileNames.get(i);
-            Path target = paths.repoRoot().resolve(issue.getRepoPath()).resolve(fileName);
+            String fileName = namesByLang.get(desc.getLang());
+            String filePath = pathsByLang.get(desc.getLang());
+            Path target = paths.repoRoot().resolve(filePath);
             try {
                 Files.createDirectories(target.getParent());
                 Files.write(target, documents.get(i).bytes());
@@ -1044,7 +1073,7 @@ public class IssuePublishService extends BaseService {
             }
 
             desc.setFileName(fileName);
-            desc.setFilePath(issue.getRepoPath() + "/" + fileName);
+            desc.setFilePath(filePath);
             desc.setFileSource(FileSource.GENERATED);
         }
 

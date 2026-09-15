@@ -31,9 +31,11 @@ import java.util.Date;
  * series named no pattern at all. An edition that had to be filed under
  * something else could not be.
  *
- * So the order is: the name somebody set for THIS issue, then the series'
- * pattern, then whatever the language already carries, then the issue's public
- * id. Always a PDF, because that is what is written.
+ * A published issue keeps its stored name: an amendment replaces the document
+ * at the address readers already hold. Before publication, the order is the
+ * name somebody set for THIS issue, then the series' pattern, then whatever the
+ * language already carries, then the issue's public id. Generated names always
+ * end in PDF, because that is what is written.
  *
  * ONE RESOLUTION, because three callers ask: the publish writes the file, the
  * preview names its bytes from the same rule so a preview and a release cannot
@@ -99,12 +101,33 @@ public final class IssueFileNaming {
      */
     public static String resolve(PublicationIssue issue, PublicationSeries series,
                                  PublicationIssueDesc desc, Date cutoff) {
+        return resolve(issue, series, desc, cutoff,
+                desc != null && desc.isFileNameOverridden() ? desc.getFileName() : null);
+    }
+
+    /**
+     * The same, with the override taken as given rather than read off the row.
+     *
+     * For the edit that is about to set or clear one: distinctness is a property
+     * of the names the RELEASE will write, and it can only be judged before the
+     * row changes if the name under consideration can be asked about without
+     * being stored first.
+     *
+     * @param override the name set for this issue, or null when the pattern decides
+     */
+    public static String resolve(PublicationIssue issue, PublicationSeries series,
+                                 PublicationIssueDesc desc, Date cutoff, String override) {
+        // A published name is an address readers already hold. Changes to the
+        // series' pattern apply to future releases, never to an amendment.
+        if (issue != null && issue.getStatus() == IssueStatus.PUBLISHED && desc != null
+                && desc.getFileName() != null && !desc.getFileName().isBlank()) {
+            return desc.getFileName();
+        }
         // A name somebody set for this issue. It is a decision, and re-deriving
         // over it would discard it with nothing to say it had been made -- the
         // same rule the issue's NAME has carried since the edit path existed.
-        if (desc != null && desc.isFileNameOverridden()
-                && desc.getFileName() != null && !desc.getFileName().isBlank()) {
-            return withPdf(desc.getFileName().trim());
+        if (override != null && !override.isBlank()) {
+            return withPdf(override.trim());
         }
 
         String name = suggested(issue, series, desc, cutoff);

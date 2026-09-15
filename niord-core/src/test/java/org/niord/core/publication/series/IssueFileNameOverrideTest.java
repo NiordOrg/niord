@@ -33,6 +33,8 @@ import org.niord.core.publication.series.vo.SystemPublicationIssueVo;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.user.User;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -83,6 +85,9 @@ public class IssueFileNameOverrideTest {
 
     @Inject
     IssueAuditService audit;
+
+    @Inject
+    PublicationPathService paths;
 
     @Inject
     EntityManager em;
@@ -169,6 +174,80 @@ public class IssueFileNameOverrideTest {
     }
 
     // -------------------------------------------------------------- the default
+
+    @Test
+    @Transactional
+    public void anAmendKeepsThePublishedAddressAfterTheSeriesPatternChanges() throws Exception {
+        PublicationSeries s = series("da");
+        PublicationIssue i = issue(s);
+        StubIssueRenderService.renders("original document");
+        publish(i);
+        String name = descOf(i, "da").getFileName();
+        String path = descOf(i, "da").getFilePath();
+        s.getDescs().get(0).setFileNamePattern("changed-${week}.pdf");
+        StubIssueRenderService.renders("corrected document");
+
+        var amended = publishService.amend(i.getId(), new IssuePublishService.AmendRequest(
+                IssuePublishService.PublishRequest.ALL_WARNINGS, user(), "correct the chart number"));
+        em.flush();
+        em.clear();
+
+        PublicationIssue after = em.find(PublicationIssue.class, i.getId());
+        assertEquals(name, descOf(after, "da").getFileName());
+        assertEquals(path, descOf(after, "da").getFilePath());
+        assertEquals("corrected document", Files.readString(paths.repoRoot().resolve(path)));
+        assertEquals(1, amended.archivePaths().size());
+        assertEquals("original document", Files.readString(Path.of(amended.archivePaths().get(0))));
+        assertFalse(Files.exists(paths.repoRoot().resolve(after.getRepoPath()).resolve("changed-36.pdf")));
+    }
+
+    /** D-3 judged on what the release WOULD write: the other language has no stored name yet. */
+    @Test
+    @Transactional
+    public void anOverrideEqualToTheOtherLanguagesGeneratedNameIsRefusedAtEdit() {
+        PublicationSeries s = series("da", "en");
+        // The edit judges names at the cut-off the release would stamp, which is
+        // the one the screen's suggestion shows. Pinned, so the week in the name
+        // is the fixture's rather than the week this test happens to run in.
+        s.setCutoffDefault(CutoffDefault.PERIOD_END);
+        PublicationIssue i = issue(s);
+        i.setIntervalTo(new Date(CUTOFF));
+
+        var refusal = assertThrows(IssueLifecycleService.TransitionRefusedException.class,
+                () -> editService.update(i, fileNames(Map.of("en", "EfS-da-Uge-36-2026.pdf")), user()));
+        assertEquals("FILE_NAME_NOT_DISTINCT", refusal.code());
+        assertFalse(descOf(i, "en").isFileNameOverridden(), "a refused edit changes nothing");
+    }
+
+    /** The pattern can change after the edit accepted the name; the publish is the last line. */
+    @Test
+    @Transactional
+    public void publishRefusesAnOverrideThePatternLaterCollidesWith() {
+        PublicationSeries s = series("da", "en");
+        PublicationIssue i = issue(s);
+        editService.update(i, fileNames(Map.of("en", "notice-36.pdf")), user());
+        s.getDescs().get(0).setFileNamePattern("notice-${week}.pdf");
+        em.flush();
+
+        var refusal = assertThrows(IssueLifecycleService.TransitionRefusedException.class, () -> publish(i));
+        assertEquals("FILE_NAME_NOT_DISTINCT", refusal.code());
+        assertTrue(StubIssueRenderService.requests().isEmpty(), "collision must be refused before rendering");
+        assertFalse(Files.exists(paths.repoRoot().resolve(i.getRepoPath()).resolve("notice-36.pdf")));
+    }
+
+    @Test
+    @Transactional
+    public void publishRefusesPatternsThatExpandToTheSameName() {
+        PublicationSeries s = series("da", "en");
+        s.getDescs().get(0).setFileNamePattern("notice-${week}.pdf");
+        s.getDescs().get(1).setFileNamePattern("notice-36.pdf");
+        PublicationIssue i = issue(s);
+        em.flush();
+
+        var refusal = assertThrows(IssueLifecycleService.TransitionRefusedException.class, () -> publish(i));
+        assertEquals("FILE_NAME_NOT_DISTINCT", refusal.code());
+        assertFalse(Files.exists(paths.repoRoot().resolve(i.getRepoPath()).resolve("notice-36.pdf")));
+    }
 
     /** Nothing set: the series' pattern names the file, exactly as it always did. */
     @Test
